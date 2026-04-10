@@ -1,0 +1,3 @@
+data,ticker,nome,categoria,plataforma,quantidade,valor
+2026-04-01,ABCD,Ativo Inventado,acao,B3,10,12.00
+2026-04-01,XXXX,Outro Inventado,acao,B3,5,7.00

@@ -1,0 +1,10 @@
+name = "ei-api-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-04-09"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-dev"
+database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
+preview_database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
+migrations_dir = "../../banco/migrations"

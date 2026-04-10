@@ -1,0 +1,23 @@
+{
+  "name": "@ei/raiz",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "servicos/*",
+    "pacotes/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @ei/web",
+    "dev:api": "npm run dev -w @ei/api",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "deploy:api": "npm run deploy -w @ei/api",
+    "deploy:web": "npm run build -w @ei/web && npm run deploy -w @ei/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "playwright": "^1.59.1"
+  }
+}
