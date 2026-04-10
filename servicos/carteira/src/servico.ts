@@ -52,17 +52,30 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   async obterResumo(usuarioId: string): Promise<ResumoCarteira> {
-    const ativos = await this.listarAtivos(usuarioId);
-    const patrimonioTotal = ativos.reduce((acc, item) => acc + item.valorAtual, 0);
-    const retorno12m =
-      ativos.length > 0
-        ? Number((ativos.reduce((acc, item) => acc + (item.ganhoPerdaPercentual ?? item.retorno12m), 0) / ativos.length).toFixed(2))
-        : 0;
+    const ativos = await this.deps.repositorio.listarAtivos(usuarioId);
+    let patrimonioTotal = 0;
+    let custoTotalAcumulado = 0;
+
+    for (const ativo of ativos) {
+      const meta = await this.obterAtualizacaoMercado(ativo);
+      const precoAtual = meta.precoAtual ?? ativo.valorAtual / ativo.quantidade;
+      
+      const valorMercadoAtual = precoAtual * ativo.quantidade;
+      const custoAquisicao = ativo.precoMedio * ativo.quantidade;
+
+      patrimonioTotal += valorMercadoAtual;
+      custoTotalAcumulado += custoAquisicao;
+    }
+
+    const retornoTotal = custoTotalAcumulado > 0 
+      ? ((patrimonioTotal - custoTotalAcumulado) / custoTotalAcumulado) * 100 
+      : 0;
 
     return {
-      patrimonioTotal,
-      retorno12m,
-      score: patrimonioTotal > 0 ? Math.min(100, Math.round(60 + retorno12m)) : 0,
+      patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
+      retorno12m: Number(retornoTotal.toFixed(2)),
+      // Score agora reflete a saúde da rentabilidade real (70 base + ajuste de performance)
+      score: patrimonioTotal > 0 ? Math.max(0, Math.min(100, Math.round(70 + (retornoTotal / 2)))) : 0,
       quantidadeAtivos: ativos.length,
     };
   }

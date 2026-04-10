@@ -101,40 +101,62 @@ export default function Insights() {
   const cards = useMemo(() => {
     if (!resumo) return [];
     const lista = [];
+    
+    // 1. Risco Principal (Backend-driven)
     if (resumo.riscoPrincipal) {
       lista.push({
         type: resumo.riscoPrincipal.severidade === 'alto' ? 'alert' : 'opportunity',
         title: resumo.riscoPrincipal.titulo,
         description: resumo.riscoPrincipal.descricao,
-        impact: `Severidade ${resumo.riscoPrincipal.severidade}`,
-        action: 'Ver Detalhe do Risco',
-        infoTitle: 'Risco Principal',
+        impact: `Severidade ${resumo.riscoPrincipal.severidade?.toUpperCase()}`,
+        action: 'Explorar Risco', 
+        infoTitle: 'Identificador de Risco',
         infoText: resumo.riscoPrincipal.codigo,
       });
     }
+
+    // 2. Ação Prioritária (Backend-driven)
     if (resumo.acaoPrioritaria) {
       lista.push({
         type: 'opportunity',
         title: resumo.acaoPrioritaria.titulo,
         description: resumo.acaoPrioritaria.descricao,
-        impact: resumo.acaoPrioritaria.impactoEsperado,
-        action: 'Ver Acao Prioritaria',
-        infoTitle: 'Acao Prioritaria',
+        impact: resumo.acaoPrioritaria.impactoEsperado || 'Ajuste Estrutural',
+        action: 'Ver Recomendação',
+        infoTitle: 'Código da Ação',
         infoText: resumo.acaoPrioritaria.codigo,
       });
     }
-    lista.push({
-      type: 'positive',
-      title: 'Resumo do Diagnóstico',
-      description: resumo.diagnostico.resumo,
-      impact: `Faixa ${resumo.score.faixa}`,
-      action: 'Atualizar Leitura',
-      infoTitle: 'Atualização',
-      infoText: `Atualizado em ${new Date(resumo.score.atualizadoEm).toLocaleString('pt-BR')}`,
-    });
+
+    if (resumo.insightPrincipal) {
+      lista.push({
+        type: 'opportunity',
+        title: resumo.insightPrincipal.titulo,
+        description: resumo.insightPrincipal.descricao,
+        impact: resumo.classificacao ? `Classificação ${resumo.classificacao.toUpperCase()}` : 'Ajuste Estrutural',
+        action: resumo.insightPrincipal.acao,
+        infoTitle: 'Insight Principal',
+        infoText: 'Gerado pela penalidade de maior peso do motor de score.',
+      });
+    }
+
+    // 3. Diagnóstico Geral (Contextual)
+    if (resumo.diagnostico) {
+      lista.push({
+        type: 'positive',
+        title: 'Diagnóstico Consolidado',
+        description: resumo.diagnosticoFinal?.mensagem || resumo.diagnostico.resumo,
+        impact: `Status: ${resumo.score.faixa}`,
+        action: 'Análise Completa',
+        infoTitle: 'Motor de Regras',
+        infoText: `Último cálculo em ${new Date(resumo.score.atualizadoEm).toLocaleString('pt-BR')}`,
+      });
+    }
+
     return lista;
   }, [resumo]);
-  const semBaseInsights = !loading && !error && resumo && resumo.score?.score === 0;
+
+  const semBaseInsights = !loading && !error && resumo && (resumo.score?.score === 0 && !resumo.riscoPrincipal);
 
   return (
     <div className="w-full bg-white font-['Inter'] text-[#0B1218]">
@@ -188,7 +210,7 @@ export default function Insights() {
                 <span className="text-white/30 text-sm font-bold">/100</span>
               </div>
               <p className="text-white/40 text-xs leading-relaxed mb-8">
-                {resumo.diagnostico.resumo}
+                {resumo.diagnosticoFinal?.mensagem || resumo.diagnostico.resumo}
               </p>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-[#F56A2A]" style={{ width: `${Math.max(0, Math.min(100, resumo.score.score))}%` }}></div>
@@ -196,9 +218,9 @@ export default function Insights() {
             </div>
 
             <div className="border border-[#EFE7DC] p-8 rounded-sm">
-              <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-6">Metodologia Esquilo</h4>
+              <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-6">Pontos de Diagnóstico</h4>
               <ul className="space-y-4">
-                {resumo.diagnostico.riscos.slice(0, 2).map((risco) => (
+                {resumo.diagnostico.riscos.map((risco) => (
                 <li key={risco.codigo} className="flex gap-3 text-xs text-[#0B1218]/60 leading-relaxed italic">
                   <span className="text-[#F56A2A]">"</span>
                   {risco.titulo}: {risco.descricao}

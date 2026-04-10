@@ -321,17 +321,19 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
   }
 
   if (pathname === "/api/insights/resumo" && request.method === "GET") {
-    const [score, diagnostico] = await Promise.all([
-      insightsService.calcularScore(sessao.usuario.id),
-      insightsService.gerarDiagnostico(sessao.usuario.id),
-    ]);
+    const resumo = await insightsService.gerarResumo(sessao.usuario.id);
     return {
       ok: true,
       dados: {
-        score,
-        diagnostico,
-        riscoPrincipal: (diagnostico.riscos[0] ?? null) as RiscoPrincipal | null,
-        acaoPrioritaria: (diagnostico.acoes[0] ?? null) as AcaoPrioritaria | null,
+        score: resumo.scoreDetalhado,
+        diagnostico: resumo.diagnosticoLegado,
+        riscoPrincipal: (resumo.riscoPrincipal ?? null) as RiscoPrincipal | null,
+        acaoPrioritaria: (resumo.acaoPrioritaria ?? null) as AcaoPrioritaria | null,
+        retorno: resumo.retorno,
+        classificacao: resumo.classificacao,
+        diagnosticoFinal: resumo.diagnostico,
+        insightPrincipal: resumo.diagnostico.insightPrincipal,
+        penalidadesAplicadas: resumo.penalidadesAplicadas,
       },
     };
   }

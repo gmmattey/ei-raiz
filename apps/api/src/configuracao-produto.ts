@@ -99,6 +99,8 @@ const defaultScoreConfig = {
     objetivoCrescimentoDefensivo: 5,
     objetivoRendaSemBase: 4,
     objetivoAposentadoriaSemConsistencia: 3,
+    aportesInconsistentes: 6,
+    evolucaoNegativa: 8,
   },
 };
 

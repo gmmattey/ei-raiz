@@ -6,6 +6,27 @@ export type ResumoInsights = {
   diagnostico: Diagnostico;
   riscoPrincipal: RiscoPrincipal | null;
   acaoPrioritaria: AcaoPrioritaria | null;
+  retorno?: number;
+  classificacao?: "critico" | "baixo" | "ok" | "bom" | "excelente";
+  diagnosticoFinal?: {
+    mensagem: string;
+    insightPrincipal: {
+      titulo: string;
+      descricao: string;
+      acao: string;
+    };
+  };
+  insightPrincipal?: {
+    titulo: string;
+    descricao: string;
+    acao: string;
+  };
+  penalidadesAplicadas?: Array<{
+    tipo: string;
+    peso: number;
+    descricao: string;
+    bloco: string;
+  }>;
 };
 
 export function obterScore(): Promise<ScoreCarteira> {

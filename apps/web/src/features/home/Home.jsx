@@ -122,9 +122,9 @@ export default function HomeLobby() {
                         Retorno 12M: {resumo?.retorno12m?.toFixed?.(2) ?? '0.00'}%
                       </span>
                     </div>
-                    {insights?.diagnostico?.resumo && (
+                    {(insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo) && (
                       <p className="text-[11px] font-medium leading-relaxed text-[#0B1218]/60 max-w-md">
-                        {insights.diagnostico.resumo}
+                        {insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo}
                       </p>
                     )}
                   </div>

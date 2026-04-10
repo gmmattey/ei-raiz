@@ -26,13 +26,18 @@ const PreInsight: React.FC = () => {
         const moeda = (valor: number) =>
           new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor ?? 0);
 
-        // Cálculo simples de jornada baseado no objetivo do perfil (se disponível no futuro)
-        // Por ora, usamos um valor real vindo do contexto ou placeholder lógico do backend
         setData({
           userName: user?.nome?.split(' ')[0] || 'Investidor',
           patrimonio: moeda(resumo.patrimonioTotal),
           percentualJornada: resumo.quantidadeAtivos > 0 ? 'em evolução' : '0%',
-          acaoRecomendada: insights.riscoPrincipal?.descricao || insights.acaoPrioritaria?.descricao || 'Sua carteira está sendo processada.'
+          acaoRecomendada:
+            insights.insightPrincipal?.acao ||
+            insights.diagnosticoFinal?.insightPrincipal?.acao ||
+            insights.insightPrincipal?.descricao ||
+            insights.diagnosticoFinal?.insightPrincipal?.descricao ||
+            insights.riscoPrincipal?.descricao ||
+            insights.acaoPrioritaria?.descricao ||
+            'Sua carteira está sendo processada.'
         });
       } catch (err) {
         console.error('Falha ao carregar PreInsight:', err);
