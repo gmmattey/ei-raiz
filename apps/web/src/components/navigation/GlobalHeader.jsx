@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
-import { configApi, getStoredUser } from '../../cliente-api';
+import { adminApi, clearSession, configApi, getStoredUser } from '../../cliente-api';
 import { Menu, X } from 'lucide-react';
 
 export default function GlobalHeader() {
@@ -10,6 +10,7 @@ export default function GlobalHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [usuario, setUsuario] = useState(() => getStoredUser());
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fallbackNavItems = [
     { label: 'Home', path: '/home' },
@@ -28,12 +29,14 @@ export default function GlobalHeader() {
       try {
         setUsuario(getStoredUser());
         const appConfig = await configApi.obterAppConfig();
+        const acessoAdmin = await adminApi.obterMeAdmin().catch(() => ({ isAdmin: false }));
         if (!ativo) return;
         const itens = (appConfig.menus ?? [])
           .filter((item) => item.visivel)
           .sort((a, b) => a.ordem - b.ordem)
           .map((item) => ({ label: item.label, path: item.path }));
         setNavItems(itens.length ? itens : fallbackNavItems);
+        setIsAdmin(Boolean(acessoAdmin?.isAdmin));
       } catch {
         if (ativo) setNavItems(fallbackNavItems);
       }
@@ -48,12 +51,13 @@ export default function GlobalHeader() {
     { label: 'Meu Perfil', icon: assetPath('/assets/icons/preto/perfil.svg'), action: () => navigate('/perfil') },
     { label: 'Perfil de Risco', icon: assetPath('/assets/icons/preto/radar.svg'), action: () => navigate('/perfil-de-risco') },
     { label: 'Configurações', icon: assetPath('/assets/icons/preto/configuracoes.svg'), action: () => navigate('/configuracoes') },
+    ...(isAdmin ? [{ label: 'Painel Admin', icon: assetPath('/assets/icons/preto/score.svg'), action: () => navigate('/admin') }] : []),
     { 
       label: 'Sair da conta', 
       icon: assetPath('/assets/icons/preto/fechar.svg'),
       color: 'text-[#E85C5C]', 
       action: () => {
-        localStorage.removeItem('isAuthenticated');
+        clearSession();
         localStorage.removeItem('hasSeenPreInsight');
         window.location.href = '/';
       } 

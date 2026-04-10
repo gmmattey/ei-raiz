@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { ApiError, authApi, consumirMotivoSaidaSessao } from '../../cliente-api';
+import { useConteudoApp } from '../../hooks/useConteudoApp';
 import { 
   Menu, X, ChevronRight, ArrowRight, Lock, 
   Eye, BarChart2, Shield, Info, FileText, AlertTriangle, CheckCircle2
@@ -363,10 +364,10 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
 
 // --- BLOCOS DE CONTEÚDO ---
 
-const SectionComoFunciona = ({ id }) => (
+const SectionComoFunciona = ({ id, titulo }) => (
   <section id={id} className="min-h-screen flex flex-col justify-center py-24 bg-white text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
     <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 text-center">
-      <h2 className="font-['Sora'] text-3xl md:text-5xl font-bold text-[#0B1218] mb-20">Entenda como a gente te ajuda</h2>
+      <h2 className="font-['Sora'] text-3xl md:text-5xl font-bold text-[#0B1218] mb-20">{titulo}</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
         <div className="hidden md:block absolute top-6 left-[15%] right-[15%] h-px bg-[#EFE7DC]"></div>
         <div className="relative z-10 flex flex-col items-center">
@@ -396,15 +397,12 @@ const SectionComoFunciona = ({ id }) => (
   </section>
 );
 
-const SectionProposta = ({ id }) => (
+const SectionProposta = ({ id, titulo }) => (
   <section id={id} className="min-h-screen flex flex-col justify-center bg-[#F5F0EB] py-24 text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
     <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         <div className="lg:col-span-5">
-          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6 leading-tight">
-            Acesso apenas leitura.<br/>
-            Zero execução.
-          </h2>
+          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6 leading-tight">{titulo}</h2>
           <p className="font-['Inter'] text-lg text-[#0B1218]/70 leading-relaxed mb-10">
             A Esquilo Invest não possui ferramentas técnicas para movimentar dinheiro. Nós não vendemos CDBs, não executamos ordens e não ganhamos comissão sobre seus ativos. Nosso único produto é a sua lucidez financeira.
           </p>
@@ -462,12 +460,12 @@ const SectionProposta = ({ id }) => (
   </section>
 );
 
-const SectionFaq = ({ id }) => (
+const SectionFaq = ({ id, titulo, subtitulo }) => (
   <section id={id} className="min-h-screen flex flex-col justify-center py-24 bg-white text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
     <div className="mx-auto w-full max-w-[896px] px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-16">
-        <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold text-[#0B1218] mb-4">Entenda a ferramenta</h2>
-        <p className="font-['Inter'] text-[#0B1218]/70 text-xl">Como o sistema opera e lê os seus dados.</p>
+        <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold text-[#0B1218] mb-4">{titulo}</h2>
+        <p className="font-['Inter'] text-[#0B1218]/70 text-xl">{subtitulo}</p>
       </div>
       <div className="grid grid-cols-1 gap-6">
         <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
@@ -496,6 +494,7 @@ const SectionFaq = ({ id }) => (
 export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { texto, booleano } = useConteudoApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [alertaLogin, setAlertaLogin] = useState('');
@@ -600,17 +599,21 @@ export default function LandingPage() {
         <div className="relative z-20 mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mt-16 fade-in-up">
             <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-4 text-white tracking-tight">
-              Sua carteira merece<br/>
-              <span className="text-[#F56A2A]">uma visão real.</span>
+              {texto("landing.hero.titulo", "Sua carteira merece")}<br/>
+              <span className="text-[#F56A2A]">{texto("landing.hero.titulo_destaque", "uma visão real.")}</span>
             </h1>
-            <h2 className="font-['Sora'] text-xl md:text-2xl font-semibold text-[#F5F0EB]/90 mb-6 fade-in-up" style={{ animationDelay: '0.1s' }}>Consolidação real, diagnóstico claro e decisão orientada.</h2>
-            <p className="font-['Inter'] text-lg text-[#F5F0EB]/70 mb-10 leading-relaxed max-w-lg fade-in-up" style={{ animationDelay: '0.2s' }}>Centralize seus ativos, entenda concentração e risco da carteira e receba uma orientação objetiva do próximo passo.</p>
+            <h2 className="font-['Sora'] text-xl md:text-2xl font-semibold text-[#F5F0EB]/90 mb-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
+              {texto("landing.hero.subtitulo", "Consolidação real, diagnóstico claro e decisão orientada.")}
+            </h2>
+            <p className="font-['Inter'] text-lg text-[#F5F0EB]/70 mb-10 leading-relaxed max-w-lg fade-in-up" style={{ animationDelay: '0.2s' }}>
+              {texto("landing.hero.descricao", "Centralize seus ativos, entenda concentração e risco da carteira e receba uma orientação objetiva do próximo passo.")}
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto fade-in-up" style={{ animationDelay: '0.3s' }}>
               <Button variant="primary" className="w-full sm:w-auto text-base px-8 py-3.5 shadow-lg shadow-[#F56A2A]/20" onClick={(e) => handleNavClick(e, 'como-funciona')}>
-                Ver como funciona <Icon name="arrowRight" size={18} />
+                {texto("landing.hero.cta_primario", "Ver como funciona")} <Icon name="arrowRight" size={18} />
               </Button>
               <button className="font-['Inter'] font-semibold rounded-md px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
-                Saber mais sobre a gente
+                {texto("landing.hero.cta_secundario", "Saber mais sobre a gente")}
               </button>
             </div>
           </div>
@@ -620,9 +623,18 @@ export default function LandingPage() {
       {visibleSections.length > 0 && (
         <div className="relative z-30 bg-white">
           {visibleSections.map(sectionId => {
-            if (sectionId === 'como-funciona') return <SectionComoFunciona key={sectionId} id={sectionId} />;
-            if (sectionId === 'proposta') return <SectionProposta key={sectionId} id={sectionId} />;
-            if (sectionId === 'faq') return <SectionFaq key={sectionId} id={sectionId} />;
+            if (sectionId === 'como-funciona') return <SectionComoFunciona key={sectionId} id={sectionId} titulo={texto("landing.como_funciona.titulo", "Entenda como a gente te ajuda")} />;
+            if (sectionId === 'proposta') return <SectionProposta key={sectionId} id={sectionId} titulo={texto("landing.proposta.titulo", "Acesso apenas leitura. Zero execução.")} />;
+            if (sectionId === 'faq' && booleano("landing.secao.faq.visivel", true)) {
+              return (
+                <SectionFaq
+                  key={sectionId}
+                  id={sectionId}
+                  titulo={texto("landing.faq.titulo", "Entenda a ferramenta")}
+                  subtitulo={texto("landing.faq.subtitulo", "Como o sistema opera e lê os seus dados.")}
+                />
+              );
+            }
             return null;
           })}
         </div>
@@ -630,9 +642,11 @@ export default function LandingPage() {
 
       <footer className="bg-[#EFE7DC] pt-32 pb-8 text-[#0B1218] relative z-30">
         <div className="mx-auto mb-32 w-full max-w-[896px] px-4 text-center">
-          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6">O diagnóstico leva menos de 5 minutos.</h2>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-xl mb-10">Crie sua conta, importe seu CSV e tenha uma leitura clara da sua carteira em minutos.</p>
-          <Button variant="primary" className="mx-auto text-lg px-12 py-5 shadow-sm text-white" onClick={() => navigate('/onboarding')}>Acessar plataforma</Button>
+          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6">{texto("landing.footer.cta_titulo", "O diagnóstico leva menos de 5 minutos.")}</h2>
+          <p className="font-['Inter'] text-[#0B1218]/70 text-xl mb-10">{texto("landing.footer.cta_descricao", "Crie sua conta, importe seu CSV e tenha uma leitura clara da sua carteira em minutos.")}</p>
+          <Button variant="primary" className="mx-auto text-lg px-12 py-5 shadow-sm text-white" onClick={() => navigate('/onboarding')}>
+            {texto("landing.footer.cta_botao", "Acessar plataforma")}
+          </Button>
         </div>
         <div className="mx-auto w-full max-w-[1280px] border-t border-[#0B1218]/10 px-4 pt-16 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">

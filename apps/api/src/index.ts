@@ -12,12 +12,26 @@ import { ErroImportacao, ParserCsvGenerico, RepositorioImportacaoD1, ServicoImpo
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
 import { RepositorioPerfilD1, ServicoPerfilPadrao } from "@ei/servico-perfil";
 import { ZodError, z } from "zod";
-import { atualizarFeatureFlags, atualizarMenus, atualizarScoreConfig, obterAppConfig } from "./configuracao-produto";
+import {
+  atualizarConteudoApp,
+  atualizarCorretorasSuportadas,
+  atualizarFeatureFlags,
+  atualizarMenus,
+  atualizarScoreConfig,
+  definirAdmin,
+  listarAdmins,
+  obterAppConfig,
+  obterConteudoApp,
+  obterCorretorasSuportadas,
+  obterLogsAuditoriaAdmin,
+  usuarioEhAdmin,
+} from "./configuracao-produto";
 
 type Env = {
   DB: D1Database;
   JWT_SECRET: string;
   ADMIN_TOKEN?: string;
+  ADMIN_EMAILS?: string;
 };
 
 type ServiceError = { ok: false; status: number; codigo: string; mensagem: string; detalhes?: unknown };
@@ -66,10 +80,39 @@ const atualizarMenusSchema = z.object({
   ),
 });
 
+const blocoConteudoSchema = z.object({
+  chave: z.string().min(2),
+  modulo: z.string().min(2),
+  tipo: z.enum(["texto", "markdown", "json", "boolean"]),
+  valor: z.string(),
+  visivel: z.boolean(),
+  ordem: z.number().int().nonnegative(),
+});
+
+const atualizarConteudoSchema = z.object({
+  blocos: z.array(blocoConteudoSchema),
+});
+
+const corretoraSchema = z.object({
+  codigo: z.string().min(2),
+  nome: z.string().min(2),
+  status: z.enum(["ativo", "beta", "planejado"]),
+  mensagemAjuda: z.string().min(2),
+});
+
+const atualizarCorretorasSchema = z.object({
+  corretoras: z.array(corretoraSchema),
+});
+
+const atualizarAdminSchema = z.object({
+  email: z.string().email(),
+  ativo: z.boolean(),
+});
+
 const corsHeaders = (): Record<string, string> => ({
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-  "access-control-allow-headers": "authorization,content-type",
+  "access-control-allow-headers": "authorization,content-type,x-admin-token",
 });
 
 const json = (payload: unknown, status = 200): Response =>
@@ -89,7 +132,9 @@ const isPublicRoute = (pathname: string): boolean =>
   pathname === "/api/auth/verificar-cadastro" ||
   pathname === "/api/auth/recuperar-senha" ||
   pathname === "/api/auth/recuperar-acesso" ||
-  pathname === "/api/auth/redefinir-senha";
+  pathname === "/api/auth/redefinir-senha" ||
+  pathname === "/api/app/content" ||
+  pathname === "/api/app/corretoras";
 
 const extrairToken = (request: Request): string | null => {
   const auth = request.headers.get("authorization");
@@ -167,13 +212,23 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     return { ok: true, dados: sessao };
   }
 
+  if (pathname === "/api/app/content" && request.method === "GET") {
+    return { ok: true, dados: await obterConteudoApp(env.DB) };
+  }
+
+  if (pathname === "/api/app/corretoras" && request.method === "GET") {
+    return { ok: true, dados: await obterCorretorasSuportadas(env.DB) };
+  }
+
   if (!sessao) return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
 
-  const validarAdmin = (): ServiceError | null => {
-    const token = request.headers.get("x-admin-token");
-    if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
-      return { ok: false, status: 403, codigo: "ACESSO_NEGADO", mensagem: "Acesso administrativo negado" };
-    }
+  const validarAdmin = async (): Promise<ServiceError | null> => {
+    const autorizado = await usuarioEhAdmin(env.DB, sessao.usuario.email, {
+      adminTokenHeader: request.headers.get("x-admin-token"),
+      adminTokenEnv: env.ADMIN_TOKEN,
+      adminEmailsEnv: env.ADMIN_EMAILS,
+    });
+    if (!autorizado) return { ok: false, status: 403, codigo: "ACESSO_NEGADO", mensagem: "Acesso administrativo negado" };
     return null;
   };
 
@@ -282,32 +337,101 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
   }
 
   if (pathname === "/api/admin/config" && request.method === "GET") {
-    const erro = validarAdmin();
+    const erro = await validarAdmin();
     if (erro) return erro;
-    return { ok: true, dados: await obterAppConfig(env.DB) };
+    return { ok: true, dados: await obterAppConfig(env.DB, { incluirOcultos: true }) };
+  }
+
+  if (pathname === "/api/admin/me" && request.method === "GET") {
+    return {
+      ok: true,
+      dados: {
+        email: sessao.usuario.email,
+        isAdmin: !(await validarAdmin()),
+      },
+    };
+  }
+
+  if (pathname === "/api/admin/content" && request.method === "GET") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    return { ok: true, dados: await obterConteudoApp(env.DB, { incluirOcultos: true }) };
   }
 
   if (pathname === "/api/admin/config/score" && request.method === "PUT") {
-    const erro = validarAdmin();
+    const erro = await validarAdmin();
     if (erro) return erro;
     const body = atualizarScoreConfigSchema.parse(await parseJsonBody(request));
-    await atualizarScoreConfig(env.DB, body.score);
+    await atualizarScoreConfig(env.DB, body.score, sessao.usuario.email);
     return { ok: true, dados: { atualizado: true } };
   }
 
   if (pathname === "/api/admin/config/flags" && request.method === "PUT") {
-    const erro = validarAdmin();
+    const erro = await validarAdmin();
     if (erro) return erro;
     const body = atualizarFlagsSchema.parse(await parseJsonBody(request));
-    await atualizarFeatureFlags(env.DB, body.flags);
+    await atualizarFeatureFlags(env.DB, body.flags, sessao.usuario.email);
     return { ok: true, dados: { atualizado: true } };
   }
 
   if (pathname === "/api/admin/config/menus" && request.method === "PUT") {
-    const erro = validarAdmin();
+    const erro = await validarAdmin();
     if (erro) return erro;
     const body = atualizarMenusSchema.parse(await parseJsonBody(request));
-    await atualizarMenus(env.DB, body.menus);
+    await atualizarMenus(env.DB, body.menus, sessao.usuario.email);
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname === "/api/admin/content" && request.method === "PUT") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const body = atualizarConteudoSchema.parse(await parseJsonBody(request));
+    await atualizarConteudoApp(env.DB, body.blocos, sessao.usuario.email);
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname === "/api/admin/corretoras" && request.method === "GET") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    return { ok: true, dados: await obterCorretorasSuportadas(env.DB) };
+  }
+
+  if (pathname === "/api/admin/corretoras" && request.method === "PUT") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const body = atualizarCorretorasSchema.parse(await parseJsonBody(request));
+    await atualizarCorretorasSuportadas(env.DB, body.corretoras, sessao.usuario.email);
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname === "/api/admin/usuarios" && request.method === "GET") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    return { ok: true, dados: await listarAdmins(env.DB) };
+  }
+
+  if (pathname === "/api/admin/usuarios" && request.method === "POST") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const body = atualizarAdminSchema.parse(await parseJsonBody(request));
+    await definirAdmin(env.DB, body.email, body.ativo, sessao.usuario.email);
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname === "/api/admin/auditoria" && request.method === "GET") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const url = new URL(request.url);
+    const limite = Number.parseInt(url.searchParams.get("limite") ?? "50", 10);
+    return { ok: true, dados: await obterLogsAuditoriaAdmin(env.DB, Number.isNaN(limite) ? 50 : limite) };
+  }
+
+  if (pathname === "/api/admin/bootstrap" && request.method === "POST") {
+    const tokenHeader = request.headers.get("x-admin-token");
+    if (!env.ADMIN_TOKEN || !tokenHeader || tokenHeader !== env.ADMIN_TOKEN) {
+      return { ok: false, status: 403, codigo: "ACESSO_NEGADO", mensagem: "Token administrativo inválido" };
+    }
+    await definirAdmin(env.DB, sessao.usuario.email, true, sessao.usuario.email);
     return { ok: true, dados: { atualizado: true } };
   }
 

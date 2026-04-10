@@ -5,5 +5,7 @@ export * as perfilApi from "./perfil";
 export * as historicoApi from "./historico";
 export * as insightsApi from "./insights";
 export * as configApi from "./config";
+export * as conteudoApi from "./conteudo";
+export * as adminApi from "./admin";
 export { ApiError } from "./http";
 export { clearSession, consumirMotivoSaidaSessao, getAuthToken, getStoredUser, marcarSessaoExpirada } from "./authStorage";

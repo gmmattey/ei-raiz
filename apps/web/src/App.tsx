@@ -14,6 +14,7 @@ import Importar from './features/importacao/Importar';
 import PerfilRisco from './features/perfil/PerfilRisco';
 import PerfilUsuario from './features/perfil/PerfilUsuario';
 import Configuracoes from './features/perfil/Configuracoes';
+import PainelAdmin from './features/admin/PainelAdmin';
 import Placeholder from './components/feedback/Placeholder';
 import PreInsight from './components/feedback/PreInsight';
 import AppLayout from './components/layout/AppLayout';
@@ -68,6 +69,7 @@ const App: React.FC = () => {
         <Route path="/perfil-de-risco" element={<ProtectedRoute><AppLayout><PerfilRisco /></AppLayout></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><AppLayout><PerfilUsuario /></AppLayout></ProtectedRoute>} />
         <Route path="/configuracoes" element={<ProtectedRoute><AppLayout><Configuracoes /></AppLayout></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AppLayout><PainelAdmin /></AppLayout></ProtectedRoute>} />
 
         <Route
           path="*"

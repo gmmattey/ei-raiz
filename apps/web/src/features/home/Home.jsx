@@ -3,8 +3,10 @@ import { ArrowRight, Eye, EyeOff, Plus, TrendingUp, AlertCircle, LayoutDashboard
 import { useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { ApiError, carteiraApi, insightsApi, getStoredUser } from '../../cliente-api';
+import { useConteudoApp } from '../../hooks/useConteudoApp';
 
 export default function HomeLobby() {
+  const { texto } = useConteudoApp();
   const [showValues, setShowValues] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -99,7 +101,7 @@ export default function HomeLobby() {
             <div className="flex flex-col justify-between gap-8 md:flex-row md:items-start">
               <div className="flex-1">
                 <div className="mb-2 flex items-center gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">Patrimônio Total</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">{texto("home.cartao_principal.titulo", "Patrimônio Total")}</p>
                   <button
                     onClick={() => setShowValues(!showValues)}
                     className="text-[#0B1218]/20 transition-colors hover:text-[#0B1218]"
@@ -131,7 +133,7 @@ export default function HomeLobby() {
                 {!possuiDadosReais && !error && (
                   <div className="mt-6">
                     <p className="text-xs text-[#0B1218]/60 leading-relaxed mb-4">
-                      Sua carteira ainda está vazia. Importe seu primeiro extrato para liberar a análise completa de patrimônio, riscos e insights.
+                      {texto("home.cartao_principal.sem_base", "Sua carteira ainda está vazia. Importe seu primeiro extrato para liberar a análise completa de patrimônio, riscos e insights.")}
                     </p>
                     <button
                       onClick={() => navigate('/importar')}
@@ -193,7 +195,7 @@ export default function HomeLobby() {
 
         {/* Acesso Rápido */}
         <section className="fade-in-up" style={{ animationDelay: '0.15s' }}>
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">Acesso Rápido</p>
+          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">{texto("home.quick_actions.titulo", "Acesso Rápido")}</p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {quickActions.map((item) => (
               <button

@@ -1,41 +1,61 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Loader2 } from 'lucide-react';
+import { carteiraApi, getStoredUser, insightsApi } from '../../cliente-api';
 
-interface PreInsightProps {
-  userName?: string;
-  patrimonio?: string;
-  percentualJornada?: string;
-  acaoRecomendada?: string;
-}
-
-const PreInsight: React.FC<PreInsightProps> = ({
-  userName = 'Luiz Giammattey',
-  patrimonio = 'R$ 142.530,22',
-  percentualJornada = '15%',
-  acaoRecomendada = 'Sugerimos realizar lucros em ativos de risco e reforçar a posição em pós-fixados.',
-}) => {
+const PreInsight: React.FC = () => {
   const navigate = useNavigate();
-  const [offset, setOffset] = useState(0);
-  const [startY, setStartY] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    userName: '',
+    patrimonio: 'R$ 0,00',
+    percentualJornada: '0%',
+    acaoRecomendada: 'Analisando sua carteira...'
+  });
+
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        const user = getStoredUser();
+        const [resumo, insights] = await Promise.all([
+          carteiraApi.obterResumoCarteira(),
+          insightsApi.obterResumo()
+        ]);
+
+        const moeda = (valor: number) =>
+          new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor ?? 0);
+
+        // Cálculo simples de jornada baseado no objetivo do perfil (se disponível no futuro)
+        // Por ora, usamos um valor real vindo do contexto ou placeholder lógico do backend
+        setData({
+          userName: user?.nome?.split(' ')[0] || 'Investidor',
+          patrimonio: moeda(resumo.patrimonioTotal),
+          percentualJornada: resumo.quantidadeAtivos > 0 ? 'em evolução' : '0%',
+          acaoRecomendada: insights.riscoPrincipal?.descricao || insights.acaoPrioritaria?.descricao || 'Sua carteira está sendo processada.'
+        });
+      } catch (err) {
+        console.error('Falha ao carregar PreInsight:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
+  }, []);
 
   const handleContinue = () => {
     localStorage.setItem('hasSeenPreInsight', 'true');
     navigate('/home', { replace: true });
   };
 
-  const handleStart = (y: number) => setStartY(y);
-  const handleMove = (y: number) => {
-    if (startY === 0) return;
-    const diff = y - startY;
-    if (diff < 0) setOffset(diff);
-  };
-  const handleEnd = () => {
-    if (offset < -100) handleContinue();
-    setOffset(0);
-    setStartY(0);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0B1218] flex items-center justify-center text-white">
+        <Loader2 className="animate-spin text-[#f56a2a]" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0B1218] p-6 text-white overflow-y-auto selection:bg-[#f56a2a]">
@@ -55,11 +75,13 @@ const PreInsight: React.FC<PreInsightProps> = ({
             <div className="md:col-span-8 fade-in-up" style={{ animationDelay: '0.1s' }}>
               <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.4em] text-[#f56a2a]">Seu primeiro diagnóstico</p>
               <h1 className="mb-8 font-['Sora'] text-4xl font-bold leading-[1.1] tracking-tight md:text-6xl">
-                Oi, {userName}. <br />
+                Oi, {data.userName}. <br />
                 Seus investimentos <span className="text-[#f56a2a]">tão fazendo sentido</span>.
               </h1>
               <div className="max-w-xl text-lg font-light leading-relaxed text-white/50">
-                Você já juntou <span className="font-bold text-white">{patrimonio}</span>. Com a meta de liberdade financeira que você falou, você já avançou <span className="font-bold text-[#6FCF97]">{percentualJornada}</span>.
+                Você já juntou <span className="font-bold text-white">{data.patrimonio}</span>. {data.percentualJornada !== '0%' && (
+                  <>Sua carteira está <span className="font-bold text-[#6FCF97]">{data.percentualJornada}</span>.</>
+                )}
               </div>
             </div>
 
@@ -76,7 +98,7 @@ const PreInsight: React.FC<PreInsightProps> = ({
                 <div className="space-y-3">
                   <h3 className="font-['Sora'] text-sm font-bold uppercase tracking-widest text-white">Próximo passo</h3>
                   <p className="text-xs italic leading-relaxed text-white/40">
-                    "{acaoRecomendada}"
+                    "{data.acaoRecomendada}"
                   </p>
                 </div>
               </div>

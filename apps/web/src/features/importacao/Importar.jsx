@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, importacaoApi } from '../../cliente-api';
+import { ApiError, conteudoApi, importacaoApi } from '../../cliente-api';
 import { baixarTemplateImportacaoCsv } from '../../utils/importacaoTemplate';
+import { useConteudoApp } from '../../hooks/useConteudoApp';
 import {
   UploadCloud,
   ArrowRight,
@@ -57,6 +58,7 @@ const columnsEsperadas = 'data,ticker,nome,categoria,plataforma,quantidade,valor
 
 export default function Importar() {
   const navigate = useNavigate();
+  const { texto } = useConteudoApp();
   const fileInputRef = useRef(null);
 
   const [step, setStep] = useState('upload');
@@ -66,6 +68,22 @@ export default function Importar() {
   const [preview, setPreview] = useState(null);
   const [isConfirmando, setIsConfirmando] = useState(false);
   const [confirmError, setConfirmError] = useState('');
+  const [corretoras, setCorretoras] = useState([]);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      try {
+        const lista = await conteudoApi.obterCorretorasSuportadas();
+        if (ativo) setCorretoras(lista);
+      } catch {
+        if (ativo) setCorretoras([]);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const iniciarUpload = async (file) => {
     if (!file) return;
@@ -129,8 +147,8 @@ export default function Importar() {
         </div>
 
         <div className="text-center mb-16">
-          <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-4">Atualizar Carteira</h1>
-          <p className="text-[#0B1218]/40 text-sm font-medium">Envie seu CSV e valide linha por linha antes de confirmar.</p>
+          <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-4">{texto("importacao.upload.titulo", "Atualizar Carteira")}</h1>
+          <p className="text-[#0B1218]/40 text-sm font-medium">{texto("importacao.upload.descricao", "Envie seu CSV e valide linha por linha antes de confirmar.")}</p>
         </div>
 
         {step === 'upload' && (
@@ -190,8 +208,17 @@ export default function Importar() {
               <div className="p-6 border border-[#EFE7DC] rounded-sm flex items-start gap-4 bg-[#FAFAFA]">
                 <Landmark className="text-[#0B1218]/20 shrink-0" size={24} />
                 <div>
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-2">Integrações bancárias</h4>
-                  <p className="text-[11px] text-[#0B1218]/60 leading-relaxed">Fluxo atual da plataforma: importação por CSV com revisão linha a linha antes de confirmar.</p>
+                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-2">{texto("importacao.corretoras.titulo", "Integrações bancárias")}</h4>
+                  <p className="text-[11px] text-[#0B1218]/60 leading-relaxed">{texto("importacao.corretoras.descricao", "Fluxo atual da plataforma: importação por CSV com revisão linha a linha antes de confirmar.")}</p>
+                  {corretoras.length > 0 && (
+                    <ul className="mt-3 space-y-1 text-[11px] text-[#0B1218]/70">
+                      {corretoras.map((corretora) => (
+                        <li key={corretora.codigo}>
+                          <span className="font-semibold">{corretora.nome}</span> · {corretora.status} · {corretora.mensagemAjuda}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
