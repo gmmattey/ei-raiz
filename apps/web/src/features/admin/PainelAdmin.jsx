@@ -205,21 +205,21 @@ export default function PainelAdmin() {
           {blocos.map((bloco, idx) => (
             <div key={bloco.chave} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                <input value={bloco.modulo} onChange={(e) => atualizarLista(setBlocos, idx, { modulo: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" placeholder="módulo" />
-                <input value={bloco.chave} onChange={(e) => atualizarLista(setBlocos, idx, { chave: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" placeholder="chave" />
-                <select value={bloco.tipo} onChange={(e) => atualizarLista(setBlocos, idx, { tipo: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs">
+                <input value={bloco.modulo} onChange={(e) => atualizarLista(setBlocos, idx, { modulo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="módulo" />
+                <input value={bloco.chave} onChange={(e) => atualizarLista(setBlocos, idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="chave" />
+                <select value={bloco.tipo} onChange={(e) => atualizarLista(setBlocos, idx, { tipo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs">
                   <option value="texto">texto</option>
                   <option value="markdown">markdown</option>
                   <option value="json">json</option>
                   <option value="boolean">boolean</option>
                 </select>
-                <input type="number" value={bloco.ordem} onChange={(e) => atualizarLista(setBlocos, idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] px-2 py-2 text-xs" placeholder="ordem" />
+                <input type="number" value={bloco.ordem} onChange={(e) => atualizarLista(setBlocos, idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="ordem" />
                 <label className="flex items-center gap-2 text-xs">
                   <input type="checkbox" checked={Boolean(bloco.visivel)} onChange={(e) => atualizarLista(setBlocos, idx, { visivel: e.target.checked })} />
                   Visível
                 </label>
               </div>
-              <textarea value={bloco.valor} onChange={(e) => atualizarLista(setBlocos, idx, { valor: e.target.value })} className="mt-2 w-full min-h-[80px] border border-[#EFE7DC] px-2 py-2 text-xs" />
+              <textarea value={bloco.valor} onChange={(e) => atualizarLista(setBlocos, idx, { valor: e.target.value })} className="mt-2 w-full min-h-[80px] border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
             </div>
           ))}
         </div>
@@ -232,10 +232,10 @@ export default function PainelAdmin() {
           </button>
           {(config.menus ?? []).map((menu, idx) => (
             <div key={menu.chave} className="grid grid-cols-1 md:grid-cols-5 gap-2 border border-[#EFE7DC] p-3 rounded-sm bg-white">
-              <input value={menu.chave} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { chave: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
-              <input value={menu.label} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { label: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
-              <input value={menu.path} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { path: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
-              <input type="number" value={menu.ordem} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
+              <input value={menu.chave} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <input value={menu.label} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { label: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <input value={menu.path} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { path: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <input type="number" value={menu.ordem} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
               <label className="flex items-center gap-2 text-xs">
                 <input type="checkbox" checked={Boolean(menu.visivel)} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { visivel: e.target.checked })} />
                 Visível
@@ -268,7 +268,7 @@ export default function PainelAdmin() {
           <button onClick={salvarScore} className="px-4 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">
             Salvar score
           </button>
-          <textarea value={scoreJson} onChange={(e) => setScoreJson(e.target.value)} className="w-full min-h-[360px] border border-[#EFE7DC] p-3 text-xs font-mono" />
+          <textarea value={scoreJson} onChange={(e) => setScoreJson(e.target.value)} className="w-full min-h-[360px] border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 p-3 text-xs font-mono" />
         </div>
       )}
 
@@ -279,14 +279,14 @@ export default function PainelAdmin() {
           </button>
           {corretoras.map((item, idx) => (
             <div key={item.codigo} className="grid grid-cols-1 md:grid-cols-4 gap-2 border border-[#EFE7DC] p-3 rounded-sm bg-white">
-              <input value={item.codigo} onChange={(e) => atualizarLista(setCorretoras, idx, { codigo: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
-              <input value={item.nome} onChange={(e) => atualizarLista(setCorretoras, idx, { nome: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
-              <select value={item.status} onChange={(e) => atualizarLista(setCorretoras, idx, { status: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs">
+              <input value={item.codigo} onChange={(e) => atualizarLista(setCorretoras, idx, { codigo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <input value={item.nome} onChange={(e) => atualizarLista(setCorretoras, idx, { nome: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <select value={item.status} onChange={(e) => atualizarLista(setCorretoras, idx, { status: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs">
                 <option value="ativo">ativo</option>
                 <option value="beta">beta</option>
                 <option value="planejado">planejado</option>
               </select>
-              <input value={item.mensagemAjuda} onChange={(e) => atualizarLista(setCorretoras, idx, { mensagemAjuda: e.target.value })} className="border border-[#EFE7DC] px-2 py-2 text-xs" />
+              <input value={item.mensagemAjuda} onChange={(e) => atualizarLista(setCorretoras, idx, { mensagemAjuda: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
             </div>
           ))}
         </div>
@@ -300,7 +300,7 @@ export default function PainelAdmin() {
               value={novoAdminEmail}
               onChange={(e) => setNovoAdminEmail(e.target.value)}
               placeholder="email@dominio.com"
-              className="flex-1 border border-[#EFE7DC] px-3 py-2 text-sm"
+              className="flex-1 border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-3 py-2 text-sm"
             />
             <button onClick={() => novoAdminEmail && salvarAdmin(novoAdminEmail, true)} className="px-4 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">
               Adicionar admin

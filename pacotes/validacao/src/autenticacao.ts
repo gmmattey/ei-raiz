@@ -16,7 +16,7 @@ export const registrarEntradaSchema = z.object({
 
 export const entrarEntradaSchema = z.object({
   email: z.string().trim().email().max(180),
-  senha: z.string().min(8).max(128),
+  senha: z.string().min(5).max(128),
 });
 
 export const authorizationHeaderSchema = z

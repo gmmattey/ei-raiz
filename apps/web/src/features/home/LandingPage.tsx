@@ -80,7 +80,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
 
   const handleLoginSubmit = async () => {
     const email = emailInput.trim().toLowerCase();
-    if (!email.includes('@') || !email.includes('.') || passwordInput.length < 8) {
+    if (!email.includes('@') || !email.includes('.') || passwordInput.length < 5) {
       setAuthError('E-mail ou senha incorretos');
       return;
     }
@@ -247,7 +247,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                 <button
                   type="button"
                   onClick={handleLoginSubmit}
-                  disabled={passwordInput.length < 8 || isSubmitting}
+                  disabled={passwordInput.length < 5 || isSubmitting}
                   className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
                 >
                   {isSubmitting ? 'Entrando...' : 'Entrar'}
