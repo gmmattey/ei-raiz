@@ -2,6 +2,13 @@ import type { AcaoPrioritaria, Diagnostico, RiscoPrincipal, ScoreCarteira } from
 import { apiRequest } from "./http";
 
 export type ResumoInsights = {
+  scoreGeral?: number;
+  pilares?: {
+    estrategiaCarteira: number;
+    comportamentoFinanceiro: number;
+    estruturaPatrimonial: number;
+    adequacaoMomentoVida: number;
+  };
   score: ScoreCarteira;
   diagnostico: Diagnostico;
   riscoPrincipal: RiscoPrincipal | null;
@@ -10,6 +17,9 @@ export type ResumoInsights = {
   classificacao?: "critico" | "baixo" | "ok" | "bom" | "excelente";
   diagnosticoFinal?: {
     mensagem: string;
+    impactoConcreto?: string;
+    consequencia?: string;
+    oQueFazerAgora?: string;
     insightPrincipal: {
       titulo: string;
       descricao: string;
@@ -25,8 +35,13 @@ export type ResumoInsights = {
     tipo: string;
     peso: number;
     descricao: string;
-    bloco: string;
+    pilar: string;
   }>;
+  impactoDecisoesRecentes?: {
+    quantidade: number;
+    deltaMedio: number;
+    deltaTotal: number;
+  };
 };
 
 export function obterScore(): Promise<ScoreCarteira> {

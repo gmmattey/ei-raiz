@@ -228,6 +228,27 @@ export default function Insights() {
                 ))}
               </ul>
             </div>
+
+            {resumo.pilares && (
+              <div className="border border-[#EFE7DC] p-8 rounded-sm">
+                <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-6">4 Pilares do Score</h4>
+                <ul className="space-y-3 text-xs text-[#0B1218]/70">
+                  <li>Estratégia da Carteira: {resumo.pilares.estrategiaCarteira}</li>
+                  <li>Comportamento Financeiro: {resumo.pilares.comportamentoFinanceiro}</li>
+                  <li>Estrutura Patrimonial: {resumo.pilares.estruturaPatrimonial}</li>
+                  <li>Adequação ao Momento de Vida: {resumo.pilares.adequacaoMomentoVida}</li>
+                </ul>
+              </div>
+            )}
+
+            {resumo.impactoDecisoesRecentes?.quantidade > 0 && (
+              <div className="border border-[#EFE7DC] p-8 rounded-sm bg-[#FDFCFB]">
+                <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-3">Impacto das Decisões Recentes</h4>
+                <p className="text-xs text-[#0B1218]/65 leading-relaxed">
+                  {resumo.impactoDecisoesRecentes.deltaTotal >= 0 ? 'Efeito positivo' : 'Efeito negativo'} de {resumo.impactoDecisoesRecentes.deltaTotal.toFixed(1)} pontos no score em {resumo.impactoDecisoesRecentes.quantidade} simulações salvas.
+                </p>
+              </div>
+            )}
           </aside>
         </div>
         )}

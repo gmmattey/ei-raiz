@@ -15,6 +15,14 @@ import PerfilRisco from './features/perfil/PerfilRisco';
 import PerfilUsuario from './features/perfil/PerfilUsuario';
 import Configuracoes from './features/perfil/Configuracoes';
 import PainelAdmin from './features/admin/PainelAdmin';
+import DecisionHub from './features/decisoes/DecisionHub';
+import PropertySimulator from './features/decisoes/PropertySimulator';
+import CarSimulator from './features/decisoes/CarSimulator';
+import ReserveOrFinanceSimulator from './features/decisoes/ReserveOrFinanceSimulator';
+import SpendOrInvestSimulator from './features/decisoes/SpendOrInvestSimulator';
+import FreeSimulationSimulator from './features/decisoes/FreeSimulationSimulator';
+import SimulationHistory from './features/decisoes/SimulationHistory';
+import SimulationDetail from './features/decisoes/SimulationDetail';
 import Placeholder from './components/feedback/Placeholder';
 import PreInsight from './components/feedback/PreInsight';
 import AppLayout from './components/layout/AppLayout';
@@ -64,6 +72,16 @@ const App: React.FC = () => {
         <Route path="/ativo/:ticker" element={<ProtectedRoute><AppLayout><DetalheAtivo /></AppLayout></ProtectedRoute>} />
         <Route path="/aportes" element={<ProtectedRoute><AppLayout><Aportes /></AppLayout></ProtectedRoute>} />
         <Route path="/insights" element={<ProtectedRoute><AppLayout><Insights /></AppLayout></ProtectedRoute>} />
+        
+        <Route path="/decisoes" element={<ProtectedRoute><AppLayout><DecisionHub /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/imovel" element={<ProtectedRoute><AppLayout><PropertySimulator /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/carro" element={<ProtectedRoute><AppLayout><CarSimulator /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/reserva-ou-financiar" element={<ProtectedRoute><AppLayout><ReserveOrFinanceSimulator /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/gastar-ou-investir" element={<ProtectedRoute><AppLayout><SpendOrInvestSimulator /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/livre" element={<ProtectedRoute><AppLayout><FreeSimulationSimulator /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/historico" element={<ProtectedRoute><AppLayout><SimulationHistory /></AppLayout></ProtectedRoute>} />
+        <Route path="/decisoes/resultado/:id" element={<ProtectedRoute><AppLayout><SimulationDetail /></AppLayout></ProtectedRoute>} />
+
         <Route path="/historico" element={<ProtectedRoute><AppLayout><Historico /></AppLayout></ProtectedRoute>} />
         <Route path="/importar" element={<ProtectedRoute><AppLayout><Importar /></AppLayout></ProtectedRoute>} />
         <Route path="/perfil-de-risco" element={<ProtectedRoute><AppLayout><PerfilRisco /></AppLayout></ProtectedRoute>} />

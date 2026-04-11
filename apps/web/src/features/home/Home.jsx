@@ -61,6 +61,7 @@ export default function HomeLobby() {
   const quickActions = [
     { title: 'Sua Carteira', desc: 'Ativos e alocação', icon: <Wallet size={20} />, action: () => navigate('/carteira') },
     { title: 'Insights', desc: 'Diagnóstico tático', icon: <LayoutDashboard size={20} />, action: () => navigate('/insights') },
+    { title: 'Decisões', desc: 'Simulador estratégico', icon: <TrendingUp size={20} />, action: () => navigate('/decisoes') },
     { title: 'Histórico', desc: 'Evolução e eventos', icon: <History size={20} />, action: () => navigate('/historico') },
     { title: 'Importar', desc: 'Sincronizar dados', icon: <FileUp size={20} />, action: () => navigate('/importar') },
   ];
@@ -119,12 +120,17 @@ export default function HomeLobby() {
                     <div className="flex items-center gap-2">
                       <TrendingUp size={16} className={resumo?.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"} />
                       <span className={`text-xs font-bold ${resumo?.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>
-                        Retorno 12M: {resumo?.retorno12m?.toFixed?.(2) ?? '0.00'}%
+                        Retorno consolidado: {resumo?.retorno12m?.toFixed?.(2) ?? '0.00'}%
                       </span>
                     </div>
                     {(insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo) && (
                       <p className="text-[11px] font-medium leading-relaxed text-[#0B1218]/60 max-w-md">
                         {insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo}
+                      </p>
+                    )}
+                    {insights?.impactoDecisoesRecentes?.quantidade > 0 && (
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/45">
+                        Decisões recentes: {insights.impactoDecisoesRecentes.deltaTotal >= 0 ? '+' : ''}{insights.impactoDecisoesRecentes.deltaTotal.toFixed(1)} pts no score ({insights.impactoDecisoesRecentes.quantidade} simulações)
                       </p>
                     )}
                   </div>

@@ -31,6 +31,7 @@ const PreInsight: React.FC = () => {
           patrimonio: moeda(resumo.patrimonioTotal),
           percentualJornada: resumo.quantidadeAtivos > 0 ? 'em evolução' : '0%',
           acaoRecomendada:
+            insights.diagnosticoFinal?.oQueFazerAgora ||
             insights.insightPrincipal?.acao ||
             insights.diagnosticoFinal?.insightPrincipal?.acao ||
             insights.insightPrincipal?.descricao ||

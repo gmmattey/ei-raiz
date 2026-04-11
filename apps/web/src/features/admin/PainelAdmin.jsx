@@ -9,6 +9,7 @@ const tabs = [
   { id: "menus", label: "Menus" },
   { id: "flags", label: "Feature Flags" },
   { id: "score", label: "Score" },
+  { id: "simulacoes", label: "Simulações" },
   { id: "corretoras", label: "Corretoras" },
   { id: "admins", label: "Permissões" },
   { id: "auditoria", label: "Auditoria" },
@@ -27,6 +28,7 @@ export default function PainelAdmin() {
   const [corretoras, setCorretoras] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
+  const [parametrosSimulacao, setParametrosSimulacao] = useState([]);
   const [scoreJson, setScoreJson] = useState("{}");
   const [novoAdminEmail, setNovoAdminEmail] = useState("");
 
@@ -40,12 +42,13 @@ export default function PainelAdmin() {
         return;
       }
 
-      const [cfg, conteudo, listaCorretoras, listaAdmins, logs] = await Promise.all([
+      const [cfg, conteudo, listaCorretoras, listaAdmins, logs, parametros] = await Promise.all([
         adminApi.obterConfigAdmin(),
         adminApi.obterConteudoAdmin(),
         adminApi.obterCorretorasAdmin(),
         adminApi.listarAdmins(),
         adminApi.listarAuditoria(50),
+        adminApi.listarParametrosSimulacaoAdmin(),
       ]);
 
       setMe(meAdmin);
@@ -54,6 +57,7 @@ export default function PainelAdmin() {
       setCorretoras(listaCorretoras ?? []);
       setAdmins(listaAdmins ?? []);
       setAuditoria(logs ?? []);
+      setParametrosSimulacao((parametros ?? []).map((item) => ({ ...item, valorJson: JSON.stringify(item.valor ?? {}, null, 2) })));
       setScoreJson(JSON.stringify(cfg.score ?? {}, null, 2));
     } catch (error) {
       if (error instanceof ApiError && error.status === 403) {
@@ -77,8 +81,9 @@ export default function PainelAdmin() {
       flags: Object.keys(config.flags ?? {}).length,
       corretoras: corretoras.length,
       admins: admins.length,
+      parametrosSimulacao: parametrosSimulacao.length,
     }),
-    [admins.length, blocos.length, config.flags, config.menus, corretoras.length],
+    [admins.length, blocos.length, config.flags, config.menus, corretoras.length, parametrosSimulacao.length],
   );
 
   const salvarMenus = async () => {
@@ -151,6 +156,24 @@ export default function PainelAdmin() {
     }
   };
 
+  const salvarParametrosSimulacao = async () => {
+    setErro("");
+    setSucesso("");
+    try {
+      const payload = parametrosSimulacao.map((item) => ({
+        chave: item.chave,
+        valor: JSON.parse(item.valorJson || "{}"),
+        descricao: item.descricao || "",
+        ativo: Boolean(item.ativo),
+      }));
+      await adminApi.atualizarParametrosSimulacaoAdmin(payload);
+      setSucesso("Parâmetros de simulação salvos.");
+      setParametrosSimulacao(await adminApi.listarParametrosSimulacaoAdmin().then((rows) => (rows ?? []).map((item) => ({ ...item, valorJson: JSON.stringify(item.valor ?? {}, null, 2) }))));
+    } catch {
+      setErro("Falha ao salvar parâmetros de simulação (JSON inválido ou erro de persistência).");
+    }
+  };
+
   if (loading) return <p className="text-sm text-[#0B1218]/60">Carregando painel administrativo...</p>;
 
   return (
@@ -194,6 +217,7 @@ export default function PainelAdmin() {
           <StatCard label="Feature Flags" value={resumo.flags} />
           <StatCard label="Corretoras" value={resumo.corretoras} />
           <StatCard label="Admins" value={resumo.admins} />
+          <StatCard label="Parâmetros Simulações" value={resumo.parametrosSimulacao} />
         </div>
       )}
 
@@ -269,6 +293,28 @@ export default function PainelAdmin() {
             Salvar score
           </button>
           <textarea value={scoreJson} onChange={(e) => setScoreJson(e.target.value)} className="w-full min-h-[360px] border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 p-3 text-xs font-mono" />
+        </div>
+      )}
+
+      {activeTab === "simulacoes" && (
+        <div className="space-y-3">
+          <button onClick={salvarParametrosSimulacao} className="px-4 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">
+            Salvar parâmetros
+          </button>
+          {parametrosSimulacao.map((item, idx) => (
+            <div key={item.chave} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <input value={item.chave} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+                <input value={item.descricao || ""} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { descricao: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+                <input value={item.origem || "admin"} readOnly className="border border-[#EFE7DC] bg-[#FAFAFA] text-[#0B1218]/50 px-2 py-2 text-xs" />
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={Boolean(item.ativo)} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { ativo: e.target.checked })} />
+                  Ativo
+                </label>
+              </div>
+              <textarea value={item.valorJson || "{}"} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { valorJson: e.target.value })} className="mt-2 w-full min-h-[120px] border border-[#EFE7DC] bg-white text-[#0B1218] p-2 text-xs font-mono" />
+            </div>
+          ))}
         </div>
       )}
 

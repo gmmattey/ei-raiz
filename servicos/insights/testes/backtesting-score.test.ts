@@ -26,6 +26,10 @@ class RepoBacktest implements RepositorioInsights {
     return null;
   }
 
+  async obterImpactoDecisoesRecentes(): Promise<{ quantidade: number; deltaMedio: number; deltaTotal: number }> {
+    return { quantidade: 0, deltaMedio: 0, deltaTotal: 0 };
+  }
+
   async salvarSnapshotScore(): Promise<void> {}
 }
 
@@ -59,6 +63,10 @@ test("backtesting: cenários críticos, médios e bons", async () => {
     evolucaoPatrimonio12m: -5,
     idadeCarteiraMeses: 6,
     mesesComAporteUltimos6m: 1,
+    percentualLiquidezImediata: 2,
+    percentualDinheiroParado: 40,
+    percentualIliquido: 70,
+    percentualDividaSobrePatrimonio: 45,
   }).calcularScore("usr_critico");
 
   const regular = await criarServico(basePerfil, {
@@ -75,6 +83,10 @@ test("backtesting: cenários críticos, médios e bons", async () => {
     evolucaoPatrimonio12m: 7,
     idadeCarteiraMeses: 10,
     mesesComAporteUltimos6m: 4,
+    percentualLiquidezImediata: 10,
+    percentualDinheiroParado: 20,
+    percentualIliquido: 45,
+    percentualDividaSobrePatrimonio: 20,
   }).calcularScore("usr_regular");
 
   const bom = await criarServico(basePerfil, {
@@ -91,6 +103,10 @@ test("backtesting: cenários críticos, médios e bons", async () => {
     evolucaoPatrimonio12m: 22,
     idadeCarteiraMeses: 12,
     mesesComAporteUltimos6m: 6,
+    percentualLiquidezImediata: 22,
+    percentualDinheiroParado: 10,
+    percentualIliquido: 18,
+    percentualDividaSobrePatrimonio: 5,
   }).calcularScore("usr_bom");
 
   assert.ok(critico.score < regular.score);
@@ -116,6 +132,10 @@ test("sensibilidade: aumento de concentração reduz score de forma coerente", a
     evolucaoPatrimonio12m: 15,
     idadeCarteiraMeses: 12,
     mesesComAporteUltimos6m: 5,
+    percentualLiquidezImediata: 18,
+    percentualDinheiroParado: 12,
+    percentualIliquido: 24,
+    percentualDividaSobrePatrimonio: 8,
   };
 
   const baixo = await criarServico(perfil, baseMetricas).calcularScore("usr_sens_1");

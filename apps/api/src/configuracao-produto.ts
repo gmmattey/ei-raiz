@@ -72,11 +72,10 @@ const defaultFlags: Record<string, boolean> = {
 
 const defaultScoreConfig = {
   pesos: {
-    aderenciaPerfil: 25,
-    qualidadeCarteira: 25,
-    consistenciaAportes: 15,
-    adequacaoObjetivo: 15,
-    historicoMomentoVida: 20,
+    estrategiaCarteira: 35,
+    comportamentoFinanceiro: 25,
+    estruturaPatrimonial: 20,
+    adequacaoMomentoVida: 20,
   },
   thresholds: {
     criticoMax: 39,
@@ -101,6 +100,16 @@ const defaultScoreConfig = {
     objetivoAposentadoriaSemConsistencia: 3,
     aportesInconsistentes: 6,
     evolucaoNegativa: 8,
+    liquidezBaixa: 6,
+    dinheiroParadoAlto: 4,
+    concentracaoEmImovel: 5,
+    dependenciaDeAtivoIliquido: 5,
+    endividamentoAlto: 7,
+    usoExcessivoDaReserva: 5,
+    custoFixoElevado: 4,
+    compraIncompativelComMomento: 6,
+    veiculoAcimaDaCapacidade: 5,
+    financiamentoDesfavoravel: 4,
   },
 };
 

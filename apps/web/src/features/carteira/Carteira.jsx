@@ -122,7 +122,7 @@ export default function Carteira() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <MetricCard label="Patrimônio Total" value={moeda(resumo?.patrimonioTotal)} />
-          <MetricCard label="Retorno 12M" value={`${resumo?.retorno12m?.toFixed?.(2) ?? "0.00"}%`} />
+          <MetricCard label="Retorno Consolidado" value={`${resumo?.retorno12m?.toFixed?.(2) ?? "0.00"}%`} />
           <MetricCard label="Score" value={`${resumo?.score ?? 0}/100`} />
           <MetricCard label="Ativos" value={`${resumo?.quantidadeAtivos ?? 0}`} />
         </div>
@@ -169,7 +169,7 @@ export default function Carteira() {
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Ativo</th>
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Alocação</th>
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Valor Atual</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Retorno 12M</th>
+                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Retorno Consolidado</th>
                   </tr>
                 </thead>
                 <tbody>

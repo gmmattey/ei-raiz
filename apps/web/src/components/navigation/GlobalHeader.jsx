@@ -18,6 +18,7 @@ export default function GlobalHeader() {
     { label: 'Carteira', path: '/carteira' },
     { label: 'Aportes', path: '/aportes' },
     { label: 'Insights', path: '/insights' },
+    { label: 'Decisões', path: '/decisoes' },
     { label: 'Histórico', path: '/historico' },
     { label: 'Importar', path: '/importar' },
   ];

@@ -1,7 +1,10 @@
 import type {
   AcaoPrioritaria,
+  CalcularSimulacaoEntrada,
   CategoriaAtivo,
+  CriarPosicaoFinanceiraEntrada,
   PerfilFinanceiro,
+  PosicaoFinanceira,
   RiscoPrincipal,
   SessaoUsuarioSaida,
 } from "@ei/contratos";
@@ -10,6 +13,7 @@ import { RepositorioCarteiraD1, ServicoCarteiraPadrao } from "@ei/servico-cartei
 import { RepositorioHistoricoD1, ServicoHistoricoPadrao } from "@ei/servico-historico";
 import { ErroImportacao, ParserCsvGenerico, RepositorioImportacaoD1, ServicoImportacaoPadrao } from "@ei/servico-importacao";
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
+import { RepositorioDecisoesD1, ServicoDecisoesPadrao } from "@ei/servico-decisoes";
 import { RepositorioPerfilD1, ServicoPerfilPadrao } from "@ei/servico-perfil";
 import { ZodError, z } from "zod";
 import {
@@ -38,7 +42,7 @@ type ServiceError = { ok: false; status: number; codigo: string; mensagem: strin
 type ServiceSuccess<T> = { ok: true; dados: T };
 type ServiceResponse<T> = ServiceSuccess<T> | ServiceError;
 
-const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/app", "/api/admin"];
+const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/decisoes", "/api/posicoes", "/api/app", "/api/admin"];
 const categoriasPermitidas: CategoriaAtivo[] = ["acao", "fundo", "previdencia", "renda_fixa"];
 
 const salvarPerfilSchema = z.object({
@@ -109,6 +113,34 @@ const atualizarAdminSchema = z.object({
   ativo: z.boolean(),
 });
 
+const posicaoSchema = z.object({
+  tipo: z.enum(["investimento", "caixa", "poupanca", "cofrinho", "imovel", "veiculo", "divida"]),
+  nome: z.string().min(2),
+  valorAtual: z.number(),
+  custoAquisicao: z.number().optional(),
+  liquidez: z.enum(["imediata", "curto_prazo", "medio_prazo", "baixa"]),
+  risco: z.enum(["baixo", "medio", "alto"]),
+  categoria: z.string().min(2),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const simulacaoCalculoSchema = z.object({
+  tipo: z.enum(["imovel", "carro", "reserva_ou_financiar", "gastar_ou_investir", "livre"]),
+  nome: z.string().min(2).optional(),
+  premissas: z.record(z.unknown()),
+});
+
+const atualizarParametrosSimulacaoSchema = z.object({
+  parametros: z.array(
+    z.object({
+      chave: z.string().min(2),
+      valor: z.record(z.unknown()),
+      descricao: z.string().optional(),
+      ativo: z.boolean().default(true),
+    }),
+  ),
+});
+
 const corsHeaders = (): Record<string, string> => ({
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
@@ -134,7 +166,8 @@ const isPublicRoute = (pathname: string): boolean =>
   pathname === "/api/auth/recuperar-acesso" ||
   pathname === "/api/auth/redefinir-senha" ||
   pathname === "/api/app/content" ||
-  pathname === "/api/app/corretoras";
+  pathname === "/api/app/corretoras" ||
+  pathname === "/api/app/simulacoes/parametros";
 
 const extrairToken = (request: Request): string | null => {
   const auth = request.headers.get("authorization");
@@ -154,6 +187,7 @@ const getPerfilService = (env: Env): ServicoPerfilPadrao => new ServicoPerfilPad
 const getHistoricoService = (env: Env): ServicoHistoricoPadrao => new ServicoHistoricoPadrao(new RepositorioHistoricoD1(env.DB));
 const getInsightsService = (env: Env): ServicoInsightsPadrao => new ServicoInsightsPadrao(new RepositorioInsightsD1(env.DB));
 const getCarteiraService = (env: Env): ServicoCarteiraPadrao => new ServicoCarteiraPadrao({ repositorio: new RepositorioCarteiraD1(env.DB) });
+const getDecisoesService = (env: Env): ServicoDecisoesPadrao => new ServicoDecisoesPadrao(new RepositorioDecisoesD1(env.DB));
 const getImportacaoService = (env: Env): ServicoImportacaoPadrao =>
   new ServicoImportacaoPadrao({
     db: env.DB,
@@ -175,6 +209,7 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
   const perfilService = getPerfilService(env);
   const historicoService = getHistoricoService(env);
   const insightsService = getInsightsService(env);
+  const decisoesService = getDecisoesService(env);
   const importacaoService = getImportacaoService(env);
 
   if ((pathname === "/api/auth/registrar" || pathname === "/api/auth/registro") && request.method === "POST") {
@@ -218,6 +253,22 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
 
   if (pathname === "/api/app/corretoras" && request.method === "GET") {
     return { ok: true, dados: await obterCorretorasSuportadas(env.DB) };
+  }
+
+  if (pathname === "/api/app/simulacoes/parametros" && request.method === "GET") {
+    const rows = await env.DB
+      .prepare("SELECT chave, valor_json, descricao, ativo, atualizado_em FROM simulacoes_parametros WHERE ativo = 1 ORDER BY chave ASC")
+      .all<{ chave: string; valor_json: string; descricao: string | null; ativo: number; atualizado_em: string }>();
+    return {
+      ok: true,
+      dados: (rows.results ?? []).map((row) => ({
+        chave: row.chave,
+        valor: row.valor_json ? JSON.parse(row.valor_json) : {},
+        descricao: row.descricao ?? "",
+        ativo: row.ativo === 1,
+        atualizadoEm: row.atualizado_em,
+      })),
+    };
   }
 
   if (!sessao) return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
@@ -288,6 +339,146 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     return { ok: true, dados: await historicoService.listarEventos(sessao.usuario.id, Number.isNaN(limite) ? 12 : limite) };
   }
 
+  if (pathname === "/api/posicoes" && request.method === "GET") {
+    const rows = await env.DB
+      .prepare(
+        "SELECT id, usuario_id, tipo, nome, valor_atual, custo_aquisicao, liquidez, risco, categoria, metadata_json, criado_em, atualizado_em FROM posicoes_financeiras WHERE usuario_id = ? AND ativo = 1 ORDER BY atualizado_em DESC",
+      )
+      .bind(sessao.usuario.id)
+      .all<any>();
+    const dados: PosicaoFinanceira[] = (rows.results ?? []).map((row: any) => ({
+      id: row.id,
+      usuarioId: row.usuario_id,
+      tipo: row.tipo,
+      nome: row.nome,
+      valorAtual: row.valor_atual ?? 0,
+      custoAquisicao: typeof row.custo_aquisicao === "number" ? row.custo_aquisicao : undefined,
+      liquidez: row.liquidez,
+      risco: row.risco,
+      categoria: row.categoria,
+      metadata: row.metadata_json ? JSON.parse(row.metadata_json) : {},
+      criadoEm: row.criado_em,
+      atualizadoEm: row.atualizado_em,
+    }));
+    return { ok: true, dados };
+  }
+
+  if (pathname === "/api/posicoes" && request.method === "POST") {
+    const body = posicaoSchema.parse(await parseJsonBody(request)) as CriarPosicaoFinanceiraEntrada;
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await env.DB
+      .prepare(
+        [
+          "INSERT INTO posicoes_financeiras",
+          "(id, usuario_id, tipo, nome, valor_atual, custo_aquisicao, liquidez, risco, categoria, metadata_json, ativo, criado_em, atualizado_em)",
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+        ].join(" "),
+      )
+      .bind(
+        id,
+        sessao.usuario.id,
+        body.tipo,
+        body.nome,
+        body.valorAtual,
+        body.custoAquisicao ?? null,
+        body.liquidez,
+        body.risco,
+        body.categoria,
+        JSON.stringify(body.metadata ?? {}),
+        now,
+        now,
+      )
+      .run();
+    return { ok: true, dados: { id, usuarioId: sessao.usuario.id, ...body, criadoEm: now, atualizadoEm: now } };
+  }
+
+  if (pathname.startsWith("/api/posicoes/") && request.method === "PUT") {
+    const id = pathname.replace("/api/posicoes/", "");
+    const body = posicaoSchema.partial().parse(await parseJsonBody(request)) as Partial<CriarPosicaoFinanceiraEntrada>;
+    const now = new Date().toISOString();
+    await env.DB
+      .prepare(
+        [
+          "UPDATE posicoes_financeiras SET",
+          "tipo = COALESCE(?, tipo),",
+          "nome = COALESCE(?, nome),",
+          "valor_atual = COALESCE(?, valor_atual),",
+          "custo_aquisicao = COALESCE(?, custo_aquisicao),",
+          "liquidez = COALESCE(?, liquidez),",
+          "risco = COALESCE(?, risco),",
+          "categoria = COALESCE(?, categoria),",
+          "metadata_json = COALESCE(?, metadata_json),",
+          "atualizado_em = ?",
+          "WHERE id = ? AND usuario_id = ? AND ativo = 1",
+        ].join(" "),
+      )
+      .bind(
+        body.tipo ?? null,
+        body.nome ?? null,
+        typeof body.valorAtual === "number" ? body.valorAtual : null,
+        typeof body.custoAquisicao === "number" ? body.custoAquisicao : null,
+        body.liquidez ?? null,
+        body.risco ?? null,
+        body.categoria ?? null,
+        body.metadata ? JSON.stringify(body.metadata) : null,
+        now,
+        id,
+        sessao.usuario.id,
+      )
+      .run();
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname.startsWith("/api/posicoes/") && request.method === "DELETE") {
+    const id = pathname.replace("/api/posicoes/", "");
+    await env.DB
+      .prepare("UPDATE posicoes_financeiras SET ativo = 0, atualizado_em = ? WHERE id = ? AND usuario_id = ?")
+      .bind(new Date().toISOString(), id, sessao.usuario.id)
+      .run();
+    return { ok: true, dados: { removido: true } };
+  }
+
+  if (pathname === "/api/decisoes/simulacoes/calcular" && request.method === "POST") {
+    const body = simulacaoCalculoSchema.parse(await parseJsonBody(request)) as CalcularSimulacaoEntrada;
+    return { ok: true, dados: await decisoesService.calcular(sessao.usuario.id, body) };
+  }
+
+  if (pathname === "/api/decisoes/simulacoes" && request.method === "POST") {
+    const body = simulacaoCalculoSchema.parse(await parseJsonBody(request)) as CalcularSimulacaoEntrada;
+    return { ok: true, dados: await decisoesService.salvar(sessao.usuario.id, body) };
+  }
+
+  if (pathname === "/api/decisoes/simulacoes" && request.method === "GET") {
+    return { ok: true, dados: await decisoesService.listar(sessao.usuario.id) };
+  }
+
+  if (pathname.startsWith("/api/decisoes/simulacoes/") && pathname.endsWith("/recalcular") && request.method === "POST") {
+    const id = pathname.replace("/api/decisoes/simulacoes/", "").replace("/recalcular", "");
+    const recalculado = await decisoesService.recalcular(sessao.usuario.id, id);
+    if (!recalculado) return { ok: false, status: 404, codigo: "SIMULACAO_NAO_ENCONTRADA", mensagem: "Simulação não encontrada" };
+    return { ok: true, dados: recalculado };
+  }
+
+  if (pathname.startsWith("/api/decisoes/simulacoes/") && pathname.endsWith("/duplicar") && request.method === "POST") {
+    const id = pathname.replace("/api/decisoes/simulacoes/", "").replace("/duplicar", "");
+    const duplicada = await decisoesService.duplicar(sessao.usuario.id, id);
+    if (!duplicada) return { ok: false, status: 404, codigo: "SIMULACAO_NAO_ENCONTRADA", mensagem: "Simulação não encontrada" };
+    return { ok: true, dados: duplicada };
+  }
+
+  if (pathname.startsWith("/api/decisoes/simulacoes/") && pathname.endsWith("/historico") && request.method === "GET") {
+    const id = pathname.replace("/api/decisoes/simulacoes/", "").replace("/historico", "");
+    return { ok: true, dados: await decisoesService.listarHistorico(sessao.usuario.id, id) };
+  }
+
+  if (pathname.startsWith("/api/decisoes/simulacoes/") && request.method === "GET") {
+    const id = pathname.replace("/api/decisoes/simulacoes/", "");
+    const simulacao = await decisoesService.obter(sessao.usuario.id, id);
+    if (!simulacao) return { ok: false, status: 404, codigo: "SIMULACAO_NAO_ENCONTRADA", mensagem: "Simulação não encontrada" };
+    return { ok: true, dados: simulacao };
+  }
+
   if (pathname === "/api/importacao/upload" && request.method === "POST") {
     const body = uploadImportacaoSchema.parse(await parseJsonBody(request));
     const preview = await importacaoService.gerarPreview({
@@ -325,6 +516,8 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     return {
       ok: true,
       dados: {
+        scoreGeral: resumo.scoreDetalhado.score,
+        pilares: resumo.scoreDetalhado.pilares,
         score: resumo.scoreDetalhado,
         diagnostico: resumo.diagnosticoLegado,
         riscoPrincipal: (resumo.riscoPrincipal ?? null) as RiscoPrincipal | null,
@@ -334,6 +527,7 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
         diagnosticoFinal: resumo.diagnostico,
         insightPrincipal: resumo.diagnostico.insightPrincipal,
         penalidadesAplicadas: resumo.penalidadesAplicadas,
+        impactoDecisoesRecentes: resumo.impactoDecisoesRecentes,
       },
     };
   }
@@ -403,6 +597,51 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     if (erro) return erro;
     const body = atualizarCorretorasSchema.parse(await parseJsonBody(request));
     await atualizarCorretorasSuportadas(env.DB, body.corretoras, sessao.usuario.email);
+    return { ok: true, dados: { atualizado: true } };
+  }
+
+  if (pathname === "/api/admin/simulacoes/parametros" && request.method === "GET") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const rows = await env.DB
+      .prepare("SELECT id, chave, valor_json, descricao, origem, ativo, atualizado_em FROM simulacoes_parametros ORDER BY chave ASC")
+      .all<any>();
+    return {
+      ok: true,
+      dados: (rows.results ?? []).map((row: any) => ({
+        id: row.id,
+        chave: row.chave,
+        valor: row.valor_json ? JSON.parse(row.valor_json) : {},
+        descricao: row.descricao ?? "",
+        origem: row.origem ?? "admin",
+        ativo: row.ativo === 1,
+        atualizadoEm: row.atualizado_em,
+      })),
+    };
+  }
+
+  if (pathname === "/api/admin/simulacoes/parametros" && request.method === "PUT") {
+    const erro = await validarAdmin();
+    if (erro) return erro;
+    const body = atualizarParametrosSimulacaoSchema.parse(await parseJsonBody(request));
+    const now = new Date().toISOString();
+    const stmts = body.parametros.map((item) =>
+      env.DB
+        .prepare(
+          [
+            "INSERT INTO simulacoes_parametros (id, chave, valor_json, descricao, origem, ativo, atualizado_em)",
+            "VALUES (?, ?, ?, ?, 'admin', ?, ?)",
+            "ON CONFLICT(chave) DO UPDATE SET",
+            "valor_json = excluded.valor_json, descricao = excluded.descricao, origem = 'admin', ativo = excluded.ativo, atualizado_em = excluded.atualizado_em",
+          ].join(" "),
+        )
+        .bind(crypto.randomUUID(), item.chave, JSON.stringify(item.valor ?? {}), item.descricao ?? "", item.ativo ? 1 : 0, now),
+    );
+    if (stmts.length > 0) await env.DB.batch(stmts);
+    await env.DB
+      .prepare("INSERT INTO admin_auditoria (id, acao, alvo, payload_json, autor_email, criado_em) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(crypto.randomUUID(), "simulacoes.parametros.atualizar", "simulacoes_parametros", JSON.stringify({ quantidade: body.parametros.length }), sessao.usuario.email, now)
+      .run();
     return { ok: true, dados: { atualizado: true } };
   }
 

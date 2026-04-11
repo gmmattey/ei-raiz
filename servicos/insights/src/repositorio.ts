@@ -14,6 +14,10 @@ export type MetricasCarteira = {
   evolucaoPatrimonio12m: number;
   idadeCarteiraMeses: number;
   mesesComAporteUltimos6m: number;
+  percentualLiquidezImediata: number;
+  percentualDinheiroParado: number;
+  percentualIliquido: number;
+  percentualDividaSobrePatrimonio: number;
 };
 
 type SnapshotScorePersistido = {
@@ -21,14 +25,21 @@ type SnapshotScorePersistido = {
   criadoEm: string;
 };
 
-type BlocosScore = ScoreCarteira["blocos"];
+type PilaresScore = ScoreCarteira["pilares"];
 type Fator = { label: string; impacto: number };
+
+export type ImpactoDecisoesRecentes = {
+  quantidade: number;
+  deltaMedio: number;
+  deltaTotal: number;
+};
 
 export interface RepositorioInsights {
   obterPerfil(usuarioId: string): Promise<PerfilFinanceiro | null>;
   obterMetricasCarteira(usuarioId: string): Promise<MetricasCarteira>;
   obterConfiguracaoScore(): Promise<Record<string, unknown> | null>;
   obterUltimoSnapshotScore(usuarioId: string): Promise<SnapshotScorePersistido | null>;
+  obterImpactoDecisoesRecentes(usuarioId: string): Promise<ImpactoDecisoesRecentes>;
   salvarSnapshotScore(
     usuarioId: string,
     payload: {
@@ -36,7 +47,7 @@ export interface RepositorioInsights {
       faixa: ScoreCarteira["faixa"];
       riscoPrincipal: string;
       acaoPrioritaria: string;
-      blocos: BlocosScore;
+      pilares: PilaresScore;
       fatoresPositivos: Fator[];
       fatoresNegativos: Fator[];
     },
@@ -118,6 +129,26 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
     const idadeCarteiraMeses = hist.length;
     const mesesComAporteUltimos6m = hist.slice(0, 6).filter((item) => (item.valor_total ?? 0) > 0).length;
 
+    const posicoes = await this.db
+      .prepare("SELECT tipo, valor_atual, liquidez FROM posicoes_financeiras WHERE usuario_id = ? AND ativo = 1")
+      .bind(usuarioId)
+      .all<{ tipo: string; valor_atual: number; liquidez: string }>();
+    const posicoesRows = posicoes.results ?? [];
+    const valorPosicoes = posicoesRows.reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const patrimonioComPosicoes = patrimonioTotal + Math.max(0, valorPosicoes);
+    const valorLiquidezImediata = posicoesRows
+      .filter((item) => item.liquidez === "imediata")
+      .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const valorDinheiroParado = posicoesRows
+      .filter((item) => item.tipo === "caixa" || item.tipo === "poupanca" || item.tipo === "cofrinho")
+      .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const valorIliquido = posicoesRows
+      .filter((item) => item.tipo === "imovel" || item.tipo === "veiculo" || item.liquidez === "baixa")
+      .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const valorDivida = posicoesRows
+      .filter((item) => item.tipo === "divida")
+      .reduce((acc, item) => acc + Math.abs(item.valor_atual ?? 0), 0);
+
     return {
       patrimonioTotal,
       quantidadeAtivos,
@@ -132,6 +163,10 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
       evolucaoPatrimonio12m,
       idadeCarteiraMeses,
       mesesComAporteUltimos6m,
+      percentualLiquidezImediata: patrimonioComPosicoes > 0 ? (valorLiquidezImediata / patrimonioComPosicoes) * 100 : 0,
+      percentualDinheiroParado: patrimonioComPosicoes > 0 ? (valorDinheiroParado / patrimonioComPosicoes) * 100 : 0,
+      percentualIliquido: patrimonioComPosicoes > 0 ? (valorIliquido / patrimonioComPosicoes) * 100 : 0,
+      percentualDividaSobrePatrimonio: patrimonioComPosicoes > 0 ? (valorDivida / patrimonioComPosicoes) * 100 : 0,
     };
   }
 
@@ -166,6 +201,27 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
     };
   }
 
+  async obterImpactoDecisoesRecentes(usuarioId: string): Promise<ImpactoDecisoesRecentes> {
+    const rows = await this.db
+      .prepare("SELECT delta_score FROM simulacoes WHERE usuario_id = ? AND status = 'salva' ORDER BY atualizado_em DESC LIMIT 5")
+      .bind(usuarioId)
+      .all<{ delta_score: number | null }>();
+    const deltas = (rows.results ?? [])
+      .map((row) => row.delta_score)
+      .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+
+    if (deltas.length === 0) {
+      return { quantidade: 0, deltaMedio: 0, deltaTotal: 0 };
+    }
+
+    const deltaTotal = deltas.reduce((acc, item) => acc + item, 0);
+    return {
+      quantidade: deltas.length,
+      deltaTotal,
+      deltaMedio: deltaTotal / deltas.length,
+    };
+  }
+
   async salvarSnapshotScore(
     usuarioId: string,
     payload: {
@@ -173,7 +229,7 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
       faixa: ScoreCarteira["faixa"];
       riscoPrincipal: string;
       acaoPrioritaria: string;
-      blocos: BlocosScore;
+      pilares: PilaresScore;
       fatoresPositivos: Fator[];
       fatoresNegativos: Fator[];
     },
@@ -193,7 +249,7 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
         payload.faixa,
         payload.riscoPrincipal,
         payload.acaoPrioritaria,
-        JSON.stringify(payload.blocos),
+        JSON.stringify(payload.pilares),
         JSON.stringify(payload.fatoresPositivos),
         JSON.stringify(payload.fatoresNegativos),
         new Date().toISOString(),

@@ -66,7 +66,7 @@ export default function DetalheAtivo() {
             <Info label="Categoria" value={categoria} />
             <Info label="Plataforma" value={ativo.plataforma} />
             <Info label="Valor Atual" value={moeda(ativo.valorAtual)} />
-            <Info label="Retorno 12M" value={`${ativo.retorno12m.toFixed(2)}%`} />
+            <Info label="Retorno Consolidado" value={`${ativo.retorno12m.toFixed(2)}%`} />
           </div>
         </div>
       </div>

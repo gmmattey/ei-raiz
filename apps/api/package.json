@@ -13,6 +13,7 @@
     "@ei/contratos": "*",
     "@ei/servico-autenticacao": "*",
     "@ei/servico-carteira": "*",
+    "@ei/servico-decisoes": "*",
     "@ei/servico-historico": "*",
     "@ei/servico-importacao": "*",
     "@ei/servico-insights": "*",

@@ -70,7 +70,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
               <MetricCard label="Patrimonio" value={moeda(resumo?.patrimonioTotal)} />
               <MetricCard label="Score" value={`${resumo?.score ?? 0}/100`} />
-              <MetricCard label="Retorno 12M" value={`${resumo?.retorno12m?.toFixed?.(2) ?? "0.00"}%`} />
+              <MetricCard label="Retorno Consolidado" value={`${resumo?.retorno12m?.toFixed?.(2) ?? "0.00"}%`} />
               <MetricCard label="Ativos" value={`${resumo?.quantidadeAtivos ?? 0}`} />
             </div>
 

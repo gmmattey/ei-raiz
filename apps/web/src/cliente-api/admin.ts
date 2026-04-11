@@ -23,6 +23,16 @@ export type LogAuditoriaAdmin = {
   criadoEm: string;
 };
 
+export type ParametroSimulacaoAdmin = {
+  id?: string;
+  chave: string;
+  valor: Record<string, unknown>;
+  descricao?: string;
+  origem?: string;
+  ativo: boolean;
+  atualizadoEm?: string;
+};
+
 export function obterMeAdmin(): Promise<AdminMe> {
   return apiRequest<AdminMe>("/api/admin/me", { method: "GET" });
 }
@@ -87,4 +97,15 @@ export function atualizarAdmin(email: string, ativo: boolean): Promise<{ atualiz
 
 export function listarAuditoria(limite = 50): Promise<LogAuditoriaAdmin[]> {
   return apiRequest<LogAuditoriaAdmin[]>(`/api/admin/auditoria?limite=${limite}`, { method: "GET" });
+}
+
+export function listarParametrosSimulacaoAdmin(): Promise<ParametroSimulacaoAdmin[]> {
+  return apiRequest<ParametroSimulacaoAdmin[]>("/api/admin/simulacoes/parametros", { method: "GET" });
+}
+
+export function atualizarParametrosSimulacaoAdmin(parametros: Array<{ chave: string; valor: Record<string, unknown>; descricao?: string; ativo: boolean }>): Promise<{ atualizado: boolean }> {
+  return apiRequest<{ atualizado: boolean }>("/api/admin/simulacoes/parametros", {
+    method: "PUT",
+    body: JSON.stringify({ parametros }),
+  });
 }

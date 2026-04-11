@@ -27,12 +27,11 @@ export type ScoreCarteira = {
   fatoresNegativos: Array<{ label: string; impacto: number }>;
   riscoPrincipal: string;
   acaoPrioritaria: string;
-  blocos: {
-    aderenciaPerfil: number;
-    qualidadeCarteira: number;
-    consistenciaAportes: number;
-    adequacaoObjetivo: number;
-    historicoMomentoVida: number;
+  pilares: {
+    estrategiaCarteira: number;
+    comportamentoFinanceiro: number;
+    estruturaPatrimonial: number;
+    adequacaoMomentoVida: number;
   };
   atualizadoEm: string;
 };

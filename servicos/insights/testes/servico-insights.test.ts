@@ -29,6 +29,10 @@ class RepositorioFake implements RepositorioInsights {
     return this.ultimoSnapshot;
   }
 
+  async obterImpactoDecisoesRecentes(): Promise<{ quantidade: number; deltaMedio: number; deltaTotal: number }> {
+    return { quantidade: 0, deltaMedio: 0, deltaTotal: 0 };
+  }
+
   async salvarSnapshotScore(
     _usuarioId: string,
     payload: {
@@ -36,7 +40,7 @@ class RepositorioFake implements RepositorioInsights {
       faixa: ScoreCarteira["faixa"];
       riscoPrincipal: string;
       acaoPrioritaria: string;
-      blocos: ScoreCarteira["blocos"];
+      pilares: ScoreCarteira["pilares"];
       fatoresPositivos: Array<{ label: string; impacto: number }>;
       fatoresNegativos: Array<{ label: string; impacto: number }>;
     },
@@ -72,6 +76,10 @@ test("deve calcular score único com explicabilidade e snapshot", async () => {
       evolucaoPatrimonio12m: 22,
       idadeCarteiraMeses: 12,
       mesesComAporteUltimos6m: 6,
+      percentualLiquidezImediata: 20,
+      percentualDinheiroParado: 8,
+      percentualIliquido: 15,
+      percentualDividaSobrePatrimonio: 5,
     },
   );
 
@@ -112,6 +120,10 @@ test("deve calcular variação contra snapshot anterior", async () => {
       evolucaoPatrimonio12m: 1,
       idadeCarteiraMeses: 6,
       mesesComAporteUltimos6m: 2,
+      percentualLiquidezImediata: 3,
+      percentualDinheiroParado: 30,
+      percentualIliquido: 65,
+      percentualDividaSobrePatrimonio: 40,
     },
   );
   repo.ultimoSnapshot = { score: 70, criadoEm: "2026-04-01T00:00:00.000Z" };
