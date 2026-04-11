@@ -42,6 +42,22 @@ export type ResumoInsights = {
     deltaMedio: number;
     deltaTotal: number;
   };
+  confiancaDiagnostico?: "alta" | "limitada";
+  confianca_diagnostico?: "alta" | "limitada";
+  atualizacaoMercado?: {
+    cobertura: number;
+    statusGeral: "atualizado" | "atrasado" | "indisponivel";
+    ultimaAtualizacao: string | null;
+    fontes: Array<{ fonte: "brapi" | "cvm" | "nenhuma"; quantidade: number }>;
+    coberturaPorStatus: Record<"atualizado" | "atrasado" | "indisponivel", number>;
+  };
+  atualizacao_mercado?: {
+    cobertura: number;
+    status_geral: "atualizado" | "atrasado" | "indisponivel";
+    ultima_atualizacao: string | null;
+    fontes: Array<{ fonte: "brapi" | "cvm" | "nenhuma"; quantidade: number }>;
+    cobertura_por_status: Record<"atualizado" | "atrasado" | "indisponivel", number>;
+  };
 };
 
 export function obterScore(): Promise<ScoreCarteira> {

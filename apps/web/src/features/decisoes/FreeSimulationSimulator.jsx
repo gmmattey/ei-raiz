@@ -5,7 +5,7 @@ import DecisionFormSection from './components/DecisionFormSection';
 import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
-import { decisoesApi } from '../../cliente-api';
+import { decisoesApi, telemetriaApi } from '../../cliente-api';
 
 const FreeSimulationSimulator = () => {
   const [loading, setLoading] = useState(false);
@@ -33,13 +33,13 @@ const FreeSimulationSimulator = () => {
   );
 
   const calcular = async () => {
-    try { setLoading(true); setErro(''); setResultado(await decisoesApi.calcularSimulacao({ tipo: 'livre', nome: form.nome, premissas: form })); }
+    try { setLoading(true); setErro(''); await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'livre' }); setResultado(await decisoesApi.calcularSimulacao({ tipo: 'livre', nome: form.nome, premissas: form })); }
     catch { setErro('Falha ao calcular simulação livre.'); }
     finally { setLoading(false); }
   };
 
   const salvar = async () => {
-    try { setLoading(true); setErro(''); await decisoesApi.salvarSimulacao({ tipo: 'livre', nome: form.nome, premissas: form }); }
+    try { setLoading(true); setErro(''); await decisoesApi.salvarSimulacao({ tipo: 'livre', nome: form.nome, premissas: form }); await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'livre' }); }
     catch { setErro('Falha ao salvar simulação.'); }
     finally { setLoading(false); }
   };

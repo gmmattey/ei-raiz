@@ -8,5 +8,6 @@ export * as decisoesApi from "./decisoes";
 export * as configApi from "./config";
 export * as conteudoApi from "./conteudo";
 export * as adminApi from "./admin";
+export * as telemetriaApi from "./telemetria";
 export { ApiError } from "./http";
 export { clearSession, consumirMotivoSaidaSessao, getAuthToken, getStoredUser, marcarSessaoExpirada } from "./authStorage";

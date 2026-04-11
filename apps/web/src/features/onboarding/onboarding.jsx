@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { baixarTemplateImportacaoCsv } from '../../utils/importacaoTemplate';
-import { ApiError, authApi, perfilApi } from '../../cliente-api';
+import { ApiError, authApi, perfilApi, telemetriaApi } from '../../cliente-api';
 import { ChevronRight, ChevronLeft, ShieldCheck, Eye, EyeOff, Check, UploadCloud, Download, FileSpreadsheet, Home, X, Lock } from 'lucide-react';
 
 // --- VALIDADORES ---
@@ -216,7 +216,7 @@ export default function App() {
         if (error instanceof ApiError && error.code === 'API_INDISPONIVEL') {
           setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente em instantes.');
         } else if (error instanceof ApiError) {
-          setSubmitError(error.message);
+          setSubmitError('Não foi possível validar CPF e e-mail agora. Revise os dados e tente novamente.');
         } else {
           setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente em instantes.');
         }
@@ -227,6 +227,7 @@ export default function App() {
     }
 
     setCurrentStep((p) => Math.min(p + 1, 5));
+    await telemetriaApi.registrarEventoTelemetria('onboarding_step_completed', { step: currentStep });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const handlePrev = () => { setCurrentStep(p => Math.max(p - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -251,10 +252,11 @@ export default function App() {
         objetivo: mapObjetivo(profileAnswers.q1),
         maturidade: mapMaturidade(profileAnswers.q4),
       });
+      await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding' });
       setIsFinished(true);
     } catch (error) {
       if (error instanceof ApiError) {
-        setSubmitError(error.message);
+        setSubmitError('Não foi possível concluir o cadastro agora. Revise os dados e tente novamente.');
       } else {
         setSubmitError('Nao foi possivel concluir o cadastro. Tente novamente.');
       }

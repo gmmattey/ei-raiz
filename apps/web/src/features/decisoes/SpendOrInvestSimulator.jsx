@@ -5,7 +5,7 @@ import DecisionFormSection from './components/DecisionFormSection';
 import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
-import { decisoesApi } from '../../cliente-api';
+import { decisoesApi, telemetriaApi } from '../../cliente-api';
 
 const SpendOrInvestSimulator = () => {
   const [loading, setLoading] = useState(false);
@@ -25,13 +25,13 @@ const SpendOrInvestSimulator = () => {
   );
 
   const calcular = async () => {
-    try { setLoading(true); setErro(''); setResultado(await decisoesApi.calcularSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: form })); }
+    try { setLoading(true); setErro(''); await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'gastar_ou_investir' }); setResultado(await decisoesApi.calcularSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: form })); }
     catch { setErro('Falha ao calcular cenário.'); }
     finally { setLoading(false); }
   };
 
   const salvar = async () => {
-    try { setLoading(true); setErro(''); await decisoesApi.salvarSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: form }); }
+    try { setLoading(true); setErro(''); await decisoesApi.salvarSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: form }); await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'gastar_ou_investir' }); }
     catch { setErro('Falha ao salvar simulação.'); }
     finally { setLoading(false); }
   };

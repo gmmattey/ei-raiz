@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
-import { ApiError, authApi, consumirMotivoSaidaSessao } from '../../cliente-api';
+import { ApiError, authApi, consumirMotivoSaidaSessao, telemetriaApi } from '../../cliente-api';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
 import { 
   Menu, X, ChevronRight, ArrowRight, Lock, 
@@ -60,6 +60,12 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
+  const mapApiAuthError = (error) => {
+    if (!(error instanceof ApiError)) return 'Não foi possível concluir a ação agora.';
+    if (error.status === 401) return 'Credenciais inválidas. Confira e tente novamente.';
+    if (error.code === 'TOKEN_INVALIDO' || error.code === 'TOKEN_EXPIRADO') return 'Token inválido ou expirado.';
+    return 'Não foi possível concluir a ação agora.';
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -88,6 +94,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
     setAuthError('');
     try {
       await authApi.entrar(email, passwordInput);
+      await telemetriaApi.registrarEventoTelemetria('login_success', { origem: 'landing_modal' });
       onClose();
       navigate('/home');
     } catch (error) {
@@ -113,8 +120,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
       const resposta = await authApi.solicitarRecuperacaoPorEmail(email);
       setRecoveryInfo(`Solicitação enviada para ${resposta.destinoMascara}. Confira seu e-mail e use o token para redefinir a senha nesta mesma tela.`);
     } catch (error) {
-      if (error instanceof ApiError) setAuthError(error.message);
-      else setAuthError('Não foi possível solicitar recuperação agora. Tente novamente em alguns instantes.');
+      setAuthError(mapApiAuthError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -132,8 +138,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
       const resposta = await authApi.solicitarRecuperacaoPorCpf(cpf);
       setRecoveryInfo(`Conta localizada: ${resposta.destinoMascara}. Enviamos o token para recuperação e você já pode redefinir a senha no próximo passo.`);
     } catch (error) {
-      if (error instanceof ApiError) setAuthError(error.message);
-      else setAuthError('Não foi possível localizar sua conta agora. Tente novamente em alguns instantes.');
+      setAuthError(mapApiAuthError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -158,8 +163,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
       setTokenInput('');
       setNewPasswordInput('');
     } catch (error) {
-      if (error instanceof ApiError) setAuthError(error.message);
-      else setAuthError('Falha ao redefinir senha.');
+      setAuthError(mapApiAuthError(error));
     } finally {
       setIsSubmitting(false);
     }

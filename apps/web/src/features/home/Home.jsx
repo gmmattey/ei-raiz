@@ -59,7 +59,7 @@ export default function HomeLobby() {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor ?? 0);
 
   const quickActions = [
-    { title: 'Sua Carteira', desc: 'Ativos e alocação', icon: <Wallet size={20} />, action: () => navigate('/carteira') },
+    { title: 'Sua Carteira', desc: 'Ativos e alocação', icon: <Wallet size={20} />, action: () => navigate('/carteira?categoria=acao') },
     { title: 'Insights', desc: 'Diagnóstico tático', icon: <LayoutDashboard size={20} />, action: () => navigate('/insights') },
     { title: 'Decisões', desc: 'Simulador estratégico', icon: <TrendingUp size={20} />, action: () => navigate('/decisoes') },
     { title: 'Histórico', desc: 'Evolução e eventos', icon: <History size={20} />, action: () => navigate('/historico') },
@@ -156,12 +156,12 @@ export default function HomeLobby() {
               <div className="hidden h-32 w-px bg-[#EFE7DC] md:block" />
 
               <div className="flex shrink-0 gap-4 border-t border-[#EFE7DC] pt-8 md:border-0 md:pt-0">
-                <button
-                  onClick={() => navigate('/importar')}
-                  className="flex w-full items-center justify-center gap-2 rounded-sm bg-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#111923] md:w-auto"
-                >
-                  <Plus size={16} /> Aportar
-                </button>
+              <button
+                onClick={() => navigate('/carteira?categoria=acao')}
+                className="flex w-full items-center justify-center gap-2 rounded-sm bg-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#111923] md:w-auto"
+              >
+                <Plus size={16} /> Gerir ações
+              </button>
               </div>
             </div>
           </div>

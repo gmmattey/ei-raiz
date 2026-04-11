@@ -1,4 +1,11 @@
-import type { AtivoResumo, CategoriaAtivo, DetalheCategoria, ResumoCarteira, ServicoCarteira } from "@ei/contratos";
+import type {
+  AtivoResumo,
+  CategoriaAtivo,
+  ComparativoBenchmarkCarteira,
+  DetalheCategoria,
+  ResumoCarteira,
+  ServicoCarteira,
+} from "@ei/contratos";
 import type { AtivoPersistido, FonteMercado, RepositorioCarteira } from "./repositorio";
 
 const BOLSA_TTL_MIN = 10;
@@ -94,6 +101,54 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     };
   }
 
+  async obterComparativoBenchmark(usuarioId: string, periodoMeses: number): Promise<ComparativoBenchmarkCarteira> {
+    const meses = Number.isFinite(periodoMeses) ? Math.max(3, Math.min(24, Math.floor(periodoMeses))) : 12;
+    const snapshots = await this.deps.repositorio.listarSnapshotsPatrimonio(usuarioId, Math.max(meses, 12));
+    const serieCarteira = [...snapshots].reverse().map((item) => ({ data: item.data, valor: item.valorTotal }));
+    const baseCarteira = serieCarteira[0]?.valor ?? 0;
+    const serieCarteiraNormalizada = serieCarteira.map((item) => ({
+      data: item.data,
+      carteira: baseCarteira > 0 ? Number(((item.valor / baseCarteira) * 100).toFixed(4)) : 100,
+    }));
+
+    const comparativoCDI = await this.obterSerieCDI(meses);
+    const datas = new Set<string>([
+      ...serieCarteiraNormalizada.map((item) => item.data),
+      ...comparativoCDI.serie.map((item) => item.data),
+    ]);
+
+    const carteiraMap = new Map(serieCarteiraNormalizada.map((item) => [item.data, item.carteira]));
+    const cdiMap = new Map(comparativoCDI.serie.map((item) => [item.data, item.valor]));
+
+    let lastCarteira = 100;
+    let lastCDI = 100;
+    const serie = Array.from(datas)
+      .sort((a, b) => (a < b ? -1 : 1))
+      .map((data) => {
+        const c = carteiraMap.get(data);
+        if (typeof c === "number") lastCarteira = c;
+        const d = cdiMap.get(data);
+        if (typeof d === "number") lastCDI = d;
+        return { data, carteira: Number(lastCarteira.toFixed(4)), cdi: Number(lastCDI.toFixed(4)) };
+      });
+
+    const ultimoCarteira = serie[serie.length - 1]?.carteira ?? 100;
+    const ultimoCDI = serie[serie.length - 1]?.cdi ?? 100;
+    const carteiraRetornoPeriodo = Number((ultimoCarteira - 100).toFixed(2));
+    const cdiRetornoPeriodo = Number((ultimoCDI - 100).toFixed(2));
+
+    return {
+      periodoMeses: meses,
+      carteiraRetornoPeriodo,
+      cdiRetornoPeriodo,
+      excessoRetorno: Number((carteiraRetornoPeriodo - cdiRetornoPeriodo).toFixed(2)),
+      fonteBenchmark: comparativoCDI.fonte,
+      statusAtualizacaoBenchmark: comparativoCDI.status,
+      atualizadoEmBenchmark: comparativoCDI.atualizadoEm,
+      serie,
+    };
+  }
+
   private async obterAtualizacaoMercado(ativo: AtivoPersistido): Promise<AtualizacaoMercado> {
     if (ativo.categoria === "acao" && (ativo.tickerCanonico || ativo.ticker)) {
       return this.obterCotacaoComCache("brapi", (ativo.tickerCanonico || ativo.ticker).toUpperCase());
@@ -123,6 +178,9 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       nome: ativo.nome,
       categoria: ativo.categoria,
       plataforma: ativo.plataforma ?? "",
+      quantidade: ativo.quantidade,
+      precoMedio: ativo.precoMedio,
+      preco_medio: ativo.precoMedio,
       precoAtual: precoAtual ?? undefined,
       variacaoPercentual: meta.variacaoPercentual ?? undefined,
       ganhoPerda,
@@ -130,6 +188,8 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       ultimaAtualizacao: meta.atualizadoEm ?? undefined,
       fontePreco: meta.fonte,
       statusAtualizacao: meta.status,
+      dataCadastro: ativo.dataCadastro ?? undefined,
+      dataAquisicao: (ativo.dataAquisicao ?? ativo.dataCadastro) ?? undefined,
       valorAtual: Number(valorAtual.toFixed(2)),
       participacao: ativo.participacao ?? 0,
       retorno12m: ativo.retorno12m ?? 0,
@@ -248,5 +308,57 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       variacaoPercentual: null,
       payload: { cnpj, nome },
     };
+  }
+
+  private async obterSerieCDI(
+    periodoMeses: number,
+  ): Promise<{ serie: Array<{ data: string; valor: number }>; fonte: string; status: "atualizado" | "atrasado" | "indisponivel"; atualizadoEm: string | null }> {
+    const fim = new Date();
+    const inicio = new Date();
+    inicio.setMonth(fim.getMonth() - periodoMeses);
+
+    const d2 = `${String(fim.getDate()).padStart(2, "0")}/${String(fim.getMonth() + 1).padStart(2, "0")}/${fim.getFullYear()}`;
+    const d1 = `${String(inicio.getDate()).padStart(2, "0")}/${String(inicio.getMonth() + 1).padStart(2, "0")}/${inicio.getFullYear()}`;
+
+    const parseBCBDate = (value: string): string => {
+      const [day, month, year] = value.split("/");
+      return `${year}-${month}-${day}`;
+    };
+
+    try {
+      const response = await this.fetchFn(
+        `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4389/dados?formato=json&dataInicial=${encodeURIComponent(d1)}&dataFinal=${encodeURIComponent(d2)}`,
+      );
+      if (!response.ok) throw new Error(`BCB_CDI_HTTP_${response.status}`);
+      const data = (await response.json()) as Array<{ data: string; valor: string }>;
+      if (!Array.isArray(data) || data.length === 0) throw new Error("BCB_CDI_EMPTY");
+
+      let acumulado = 100;
+      const serie = data.map((item) => {
+        const taxa = Number.parseFloat(String(item.valor).replace(",", "."));
+        if (Number.isFinite(taxa)) acumulado *= 1 + taxa / 100;
+        return { data: parseBCBDate(item.data), valor: Number(acumulado.toFixed(4)) };
+      });
+      return { serie, fonte: "bcb_sgs_4389", status: "atualizado", atualizadoEm: new Date().toISOString() };
+    } catch {
+      try {
+        const response = await this.fetchFn(
+          `https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=${encodeURIComponent(d1)}&dataFinal=${encodeURIComponent(d2)}`,
+        );
+        if (!response.ok) throw new Error(`BCB_SELIC_HTTP_${response.status}`);
+        const data = (await response.json()) as Array<{ data: string; valor: string }>;
+        if (!Array.isArray(data) || data.length === 0) throw new Error("BCB_SELIC_EMPTY");
+
+        let acumulado = 100;
+        const serie = data.map((item) => {
+          const taxa = Number.parseFloat(String(item.valor).replace(",", "."));
+          if (Number.isFinite(taxa)) acumulado *= 1 + taxa / 100;
+          return { data: parseBCBDate(item.data), valor: Number(acumulado.toFixed(4)) };
+        });
+        return { serie, fonte: "bcb_sgs_12_proxy", status: "atrasado", atualizadoEm: new Date().toISOString() };
+      } catch {
+        return { serie: [], fonte: "indisponivel", status: "indisponivel", atualizadoEm: null };
+      }
+    }
   }
 }

@@ -28,9 +28,12 @@ export default function PainelAdmin() {
   const [corretoras, setCorretoras] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
+  const [auditoriaExclusoes, setAuditoriaExclusoes] = useState([]);
+  const [saudeMercado, setSaudeMercado] = useState(null);
   const [parametrosSimulacao, setParametrosSimulacao] = useState([]);
   const [scoreJson, setScoreJson] = useState("{}");
   const [novoAdminEmail, setNovoAdminEmail] = useState("");
+  const [filtroExclusoes, setFiltroExclusoes] = useState({ autorEmail: "", ticker: "", dataInicio: "", dataFim: "" });
 
   const carregarTudo = async () => {
     setLoading(true);
@@ -42,13 +45,15 @@ export default function PainelAdmin() {
         return;
       }
 
-      const [cfg, conteudo, listaCorretoras, listaAdmins, logs, parametros] = await Promise.all([
+      const [cfg, conteudo, listaCorretoras, listaAdmins, logs, parametros, saude, exclusoes] = await Promise.all([
         adminApi.obterConfigAdmin(),
         adminApi.obterConteudoAdmin(),
         adminApi.obterCorretorasAdmin(),
         adminApi.listarAdmins(),
         adminApi.listarAuditoria(50),
         adminApi.listarParametrosSimulacaoAdmin(),
+        adminApi.obterSaudeMercadoAdmin(),
+        adminApi.listarAuditoriaExclusoesAtivos({ limite: 100 }),
       ]);
 
       setMe(meAdmin);
@@ -57,6 +62,8 @@ export default function PainelAdmin() {
       setCorretoras(listaCorretoras ?? []);
       setAdmins(listaAdmins ?? []);
       setAuditoria(logs ?? []);
+      setSaudeMercado(saude ?? null);
+      setAuditoriaExclusoes(exclusoes ?? []);
       setParametrosSimulacao((parametros ?? []).map((item) => ({ ...item, valorJson: JSON.stringify(item.valor ?? {}, null, 2) })));
       setScoreJson(JSON.stringify(cfg.score ?? {}, null, 2));
     } catch (error) {
@@ -174,6 +181,48 @@ export default function PainelAdmin() {
     }
   };
 
+  const filtrarExclusoes = async () => {
+    setErro("");
+    try {
+      const logs = await adminApi.listarAuditoriaExclusoesAtivos({
+        limite: 200,
+        autorEmail: filtroExclusoes.autorEmail || undefined,
+        ticker: filtroExclusoes.ticker || undefined,
+        dataInicio: filtroExclusoes.dataInicio || undefined,
+        dataFim: filtroExclusoes.dataFim || undefined,
+      });
+      setAuditoriaExclusoes(logs ?? []);
+    } catch {
+      setErro("Falha ao filtrar auditoria de exclusões.");
+    }
+  };
+
+  const exportarExclusoesCsv = () => {
+    const header = ["id", "criado_em", "autor_email", "usuario_id", "ticker", "nome", "categoria", "valor_atual", "quantidade", "motivo"];
+    const rows = auditoriaExclusoes.map((item) =>
+      [
+        item.id,
+        item.criadoEm,
+        item.autorEmail,
+        item.usuarioId,
+        item.ticker,
+        item.nome,
+        item.categoria,
+        String(item.valorAtual ?? 0),
+        String(item.quantidade ?? 0),
+        (item.motivo || "").replaceAll('"', '""'),
+      ].map((cell) => `"${String(cell ?? "")}"`).join(","),
+    );
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "auditoria-exclusoes-ativos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <p className="text-sm text-[#0B1218]/60">Carregando painel administrativo...</p>;
 
   return (
@@ -211,13 +260,32 @@ export default function PainelAdmin() {
       </div>
 
       {activeTab === "dashboard" && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard label="Blocos de conteúdo" value={resumo.blocos} />
-          <StatCard label="Menus" value={resumo.menus} />
-          <StatCard label="Feature Flags" value={resumo.flags} />
-          <StatCard label="Corretoras" value={resumo.corretoras} />
-          <StatCard label="Admins" value={resumo.admins} />
-          <StatCard label="Parâmetros Simulações" value={resumo.parametrosSimulacao} />
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <StatCard label="Blocos de conteúdo" value={resumo.blocos} />
+            <StatCard label="Menus" value={resumo.menus} />
+            <StatCard label="Feature Flags" value={resumo.flags} />
+            <StatCard label="Corretoras" value={resumo.corretoras} />
+            <StatCard label="Admins" value={resumo.admins} />
+            <StatCard label="Parâmetros Simulações" value={resumo.parametrosSimulacao} />
+          </div>
+          <div className="border border-[#EFE7DC] rounded-sm bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-3">Saúde de mercado</p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`inline-block w-2 h-2 rounded-full ${saudeMercado?.statusGeral === "saudavel" ? "bg-[#6FCF97]" : saudeMercado?.statusGeral === "degradado" ? "bg-[#F2C94C]" : "bg-[#E85C5C]"}`} />
+              <p className="text-sm font-semibold">Status geral: {saudeMercado?.statusGeral || "indisponivel"}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {(saudeMercado?.fontes ?? []).map((fonte) => (
+                <div key={fonte.fonte} className="border border-[#EFE7DC] rounded-sm p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest">{fonte.fonte}</p>
+                  <p className="text-xs text-[#0B1218]/60">Cobertura: {fonte.coberturaAtualizada}%</p>
+                  <p className="text-xs text-[#0B1218]/60">Erros: {fonte.erros} · Expirados: {fonte.expirados}</p>
+                  <p className="text-xs text-[#0B1218]/60">SLA: {fonte.slaMinutos} min</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -370,7 +438,30 @@ export default function PainelAdmin() {
       )}
 
       {activeTab === "auditoria" && (
-        <div className="space-y-2">
+        <div className="space-y-4">
+          <div className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/45 mb-2">Exclusões de ativos (filtros)</p>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+              <input value={filtroExclusoes.autorEmail} onChange={(e) => setFiltroExclusoes((p) => ({ ...p, autorEmail: e.target.value }))} placeholder="autor email" className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+              <input value={filtroExclusoes.ticker} onChange={(e) => setFiltroExclusoes((p) => ({ ...p, ticker: e.target.value.toUpperCase() }))} placeholder="ticker" className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+              <input type="date" value={filtroExclusoes.dataInicio} onChange={(e) => setFiltroExclusoes((p) => ({ ...p, dataInicio: e.target.value }))} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+              <input type="date" value={filtroExclusoes.dataFim} onChange={(e) => setFiltroExclusoes((p) => ({ ...p, dataFim: e.target.value }))} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
+              <div className="flex gap-2">
+                <button onClick={filtrarExclusoes} className="px-3 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">Filtrar</button>
+                <button onClick={exportarExclusoesCsv} className="px-3 py-2 border border-[#EFE7DC] bg-white text-[10px] font-bold uppercase tracking-widest">Exportar</button>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {auditoriaExclusoes.map((log) => (
+              <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#0B1218]/50">EXCLUSÃO · {log.ticker} · {log.categoria}</p>
+                <p className="text-xs text-[#0B1218]/60 mt-1">{log.autorEmail} · {new Date(log.criadoEm).toLocaleString("pt-BR")}</p>
+                <p className="text-xs mt-1"><strong>Motivo:</strong> {log.motivo}</p>
+                <p className="text-xs mt-1">Valor: {Number(log.valorAtual ?? 0).toFixed(2)} · Quantidade: {Number(log.quantidade ?? 0).toFixed(4)}</p>
+              </div>
+            ))}
+          </div>
           {auditoria.map((log) => (
             <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
               <p className="text-xs font-bold uppercase tracking-widest text-[#0B1218]/50">{log.acao} · {log.alvo}</p>

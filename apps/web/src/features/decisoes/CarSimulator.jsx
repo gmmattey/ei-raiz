@@ -5,7 +5,7 @@ import DecisionFormSection from './components/DecisionFormSection';
 import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
-import { decisoesApi } from '../../cliente-api';
+import { decisoesApi, telemetriaApi } from '../../cliente-api';
 
 const CarSimulator = () => {
   const [loading, setLoading] = useState(false);
@@ -30,6 +30,7 @@ const CarSimulator = () => {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
+      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'carro' });
       setResultado(await decisoesApi.calcularSimulacao({ tipo: 'carro', nome: form.nome, premissas: form }));
     } catch {
       setErro('Falha ao calcular simulação de veículo.');
@@ -42,6 +43,7 @@ const CarSimulator = () => {
     try {
       setLoading(true); setErro('');
       await decisoesApi.salvarSimulacao({ tipo: 'carro', nome: form.nome, premissas: form });
+      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'carro' });
     } catch {
       setErro('Falha ao salvar simulação.');
     } finally {

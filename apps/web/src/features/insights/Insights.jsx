@@ -4,7 +4,7 @@ import {
   ArrowRight, CheckCircle2, AlertTriangle,
   Info, X, Microscope
 } from 'lucide-react';
-import { ApiError, insightsApi } from '../../cliente-api';
+import { ApiError, insightsApi, telemetriaApi } from '../../cliente-api';
 import { useNavigate } from 'react-router-dom';
 
 // --- Componentes Base (Padrão Esquilo) ---
@@ -36,7 +36,7 @@ const InfoTrigger = ({ title, text }) => {
   );
 };
 
-const InsightCard = ({ type, title, description, impact, action, infoTitle, infoText }) => {
+const InsightCard = ({ type, title, description, impact, action, infoTitle, infoText, onAction }) => {
   const themes = {
     alert: { icon: <AlertTriangle size={20} />, color: 'text-[#E85C5C]', bg: 'bg-[#E85C5C]/5', border: 'border-[#E85C5C]/20' },
     positive: { icon: <CheckCircle2 size={20} />, color: 'text-[#6FCF97]', bg: 'bg-[#6FCF97]/5', border: 'border-[#6FCF97]/20' },
@@ -60,7 +60,7 @@ const InsightCard = ({ type, title, description, impact, action, infoTitle, info
         <div className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40">
           Impacto Estimado: <span className="text-[#0B1218]">{impact}</span>
         </div>
-        <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#F56A2A] hover:gap-3 transition-all">
+        <button onClick={onAction} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#F56A2A] hover:gap-3 transition-all">
           {action} <ArrowRight size={14} />
         </button>
       </div>
@@ -83,6 +83,7 @@ export default function Insights() {
         const dados = await insightsApi.obterResumo();
         if (!ativo) return;
         setResumo(dados);
+        await telemetriaApi.registrarEventoTelemetria('insight_opened', { score: dados?.score?.score ?? 0 });
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/', { replace: true });
@@ -157,6 +158,8 @@ export default function Insights() {
   }, [resumo]);
 
   const semBaseInsights = !loading && !error && resumo && (resumo.score?.score === 0 && !resumo.riscoPrincipal);
+  const confiancaDiagnostico = resumo?.confiancaDiagnostico || resumo?.confianca_diagnostico || "alta";
+  const atualizacaoMercado = resumo?.atualizacaoMercado || resumo?.atualizacao_mercado;
 
   return (
     <div className="w-full bg-white font-['Inter'] text-[#0B1218]">
@@ -194,8 +197,19 @@ export default function Insights() {
         {!loading && !error && resumo && !semBaseInsights && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-16 fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="space-y-6">
+            {confiancaDiagnostico !== "alta" && (
+              <div className="p-5 border border-[#F2C94C]/30 bg-[#F2C94C]/8 rounded-sm">
+                <p className="text-[11px] font-semibold text-[#0B1218]/80">
+                  Leitura com confiança limitada: dados de mercado {atualizacaoMercado?.statusGeral || atualizacaoMercado?.status_geral || "indisponíveis"}.
+                </p>
+              </div>
+            )}
             {cards.map((card) => (
-              <InsightCard key={card.title} {...card} />
+              <InsightCard
+                key={card.title}
+                {...card}
+                onAction={() => telemetriaApi.registrarEventoTelemetria('recommendation_clicked', { titulo: card.title, acao: card.action })}
+              />
             ))}
           </div>
 
@@ -212,6 +226,11 @@ export default function Insights() {
               <p className="text-white/40 text-xs leading-relaxed mb-8">
                 {resumo.diagnosticoFinal?.mensagem || resumo.diagnostico.resumo}
               </p>
+              {atualizacaoMercado && (
+                <p className="text-[10px] uppercase tracking-widest text-white/45 mb-4">
+                  Mercado: {(atualizacaoMercado.statusGeral || atualizacaoMercado.status_geral || "indisponivel").toUpperCase()} · cobertura {Number(atualizacaoMercado.cobertura || 0).toFixed(0)}%
+                </p>
+              )}
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-[#F56A2A]" style={{ width: `${Math.max(0, Math.min(100, resumo.score.score))}%` }}></div>
               </div>

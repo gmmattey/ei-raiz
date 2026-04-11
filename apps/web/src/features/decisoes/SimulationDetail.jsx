@@ -5,7 +5,7 @@ import DecisionSimulatorLayout from './components/DecisionSimulatorLayout';
 import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
-import { ApiError, decisoesApi } from '../../cliente-api';
+import { ApiError, decisoesApi, telemetriaApi } from '../../cliente-api';
 
 const SimulationDetail = () => {
   const { id } = useParams();
@@ -24,6 +24,7 @@ const SimulationDetail = () => {
         const data = await decisoesApi.obterSimulacao(id);
         if (!ativo) return;
         setSimulation(data);
+        await telemetriaApi.registrarEventoTelemetria('simulation_reopened', { id, origem: 'detail_open' });
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/', { replace: true });
@@ -50,6 +51,7 @@ const SimulationDetail = () => {
       setErro('');
       const data = await decisoesApi.recalcularSimulacao(id);
       setSimulation(data);
+      await telemetriaApi.registrarEventoTelemetria('simulation_reopened', { id, origem: 'recalculo' });
     } catch {
       setErro('Falha ao recalcular simulação.');
     }

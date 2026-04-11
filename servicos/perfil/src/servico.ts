@@ -1,4 +1,4 @@
-import type { PerfilFinanceiro, PlataformaVinculada, ServicoPerfil } from "@ei/contratos";
+import type { ContextoFinanceiroUsuario, PerfilFinanceiro, PlataformaVinculada, ServicoPerfil } from "@ei/contratos";
 import type { RepositorioPerfil } from "./repositorio";
 
 export class ServicoPerfilPadrao implements ServicoPerfil {
@@ -10,6 +10,14 @@ export class ServicoPerfilPadrao implements ServicoPerfil {
 
   salvarPerfil(perfil: PerfilFinanceiro): Promise<PerfilFinanceiro> {
     return this.repositorio.salvarPerfil(perfil);
+  }
+
+  obterContextoFinanceiro(usuarioId: string): Promise<ContextoFinanceiroUsuario | null> {
+    return this.repositorio.obterContextoFinanceiro(usuarioId);
+  }
+
+  salvarContextoFinanceiro(contexto: ContextoFinanceiroUsuario): Promise<ContextoFinanceiroUsuario> {
+    return this.repositorio.salvarContextoFinanceiro(contexto);
   }
 
   listarPlataformas(usuarioId: string): Promise<PlataformaVinculada[]> {

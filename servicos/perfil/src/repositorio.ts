@@ -1,10 +1,12 @@
-import type { PerfilFinanceiro, PlataformaVinculada } from "@ei/contratos";
+import type { ContextoFinanceiroUsuario, PerfilFinanceiro, PlataformaVinculada } from "@ei/contratos";
 
 export type SalvarPerfilInput = Omit<PerfilFinanceiro, "id"> & { id?: string };
 
 export interface RepositorioPerfil {
   obterPerfil(usuarioId: string): Promise<PerfilFinanceiro | null>;
   salvarPerfil(input: SalvarPerfilInput): Promise<PerfilFinanceiro>;
+  obterContextoFinanceiro(usuarioId: string): Promise<ContextoFinanceiroUsuario | null>;
+  salvarContextoFinanceiro(contexto: ContextoFinanceiroUsuario): Promise<ContextoFinanceiroUsuario>;
   listarPlataformas(usuarioId: string): Promise<PlataformaVinculada[]>;
 }
 
@@ -14,17 +16,22 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
   async obterPerfil(usuarioId: string): Promise<PerfilFinanceiro | null> {
     const row = await this.db
       .prepare(
-        "SELECT id, usuario_id, renda_mensal, aporte_mensal, horizonte, perfil_risco, objetivo, maturidade FROM perfil_financeiro WHERE usuario_id = ?",
+        "SELECT id, usuario_id, renda_mensal, gasto_mensal, aporte_mensal, reserva_caixa, horizonte, perfil_risco, objetivo, frequencia_aporte, experiencia_investimentos, tolerancia_risco_real, maturidade FROM perfil_financeiro WHERE usuario_id = ?",
       )
       .bind(usuarioId)
       .first<{
         id: string;
         usuario_id: string;
         renda_mensal: number;
+        gasto_mensal: number | null;
         aporte_mensal: number;
+        reserva_caixa: number | null;
         horizonte: string;
         perfil_risco: string;
         objetivo: string;
+        frequencia_aporte: string | null;
+        experiencia_investimentos: string | null;
+        tolerancia_risco_real: string | null;
         maturidade: number;
       }>();
 
@@ -33,10 +40,15 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
       id: row.id,
       usuarioId: row.usuario_id,
       rendaMensal: row.renda_mensal ?? 0,
+      gastoMensal: row.gasto_mensal ?? 0,
       aporteMensal: row.aporte_mensal ?? 0,
+      reservaCaixa: row.reserva_caixa ?? 0,
       horizonte: row.horizonte ?? "",
       perfilRisco: row.perfil_risco ?? "",
       objetivo: row.objetivo ?? "",
+      frequenciaAporte: row.frequencia_aporte ?? "",
+      experienciaInvestimentos: row.experiencia_investimentos ?? "",
+      toleranciaRiscoReal: row.tolerancia_risco_real ?? "",
       maturidade: row.maturidade ?? 1,
     };
   }
@@ -48,14 +60,19 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
     if (existente) {
       await this.db
         .prepare(
-          "UPDATE perfil_financeiro SET renda_mensal = ?, aporte_mensal = ?, horizonte = ?, perfil_risco = ?, objetivo = ?, maturidade = ? WHERE usuario_id = ?",
+          "UPDATE perfil_financeiro SET renda_mensal = ?, gasto_mensal = ?, aporte_mensal = ?, reserva_caixa = ?, horizonte = ?, perfil_risco = ?, objetivo = ?, frequencia_aporte = ?, experiencia_investimentos = ?, tolerancia_risco_real = ?, maturidade = ? WHERE usuario_id = ?",
         )
         .bind(
           input.rendaMensal,
+          input.gastoMensal ?? 0,
           input.aporteMensal,
+          input.reservaCaixa ?? 0,
           input.horizonte,
           input.perfilRisco,
           input.objetivo,
+          input.frequenciaAporte ?? "",
+          input.experienciaInvestimentos ?? "",
+          input.toleranciaRiscoReal ?? "",
           input.maturidade,
           input.usuarioId,
         )
@@ -63,16 +80,21 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
     } else {
       await this.db
         .prepare(
-          "INSERT INTO perfil_financeiro (id, usuario_id, renda_mensal, aporte_mensal, horizonte, perfil_risco, objetivo, maturidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO perfil_financeiro (id, usuario_id, renda_mensal, gasto_mensal, aporte_mensal, reserva_caixa, horizonte, perfil_risco, objetivo, frequencia_aporte, experiencia_investimentos, tolerancia_risco_real, maturidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(
           id,
           input.usuarioId,
           input.rendaMensal,
+          input.gastoMensal ?? 0,
           input.aporteMensal,
+          input.reservaCaixa ?? 0,
           input.horizonte,
           input.perfilRisco,
           input.objetivo,
+          input.frequenciaAporte ?? "",
+          input.experienciaInvestimentos ?? "",
+          input.toleranciaRiscoReal ?? "",
           input.maturidade,
         )
         .run();
@@ -81,6 +103,57 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
     const atualizado = await this.obterPerfil(input.usuarioId);
     if (!atualizado) throw new Error("Falha ao salvar perfil");
     return atualizado;
+  }
+
+  async obterContextoFinanceiro(usuarioId: string): Promise<ContextoFinanceiroUsuario | null> {
+    const row = await this.db
+      .prepare("SELECT contexto_json, atualizado_em FROM perfil_contexto_financeiro WHERE usuario_id = ? LIMIT 1")
+      .bind(usuarioId)
+      .first<{ contexto_json: string; atualizado_em: string }>();
+    if (!row?.contexto_json) return null;
+    try {
+      const parsed = JSON.parse(row.contexto_json) as ContextoFinanceiroUsuario;
+      return {
+        ...parsed,
+        usuarioId,
+        atualizadoEm: row.atualizado_em,
+        patrimonioExterno: {
+          imoveis: parsed.patrimonioExterno?.imoveis ?? [],
+          veiculos: parsed.patrimonioExterno?.veiculos ?? [],
+          caixaDisponivel: parsed.patrimonioExterno?.caixaDisponivel ?? 0,
+        },
+        dividas: parsed.dividas ?? [],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async salvarContextoFinanceiro(contexto: ContextoFinanceiroUsuario): Promise<ContextoFinanceiroUsuario> {
+    const now = new Date().toISOString();
+    const payload: ContextoFinanceiroUsuario = {
+      ...contexto,
+      patrimonioExterno: {
+        imoveis: contexto.patrimonioExterno?.imoveis ?? [],
+        veiculos: contexto.patrimonioExterno?.veiculos ?? [],
+        caixaDisponivel: contexto.patrimonioExterno?.caixaDisponivel ?? 0,
+      },
+      dividas: contexto.dividas ?? [],
+      atualizadoEm: now,
+    };
+
+    await this.db
+      .prepare(
+        [
+          "INSERT INTO perfil_contexto_financeiro (id, usuario_id, contexto_json, atualizado_em)",
+          "VALUES (?, ?, ?, ?)",
+          "ON CONFLICT(usuario_id) DO UPDATE SET contexto_json = excluded.contexto_json, atualizado_em = excluded.atualizado_em",
+        ].join(" "),
+      )
+      .bind(crypto.randomUUID(), contexto.usuarioId, JSON.stringify(payload), now)
+      .run();
+
+    return payload;
   }
 
   async listarPlataformas(usuarioId: string): Promise<PlataformaVinculada[]> {

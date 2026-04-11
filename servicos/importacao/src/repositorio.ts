@@ -187,8 +187,8 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
             "INSERT INTO ativos",
             "(",
             "id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m,",
-            "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json",
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json, data_cadastro, data_aquisicao",
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           ].join(" "),
         )
         .bind(
@@ -209,6 +209,8 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
           item.cnpjFundo ?? null,
           item.isin ?? null,
           item.aliases ? JSON.stringify(item.aliases) : null,
+          new Date().toISOString(),
+          item.dataOperacao || new Date().toISOString().slice(0, 10),
         ),
     );
     if (statements.length > 0) {

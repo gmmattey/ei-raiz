@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowDownRight, ArrowUpRight, Download, Info, Search } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { AlertCircle, ArrowDownRight, ArrowUpRight, Download, Search } from "lucide-react";
 import { ApiError, carteiraApi } from "../../cliente-api";
+import PageHeader from "../../components/design-system/PageHeader";
+import MetricCard from "../../components/design-system/MetricCard";
 
 const categorias = [
   { label: "Todos", value: "todos" },
@@ -23,6 +25,9 @@ const AssetRow = ({ asset, navigate }) => (
     </td>
     <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{asset.participacao.toFixed(2)}%</td>
     <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{moeda(asset.valorAtual)}</td>
+    <td className="py-5 px-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/50">
+      {(asset.fontePreco || asset.fonte_preco || "nenhuma").toUpperCase()} · {(asset.statusAtualizacao || asset.status_atualizacao || "indisponivel").toUpperCase()}
+    </td>
     <td className="py-5 px-4">
       <div className={`flex items-center text-[11px] font-bold ${asset.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>
         {asset.retorno12m >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
@@ -58,13 +63,22 @@ const AssetCard = ({ asset, navigate }) => (
         <p className="text-sm font-semibold text-[#0B1218]">{moeda(asset.valorAtual)}</p>
       </div>
     </div>
+    <p className="mt-3 text-[10px] uppercase tracking-widest text-[#0B1218]/50">
+      {(asset.fontePreco || asset.fonte_preco || "nenhuma").toUpperCase()} · {(asset.statusAtualizacao || asset.status_atualizacao || "indisponivel").toUpperCase()}
+    </p>
   </button>
 );
 
 export default function Carteira() {
   const navigate = useNavigate();
-  const [filtro, setFiltro] = useState("todos");
+  const [searchParams] = useSearchParams();
+  const filtroInicial = searchParams.get("categoria") || "todos";
+  const tickerDestacado = searchParams.get("ticker");
+  const [filtro, setFiltro] = useState(filtroInicial);
   const [busca, setBusca] = useState("");
+  const [plataformaFiltro, setPlataformaFiltro] = useState("todas");
+  const [statusFiltro, setStatusFiltro] = useState("todos");
+  const [ordenacao, setOrdenacao] = useState("valor_desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [resumo, setResumo] = useState(null);
@@ -100,25 +114,40 @@ export default function Carteira() {
     };
   }, [filtro, navigate]);
 
+  useEffect(() => {
+    setFiltro(filtroInicial);
+  }, [filtroInicial]);
+
+  const plataformas = useMemo(() => ["todas", ...Array.from(new Set((ativos || []).map((a) => a.plataforma).filter(Boolean)))], [ativos]);
+
   const ativosFiltrados = useMemo(() => {
     if (!busca.trim()) return ativos;
     const termo = busca.toLowerCase();
     return ativos.filter((item) => item.ticker.toLowerCase().includes(termo) || item.nome.toLowerCase().includes(termo));
   }, [ativos, busca]);
+  const ativosFiltradosComRegras = useMemo(() => {
+    let lista = [...ativosFiltrados];
+    if (plataformaFiltro !== "todas") lista = lista.filter((item) => item.plataforma === plataformaFiltro);
+    if (statusFiltro !== "todos") lista = lista.filter((item) => (item.statusAtualizacao || item.status_atualizacao || "indisponivel") === statusFiltro);
+    if (ordenacao === "valor_desc") lista.sort((a, b) => (b.valorAtual || 0) - (a.valorAtual || 0));
+    if (ordenacao === "participacao_desc") lista.sort((a, b) => (b.participacao || 0) - (a.participacao || 0));
+    if (ordenacao === "retorno_desc") lista.sort((a, b) => (b.retorno12m || 0) - (a.retorno12m || 0));
+    return lista;
+  }, [ativosFiltrados, plataformaFiltro, statusFiltro, ordenacao]);
   const semAtivos = !loading && !error && ativos.length === 0;
 
   return (
     <div className="w-full bg-white font-['Inter'] text-[#0B1218] animate-in fade-in duration-500">
       <div className="w-full">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-2">Tudo que você tem</h1>
-            <p className="text-[#0B1218]/40 text-sm font-medium">Dados reais consolidados da API.</p>
-          </div>
-          <button onClick={() => navigate("/historico")} className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-sm">
-            <Download size={14} /> Histórico
-          </button>
-        </div>
+        <PageHeader
+          title="Tudo que você tem"
+          subtitle="Dados reais consolidados da API."
+          actions={
+            <button onClick={() => navigate("/historico")} className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-sm">
+              <Download size={14} /> Histórico
+            </button>
+          }
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <MetricCard label="Patrimônio Total" value={moeda(resumo?.patrimonioTotal)} />
@@ -128,6 +157,19 @@ export default function Carteira() {
         </div>
 
         <div className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden fade-in-up" style={{ animationDelay: '0.1s' }}>
+          {tickerDestacado && filtro === "acao" && (
+            <div className="px-6 py-3 border-b border-[#EFE7DC] bg-[#FAFAFA] flex items-center justify-between gap-3">
+              <p className="text-[11px] text-[#0B1218]/75">
+                Você veio de outra tela para gerenciar <strong>{tickerDestacado.toUpperCase()}</strong> em ações.
+              </p>
+              <button
+                onClick={() => navigate(`/ativo/${encodeURIComponent(tickerDestacado)}`)}
+                className="px-3 py-1.5 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest"
+              >
+                Abrir detalhamento
+              </button>
+            </div>
+          )}
           <div className="p-6 border-b border-[#EFE7DC] flex flex-col md:flex-row justify-between gap-6">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
               {categorias.map((tab) => (
@@ -140,25 +182,41 @@ export default function Carteira() {
                 </button>
               ))}
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0B1218]/20" size={14} />
-              <input
-                type="text"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="BUSCAR ATIVO..."
-                className="pl-10 pr-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-[#F56A2A] w-full md:w-64"
-              />
+            <div className="flex flex-col md:flex-row gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0B1218]/20" size={14} />
+                <input
+                  type="text"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="BUSCAR ATIVO..."
+                  className="pl-10 pr-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-[#F56A2A] w-full md:w-56"
+                />
+              </div>
+              <select value={plataformaFiltro} onChange={(e) => setPlataformaFiltro(e.target.value)} className="px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
+                {plataformas.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
+                <option value="todos">todos status</option>
+                <option value="atualizado">atualizado</option>
+                <option value="atrasado">atrasado</option>
+                <option value="indisponivel">indisponível</option>
+              </select>
+              <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)} className="px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
+                <option value="valor_desc">ord: valor</option>
+                <option value="participacao_desc">ord: participação</option>
+                <option value="retorno_desc">ord: retorno</option>
+              </select>
             </div>
           </div>
 
           {loading && <div className="p-6 text-sm text-[#0B1218]/50">Carregando carteira...</div>}
           {error && <div className="p-6 text-sm text-[#E85C5C]">{error}</div>}
 
-          {!loading && !error && !semAtivos && ativosFiltrados.length > 0 && (
+          {!loading && !error && !semAtivos && ativosFiltradosComRegras.length > 0 && (
             <>
             <div className="md:hidden p-4 space-y-3">
-              {ativosFiltrados.map((asset) => (
+              {ativosFiltradosComRegras.map((asset) => (
                 <AssetCard key={asset.id} asset={asset} navigate={navigate} />
               ))}
             </div>
@@ -168,20 +226,45 @@ export default function Carteira() {
                   <tr className="bg-[#FAFAFA] border-b border-[#EFE7DC]">
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Ativo</th>
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Alocação</th>
+                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Qtd.</th>
+                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Preço médio</th>
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Valor Atual</th>
+                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Mercado</th>
+                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">P/L (R$)</th>
                     <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Retorno Consolidado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ativosFiltrados.map((asset) => (
-                    <AssetRow key={asset.id} asset={asset} navigate={navigate} />
-                  ))}
+                  {ativosFiltradosComRegras.map((asset) => (
+                    <tr key={asset.id} onClick={() => navigate(`/ativo/${asset.ticker}`)} className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors cursor-pointer">
+                      <td className="py-5 px-4">
+                        <div>
+                          <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">{asset.ticker}</p>
+                          <p className="text-[10px] text-[#0B1218]/40 font-bold uppercase tracking-tight">{asset.nome}</p>
+                        </div>
+                      </td>
+                      <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{asset.participacao.toFixed(2)}%</td>
+                      <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{Number(asset.quantidade ?? 0).toFixed(4)}</td>
+                      <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{moeda(asset.precoMedio || asset.preco_medio || 0)}</td>
+                      <td className="py-5 px-4 text-sm font-medium text-[#0B1218]">{moeda(asset.valorAtual)}</td>
+                      <td className="py-5 px-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/50">
+                        {(asset.fontePreco || asset.fonte_preco || "nenhuma").toUpperCase()} · {(asset.statusAtualizacao || asset.status_atualizacao || "indisponivel").toUpperCase()}
+                      </td>
+                      <td className={`py-5 px-4 text-sm font-semibold ${(asset.ganhoPerda || 0) >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>{moeda(asset.ganhoPerda || 0)}</td>
+                      <td className="py-5 px-4">
+                        <div className={`flex items-center text-[11px] font-bold ${asset.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>
+                          {asset.retorno12m >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                          {asset.retorno12m.toFixed(2)}%
+                        </div>
+                      </td>
+                    </tr>
+                  ))}                  
                 </tbody>
               </table>
             </div>
             </>
           )}
-          {!loading && !error && !semAtivos && ativosFiltrados.length === 0 && (
+          {!loading && !error && !semAtivos && ativosFiltradosComRegras.length === 0 && (
             <div className="p-8 text-center">
               <p className="text-sm text-[#0B1218]/60">Nenhum ativo encontrado para o filtro e busca atuais.</p>
             </div>
@@ -215,12 +298,3 @@ export default function Carteira() {
   );
 }
 
-const MetricCard = ({ label, value }) => (
-  <div className="bg-white border border-[#EFE7DC] p-6 rounded-sm">
-    <div className="flex items-center justify-between mb-4">
-      <span className="text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">{label}</span>
-      <Info size={12} className="text-[#0B1218]/20" />
-    </div>
-    <h3 className="font-['Sora'] text-2xl font-bold text-[#0B1218]">{value}</h3>
-  </div>
-);

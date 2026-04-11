@@ -5,7 +5,7 @@ import DecisionFormSection from './components/DecisionFormSection';
 import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
-import { decisoesApi, getStoredUser } from '../../cliente-api';
+import { decisoesApi, getStoredUser, telemetriaApi } from '../../cliente-api';
 
 const PropertySimulator = () => {
   const user = getStoredUser();
@@ -39,6 +39,7 @@ const PropertySimulator = () => {
     try {
       setLoading(true);
       setErro('');
+      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'imovel' });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'imovel', nome: form.nome, premissas: form });
       setResultado(data);
     } catch {
@@ -53,6 +54,7 @@ const PropertySimulator = () => {
       setLoading(true);
       setErro('');
       const data = await decisoesApi.salvarSimulacao({ tipo: 'imovel', nome: form.nome, premissas: form });
+      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'imovel', id: data?.id });
       setResultado(data.resultado || resultado);
     } catch {
       setErro('Falha ao salvar simulação.');

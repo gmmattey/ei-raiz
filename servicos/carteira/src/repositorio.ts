@@ -13,6 +13,8 @@ export type AtivoPersistido = {
   valorAtual: number;
   participacao: number;
   retorno12m: number;
+  dataCadastro: string | null;
+  dataAquisicao: string | null;
   tickerCanonico: string | null;
   cnpjFundo: string | null;
 };
@@ -27,6 +29,7 @@ export type CacheCotacaoPersistido = {
 
 export interface RepositorioCarteira {
   listarAtivos(usuarioId: string): Promise<AtivoPersistido[]>;
+  listarSnapshotsPatrimonio(usuarioId: string, limite: number): Promise<Array<{ data: string; valorTotal: number }>>;
   atualizarValorAtivo(ativoId: string, valorAtual: number, retorno12m: number): Promise<void>;
   lerCacheValido(fonte: FonteMercado, chaveAtivo: string, referenciaIso: string): Promise<CacheCotacaoPersistido | null>;
   lerUltimoCache(fonte: FonteMercado, chaveAtivo: string): Promise<CacheCotacaoPersistido | null>;
@@ -50,6 +53,7 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
       .prepare(
         [
           "SELECT id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m, ticker_canonico, cnpj_fundo",
+          ", data_cadastro, data_aquisicao",
           "FROM ativos",
           "WHERE usuario_id = ?",
         ].join(" "),
@@ -66,6 +70,8 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
         valor_atual: number | null;
         participacao: number | null;
         retorno_12m: number | null;
+        data_cadastro: string | null;
+        data_aquisicao: string | null;
         ticker_canonico: string | null;
         cnpj_fundo: string | null;
       }>();
@@ -81,9 +87,19 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
       valorAtual: row.valor_atual ?? 0,
       participacao: row.participacao ?? 0,
       retorno12m: row.retorno_12m ?? 0,
+      dataCadastro: row.data_cadastro ?? null,
+      dataAquisicao: row.data_aquisicao ?? null,
       tickerCanonico: row.ticker_canonico ?? null,
       cnpjFundo: row.cnpj_fundo ?? null,
     }));
+  }
+
+  async listarSnapshotsPatrimonio(usuarioId: string, limite: number): Promise<Array<{ data: string; valorTotal: number }>> {
+    const result = await this.db
+      .prepare("SELECT data, valor_total FROM snapshots_patrimonio WHERE usuario_id = ? ORDER BY data DESC LIMIT ?")
+      .bind(usuarioId, limite)
+      .all<{ data: string; valor_total: number }>();
+    return (result.results ?? []).map((row) => ({ data: row.data, valorTotal: row.valor_total ?? 0 }));
   }
 
   async atualizarValorAtivo(ativoId: string, valorAtual: number, retorno12m: number): Promise<void> {

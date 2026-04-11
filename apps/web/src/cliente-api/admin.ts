@@ -33,6 +33,40 @@ export type ParametroSimulacaoAdmin = {
   atualizadoEm?: string;
 };
 
+export type AuditoriaExclusaoAtivo = {
+  id: string;
+  acao: string;
+  alvo: string;
+  autorEmail: string;
+  criadoEm: string;
+  motivo: string;
+  usuarioId: string;
+  ativoId: string;
+  ticker: string;
+  nome: string;
+  categoria: string;
+  valorAtual: number;
+  quantidade: number;
+  payloadJson: string;
+};
+
+export type SaudeMercadoAdmin = {
+  referencia: string;
+  sla: { acoesMinutos: number; fundosMinutos: number };
+  fontes: Array<{
+    fonte: string;
+    total: number;
+    erros: number;
+    expirados: number;
+    ultimaAtualizacao: string | null;
+    minutosDesdeUltima: number | null;
+    slaMinutos: number;
+    coberturaAtualizada: number;
+    status: "saudavel" | "degradado" | "indisponivel";
+  }>;
+  statusGeral: "saudavel" | "degradado" | "indisponivel";
+};
+
 export function obterMeAdmin(): Promise<AdminMe> {
   return apiRequest<AdminMe>("/api/admin/me", { method: "GET" });
 }
@@ -108,4 +142,25 @@ export function atualizarParametrosSimulacaoAdmin(parametros: Array<{ chave: str
     method: "PUT",
     body: JSON.stringify({ parametros }),
   });
+}
+
+export function listarAuditoriaExclusoesAtivos(params?: {
+  limite?: number;
+  autorEmail?: string;
+  ticker?: string;
+  dataInicio?: string;
+  dataFim?: string;
+}): Promise<AuditoriaExclusaoAtivo[]> {
+  const query = new URLSearchParams();
+  if (params?.limite) query.set("limite", String(params.limite));
+  if (params?.autorEmail) query.set("autorEmail", params.autorEmail);
+  if (params?.ticker) query.set("ticker", params.ticker);
+  if (params?.dataInicio) query.set("dataInicio", params.dataInicio);
+  if (params?.dataFim) query.set("dataFim", params.dataFim);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return apiRequest<AuditoriaExclusaoAtivo[]>(`/api/admin/auditoria/exclusoes${suffix}`, { method: "GET" });
+}
+
+export function obterSaudeMercadoAdmin(): Promise<SaudeMercadoAdmin> {
+  return apiRequest<SaudeMercadoAdmin>("/api/admin/mercado/saude", { method: "GET" });
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, conteudoApi, importacaoApi } from '../../cliente-api';
+import { ApiError, conteudoApi, importacaoApi, telemetriaApi } from '../../cliente-api';
 import { baixarTemplateImportacaoCsv } from '../../utils/importacaoTemplate';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
 import {
@@ -27,7 +27,7 @@ const mapearErroUpload = (erro) => {
     case 'API_INDISPONIVEL':
       return 'API indisponível no momento. Tente novamente em instantes.';
     default:
-      return erro.message || 'Não foi possível processar a importação.';
+      return 'Não foi possível processar a importação. Revise o arquivo e tente novamente.';
   }
 };
 
@@ -98,6 +98,7 @@ export default function Importar() {
     setStep('processing');
 
     try {
+      await telemetriaApi.registrarEventoTelemetria('import_started', { arquivo: file.name });
       const conteudo = await file.text();
       const resposta = await importacaoApi.uploadExtrato({
         nomeArquivo: file.name,
@@ -105,6 +106,12 @@ export default function Importar() {
         tipoArquivo: 'csv',
       });
       setPreview(resposta);
+      await telemetriaApi.registrarEventoTelemetria('import_reviewed', {
+        importacaoId: resposta.importacaoId,
+        validos: resposta.resumo?.validos ?? 0,
+        conflitos: resposta.resumo?.conflitos ?? 0,
+        erros: resposta.resumo?.erros ?? 0,
+      });
       setStep('review');
     } catch (error) {
       setErroUpload(mapearErroUpload(error));
@@ -125,10 +132,14 @@ export default function Importar() {
 
     try {
       await importacaoApi.confirmarImportacao(preview.importacaoId, itensValidos.map((item) => item.linha));
+      await telemetriaApi.registrarEventoTelemetria('import_confirmed', {
+        importacaoId: preview.importacaoId,
+        itensValidos: itensValidos.length,
+      });
       localStorage.setItem('hasSeenPreInsight', 'true');
       navigate('/home', { replace: true });
     } catch (error) {
-      if (error instanceof ApiError) setConfirmError(error.message);
+      if (error instanceof ApiError) setConfirmError('Não foi possível confirmar agora. Revise os itens e tente novamente.');
       else setConfirmError('Falha ao confirmar importação.');
     } finally {
       setIsConfirmando(false);
