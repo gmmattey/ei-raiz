@@ -13,6 +13,8 @@ type EntradaIdentidade = {
   ticker: string;
   nome: string;
   categoria: CategoriaAtivo;
+  // CNPJ explícito (opcional, sobrescreve extração por regex do nome/ticker)
+  cnpj?: string;
 };
 
 const limparEspacos = (value: string): string => value.replace(/\s+/g, " ").trim();
@@ -42,7 +44,7 @@ export function normalizarIdentidadeAtivo(input: EntradaIdentidade): IdentidadeA
   const tickerCanonico = normalizarTicker(input.ticker) || null;
   const nomeCanonico = normalizarNome(input.nome) || "ATIVO_SEM_NOME";
   const baseBusca = `${input.ticker} ${input.nome}`.toUpperCase();
-  const cnpjFundo = extrairCnpj(baseBusca);
+  const cnpjFundo = (input.cnpj?.replace(/\D/g, "") || null) ?? extrairCnpj(baseBusca);
   const isin = extrairIsin(baseBusca);
 
   let identificadorCanonico: string;

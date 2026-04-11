@@ -1,4 +1,4 @@
-import type { CategoriaAtivo, ItemImportacao, PreviewImportacao } from "@ei/contratos";
+import type { CategoriaImportacao, ItemImportacao, PreviewImportacao } from "@ei/contratos";
 
 export type RegistroImportacao = {
   id: string;
@@ -19,13 +19,30 @@ export interface RepositorioImportacao {
   ): Promise<{ itensConfirmados: number; itensIgnorados: number }>;
 }
 
-const mapRowToItem = (row: {
+// Categorias que vão para posicoes_financeiras (não para ativos)
+const categoriaPatrimonio = new Set<CategoriaImportacao>(["imovel", "veiculo", "poupanca"]);
+
+// Mapeamento de categoria → liquidez e risco para posicoes_financeiras
+function metaPatrimonio(categoria: CategoriaImportacao): { liquidez: string; risco: string; categoriaPos: string } {
+  switch (categoria) {
+    case "imovel":
+      return { liquidez: "baixa", risco: "baixo", categoriaPos: "patrimônio imobiliário" };
+    case "veiculo":
+      return { liquidez: "baixa", risco: "medio", categoriaPos: "bens móveis" };
+    case "poupanca":
+      return { liquidez: "imediata", risco: "baixo", categoriaPos: "reserva" };
+    default:
+      return { liquidez: "medio_prazo", risco: "medio", categoriaPos: "outros" };
+  }
+}
+
+type RowItemImportacao = {
   id: string;
   data_operacao: string | null;
-  ticker: string;
+  ticker: string | null;
   nome: string | null;
-  categoria: CategoriaAtivo;
-  plataforma: string;
+  categoria: CategoriaImportacao;
+  plataforma: string | null;
   quantidade: number | null;
   valor: number;
   ticker_canonico: string | null;
@@ -34,9 +51,13 @@ const mapRowToItem = (row: {
   cnpj_fundo: string | null;
   isin: string | null;
   aliases_json: string | null;
+  metadata_json: string | null;
+  aba_origem: string | null;
   status: "ok" | "conflito" | "erro";
   observacao: string | null;
-}): ItemImportacao => {
+};
+
+const mapRowToItem = (row: RowItemImportacao): ItemImportacao => {
   const linha = Number.parseInt(row.id.split("_").at(-1) ?? "0", 10);
   let aliases: string[] | undefined;
   if (row.aliases_json) {
@@ -49,14 +70,26 @@ const mapRowToItem = (row: {
       aliases = undefined;
     }
   }
+  let metadados: Record<string, unknown> | undefined;
+  if (row.metadata_json) {
+    try {
+      const parsed = JSON.parse(row.metadata_json) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        metadados = parsed as Record<string, unknown>;
+      }
+    } catch {
+      metadados = undefined;
+    }
+  }
   return {
     linha,
+    abaOrigem: (row.aba_origem as ItemImportacao["abaOrigem"]) ?? "fundos",
     dataOperacao: row.data_operacao ?? "",
-    ticker: row.ticker ?? "",
+    ticker: row.ticker ?? undefined,
     nome: row.nome ?? "",
     categoria: row.categoria,
-    plataforma: row.plataforma ?? "",
-    quantidade: row.quantidade ?? 0,
+    plataforma: row.plataforma ?? undefined,
+    quantidade: row.quantidade ?? undefined,
     valor: row.valor ?? 0,
     tickerCanonico: row.ticker_canonico ?? undefined,
     nomeCanonico: row.nome_canonico ?? undefined,
@@ -64,6 +97,7 @@ const mapRowToItem = (row: {
     cnpjFundo: row.cnpj_fundo ?? undefined,
     isin: row.isin ?? undefined,
     aliases,
+    metadados,
     status: row.status,
     observacao: row.observacao ?? undefined,
   };
@@ -74,7 +108,9 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
 
   async criarImportacao(registro: RegistroImportacao): Promise<void> {
     await this.db
-      .prepare("INSERT INTO importacoes (id, usuario_id, arquivo_nome, status, total_linhas, conflitos, erros, validos) VALUES (?, ?, ?, 'pendente', 0, 0, 0, 0)")
+      .prepare(
+        "INSERT INTO importacoes (id, usuario_id, arquivo_nome, status, total_linhas, conflitos, erros, validos) VALUES (?, ?, ?, 'pendente', 0, 0, 0, 0)",
+      )
       .bind(registro.id, registro.usuarioId, registro.arquivoNome)
       .run();
   }
@@ -88,19 +124,20 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
             "(",
             "id, importacao_id, data_operacao, ticker, nome, categoria, plataforma, quantidade, valor,",
             "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json,",
+            "metadata_json, aba_origem,",
             "status, observacao",
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           ].join(" "),
         )
         .bind(
           `item_${importacaoId}_${item.linha}`,
           importacaoId,
-          item.dataOperacao,
-          item.ticker,
+          item.dataOperacao ?? null,
+          item.ticker ?? null,
           item.nome,
           item.categoria,
-          item.plataforma,
-          item.quantidade,
+          item.plataforma ?? null,
+          item.quantidade ?? null,
           item.valor,
           item.tickerCanonico ?? null,
           item.nomeCanonico ?? null,
@@ -108,6 +145,8 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
           item.cnpjFundo ?? null,
           item.isin ?? null,
           item.aliases ? JSON.stringify(item.aliases) : null,
+          item.metadados ? JSON.stringify(item.metadados) : null,
+          item.abaOrigem ?? null,
           item.status,
           item.observacao ?? null,
         ),
@@ -149,6 +188,7 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
           "SELECT",
           "id, data_operacao, ticker, nome, categoria, plataforma, quantidade, valor,",
           "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json,",
+          "metadata_json, aba_origem,",
           "status, observacao",
           "FROM itens_importacao",
           "WHERE importacao_id = ?",
@@ -156,69 +196,101 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
         ].join(" "),
       )
       .bind(importacaoId)
-      .all<{
-        id: string;
-        data_operacao: string | null;
-        ticker: string;
-        nome: string | null;
-        categoria: CategoriaAtivo;
-        plataforma: string;
-        quantidade: number | null;
-        valor: number;
-        ticker_canonico: string | null;
-        nome_canonico: string | null;
-        identificador_canonico: string | null;
-        cnpj_fundo: string | null;
-        isin: string | null;
-        aliases_json: string | null;
-        status: "ok" | "conflito" | "erro";
-        observacao: string | null;
-      }>();
+      .all<RowItemImportacao>();
     return (result.results ?? []).map(mapRowToItem);
   }
 
-  async confirmarItens(importacaoId: string, usuarioId: string, itensValidos: number[]): Promise<{ itensConfirmados: number; itensIgnorados: number }> {
+  async confirmarItens(
+    importacaoId: string,
+    usuarioId: string,
+    itensValidos: number[],
+  ): Promise<{ itensConfirmados: number; itensIgnorados: number }> {
     const itens = await this.listarItens(importacaoId);
     const selecionados = itens.filter((item) => item.status === "ok" && itensValidos.includes(item.linha));
-    const statements = selecionados.map((item) =>
-      this.db
-        .prepare(
-          [
-            "INSERT INTO ativos",
-            "(",
-            "id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m,",
-            "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json, data_cadastro, data_aquisicao",
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          ].join(" "),
-        )
-        .bind(
-          crypto.randomUUID(),
-          usuarioId,
-          item.ticker,
-          item.nome || item.ticker,
-          item.categoria,
-          item.plataforma,
-          item.quantidade || 1,
-          item.valor,
-          item.valor,
-          0,
-          0,
-          item.tickerCanonico ?? null,
-          item.nomeCanonico ?? null,
-          item.identificadorCanonico ?? null,
-          item.cnpjFundo ?? null,
-          item.isin ?? null,
-          item.aliases ? JSON.stringify(item.aliases) : null,
-          new Date().toISOString(),
-          item.dataOperacao || new Date().toISOString().slice(0, 10),
-        ),
-    );
+
+    const ativosItems = selecionados.filter((item) => !categoriaPatrimonio.has(item.categoria));
+    const patrimonioItems = selecionados.filter((item) => categoriaPatrimonio.has(item.categoria));
+
+    const statements: D1PreparedStatement[] = [];
+
+    // --- Ativos listados (ações, fundos, previdência, renda_fixa) → tabela ativos ---
+    for (const item of ativosItems) {
+      const quantidade = Number(item.quantidade || 1);
+      const valorTotal = Number(item.valor || 0);
+      const precoMedioUnitario = quantidade > 0 ? valorTotal / quantidade : valorTotal;
+      statements.push(
+        this.db
+          .prepare(
+            [
+              "INSERT INTO ativos",
+              "(",
+              "id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m,",
+              "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json, data_cadastro, data_aquisicao",
+              ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ].join(" "),
+          )
+          .bind(
+            crypto.randomUUID(),
+            usuarioId,
+            item.ticker ?? null,
+            item.nome || item.ticker || "Ativo",
+            item.categoria,
+            item.plataforma ?? null,
+            quantidade,
+            Number(precoMedioUnitario.toFixed(8)),
+            Number(valorTotal.toFixed(2)),
+            0,
+            0,
+            item.tickerCanonico ?? null,
+            item.nomeCanonico ?? null,
+            item.identificadorCanonico ?? null,
+            item.cnpjFundo ?? null,
+            item.isin ?? null,
+            item.aliases ? JSON.stringify(item.aliases) : null,
+            new Date().toISOString(),
+            item.dataOperacao || new Date().toISOString().slice(0, 10),
+          ),
+      );
+    }
+
+    // --- Patrimônio (imóveis, veículos, poupança) → tabela posicoes_financeiras ---
+    for (const item of patrimonioItems) {
+      const meta = metaPatrimonio(item.categoria);
+      const metadados = item.metadados ?? {};
+      const valorAtual = Number(item.valor || 0);
+      const custoAquisicao = valorAtual; // sem info de custo separado na importação
+
+      statements.push(
+        this.db
+          .prepare(
+            [
+              "INSERT INTO posicoes_financeiras",
+              "(id, usuario_id, tipo, nome, valor_atual, custo_aquisicao, liquidez, risco, categoria, metadata_json, ativo, criado_em, atualizado_em)",
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+            ].join(" "),
+          )
+          .bind(
+            crypto.randomUUID(),
+            usuarioId,
+            item.categoria, // tipo: imovel | veiculo | poupanca
+            item.nome,
+            valorAtual,
+            custoAquisicao,
+            meta.liquidez,
+            meta.risco,
+            meta.categoriaPos,
+            JSON.stringify(metadados),
+            new Date().toISOString(),
+            new Date().toISOString(),
+          ),
+      );
+    }
+
     if (statements.length > 0) {
       await this.db.batch(statements);
     }
 
     await this.db.prepare("UPDATE importacoes SET status = 'confirmado' WHERE id = ?").bind(importacaoId).run();
-    const itensConfirmados = selecionados.length;
-    return { itensConfirmados, itensIgnorados: itens.length - itensConfirmados };
+    return { itensConfirmados: selecionados.length, itensIgnorados: itens.length - selecionados.length };
   }
 }

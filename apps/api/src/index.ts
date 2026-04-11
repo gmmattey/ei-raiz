@@ -30,19 +30,35 @@ import {
   obterLogsAuditoriaAdmin,
   usuarioEhAdmin,
 } from "./configuracao-produto";
+import { handleFinancialRoutes } from "./server/routes/financial.routes";
+import { BrapiProvider } from "./server/providers/brapi.provider";
+import { MarketDataService } from "./server/services/market-data.service";
+import { SessionMarketService } from "./server/services/session-market.service";
+import { UnifiedScoreService } from "./server/services/unified-score.service";
 
 type Env = {
   DB: D1Database;
   JWT_SECRET: string;
   ADMIN_TOKEN?: string;
   ADMIN_EMAILS?: string;
+  BRAPI_TOKEN?: string;
+  BRAPI_BASE_URL?: string;
+  CVM_BASE_URL?: string;
+  PASSWORD_RESET_WEBHOOK_URL?: string;
 };
 
 type ServiceError = { ok: false; status: number; codigo: string; mensagem: string; detalhes?: unknown };
 type ServiceSuccess<T> = { ok: true; dados: T };
 type ServiceResponse<T> = ServiceSuccess<T> | ServiceError;
+const MASSA_TESTE_EI_RAIZ = {
+  nome: "Teste EI Raiz",
+  cpf: "12345678909",
+  email: "teste.eiraiz+1@gmail.com",
+  senha: "Teste@1234",
+} as const;
 
-const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/decisoes", "/api/posicoes", "/api/app", "/api/admin", "/api/telemetria"];
+const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/decisoes", "/api/posicoes", "/api/app", "/api/admin", "/api/telemetria", "/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score"];
+const forcedFinancialPrefixes = ["/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score"];
 const categoriasPermitidas: CategoriaAtivo[] = ["acao", "fundo", "previdencia", "renda_fixa"];
 
 type StatusAtualizacaoMercado = "atualizado" | "atrasado" | "indisponivel";
@@ -200,11 +216,26 @@ const contextoFinanceiroSchema = z.object({
     .default([]),
 });
 
-const uploadImportacaoSchema = z.object({
+// Schema legado CSV
+const uploadImportacaoCsvSchema = z.object({
   nomeArquivo: z.string().min(1),
   conteudo: z.string().min(1),
   tipoArquivo: z.literal("csv"),
 });
+
+// Schema XLSX: itens pré-parseados no frontend por aba
+const itemXlsxSchema = z.object({
+  aba: z.enum(["acoes", "fundos", "imoveis", "veiculos", "poupanca"]),
+  linha: z.number().int().positive(),
+}).passthrough();
+
+const uploadImportacaoXlsxSchema = z.object({
+  nomeArquivo: z.string().min(1),
+  tipoArquivo: z.literal("xlsx"),
+  itens: z.array(itemXlsxSchema).min(1),
+});
+
+const uploadImportacaoSchema = z.union([uploadImportacaoCsvSchema, uploadImportacaoXlsxSchema]);
 
 const confirmarImportacaoSchema = z.object({
   itensValidos: z.array(z.number().int().positive()),
@@ -341,10 +372,13 @@ const isPublicRoute = (pathname: string): boolean =>
   pathname === "/api/auth/recuperar-senha" ||
   pathname === "/api/auth/recuperar-acesso" ||
   pathname === "/api/auth/redefinir-senha" ||
+  pathname === "/api/admin/test-data/reset" ||
   pathname === "/api/telemetria/evento" ||
   pathname === "/api/app/content" ||
   pathname === "/api/app/corretoras" ||
-  pathname === "/api/app/simulacoes/parametros";
+  pathname === "/api/app/simulacoes/parametros" ||
+  pathname.startsWith("/api/market/") ||
+  pathname.startsWith("/api/funds/");
 
 const extrairToken = (request: Request): string | null => {
   const auth = request.headers.get("authorization");
@@ -358,12 +392,31 @@ const getAuthService = (env: Env): ServicoAutenticacaoPadrao =>
   new ServicoAutenticacaoPadrao({
     repositorio: new RepositorioAutenticacaoD1(env.DB),
     segredoJWT: env.JWT_SECRET || "dev-secret",
+    notificarRecuperacaoSenha: async ({ email, token, expiraEm }) => {
+      const webhook = env.PASSWORD_RESET_WEBHOOK_URL?.trim();
+      if (!webhook) return;
+      await fetch(webhook, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "password_reset",
+          email,
+          token,
+          expiraEm,
+        }),
+      });
+    },
   });
 
 const getPerfilService = (env: Env): ServicoPerfilPadrao => new ServicoPerfilPadrao(new RepositorioPerfilD1(env.DB));
 const getHistoricoService = (env: Env): ServicoHistoricoPadrao => new ServicoHistoricoPadrao(new RepositorioHistoricoD1(env.DB));
 const getInsightsService = (env: Env): ServicoInsightsPadrao => new ServicoInsightsPadrao(new RepositorioInsightsD1(env.DB));
-const getCarteiraService = (env: Env): ServicoCarteiraPadrao => new ServicoCarteiraPadrao({ repositorio: new RepositorioCarteiraD1(env.DB) });
+const getCarteiraService = (env: Env): ServicoCarteiraPadrao =>
+  new ServicoCarteiraPadrao({
+    repositorio: new RepositorioCarteiraD1(env.DB),
+    brapiToken: env.BRAPI_TOKEN,
+    brapiBaseUrl: env.BRAPI_BASE_URL,
+  });
 const getDecisoesService = (env: Env): ServicoDecisoesPadrao => new ServicoDecisoesPadrao(new RepositorioDecisoesD1(env.DB));
 const getImportacaoService = (env: Env): ServicoImportacaoPadrao =>
   new ServicoImportacaoPadrao({
@@ -371,6 +424,20 @@ const getImportacaoService = (env: Env): ServicoImportacaoPadrao =>
     repositorio: new RepositorioImportacaoD1(env.DB),
     parsers: [new ParserCsvGenerico()],
   });
+
+const getMarketRefreshService = (env: Env): SessionMarketService | null => {
+  const token = env.BRAPI_TOKEN?.trim();
+  if (!token) return null;
+  const market = new MarketDataService({
+    db: env.DB,
+    provider: new BrapiProvider({
+      token,
+      baseUrl: env.BRAPI_BASE_URL?.trim() || "https://brapi.dev/api",
+    }),
+  });
+  return new SessionMarketService(env.DB, market);
+};
+const getUnifiedScoreService = (env: Env): UnifiedScoreService => new UnifiedScoreService(env.DB);
 
 async function parseJsonBody(request: Request): Promise<unknown> {
   try {
@@ -380,7 +447,52 @@ async function parseJsonBody(request: Request): Promise<unknown> {
   }
 }
 
+async function resetMassaTesteEiRaiz(env: Env): Promise<{ resetado: boolean; email: string; cpf: string }> {
+  const candidato = await env.DB
+    .prepare("SELECT id FROM usuarios WHERE cpf = ? OR email = ? LIMIT 1")
+    .bind(MASSA_TESTE_EI_RAIZ.cpf, MASSA_TESTE_EI_RAIZ.email)
+    .first<{ id: string }>();
+
+  if (candidato?.id) {
+    const usuarioId = candidato.id;
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM telemetria_eventos WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM simulacoes WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM posicoes_financeiras WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM perfil_contexto_financeiro WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM recuperacoes_acesso WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM usuarios WHERE id = ?").bind(usuarioId),
+    ]);
+  }
+
+  await getAuthService(env).registrar(MASSA_TESTE_EI_RAIZ);
+  return { resetado: true, email: MASSA_TESTE_EI_RAIZ.email, cpf: MASSA_TESTE_EI_RAIZ.cpf };
+}
+
+async function calcularRetornoCdiDesde(dataInicioIso: string): Promise<number> {
+  const inicio = new Date(dataInicioIso);
+  if (Number.isNaN(inicio.getTime())) return 0;
+  const fim = new Date();
+  const d1 = `${String(inicio.getDate()).padStart(2, "0")}/${String(inicio.getMonth() + 1).padStart(2, "0")}/${inicio.getFullYear()}`;
+  const d2 = `${String(fim.getDate()).padStart(2, "0")}/${String(fim.getMonth() + 1).padStart(2, "0")}/${fim.getFullYear()}`;
+  const response = await fetch(
+    `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4389/dados?formato=json&dataInicial=${encodeURIComponent(d1)}&dataFinal=${encodeURIComponent(d2)}`,
+  );
+  if (!response.ok) return 0;
+  const series = (await response.json()) as Array<{ valor: string }>;
+  if (!Array.isArray(series) || series.length === 0) return 0;
+  let acumulado = 1;
+  for (const ponto of series) {
+    const taxa = Number.parseFloat(String(ponto.valor).replace(",", "."));
+    if (Number.isFinite(taxa)) acumulado *= 1 + taxa / 100;
+  }
+  return Number(((acumulado - 1) * 100).toFixed(2));
+}
+
 async function dispatch(pathname: string, request: Request, env: Env, sessao: SessaoUsuarioSaida | null): Promise<ServiceResponse<unknown>> {
+  const financialRoute = await handleFinancialRoutes(pathname, request, env);
+  if (financialRoute) return financialRoute;
+
   const authService = getAuthService(env);
   const carteiraService = getCarteiraService(env);
   const perfilService = getPerfilService(env);
@@ -465,6 +577,14 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     return { ok: true, dados: { registrado: true } };
   }
 
+  if (pathname === "/api/admin/test-data/reset" && request.method === "POST") {
+    const tokenHeader = request.headers.get("x-admin-token");
+    if (!env.ADMIN_TOKEN || !tokenHeader || tokenHeader !== env.ADMIN_TOKEN) {
+      return { ok: false, status: 403, codigo: "ACESSO_NEGADO", mensagem: "Token administrativo inválido" };
+    }
+    return { ok: true, dados: await resetMassaTesteEiRaiz(env) };
+  }
+
   if (!sessao) return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
 
   const validarAdmin = async (): Promise<ServiceError | null> => {
@@ -482,7 +602,21 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
   }
 
   if (pathname === "/api/carteira/resumo" && request.method === "GET") {
-    return { ok: true, dados: await carteiraService.obterResumo(sessao.usuario.id) };
+    const refresh = getMarketRefreshService(env);
+    if (refresh) {
+      try {
+        await refresh.refreshUserListedAssets(sessao.usuario.id);
+      } catch {
+        // não bloqueia resposta da carteira
+      }
+    }
+    const resumo = await carteiraService.obterResumo(sessao.usuario.id);
+    try {
+      const scoreInsights = await insightsService.calcularScore(sessao.usuario.id);
+      return { ok: true, dados: { ...resumo, score: scoreInsights.score } };
+    } catch {
+      return { ok: true, dados: resumo };
+    }
   }
 
   if (pathname === "/api/carteira/benchmark" && request.method === "GET") {
@@ -501,11 +635,27 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
   }
 
   if (pathname === "/api/carteira/ativos" && request.method === "GET") {
+    const refresh = getMarketRefreshService(env);
+    if (refresh) {
+      try {
+        await refresh.refreshUserListedAssets(sessao.usuario.id);
+      } catch {
+        // não bloqueia resposta da carteira
+      }
+    }
     const ativos = (await carteiraService.listarAtivos(sessao.usuario.id)) as AtivoComMercado[];
     return { ok: true, dados: ativos.map(serializarAtivoMercado) };
   }
 
   if (pathname.startsWith("/api/carteira/categoria/") && request.method === "GET") {
+    const refresh = getMarketRefreshService(env);
+    if (refresh) {
+      try {
+        await refresh.refreshUserListedAssets(sessao.usuario.id);
+      } catch {
+        // não bloqueia resposta da carteira
+      }
+    }
     const categoria = pathname.replace("/api/carteira/categoria/", "") as CategoriaAtivo;
     if (!categoriasPermitidas.includes(categoria)) {
       return { ok: false, status: 400, codigo: "CATEGORIA_INVALIDA", mensagem: "Categoria inválida" };
@@ -530,7 +680,16 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     const inicio = new Date(baseComparacao);
     const hoje = new Date();
     const diffMeses = Math.max(1, (hoje.getFullYear() - inicio.getFullYear()) * 12 + (hoje.getMonth() - inicio.getMonth()) + 1);
-    const benchmark = await carteiraService.obterComparativoBenchmark(sessao.usuario.id, diffMeses);
+    const benchmarkCarteira = await carteiraService.obterComparativoBenchmark(sessao.usuario.id, diffMeses);
+    const cdiRetornoPeriodo = await calcularRetornoCdiDesde(baseComparacao);
+    const ativoRetornoPeriodo =
+      typeof ativo.ganhoPerdaPercentual === "number" && Number.isFinite(ativo.ganhoPerdaPercentual) ? Number(ativo.ganhoPerdaPercentual.toFixed(2)) : 0;
+    const benchmark = {
+      ...benchmarkCarteira,
+      carteiraRetornoPeriodo: ativoRetornoPeriodo,
+      cdiRetornoPeriodo,
+      excessoRetorno: Number((ativoRetornoPeriodo - cdiRetornoPeriodo).toFixed(2)),
+    };
 
     const movimentos = await env.DB
       .prepare(
@@ -1004,11 +1163,21 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
 
   if (pathname === "/api/importacao/upload" && request.method === "POST") {
     const body = uploadImportacaoSchema.parse(await parseJsonBody(request));
+    if (body.tipoArquivo === "xlsx") {
+      const preview = await importacaoService.gerarPreview({
+        usuarioId: sessao.usuario.id,
+        nomeArquivo: body.nomeArquivo,
+        tipoArquivo: "xlsx",
+        itens: body.itens as import("@ei/contratos").ItemPatrimonioBruto[],
+      });
+      return { ok: true, dados: preview };
+    }
+    // CSV legado
     const preview = await importacaoService.gerarPreview({
       usuarioId: sessao.usuario.id,
       nomeArquivo: body.nomeArquivo,
       conteudo: body.conteudo,
-      tipoArquivo: body.tipoArquivo,
+      tipoArquivo: "csv",
     });
     return { ok: true, dados: preview };
   }
@@ -1025,51 +1194,153 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     return { ok: true, dados: confirmacao };
   }
   if (pathname === "/api/insights/score" && request.method === "GET") {
-    const score = await insightsService.calcularScore(sessao.usuario.id);
-    return { ok: true, dados: score };
+    try {
+      const refresh = getMarketRefreshService(env);
+      if (refresh) {
+        try {
+          await refresh.refreshUserListedAssets(sessao.usuario.id);
+        } catch {
+          // refresh de mercado não pode derrubar leitura de insights
+        }
+      }
+      const score = await insightsService.calcularScore(sessao.usuario.id);
+      return { ok: true, dados: score };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 500,
+        codigo: "ERRO_INSIGHTS_SCORE",
+        mensagem: "Falha ao calcular score de insights",
+        detalhes: { message: error instanceof Error ? error.message : String(error) },
+      };
+    }
   }
 
   if (pathname === "/api/insights/diagnostico" && request.method === "GET") {
-    const diagnostico = await insightsService.gerarDiagnostico(sessao.usuario.id);
-    return { ok: true, dados: diagnostico };
+    try {
+      const refresh = getMarketRefreshService(env);
+      if (refresh) {
+        try {
+          await refresh.refreshUserListedAssets(sessao.usuario.id);
+        } catch {
+          // refresh de mercado não pode derrubar leitura de insights
+        }
+      }
+      const diagnostico = await insightsService.gerarDiagnostico(sessao.usuario.id);
+      return { ok: true, dados: diagnostico };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 500,
+        codigo: "ERRO_INSIGHTS_DIAGNOSTICO",
+        mensagem: "Falha ao gerar diagnóstico de insights",
+        detalhes: { message: error instanceof Error ? error.message : String(error) },
+      };
+    }
   }
 
   if (pathname === "/api/insights/resumo" && request.method === "GET") {
-    const resumo = await insightsService.gerarResumo(sessao.usuario.id);
-    const ativosMercado = (await carteiraService.listarAtivos(sessao.usuario.id)) as AtivoComMercado[];
-    const atualizacaoMercado = resumirAtualizacaoMercado(ativosMercado);
-    const confiancaDiagnostico = atualizacaoMercado.statusGeral === "atualizado" ? "alta" : "limitada";
-    const mensagemConfianca =
-      confiancaDiagnostico === "alta"
-        ? resumo.diagnostico.mensagem
-        : `${resumo.diagnostico.mensagem} Atenção: parte das cotações está ${
-            atualizacaoMercado.statusGeral === "atrasado" ? "atrasada" : "indisponível"
-          }; revise antes de decisão crítica.`;
+    try {
+      const refresh = getMarketRefreshService(env);
+      let refreshInfo: { refreshed: number; timestamp: string } | null = null;
+      if (refresh) {
+        try {
+          refreshInfo = await refresh.refreshUserListedAssets(sessao.usuario.id);
+        } catch {
+          refreshInfo = null;
+        }
+      }
+      const resumo = await insightsService.gerarResumo(sessao.usuario.id);
+      let scoreUnificado: Awaited<ReturnType<UnifiedScoreService["calculateForUser"]>> | null = null;
+      try {
+        scoreUnificado = await getUnifiedScoreService(env).calculateForUser(sessao.usuario.id);
+      } catch {
+        scoreUnificado = null;
+      }
+      const ativosMercado = (await carteiraService.listarAtivos(sessao.usuario.id)) as AtivoComMercado[];
+      const atualizacaoMercado = resumirAtualizacaoMercado(ativosMercado);
+      const confiancaDiagnostico = atualizacaoMercado.statusGeral === "atualizado" ? "alta" : "limitada";
+      const mensagemConfianca =
+        confiancaDiagnostico === "alta"
+          ? resumo.diagnostico.mensagem
+          : `${resumo.diagnostico.mensagem} Atenção: parte das cotações está ${
+              atualizacaoMercado.statusGeral === "atrasado" ? "atrasada" : "indisponível"
+            }; revise antes de decisão crítica.`;
 
-    return {
-      ok: true,
-      dados: {
-        scoreGeral: resumo.scoreDetalhado.score,
-        pilares: resumo.scoreDetalhado.pilares,
-        score: resumo.scoreDetalhado,
-        diagnostico: resumo.diagnosticoLegado,
-        riscoPrincipal: (resumo.riscoPrincipal ?? null) as RiscoPrincipal | null,
-        acaoPrioritaria: (resumo.acaoPrioritaria ?? null) as AcaoPrioritaria | null,
-        retorno: resumo.retorno,
-        classificacao: resumo.classificacao,
-        diagnosticoFinal: {
-          ...resumo.diagnostico,
-          mensagem: mensagemConfianca,
+      return {
+        ok: true,
+        dados: {
+          scoreGeral: resumo.scoreDetalhado.score,
+          pilares: resumo.scoreDetalhado.pilares,
+          score: resumo.scoreDetalhado,
+          diagnostico: resumo.diagnosticoLegado,
+          riscoPrincipal: (resumo.riscoPrincipal ?? null) as RiscoPrincipal | null,
+          acaoPrioritaria: (resumo.acaoPrioritaria ?? null) as AcaoPrioritaria | null,
+          retorno: resumo.retorno,
+          classificacao: resumo.classificacao,
+          diagnosticoFinal: {
+            ...resumo.diagnostico,
+            mensagem: mensagemConfianca,
+          },
+          insightPrincipal: resumo.diagnostico.insightPrincipal,
+          penalidadesAplicadas: resumo.penalidadesAplicadas,
+          impactoDecisoesRecentes: resumo.impactoDecisoesRecentes,
+          patrimonioConsolidado: resumo.patrimonioConsolidado,
+          patrimonio_consolidado: resumo.patrimonioConsolidado,
+          pesosScoreProprietario: resumo.pesosProprietarios,
+          pesos_score_proprietario: resumo.pesosProprietarios,
+          scoreUnificado,
+          score_unificado: scoreUnificado,
+          confiancaDiagnostico,
+          confianca_diagnostico: confiancaDiagnostico,
+          atualizacaoMercado,
+          atualizacao_mercado: atualizacaoMercado,
+          dadosMercadoSessao: refreshInfo
+            ? { status: "atualizado_nesta_sessao", timestamp: refreshInfo.timestamp, ativosAtualizados: refreshInfo.refreshed }
+            : { status: "cache_ou_indisponivel", timestamp: null, ativosAtualizados: 0 },
+          dados_mercado_sessao: refreshInfo
+            ? { status: "atualizado_nesta_sessao", timestamp: refreshInfo.timestamp, ativosAtualizados: refreshInfo.refreshed }
+            : { status: "cache_ou_indisponivel", timestamp: null, ativosAtualizados: 0 },
         },
-        insightPrincipal: resumo.diagnostico.insightPrincipal,
-        penalidadesAplicadas: resumo.penalidadesAplicadas,
-        impactoDecisoesRecentes: resumo.impactoDecisoesRecentes,
-        confiancaDiagnostico,
-        confianca_diagnostico: confiancaDiagnostico,
-        atualizacaoMercado,
-        atualizacao_mercado: atualizacaoMercado,
-      },
-    };
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 500,
+        codigo: "ERRO_INSIGHTS_RESUMO",
+        mensagem: "Falha ao gerar resumo de insights",
+        detalhes: { message: error instanceof Error ? error.message : String(error) },
+      };
+    }
+  }
+
+  if (pathname === "/api/score/unified/calculate" && request.method === "POST") {
+    const service = getUnifiedScoreService(env);
+    const body = (await parseJsonBody(request)) as Record<string, unknown>;
+    const requestedUserId = String(body.userId ?? "").trim();
+    const targetUserId = requestedUserId || sessao.usuario.id;
+    if (targetUserId !== sessao.usuario.id) {
+      const erro = await validarAdmin();
+      if (erro) return erro;
+    }
+    return { ok: true, dados: await service.calculateForUser(targetUserId) };
+  }
+
+  if (pathname === "/api/score/unified/preview" && request.method === "POST") {
+    const service = getUnifiedScoreService(env);
+    const body = (await parseJsonBody(request)) as Record<string, unknown>;
+    return { ok: true, dados: await service.preview(body) };
+  }
+
+  if (pathname.startsWith("/api/score/unified/") && pathname.endsWith("/history") && request.method === "GET") {
+    const service = getUnifiedScoreService(env);
+    const userId = pathname.replace("/api/score/unified/", "").replace("/history", "");
+    const alvo = userId || sessao.usuario.id;
+    if (alvo !== sessao.usuario.id) {
+      const erro = await validarAdmin();
+      if (erro) return erro;
+    }
+    return { ok: true, dados: await service.getHistory(alvo) };
   }
 
   if (pathname === "/api/admin/config" && request.method === "GET") {
@@ -1349,7 +1620,12 @@ export default {
     const { pathname } = new URL(request.url);
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
-    if (!routePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    if (!pathname.startsWith("/api/")) {
+      return json({ ok: false, erro: { codigo: "ROTA_INVALIDA", mensagem: "Prefixo de rota inválido" } }, 404);
+    }
+    const isAllowedPrefix = routePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+    const isForcedFinancialPrefix = forcedFinancialPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+    if (!isAllowedPrefix && !isForcedFinancialPrefix) {
       return json({ ok: false, erro: { codigo: "ROTA_INVALIDA", mensagem: "Prefixo de rota inválido" } }, 404);
     }
 

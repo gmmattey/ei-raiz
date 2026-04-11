@@ -1,13 +1,21 @@
-import type { ConfirmacaoImportacao, PreviewImportacao } from "@ei/contratos";
+import type { ConfirmacaoImportacao, ItemPatrimonioBruto, PreviewImportacao } from "@ei/contratos";
 import { apiRequest } from "./http";
 
-type UploadExtratoPayload = {
+type UploadCsvPayload = {
   nomeArquivo: string;
   conteudo: string;
   tipoArquivo: "csv";
 };
 
-export function uploadExtrato(payload: UploadExtratoPayload): Promise<PreviewImportacao> {
+type UploadXlsxPayload = {
+  nomeArquivo: string;
+  tipoArquivo: "xlsx";
+  itens: ItemPatrimonioBruto[];
+};
+
+type UploadPayload = UploadCsvPayload | UploadXlsxPayload;
+
+export function uploadExtrato(payload: UploadPayload): Promise<PreviewImportacao> {
   return apiRequest<PreviewImportacao>("/api/importacao/upload", {
     method: "POST",
     body: JSON.stringify(payload),

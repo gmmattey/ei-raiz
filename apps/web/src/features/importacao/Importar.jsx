@@ -1,330 +1,593 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, conteudoApi, importacaoApi, telemetriaApi } from '../../cliente-api';
-import { baixarTemplateImportacaoCsv } from '../../utils/importacaoTemplate';
-import { useConteudoApp } from '../../hooks/useConteudoApp';
+import { ApiError, importacaoApi, telemetriaApi } from '../../cliente-api';
+import { baixarTemplateXlsx } from '../../utils/importacaoTemplate';
+import { parseXlsx } from '../../utils/importacaoParser';
 import {
   UploadCloud,
   ArrowRight,
-  X,
-  Landmark,
   FileSpreadsheet,
   Loader2,
   AlertTriangle,
   CheckCircle2,
-  Clock3,
+  XCircle,
   RefreshCw,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  Info,
 } from 'lucide-react';
 
-const mapearErroUpload = (erro) => {
-  if (!(erro instanceof ApiError)) return 'Falha ao processar arquivo. Tente novamente.';
+// ─── Constantes de marca ──────────────────────────────────────────────────────
 
+const LABEL_ABA = {
+  acoes: '📈 Ações',
+  fundos: '🏦 Fundos',
+  imoveis: '🏠 Imóveis',
+  veiculos: '🚗 Veículos',
+  poupanca: '💰 Poupança',
+};
+
+const STATUS_LABEL = { ok: 'Válido', conflito: 'Conflito', erro: 'Erro' };
+const STATUS_CLASSE = {
+  ok: 'text-[#6FCF97] bg-[#6FCF97]/10 border border-[#6FCF97]/30',
+  conflito: 'text-[#F2C94C] bg-[#F2C94C]/10 border border-[#F2C94C]/30',
+  erro: 'text-[#E85C5C] bg-[#E85C5C]/10 border border-[#E85C5C]/30',
+};
+
+const SUGESTAO_ERRO = (item) => {
+  const obs = (item.observacao || '').toLowerCase();
+  if (item.status === 'conflito') return 'Este item já existe na sua carteira. Você pode ignorá-lo agora ou removê-lo manualmente antes de reimportar.';
+  if (obs.includes('ticker') && obs.includes('ação')) return 'Verifique se o ticker está correto (ex.: PETR4, VALE3). Letras maiúsculas, sem espaço.';
+  if (obs.includes('valor')) return 'Informe um valor positivo. Use ponto ou vírgula como separador decimal.';
+  if (obs.includes('data')) return 'Use o formato AAAA-MM-DD (ex.: 2026-01-15).';
+  if (obs.includes('quantidade')) return 'Informe a quantidade como número positivo.';
+  if (obs.includes('nome')) return 'O campo nome/descrição é obrigatório para este tipo.';
+  if (obs.includes('instituição')) return 'Informe o nome do banco ou instituição.';
+  if (obs.includes('montadora') || obs.includes('modelo')) return 'Montadora e modelo são campos obrigatórios para veículos.';
+  if (obs.includes('tipo')) return 'Informe o tipo corretamente. Consulte a aba Guia do template.';
+  return 'Revise os campos obrigatórios desta linha no arquivo e reimporte.';
+};
+
+// ─── Erros de upload ──────────────────────────────────────────────────────────
+
+const mapearErro = (erro) => {
+  if (!(erro instanceof ApiError)) {
+    return erro?.message?.includes('XLSX') ? erro.message : 'Falha ao processar o arquivo. Tente novamente.';
+  }
   switch (erro.code) {
-    case 'ARQUIVO_TIPO_INVALIDO':
-      return 'Arquivo inválido. Envie um CSV.';
-    case 'ARQUIVO_FORA_PADRAO':
-      return 'Arquivo fora do padrão esperado. Baixe o template e tente novamente.';
-    case 'API_INDISPONIVEL':
-      return 'API indisponível no momento. Tente novamente em instantes.';
-    default:
-      return 'Não foi possível processar a importação. Revise o arquivo e tente novamente.';
+    case 'ARQUIVO_TIPO_INVALIDO': return 'Formato inválido. Envie um arquivo .xlsx ou .csv.';
+    case 'ARQUIVO_FORA_PADRAO': return erro.message || 'Arquivo fora do padrão. Baixe o template e tente novamente.';
+    case 'API_INDISPONIVEL': return 'API indisponível. Tente novamente em instantes.';
+    default: return 'Não foi possível processar a importação. Revise o arquivo e tente novamente.';
   }
 };
 
-const statusLabel = {
-  ok: 'Válido',
-  conflito: 'Conflito',
-  erro: 'Erro',
-};
+// ─── Componentes auxiliares ───────────────────────────────────────────────────
 
-const statusClasse = {
-  ok: 'text-[#6FCF97] bg-[#6FCF97]/10',
-  conflito: 'text-[#F2C94C] bg-[#F2C94C]/10',
-  erro: 'text-[#E85C5C] bg-[#E85C5C]/10',
-};
+function StepIndicator({ step }) {
+  const passos = ['Upload', 'Revisão', 'Confirmação'];
+  const ativo = { upload: 0, processing: 1, review: 1, success: 2 }[step] ?? 0;
+  return (
+    <div className="flex items-center gap-3 justify-center mb-10">
+      {passos.map((label, i) => (
+        <React.Fragment key={label}>
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center transition-all ${
+                i < ativo ? 'bg-[#6FCF97] text-white' :
+                i === ativo ? 'bg-[#F56A2A] text-white' :
+                'bg-[#EFE7DC] text-[#0B1218]/40'
+              }`}
+            >
+              {i < ativo ? '✓' : i + 1}
+            </div>
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${i === ativo ? 'text-[#F56A2A]' : 'text-[#0B1218]/30'}`}>
+              {label}
+            </span>
+          </div>
+          {i < passos.length - 1 && <div className="w-8 h-px bg-[#EFE7DC]" />}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
 
-const sugerirAcao = (item) => {
-  const texto = (item.observacao || '').toLowerCase();
-  if (item.status === 'conflito') return 'Se for posição nova, ajuste ticker/plataforma para diferenciar; se for o mesmo ativo, mantenha ignorado.';
-  if (texto.includes('ticker não reconhecido')) return 'Corrija para um ticker válido (ex.: PETR4, VALE3).';
-  if (texto.includes('valor inválido')) return 'Revise o campo valor com número maior que zero e ponto para casas decimais.';
-  if (texto.includes('data inválida')) return 'Use data no formato AAAA-MM-DD.';
-  if (texto.includes('categoria inválida')) return 'Use apenas: acao, fundo, previdencia ou renda_fixa.';
-  if (texto.includes('identificação canônica inválida') || texto.includes('chave de identificação')) return 'Informe ticker/CNPJ/ISIN válido para permitir conciliação automática.';
-  return 'Revise a linha no CSV e reimporte para validar novamente.';
-};
+function ResumoCard({ icon, label, valor, cor }) {
+  return (
+    <div className="border border-[#EFE7DC] rounded-sm p-5 bg-white flex flex-col gap-2">
+      <p className="text-[10px] uppercase tracking-widest font-bold text-[#0B1218]/40">{label}</p>
+      <div className={`flex items-center gap-2 ${cor}`}>
+        {icon}
+        <p className="font-['Sora'] text-3xl font-bold">{valor}</p>
+      </div>
+    </div>
+  );
+}
 
-const columnsEsperadas = 'data,ticker,nome,categoria,plataforma,quantidade,valor';
+function ItemReview({ item, expandido, onToggle }) {
+  const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.valor || 0));
+
+  return (
+    <div className={`border-b border-[#EFE7DC]/50 last:border-0 transition-colors ${item.status === 'ok' ? 'hover:bg-white/60' : 'hover:bg-white'}`}>
+      <button
+        type="button"
+        className="w-full p-4 text-left flex items-start gap-3"
+        onClick={onToggle}
+      >
+        <div className="mt-0.5 shrink-0">
+          {item.status === 'ok' && <CheckCircle2 size={16} className="text-[#6FCF97]" />}
+          {item.status === 'conflito' && <AlertTriangle size={16} className="text-[#F2C94C]" />}
+          {item.status === 'erro' && <XCircle size={16} className="text-[#E85C5C]" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">
+              {item.ticker || item.nome || 'Item sem identificação'}
+            </p>
+            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${STATUS_CLASSE[item.status]}`}>
+              {STATUS_LABEL[item.status]}
+            </span>
+            <span className="text-[10px] text-[#0B1218]/40 font-medium">
+              {LABEL_ABA[item.abaOrigem] ?? item.abaOrigem}
+            </span>
+          </div>
+          <p className="text-[11px] text-[#0B1218]/60">
+            {[item.nome !== item.ticker && item.nome, item.plataforma].filter(Boolean).join(' · ') || item.categoria}
+          </p>
+          {item.observacao && (
+            <p className="text-[11px] text-[#E85C5C] mt-1 font-medium">{item.observacao}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">{valorFmt}</p>
+          {item.status !== 'ok' && (
+            expandido ? <ChevronUp size={14} className="text-[#0B1218]/40" /> : <ChevronDown size={14} className="text-[#0B1218]/40" />
+          )}
+        </div>
+      </button>
+
+      {expandido && item.status !== 'ok' && (
+        <div className="px-4 pb-4 ml-7">
+          <div className="bg-[#FAFAFA] border border-[#EFE7DC] rounded-sm p-3">
+            <p className="text-[11px] text-[#0B1218]/70 leading-relaxed">
+              <strong className="font-semibold">Como resolver:</strong> {SUGESTAO_ERRO(item)}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function Importar() {
   const navigate = useNavigate();
-  const { texto } = useConteudoApp();
   const fileInputRef = useRef(null);
 
   const [step, setStep] = useState('upload');
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [erroUpload, setErroUpload] = useState('');
   const [preview, setPreview] = useState(null);
   const [isConfirmando, setIsConfirmando] = useState(false);
   const [confirmError, setConfirmError] = useState('');
-  const [corretoras, setCorretoras] = useState([]);
+  const [expandidos, setExpandidos] = useState({});
+  const [filtroAba, setFiltroAba] = useState('todos');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
 
-  useEffect(() => {
-    let ativo = true;
-    (async () => {
-      try {
-        const lista = await conteudoApi.obterCorretorasSuportadas();
-        if (ativo) setCorretoras(lista);
-      } catch {
-        if (ativo) setCorretoras([]);
-      }
-    })();
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  // ─── Upload e parse ─────────────────────────────────────────────────────────
 
   const iniciarUpload = async (file) => {
     if (!file) return;
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setErroUpload('Formato inválido: envie um arquivo .csv.');
+    const isXlsx = file.name.toLowerCase().endsWith('.xlsx');
+    const isCsv = file.name.toLowerCase().endsWith('.csv');
+
+    if (!isXlsx && !isCsv) {
+      setErroUpload('Formato inválido. Envie um arquivo .xlsx (recomendado) ou .csv.');
       return;
     }
 
     setErroUpload('');
-    setSelectedFileName(file.name);
+    setSelectedFile(file);
     setStep('processing');
 
     try {
-      await telemetriaApi.registrarEventoTelemetria('import_started', { arquivo: file.name });
-      const conteudo = await file.text();
-      const resposta = await importacaoApi.uploadExtrato({
-        nomeArquivo: file.name,
-        conteudo,
-        tipoArquivo: 'csv',
-      });
+      await telemetriaApi.registrarEventoTelemetria('import_started', { arquivo: file.name, tipo: isXlsx ? 'xlsx' : 'csv' });
+
+      let resposta;
+
+      if (isXlsx) {
+        // Parse no frontend, envia JSON estruturado
+        const resultado = await parseXlsx(file);
+
+        if (resultado.itens.length === 0) {
+          setErroUpload('Nenhum item encontrado no arquivo. Verifique se preencheu pelo menos uma aba do template.');
+          setStep('upload');
+          return;
+        }
+
+        resposta = await importacaoApi.uploadExtrato({
+          nomeArquivo: file.name,
+          tipoArquivo: 'xlsx',
+          itens: resultado.itens,
+        });
+      } else {
+        // CSV legado
+        const conteudo = await file.text();
+        resposta = await importacaoApi.uploadExtrato({
+          nomeArquivo: file.name,
+          conteudo,
+          tipoArquivo: 'csv',
+        });
+      }
+
       setPreview(resposta);
       await telemetriaApi.registrarEventoTelemetria('import_reviewed', {
         importacaoId: resposta.importacaoId,
-        validos: resposta.resumo?.validos ?? 0,
-        conflitos: resposta.resumo?.conflitos ?? 0,
-        erros: resposta.resumo?.erros ?? 0,
+        validos: resposta.validos ?? 0,
+        conflitos: resposta.conflitos ?? 0,
+        erros: resposta.erros ?? 0,
       });
       setStep('review');
     } catch (error) {
-      setErroUpload(mapearErroUpload(error));
+      setErroUpload(mapearErro(error));
       setStep('upload');
     }
   };
 
-  const itensVisiveis = preview?.itens ?? [];
-  const itensValidos = itensVisiveis.filter((item) => item.status === 'ok');
-  const itensConflito = itensVisiveis.filter((item) => item.status === 'conflito');
-  const itensErro = itensVisiveis.filter((item) => item.status === 'erro');
+  // ─── Confirmação ────────────────────────────────────────────────────────────
 
   const confirmarImportacao = async () => {
     if (!preview || isConfirmando) return;
-
     setIsConfirmando(true);
     setConfirmError('');
 
     try {
-      await importacaoApi.confirmarImportacao(preview.importacaoId, itensValidos.map((item) => item.linha));
+      const linhasValidas = (preview.itens ?? [])
+        .filter((item) => item.status === 'ok')
+        .map((item) => item.linha);
+
+      await importacaoApi.confirmarImportacao(preview.importacaoId, linhasValidas);
       await telemetriaApi.registrarEventoTelemetria('import_confirmed', {
         importacaoId: preview.importacaoId,
-        itensValidos: itensValidos.length,
+        itensValidos: linhasValidas.length,
       });
       localStorage.setItem('hasSeenPreInsight', 'true');
       navigate('/home', { replace: true });
     } catch (error) {
-      if (error instanceof ApiError) setConfirmError('Não foi possível confirmar agora. Revise os itens e tente novamente.');
-      else setConfirmError('Falha ao confirmar importação.');
+      setConfirmError(error instanceof ApiError ? 'Não foi possível confirmar agora. Tente novamente.' : 'Falha ao confirmar importação.');
     } finally {
       setIsConfirmando(false);
     }
   };
 
+  // ─── Helpers de filtragem ────────────────────────────────────────────────────
+
+  const todosItens = preview?.itens ?? [];
+  const itensValidos = todosItens.filter((i) => i.status === 'ok');
+  const itensConflito = todosItens.filter((i) => i.status === 'conflito');
+  const itensErro = todosItens.filter((i) => i.status === 'erro');
+
+  const abasUnicas = [...new Set(todosItens.map((i) => i.abaOrigem))].filter(Boolean);
+
+  const itensFiltrados = todosItens.filter((item) => {
+    const okAba = filtroAba === 'todos' || item.abaOrigem === filtroAba;
+    const okStatus = filtroStatus === 'todos' || item.status === filtroStatus;
+    return okAba && okStatus;
+  });
+
+  const toggleExpandido = (linha) => {
+    setExpandidos((prev) => ({ ...prev, [linha]: !prev[linha] }));
+  };
+
+  // ─── Drag & Drop ────────────────────────────────────────────────────────────
+
+  const onDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const onDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
+  const onDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    iniciarUpload(e.dataTransfer.files?.[0]);
+  };
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className="w-full bg-white font-['Inter'] text-[#0B1218] animate-in fade-in duration-500">
       <div className="w-full max-w-[896px]">
-        <div className="mb-10 flex items-center justify-center gap-4 text-[11px] font-bold uppercase tracking-widest text-[#0B1218]/40">
-          <span className={step === 'upload' ? 'text-[#F56A2A]' : ''}>1 Upload</span>
-          <span>•</span>
-          <span className={step === 'review' || step === 'processing' ? 'text-[#F56A2A]' : ''}>2 Revisão</span>
-          <span>•</span>
-          <span className={step === 'review' && preview ? 'text-[#F56A2A]' : ''}>3 Confirmação</span>
-        </div>
+        <StepIndicator step={step} />
 
-        <div className="text-center mb-16">
-          <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-4">{texto("importacao.upload.titulo", "Atualizar Carteira")}</h1>
-          <p className="text-[#0B1218]/40 text-sm font-medium">{texto("importacao.upload.descricao", "Envie seu CSV e valide linha por linha antes de confirmar.")}</p>
-        </div>
-
+        {/* ── UPLOAD ── */}
         {step === 'upload' && (
-          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center">
+              <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-3">
+                Importar Patrimônio
+              </h1>
+              <p className="text-[#0B1218]/50 text-sm font-medium max-w-md mx-auto">
+                Baixe o template, preencha com seus dados e faça o upload. Você revisará tudo antes de confirmar.
+              </p>
+            </div>
+
+            {/* Template CTA */}
+            <div className="border border-[#F56A2A]/30 bg-[#F56A2A]/5 rounded-sm p-6 flex items-start gap-5">
+              <div className="w-10 h-10 bg-[#F56A2A] rounded-sm flex items-center justify-center shrink-0">
+                <FileSpreadsheet size={20} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-['Sora'] text-sm font-bold mb-1">
+                  Template oficial · XLSX com múltiplas abas
+                </h3>
+                <p className="text-[11px] text-[#0B1218]/60 leading-relaxed mb-1">
+                  Abas incluídas: <span className="font-semibold">Guia · Ações · Fundos · Imóveis · Veículos · Poupança</span>
+                </p>
+                <p className="text-[11px] text-[#0B1218]/50 leading-relaxed mb-4">
+                  Cada aba contém campos específicos para aquele tipo de ativo, com exemplos e instruções visíveis.
+                </p>
+                <button
+                  type="button"
+                  onClick={baixarTemplateXlsx}
+                  className="inline-flex items-center gap-2 bg-[#F56A2A] text-white px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95e25] transition-all rounded-sm"
+                >
+                  <Download size={12} /> Baixar Template .xlsx
+                </button>
+              </div>
+            </div>
+
+            {/* Drop zone */}
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".xlsx,.csv"
               className="hidden"
-              onChange={(event) => iniciarUpload(event.target.files?.[0])}
+              onChange={(e) => iniciarUpload(e.target.files?.[0])}
             />
 
             <div
-              className={`border-2 border-dashed p-16 rounded-sm text-center cursor-pointer transition-colors bg-[#FAFAFA] group ${isDragging ? 'border-[#F56A2A]' : 'border-[#EFE7DC] hover:border-[#F56A2A]'}`}
+              className={`border-2 border-dashed p-16 rounded-sm text-center cursor-pointer transition-all bg-[#FAFAFA] group ${
+                isDragging ? 'border-[#F56A2A] bg-[#F56A2A]/5' : 'border-[#EFE7DC] hover:border-[#F56A2A] hover:bg-[#F56A2A]/3'
+              }`}
               onClick={() => fileInputRef.current?.click()}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setIsDragging(false);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                setIsDragging(false);
-                iniciarUpload(event.dataTransfer.files?.[0]);
-              }}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
             >
-              <UploadCloud size={48} className="mx-auto mb-6 text-[#0B1218]/10 group-hover:text-[#F56A2A] transition-colors" />
-              <h3 className="font-['Sora'] text-lg font-bold mb-2">Arraste o CSV aqui ou clique para selecionar</h3>
-              <p className="text-xs text-[#0B1218]/40 font-medium">Formato aceito agora: CSV no padrão do template</p>
-              <button className="mt-8 bg-[#0B1218] text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all">
+              <UploadCloud
+                size={48}
+                className={`mx-auto mb-6 transition-colors ${isDragging ? 'text-[#F56A2A]' : 'text-[#0B1218]/10 group-hover:text-[#F56A2A]'}`}
+              />
+              <h3 className="font-['Sora'] text-lg font-bold mb-2">
+                {isDragging ? 'Solte o arquivo aqui' : 'Arraste o arquivo ou clique para selecionar'}
+              </h3>
+              <p className="text-xs text-[#0B1218]/40 font-medium mb-6">
+                Formatos aceitos: <strong>.xlsx</strong> (recomendado) · <span className="text-[#0B1218]/30">.csv (legado)</span>
+              </p>
+              <button
+                type="button"
+                className="bg-[#0B1218] text-white px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all rounded-sm"
+              >
                 Selecionar arquivo
               </button>
-              {selectedFileName && <p className="mt-4 text-xs font-semibold text-[#0B1218]/60">{selectedFileName}</p>}
-              {erroUpload && <p className="mt-3 text-xs font-semibold text-[#E85C5C]">{erroUpload}</p>}
+              {selectedFile && (
+                <p className="mt-4 text-xs font-semibold text-[#0B1218]/60">{selectedFile.name}</p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 border border-[#EFE7DC] rounded-sm flex items-start gap-4">
-                <FileSpreadsheet className="text-[#F56A2A] shrink-0" size={24} />
-                <div>
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-2">Template Oficial</h4>
-                  <p className="text-[11px] text-[#0B1218]/60 leading-relaxed mb-3">Use o CSV padrão para evitar erro de estrutura.</p>
-                  <p className="text-[10px] text-[#0B1218]/40 mb-4">Cabeçalho esperado: {columnsEsperadas}</p>
-                  <button
-                    type="button"
-                    onClick={baixarTemplateImportacaoCsv}
-                    className="text-[10px] font-bold text-[#F56A2A] hover:underline uppercase tracking-widest"
-                  >
-                    Baixar Template
-                  </button>
-                </div>
+            {erroUpload && (
+              <div className="flex items-start gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-sm">
+                <XCircle size={16} className="text-[#E85C5C] shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-[#E85C5C]">{erroUpload}</p>
               </div>
+            )}
 
-              <div className="p-6 border border-[#EFE7DC] rounded-sm flex items-start gap-4 bg-[#FAFAFA]">
-                <Landmark className="text-[#0B1218]/20 shrink-0" size={24} />
-                <div>
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-2">{texto("importacao.corretoras.titulo", "Integrações bancárias")}</h4>
-                  <p className="text-[11px] text-[#0B1218]/60 leading-relaxed">{texto("importacao.corretoras.descricao", "Fluxo atual da plataforma: importação por CSV com revisão linha a linha antes de confirmar.")}</p>
-                  {corretoras.length > 0 && (
-                    <ul className="mt-3 space-y-1 text-[11px] text-[#0B1218]/70">
-                      {corretoras.map((corretora) => (
-                        <li key={corretora.codigo}>
-                          <span className="font-semibold">{corretora.nome}</span> · {corretora.status} · {corretora.mensagemAjuda}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+            {/* Tipos suportados */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { icon: '📈', label: 'Ações', desc: 'B3 / ETFs / FIIs' },
+                { icon: '🏦', label: 'Fundos', desc: 'Previdência / RF' },
+                { icon: '🏠', label: 'Imóveis', desc: 'Residencial / Comercial' },
+                { icon: '🚗', label: 'Veículos', desc: 'FIPE / Financiado' },
+                { icon: '💰', label: 'Poupança', desc: 'Por instituição' },
+              ].map(({ icon, label, desc }) => (
+                <div key={label} className="border border-[#EFE7DC] rounded-sm p-4 text-center">
+                  <p className="text-xl mb-2">{icon}</p>
+                  <p className="font-['Sora'] text-xs font-bold text-[#0B1218]">{label}</p>
+                  <p className="text-[10px] text-[#0B1218]/40 mt-0.5">{desc}</p>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
+        {/* ── PROCESSING ── */}
         {step === 'processing' && (
-          <div className="py-24 text-center animate-in zoom-in-95 duration-500">
-            <Loader2 size={48} className="mx-auto mb-8 text-[#F56A2A] animate-spin" />
-            <h2 className="font-['Sora'] text-2xl font-bold mb-4 tracking-tight uppercase">Validando seu arquivo...</h2>
+          <div className="py-32 text-center animate-in zoom-in-95 duration-500">
+            <div className="relative inline-flex items-center justify-center mb-8">
+              <Loader2 size={48} className="text-[#F56A2A] animate-spin" />
+            </div>
+            <h2 className="font-['Sora'] text-2xl font-bold mb-3 tracking-tight">
+              Validando seu arquivo...
+            </h2>
             <p className="text-sm text-[#0B1218]/40 font-medium max-w-xs mx-auto">
-              Estamos separando itens válidos, conflitos e erros de preenchimento.
+              Identificando itens válidos, conflitos e erros de preenchimento.
             </p>
           </div>
         )}
 
-        {step === 'review' && (
-          <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <ResumoStatus icon={<CheckCircle2 size={16} />} label="Válidos" valor={preview?.validos ?? 0} classe="text-[#6FCF97]" />
-              <ResumoStatus icon={<AlertTriangle size={16} />} label="Conflitos" valor={preview?.conflitos ?? 0} classe="text-[#F2C94C]" />
-              <ResumoStatus icon={<Clock3 size={16} />} label="Erros" valor={preview?.erros ?? 0} classe="text-[#E85C5C]" />
+        {/* ── REVIEW ── */}
+        {step === 'review' && preview && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+            <div className="text-center mb-2">
+              <h1 className="font-['Sora'] text-3xl font-bold tracking-tight mb-2">
+                Revisão da Importação
+              </h1>
+              <p className="text-sm text-[#0B1218]/50">
+                {preview.totalLinhas} {preview.totalLinhas === 1 ? 'item encontrado' : 'itens encontrados'} · confirme os válidos abaixo
+              </p>
             </div>
 
-            <div className="bg-[#FAFAFA] border border-[#EFE7DC] rounded-sm overflow-hidden mb-6 fade-in-up">
-              <div className="p-6 border-b border-[#EFE7DC] flex justify-between items-center gap-4 flex-wrap">
-                <h3 className="font-['Sora'] text-xs font-bold uppercase tracking-widest">Revisão da Importação</h3>
-                <button
-                  onClick={() => setStep('upload')}
-                  className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/60 hover:text-[#0B1218] transition-colors"
-                >
-                  <RefreshCw size={12} /> Reenviar arquivo
-                </button>
-              </div>
-
-              <div className="divide-y divide-[#EFE7DC]/50 max-h-[400px] overflow-y-auto custom-scrollbar-minimal">
-                {itensVisiveis.map((item) => (
-                  <div key={`${item.linha}-${item.ticker}`} className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 hover:bg-white transition-colors">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">Linha {item.linha} · {item.ticker || 'SEM TICKER'}</p>
-                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-widest ${statusClasse[item.status] || 'text-[#0B1218]/60 bg-[#EFE7DC]'}`}>
-                          {statusLabel[item.status] ?? item.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#0B1218]/70">{item.nome || 'Sem nome'} · {item.categoria} · {item.plataforma || 'Sem plataforma'}</p>
-                      {item.observacao && <p className="text-[11px] text-[#E85C5C] mt-1 font-medium">{item.observacao}</p>}
-                      {item.status !== 'ok' && (
-                        <p className="text-[11px] text-[#0B1218]/70 mt-1 italic">
-                          Sugestão: {sugerirAcao(item)}
-                        </p>
-                      )}
-                    </div>
-                    <p className="font-['Sora'] text-sm font-bold">R$ {Number(item.valor || 0).toFixed(2)}</p>
-                  </div>
-                ))}
-
-                {itensVisiveis.length === 0 && <p className="p-8 text-center text-sm text-[#0B1218]/50">Nenhum item encontrado para revisão.</p>}
-              </div>
+            {/* Summary cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <ResumoCard
+                icon={<CheckCircle2 size={18} />}
+                label="Válidos"
+                valor={preview.validos ?? 0}
+                cor="text-[#6FCF97]"
+              />
+              <ResumoCard
+                icon={<AlertTriangle size={18} />}
+                label="Conflitos"
+                valor={preview.conflitos ?? 0}
+                cor="text-[#F2C94C]"
+              />
+              <ResumoCard
+                icon={<XCircle size={18} />}
+                label="Erros"
+                valor={preview.erros ?? 0}
+                cor="text-[#E85C5C]"
+              />
             </div>
 
+            {/* Info banner */}
             {(itensConflito.length > 0 || itensErro.length > 0) && (
-              <div className="mb-6 p-4 border border-[#EFE7DC] bg-white rounded-sm text-xs text-[#0B1218]/70 leading-relaxed">
-                {itensConflito.length > 0 && <p>Conflitos: ativo já existe na carteira. Revise a linha e reimporte se necessário.</p>}
-                {itensErro.length > 0 && <p className="mt-2">Erros: ajuste as linhas marcadas no CSV (ticker, valor, data, categoria) e reenvie o arquivo.</p>}
+              <div className="flex items-start gap-3 p-4 border border-[#EFE7DC] bg-[#FAFAFA] rounded-sm">
+                <Info size={14} className="text-[#0B1218]/40 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-[#0B1218]/60 leading-relaxed">
+                  {itensConflito.length > 0 && (
+                    <span>
+                      <strong>{itensConflito.length} conflito{itensConflito.length > 1 ? 's' : ''}</strong>: ativo já existente.
+                      {' '}
+                    </span>
+                  )}
+                  {itensErro.length > 0 && (
+                    <span>
+                      <strong>{itensErro.length} erro{itensErro.length > 1 ? 's' : ''}</strong>: corrija no arquivo e reimporte para incluir.
+                    </span>
+                  )}
+                  {' '}Apenas os itens <span className="text-[#6FCF97] font-semibold">válidos</span> serão importados.
+                </p>
               </div>
             )}
 
-            <div className="flex gap-4">
-              <button onClick={() => setStep('upload')} className="flex-1 py-4 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all">
-                Voltar
-              </button>
+            {/* Filtros */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex gap-1">
+                {['todos', 'ok', 'conflito', 'erro'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFiltroStatus(s)}
+                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all ${
+                      filtroStatus === s
+                        ? 'bg-[#0B1218] text-white'
+                        : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50 hover:border-[#0B1218]/30'
+                    }`}
+                  >
+                    {s === 'todos' ? 'Todos' : STATUS_LABEL[s]}
+                  </button>
+                ))}
+              </div>
+              {abasUnicas.length > 1 && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroAba('todos')}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-sm transition-all ${filtroAba === 'todos' ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
+                  >
+                    Todas as abas
+                  </button>
+                  {abasUnicas.map((aba) => (
+                    <button
+                      key={aba}
+                      type="button"
+                      onClick={() => setFiltroAba(aba)}
+                      className={`px-3 py-1.5 text-[10px] font-bold rounded-sm transition-all ${filtroAba === aba ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
+                    >
+                      {LABEL_ABA[aba] ?? aba}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
-                onClick={confirmarImportacao}
-                disabled={itensValidos.length === 0 || isConfirmando}
-                className="flex-[2] py-4 bg-[#0B1218] disabled:opacity-40 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3"
+                type="button"
+                onClick={() => setStep('upload')}
+                className="ml-auto inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/50 hover:text-[#0B1218] transition-colors"
               >
-                {isConfirmando ? 'Confirmando...' : 'Confirmar itens válidos'} <ArrowRight size={14} />
+                <RefreshCw size={12} /> Reenviar arquivo
               </button>
             </div>
 
-            {confirmError && <p className="mt-3 text-xs font-semibold text-[#E85C5C]">{confirmError}</p>}
+            {/* Lista de itens */}
+            <div className="border border-[#EFE7DC] rounded-sm overflow-hidden bg-[#FAFAFA]">
+              <div className="max-h-[480px] overflow-y-auto divide-y divide-[#EFE7DC]/50">
+                {itensFiltrados.map((item) => (
+                  <ItemReview
+                    key={`${item.linha}-${item.ticker ?? item.nome}`}
+                    item={item}
+                    expandido={!!expandidos[item.linha]}
+                    onToggle={() => toggleExpandido(item.linha)}
+                  />
+                ))}
+                {itensFiltrados.length === 0 && (
+                  <p className="p-10 text-center text-sm text-[#0B1218]/40 font-medium">
+                    Nenhum item para este filtro.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Contagem final */}
+            {itensValidos.length > 0 && (
+              <div className="flex items-center gap-3 p-4 border border-[#6FCF97]/30 bg-[#6FCF97]/5 rounded-sm">
+                <CheckCircle2 size={14} className="text-[#6FCF97] shrink-0" />
+                <p className="text-[11px] text-[#0B1218]/70 font-medium">
+                  <strong>{itensValidos.length} {itensValidos.length === 1 ? 'item será importado' : 'itens serão importados'}</strong> para a sua carteira.
+                  {itensConflito.length > 0 && ` ${itensConflito.length} conflito${itensConflito.length > 1 ? 's' : ''} ignorado${itensConflito.length > 1 ? 's' : ''}.`}
+                  {itensErro.length > 0 && ` ${itensErro.length} erro${itensErro.length > 1 ? 's' : ''} ignorado${itensErro.length > 1 ? 's' : ''}.`}
+                </p>
+              </div>
+            )}
+
+            {/* Ações */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep('upload')}
+                className="flex-1 py-4 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all rounded-sm"
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarImportacao}
+                disabled={itensValidos.length === 0 || isConfirmando}
+                className="flex-[2] py-4 bg-[#0B1218] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 rounded-sm"
+              >
+                {isConfirmando ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Confirmando...
+                  </>
+                ) : (
+                  <>
+                    Confirmar {itensValidos.length} {itensValidos.length === 1 ? 'item' : 'itens'} válidos
+                    <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {confirmError && (
+              <div className="flex items-center gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-sm">
+                <XCircle size={14} className="text-[#E85C5C] shrink-0" />
+                <p className="text-sm font-medium text-[#E85C5C]">{confirmError}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 }
-
-const ResumoStatus = ({ icon, label, valor, classe }) => (
-  <div className="border border-[#EFE7DC] rounded-sm p-4 bg-white">
-    <p className="text-[10px] uppercase tracking-widest font-bold text-[#0B1218]/40">{label}</p>
-    <div className={`mt-2 flex items-center gap-2 ${classe}`}>
-      {icon}
-      <p className="font-['Sora'] text-2xl font-bold">{valor}</p>
-    </div>
-  </div>
-);
