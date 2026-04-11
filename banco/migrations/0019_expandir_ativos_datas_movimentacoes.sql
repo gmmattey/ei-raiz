@@ -1,8 +1,8 @@
-ALTER TABLE ativos ADD COLUMN data_cadastro TEXT DEFAULT (datetime('now'));
+ALTER TABLE ativos ADD COLUMN data_cadastro TEXT;
 ALTER TABLE ativos ADD COLUMN data_aquisicao TEXT;
 
 UPDATE ativos
-SET data_cadastro = COALESCE(data_cadastro, datetime('now'));
+SET data_cadastro = COALESCE(data_cadastro, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
 
 UPDATE ativos
 SET data_aquisicao = COALESCE(data_aquisicao, data_cadastro);
