@@ -521,16 +521,12 @@ export default function HomeLobby() {
           )}
 
           {/* Card Principal de Patrimônio */}
-          <div className="rounded-sm border border-[var(--border-color)] bg-[var(--bg-card)] p-8 shadow-md transition-all hover:shadow-lg md:p-10 fade-in-up" style={{ animationDelay: '0.05s' }}>
+          <div className="rounded border border-[var(--border-color)] bg-[var(--bg-card)] p-8 shadow-md transition-all hover:shadow-lg md:p-10 fade-in-up" style={{ animationDelay: '0.05s' }}>
             <div className="flex flex-col gap-8">
               <div className="flex-1">
-                <div className="mb-2 flex items-center gap-3">
+                <div className="mb-4 flex items-center gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">{texto("home.cartao_principal.titulo", "Patrimônio Total")}</p>
                 </div>
-                
-                <h2 className="font-['Sora'] text-4xl font-bold md:text-5xl">
-                  {ocultarValores ? '••••••••' : <AnimatedCounter value={patrimonioDeclaradoTotal || 0} isCurrency={true} />}
-                </h2>
 
                 {possuiPatrimonioDeclarado && (
                   <div className="mt-6 flex flex-col gap-4">
@@ -638,7 +634,7 @@ export default function HomeLobby() {
             <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">Performance</p>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Gráfico: Evolução do Score */}
-              <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm p-6">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-6">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Evolução da Saúde Financeira</p>
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -658,7 +654,7 @@ export default function HomeLobby() {
 
               {/* Gráfico: Distribuição de Patrimônio */}
               {!ocultarValores && possuiPatrimonioDeclarado && (
-                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm p-6">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-6">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Distribuição do Patrimônio</p>
                   <div className="h-[220px]">
                     <ResponsiveContainer width="100%" height="100%">
