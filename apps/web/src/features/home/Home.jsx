@@ -528,6 +528,10 @@ export default function HomeLobby() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">{texto("home.cartao_principal.titulo", "Patrimônio Total")}</p>
                 </div>
 
+                <h2 className="font-['Sora'] text-4xl font-bold md:text-5xl mb-6">
+                  {ocultarValores ? '••••••••' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(patrimonioDeclaradoTotal || 0)}
+                </h2>
+
                 {possuiPatrimonioDeclarado && (
                   <div className="mt-6 flex flex-col gap-4">
                     {resumo?.retornoDisponivel ? (
