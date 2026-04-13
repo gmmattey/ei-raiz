@@ -486,11 +486,100 @@ async function resetMassaTesteEiRaiz(env: Env): Promise<{ resetado: boolean; ema
       env.DB.prepare("DELETE FROM posicoes_financeiras WHERE usuario_id = ?").bind(usuarioId),
       env.DB.prepare("DELETE FROM perfil_contexto_financeiro WHERE usuario_id = ?").bind(usuarioId),
       env.DB.prepare("DELETE FROM recuperacoes_acesso WHERE usuario_id = ?").bind(usuarioId),
+      env.DB.prepare("DELETE FROM ativos WHERE usuario_id = ?").bind(usuarioId),
       env.DB.prepare("DELETE FROM usuarios WHERE id = ?").bind(usuarioId),
     ]);
   }
 
-  await getAuthService(env).registrar(MASSA_TESTE_EI_RAIZ);
+  const { usuario } = await getAuthService(env).registrar(MASSA_TESTE_EI_RAIZ);
+  const usuarioId = usuario.id;
+
+  // Inserir dados financeiros realistas
+  const agora = new Date().toISOString();
+  const umAnoPassed = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Poupança
+  await env.DB
+    .prepare(
+      "INSERT INTO perfil_contexto_financeiro (id, usuario_id, contexto_json, atualizado_em) VALUES (?, ?, ?, ?)"
+    )
+    .bind(
+      `ctx_${usuarioId}`,
+      usuarioId,
+      JSON.stringify({
+        patrimonioExterno: {
+          poupanca: 5000,
+          caixaDisponivel: 5000,
+          imoveis: [],
+          veiculos: [],
+        },
+        dividas: [],
+      }),
+      agora
+    )
+    .run();
+
+  // Ativos de exemplo (sem viajar nos valores)
+  const ativos = [
+    {
+      id: `ativo_1_${usuarioId}`,
+      ticker: "PETR4",
+      nome: "Petrobras PN",
+      categoria: "acao" as const,
+      plataforma: "Massa Teste",
+      quantidade: 10,
+      precoMedio: 30.50,
+      valorAtual: 32.00,
+    },
+    {
+      id: `ativo_2_${usuarioId}`,
+      ticker: "VGIR11",
+      nome: "Vanguard Índice",
+      categoria: "fundo" as const,
+      plataforma: "Massa Teste",
+      quantidade: 5,
+      precoMedio: 90.00,
+      valorAtual: 92.50,
+    },
+    {
+      id: `ativo_3_${usuarioId}`,
+      ticker: "BBSE3",
+      nome: "BB Seguridade",
+      categoria: "acao" as const,
+      plataforma: "Massa Teste",
+      quantidade: 20,
+      precoMedio: 15.00,
+      valorAtual: 15.80,
+    },
+  ];
+
+  for (const ativo of ativos) {
+    const valorAtual = ativo.quantidade * ativo.valorAtual;
+    const participacao = (valorAtual / (valorAtual + 462.5 + 5000)) * 100;
+    const retorno12m = ((ativo.valorAtual - ativo.precoMedio) / ativo.precoMedio) * 100;
+
+    await env.DB
+      .prepare(
+        "INSERT INTO ativos (id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m, data_cadastro, data_aquisicao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      )
+      .bind(
+        ativo.id,
+        usuarioId,
+        ativo.ticker,
+        ativo.nome,
+        ativo.categoria,
+        ativo.plataforma,
+        ativo.quantidade,
+        ativo.precoMedio,
+        ativo.valorAtual,
+        participacao,
+        retorno12m,
+        umAnoPassed,
+        umAnoPassed
+      )
+      .run();
+  }
+
   return { resetado: true, email: MASSA_TESTE_EI_RAIZ.email, cpf: MASSA_TESTE_EI_RAIZ.cpf };
 }
 
