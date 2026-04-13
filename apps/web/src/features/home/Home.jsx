@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, TrendingUp, AlertCircle, CheckCircle2, UserRound, UploadCloud, CandlestickChart, Landmark, WalletCards, PiggyBank, House, Gem, X } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiError, carteiraApi, insightsApi, perfilApi, configApi, getStoredUser } from '../../cliente-api';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
@@ -639,6 +639,8 @@ export default function HomeLobby() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={insights.scoreHistorico.map((v, i) => ({ index: i, score: v }))}>
+                      <XAxis dataKey="index" hide />
+                      <YAxis hide domain={[0, 1000]} />
                       <Line
                         type="monotone"
                         dataKey="score"
