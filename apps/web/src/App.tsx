@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { consumirMotivoSaidaSessao } from './cliente-api';
 import LandingPage from './features/home/LandingPage';
 import Home from './features/home/Home';
 import Dashboard from './features/perfil/dashboard';
-import Onboarding from './features/onboarding/onboarding';
 import Carteira from './features/carteira/Carteira';
 import DetalheAtivo from './features/carteira/DetalheAtivo';
 import Insights from './features/insights/Insights';
@@ -48,21 +48,18 @@ const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =
   return children;
 };
 
-const HomeEntry: React.FC = () => (
-  hasSeenPreInsight() ? <AppLayout><Home /></AppLayout> : <Navigate to="/pre-insight" replace />
-);
+const HomeEntry: React.FC = () => <AppLayout><Home /></AppLayout>;
+const PreInsightEntry: React.FC = () => <AppLayout><PreInsight /></AppLayout>;
 
-const PreInsightEntry: React.FC = () => (
-  hasSeenPreInsight() ? <Navigate to="/home" replace /> : <PreInsight />
-);
+const AnimatedRoutes: React.FC = () => {
+  const location = useLocation();
 
-const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/0" element={<PublicRoute><LandingPage /></PublicRoute>} />
-        <Route path="/onboarding" element={<PublicRoute><AppLayout><Onboarding /></AppLayout></PublicRoute>} />
+        <Route path="/onboarding" element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/placeholder" element={<AppLayout><Placeholder /></AppLayout>} />
 
         <Route path="/home" element={<ProtectedRoute><HomeEntry /></ProtectedRoute>} />
@@ -101,7 +98,22 @@ const App: React.FC = () => {
           }
         />
       </Routes>
-    </Router>
+    </AnimatePresence>
+  );
+};
+
+import { ModoVisualizacaoProvider } from './context/ModoVisualizacaoContext';
+import { ThemeProvider } from './context/ThemeContext';
+
+const App: React.FC = () => {
+  return (
+    <ModoVisualizacaoProvider>
+      <ThemeProvider>
+        <Router>
+          <AnimatedRoutes />
+        </Router>
+      </ThemeProvider>
+    </ModoVisualizacaoProvider>
   );
 };
 

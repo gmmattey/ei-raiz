@@ -22,18 +22,51 @@ type AtualizacaoMercado = {
 type DependenciasServicoCarteira = {
   repositorio: RepositorioCarteira;
   fetchFn?: typeof fetch;
+  brapiToken?: string;
+  brapiBaseUrl?: string;
 };
 
 const nowIso = (): string => new Date().toISOString();
 const toIsoOffset = (mins: number): string => new Date(Date.now() + mins * 60_000).toISOString();
 const toIsoOffsetHours = (hours: number): string => new Date(Date.now() + hours * 3_600_000).toISOString();
 const normalizarCnpj = (value: string): string => value.replace(/\D/g, "");
+const pareceTickerListado = (ticker: string): boolean => /^[A-Z]{4}\d{1,2}$/.test(ticker) || /^[A-Z]{5}\d{1,2}$/.test(ticker) || /^\^[A-Z0-9.]+$/.test(ticker);
+const normalizarPrecoMedioUnitario = (precoMedio: number, quantidade: number, valorAtual: number): number => {
+  if (!Number.isFinite(precoMedio) || precoMedio <= 0) return 0;
+  if (!Number.isFinite(quantidade) || quantidade <= 0) return precoMedio;
+  const totalEstimadoComUnitario = precoMedio * quantidade;
+  const valorReferencia = Number.isFinite(valorAtual) && valorAtual > 0 ? valorAtual : totalEstimadoComUnitario;
+  const referenciaUnitaria = valorReferencia / quantidade;
+  const erroRelativoUnitario = Math.abs(totalEstimadoComUnitario - valorReferencia) / Math.max(1, valorReferencia);
+  const erroRelativoTotal = Math.abs(precoMedio - valorReferencia) / Math.max(1, valorReferencia);
+  if (erroRelativoUnitario <= 0.05) return precoMedio;
+  if (erroRelativoTotal <= 0.05) return precoMedio / quantidade;
+  if (Number.isFinite(referenciaUnitaria) && referenciaUnitaria > 0) {
+    const candidatos = [precoMedio, precoMedio / 10, precoMedio / 100, precoMedio / 1000, precoMedio / 10000];
+    let melhor = precoMedio;
+    let menorErro = Number.POSITIVE_INFINITY;
+    for (const candidato of candidatos) {
+      if (!Number.isFinite(candidato) || candidato <= 0) continue;
+      const erro = Math.abs(candidato - referenciaUnitaria) / Math.max(1, referenciaUnitaria);
+      if (erro < menorErro) {
+        menorErro = erro;
+        melhor = candidato;
+      }
+    }
+    if (menorErro <= 0.35) return melhor;
+  }
+  return precoMedio;
+};
 
 export class ServicoCarteiraPadrao implements ServicoCarteira {
   private readonly fetchFn: typeof fetch;
+  private readonly brapiToken: string | null;
+  private readonly brapiBaseUrl: string;
 
   constructor(private readonly deps: DependenciasServicoCarteira) {
     this.fetchFn = deps.fetchFn ?? fetch;
+    this.brapiToken = deps.brapiToken?.trim() || null;
+    this.brapiBaseUrl = deps.brapiBaseUrl?.trim().replace(/\/+$/, "") || "https://brapi.dev/api";
   }
 
   async listarAtivos(usuarioId: string): Promise<AtivoResumo[]> {
@@ -62,25 +95,33 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     const ativos = await this.deps.repositorio.listarAtivos(usuarioId);
     let patrimonioTotal = 0;
     let custoTotalAcumulado = 0;
+    let todosComBaseCusto = true;
 
     for (const ativo of ativos) {
       const meta = await this.obterAtualizacaoMercado(ativo);
       const precoAtual = meta.precoAtual ?? ativo.valorAtual / ativo.quantidade;
       
       const valorMercadoAtual = precoAtual * ativo.quantidade;
-      const custoAquisicao = ativo.precoMedio * ativo.quantidade;
+      const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
+      const custoAquisicao = precoMedioUnitario * ativo.quantidade;
+      if (!(Number.isFinite(ativo.precoMedio) && ativo.precoMedio > 0)) {
+        todosComBaseCusto = false;
+      }
 
       patrimonioTotal += valorMercadoAtual;
       custoTotalAcumulado += custoAquisicao;
     }
 
-    const retornoTotal = custoTotalAcumulado > 0 
+    const retornoDisponivel = ativos.length > 0 && todosComBaseCusto;
+    const retornoTotal = retornoDisponivel && custoTotalAcumulado > 0
       ? ((patrimonioTotal - custoTotalAcumulado) / custoTotalAcumulado) * 100 
       : 0;
 
     return {
       patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
       retorno12m: Number(retornoTotal.toFixed(2)),
+      retornoDisponivel,
+      motivoRetornoIndisponivel: retornoDisponivel ? undefined : "Retorno indisponível — importe seu histórico para calcular",
       // Score agora reflete a saúde da rentabilidade real (70 base + ajuste de performance)
       score: patrimonioTotal > 0 ? Math.max(0, Math.min(100, Math.round(70 + (retornoTotal / 2)))) : 0,
       quantidadeAtivos: ativos.length,
@@ -150,8 +191,15 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   private async obterAtualizacaoMercado(ativo: AtivoPersistido): Promise<AtualizacaoMercado> {
-    if (ativo.categoria === "acao" && (ativo.tickerCanonico || ativo.ticker)) {
-      return this.obterCotacaoComCache("brapi", (ativo.tickerCanonico || ativo.ticker).toUpperCase());
+    const tickerListado = (ativo.tickerCanonico || ativo.ticker)?.toUpperCase();
+    const tickerComCaraDeBolsa = !!tickerListado && pareceTickerListado(tickerListado);
+    const deveUsarBrapi =
+      !!tickerListado &&
+      (ativo.categoria === "acao" ||
+        tickerComCaraDeBolsa ||
+        (ativo.categoria === "fundo" && !(ativo.cnpjFundo && normalizarCnpj(ativo.cnpjFundo).length > 0)));
+    if (deveUsarBrapi && tickerListado) {
+      return this.obterCotacaoComCache("brapi", tickerListado);
     }
     if (ativo.categoria === "fundo" && ativo.cnpjFundo) {
       return this.obterCotacaoComCache("cvm", normalizarCnpj(ativo.cnpjFundo));
@@ -166,8 +214,9 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   private mapComAtualizacao(ativo: AtivoPersistido, meta: AtualizacaoMercado): AtivoResumo {
+    const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
     const precoAtual = meta.precoAtual;
-    const custoTotal = ativo.precoMedio * ativo.quantidade;
+    const custoTotal = precoMedioUnitario * ativo.quantidade;
     const valorAtual = precoAtual !== null ? precoAtual * ativo.quantidade : ativo.valorAtual;
     const ganhoPerda = valorAtual - custoTotal;
     const ganhoPerdaPercentual = custoTotal > 0 ? (ganhoPerda / custoTotal) * 100 : 0;
@@ -179,8 +228,8 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       categoria: ativo.categoria,
       plataforma: ativo.plataforma ?? "",
       quantidade: ativo.quantidade,
-      precoMedio: ativo.precoMedio,
-      preco_medio: ativo.precoMedio,
+      precoMedio: Number(precoMedioUnitario.toFixed(8)),
+      preco_medio: Number(precoMedioUnitario.toFixed(8)),
       precoAtual: precoAtual ?? undefined,
       variacaoPercentual: meta.variacaoPercentual ?? undefined,
       ganhoPerda,
@@ -192,12 +241,14 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       dataAquisicao: (ativo.dataAquisicao ?? ativo.dataCadastro) ?? undefined,
       valorAtual: Number(valorAtual.toFixed(2)),
       participacao: ativo.participacao ?? 0,
-      retorno12m: ativo.retorno12m ?? 0,
+      retorno12m: Number(ganhoPerdaPercentual.toFixed(2)),
     };
   }
 
   private async obterCotacaoComCache(fonte: FonteMercado, chaveAtivo: string): Promise<AtualizacaoMercado> {
-    const cache = await this.deps.repositorio.lerCacheValido(fonte, chaveAtivo, nowIso());
+    const cacheKeyPrimaria = fonte === "brapi" ? `quote:${chaveAtivo.toUpperCase()}` : chaveAtivo;
+    const cache = (await this.deps.repositorio.lerCacheValido(fonte, cacheKeyPrimaria, nowIso()))
+      ?? (fonte === "brapi" ? await this.deps.repositorio.lerCacheValido(fonte, chaveAtivo, nowIso()) : null);
     if (cache) {
       return {
         fonte,
@@ -214,7 +265,7 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       const expiraEm = fonte === "brapi" ? toIsoOffset(BOLSA_TTL_MIN) : toIsoOffsetHours(FUNDOS_TTL_HOURS);
       await this.deps.repositorio.salvarCache(
         fonte,
-        chaveAtivo,
+        cacheKeyPrimaria,
         resultado.precoAtual,
         resultado.variacaoPercentual,
         resultado.payload,
@@ -231,10 +282,11 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
         atualizadoEm,
       };
     } catch (error) {
-      const fallback = await this.deps.repositorio.lerUltimoCache(fonte, chaveAtivo);
+      const fallback = (await this.deps.repositorio.lerUltimoCache(fonte, cacheKeyPrimaria))
+        ?? (fonte === "brapi" ? await this.deps.repositorio.lerUltimoCache(fonte, chaveAtivo) : null);
       await this.deps.repositorio.salvarCache(
         fonte,
-        chaveAtivo,
+        cacheKeyPrimaria,
         fallback?.precoAtual ?? null,
         fallback?.variacaoPercentual ?? null,
         fallback?.payload ?? null,
@@ -262,7 +314,9 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   private async buscarBrapi(ticker: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown }> {
-    const response = await this.fetchFn(`https://brapi.dev/api/quote/${encodeURIComponent(ticker)}`, {
+    const url = new URL(`${this.brapiBaseUrl}/quote/${encodeURIComponent(ticker)}`);
+    if (this.brapiToken) url.searchParams.set("token", this.brapiToken);
+    const response = await this.fetchFn(url.toString(), {
       method: "GET",
       headers: { accept: "application/json" },
     });
@@ -281,32 +335,117 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     };
   }
 
+  /**
+   * Busca a cota diária de um fundo via CVM (inf_diario_fi_YYYYMM.csv).
+   * Tenta o mês atual e, em caso de falha (arquivo ainda não publicado), tenta o mês anterior.
+   * O arquivo é lido via streaming para evitar carregar dezenas de MB em memória.
+   */
   private async buscarCvm(cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown }> {
-    const response = await this.fetchFn("https://dados.cvm.gov.br/dados/FI/CAD/DADOS/cad_fi.csv", {
-      method: "GET",
-      headers: { accept: "text/csv" },
-    });
-    if (!response.ok) throw new Error(`CVM_HTTP_${response.status}`);
-    const csv = await response.text();
-    const linhas = csv.split(/\r?\n/);
-    const cabecalho = (linhas[0] ?? "").split(";").map((col) => col.replace(/"/g, "").trim().toUpperCase());
-    const idxCnpj = cabecalho.indexOf("CNPJ_FUNDO");
-    const idxNome = cabecalho.indexOf("DENOM_SOCIAL");
-    if (idxCnpj < 0) throw new Error("CVM_HEADER_CNPJ_INVALIDO");
+    const resultado = await this.buscarCotaCvmDiaria(cnpj);
+    if (resultado !== null) return resultado;
+    throw new Error("CVM_COTA_NAO_ENCONTRADA");
+  }
 
-    const linha = linhas.slice(1).find((row) => {
-      const cols = row.split(";");
-      const doc = normalizarCnpj((cols[idxCnpj] ?? "").replace(/"/g, ""));
-      return doc === cnpj;
-    });
-    if (!linha) throw new Error("CVM_FUNDO_NAO_ENCONTRADO");
-    const cols = linha.split(";");
-    const nome = idxNome >= 0 ? (cols[idxNome] ?? "").replace(/"/g, "").trim() : "";
+  private async buscarCotaCvmDiaria(cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown } | null> {
+    const tentativas = this.gerarUrlsCvmDiaria();
+    for (const url of tentativas) {
+      try {
+        const resultado = await this.lerCotaCvmStream(url, cnpj);
+        if (resultado !== null) return resultado;
+      } catch {
+        // tenta próxima URL
+      }
+    }
+    return null;
+  }
+
+  /** Gera as URLs do arquivo CVM para o mês atual e o anterior. */
+  private gerarUrlsCvmDiaria(): string[] {
+    const agora = new Date();
+    const urls: string[] = [];
+    for (let delta = 0; delta <= 1; delta++) {
+      const data = new Date(agora.getFullYear(), agora.getMonth() - delta, 1);
+      const ano = data.getFullYear();
+      const mes = String(data.getMonth() + 1).padStart(2, "0");
+      urls.push(`https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO_FI/DADOS/inf_diario_fi_${ano}${mes}.csv`);
+    }
+    return urls;
+  }
+
+  /**
+   * Lê o CSV CVM via streaming em chunks de texto, procurando o CNPJ sem
+   * carregar o arquivo inteiro na memória. Retorna a cota mais recente ou null.
+   */
+  private async lerCotaCvmStream(url: string, cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown } | null> {
+    const response = await this.fetchFn(url, { method: "GET", headers: { accept: "text/plain" } });
+    if (!response.ok) throw new Error(`CVM_DIARIO_HTTP_${response.status}`);
+    if (!response.body) throw new Error("CVM_DIARIO_SEM_BODY");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("latin1");
+    let buffer = "";
+    let cabecalho: string[] | null = null;
+    let idxCnpj = -1;
+    let idxData = -1;
+    let idxCota = -1;
+    let melhorData = "";
+    let melhorCota: number | null = null;
+    let cotaAnterior: number | null = null;
+
+    const processarLinha = (linha: string): void => {
+      if (!linha.trim()) return;
+      const cols = linha.split(";");
+      if (cabecalho === null) {
+        cabecalho = cols.map((c) => c.replace(/"/g, "").trim().toUpperCase());
+        idxCnpj = cabecalho.indexOf("CNPJ_FUNDO");
+        idxData = cabecalho.indexOf("DT_COMPTC");
+        idxCota = cabecalho.indexOf("VL_QUOTA");
+        return;
+      }
+      if (idxCnpj < 0 || idxData < 0 || idxCota < 0) return;
+      const cnpjLinha = normalizarCnpj((cols[idxCnpj] ?? "").replace(/"/g, ""));
+      if (cnpjLinha !== cnpj) return;
+      const data = (cols[idxData] ?? "").trim();
+      const cotaStr = (cols[idxCota] ?? "").replace(",", ".").trim();
+      const cota = Number.parseFloat(cotaStr);
+      if (!Number.isFinite(cota) || cota <= 0) return;
+      if (data > melhorData) {
+        cotaAnterior = melhorCota;
+        melhorData = data;
+        melhorCota = cota;
+      }
+    };
+
+    // Limite de segurança: até 30 MB de dados lidos para evitar travamento em Workers
+    const MAX_BYTES = 30 * 1024 * 1024;
+    let totalBytes = 0;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        buffer += decoder.decode(value, { stream: true });
+        const linhas = buffer.split(/\r?\n/);
+        buffer = linhas.pop() ?? "";
+        for (const linha of linhas) processarLinha(linha);
+        if (totalBytes >= MAX_BYTES) break;
+      }
+      if (buffer) processarLinha(buffer);
+    } finally {
+      reader.cancel().catch(() => undefined);
+    }
+
+    if (melhorCota === null) return null;
+
+    const variacaoPercentual = cotaAnterior !== null && cotaAnterior > 0
+      ? ((melhorCota - cotaAnterior) / cotaAnterior) * 100
+      : null;
 
     return {
-      precoAtual: null,
-      variacaoPercentual: null,
-      payload: { cnpj, nome },
+      precoAtual: melhorCota,
+      variacaoPercentual,
+      payload: { cnpj, data: melhorData, cota: melhorCota },
     };
   }
 

@@ -3,6 +3,7 @@ import { History, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DecisionSimulatorLayout from './components/DecisionSimulatorLayout';
 import SavedSimulationCard from './components/SavedSimulationCard';
+import EstadoVazio from '../../components/feedback/EstadoVazio';
 import { ApiError, decisoesApi } from '../../cliente-api';
 
 const tipoLabel = {
@@ -62,21 +63,21 @@ const SimulationHistory = () => {
       <div className="space-y-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0B1218]/20" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar simulação..."
-              className="w-full rounded-sm border border-[#EFE7DC] bg-white py-4 pl-12 pr-4 text-sm outline-none focus:border-[#F56A2A]"
+              className="w-full rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] py-4 pl-12 pr-4 text-sm outline-none focus:border-[var(--accent)]"
             />
           </div>
-          <button className="flex items-center gap-2 rounded-sm border border-[#EFE7DC] bg-white px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] hover:bg-[#FDFCFB]">
+          <button className="flex items-center gap-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors">
             <Filter size={16} /> Filtros
           </button>
         </div>
 
-        {loading && <p className="text-sm text-[#0B1218]/50">Carregando simulações...</p>}
+        {loading && <p className="text-sm text-[var(--text-muted)]">Carregando simulações...</p>}
         {erro && <p className="text-sm text-[#E85C5C]">{erro}</p>}
 
         {!loading && !erro && (
@@ -96,13 +97,12 @@ const SimulationHistory = () => {
         )}
 
         {!loading && !erro && filtradas.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#EFE7DC]/30 text-[#0B1218]/20">
-              <History size={40} />
-            </div>
-            <h3 className="font-['Sora'] text-xl font-bold text-[#0B1218]">Nenhuma simulação encontrada</h3>
-            <p className="mt-2 text-sm text-[#0B1218]/40">Você ainda não salvou nenhuma análise financeira.</p>
-          </div>
+          <EstadoVazio 
+            titulo="Nenhuma simulação encontrada"
+            descricao="Você ainda não salvou nenhuma análise financeira ou nenhuma simulação corresponde à sua busca."
+            acaoTexto="Nova Simulação"
+            onAcao={() => navigate('/decisoes')}
+          />
         )}
       </div>
     </DecisionSimulatorLayout>

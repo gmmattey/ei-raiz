@@ -24,7 +24,7 @@ const ConfigItem = ({ icon, title, description, action }) => (
   </div>
 );
 
-export default function Configuracoes() {
+export default function Configuracoes({ embedded = false }) {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(() => getStoredUser());
   const [erro, setErro] = useState('');
@@ -59,8 +59,8 @@ export default function Configuracoes() {
   }, [usuario]);
 
   return (
-    <div className="w-full bg-white font-['Inter'] text-[#0B1218] animate-in fade-in duration-500">
-      <div className="w-full max-w-[896px]">
+    <div className={`w-full bg-transparent font-['Inter'] text-[#0B1218] ${embedded ? '' : 'animate-in fade-in duration-500'}`}>
+      <div className={`w-full ${embedded ? '' : 'max-w-[896px]'}`}>
         <div className="mb-16">
           <div className="flex items-center gap-3 text-[#F56A2A] mb-4">
             <Settings size={24} />

@@ -11,23 +11,35 @@ const PropertySimulator = () => {
   const user = getStoredUser();
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
-  const [resultado, setResultado] = useState(null);
-  const [form, setForm] = useState({
-    nome: 'Simulação Imóvel',
-    valorImovel: 850000,
-    entrada: 200000,
-    prazoMeses: 360,
-    jurosAnual: 0.105,
-    custosDocumentacao: 50000,
-    manutencaoMensal: 1200,
-    valorizacaoAnual: 0.06,
-    aluguelMensal: 3200,
-    reajusteAluguelAnual: 0.06,
-    retornoInvestimentoAnual: 0.1,
-    rendaMensal: user?.rendaMensal || 15000,
-    horizonteAnos: 10,
-    liquidezAtual: 250000,
-    scoreAtual: 68,
+  const [resultado, setResultado] = useState(() => {
+    try {
+      const salvo = sessionStorage.getItem('sim_res_imovel');
+      return salvo ? JSON.parse(salvo) : null;
+    } catch { return null; }
+  });
+  const [form, setForm] = useState(() => {
+    try {
+      const formSalvo = sessionStorage.getItem('sim_form_imovel');
+      if (formSalvo) return JSON.parse(formSalvo);
+    } catch { /* ignore */ }
+    return {
+
+      nome: 'Simulação Imóvel',
+      valorImovel: 850000,
+      entrada: 200000,
+      prazoMeses: 360,
+      jurosAnual: 0.105,
+      custosDocumentacao: 50000,
+      manutencaoMensal: 1200,
+      valorizacaoAnual: 0.06,
+      aluguelMensal: 3200,
+      reajusteAluguelAnual: 0.06,
+      retornoInvestimentoAnual: 0.1,
+      rendaMensal: user?.rendaMensal || 15000,
+      horizonteAnos: 10,
+      liquidezAtual: 250000,
+      scoreAtual: 68,
+    };
   });
 
   const onChange = (key) => (e) => {
@@ -42,6 +54,8 @@ const PropertySimulator = () => {
       await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'imovel' });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'imovel', nome: form.nome, premissas: form });
       setResultado(data);
+      sessionStorage.setItem('sim_res_imovel', JSON.stringify(data));
+      sessionStorage.setItem('sim_form_imovel', JSON.stringify(form));
     } catch {
       setErro('Falha ao calcular simulação de imóvel.');
     } finally {
@@ -56,6 +70,8 @@ const PropertySimulator = () => {
       const data = await decisoesApi.salvarSimulacao({ tipo: 'imovel', nome: form.nome, premissas: form });
       await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'imovel', id: data?.id });
       setResultado(data.resultado || resultado);
+      sessionStorage.setItem('sim_res_imovel', JSON.stringify(data.resultado || resultado));
+      sessionStorage.setItem('sim_form_imovel', JSON.stringify(form));
     } catch {
       setErro('Falha ao salvar simulação.');
     } finally {
@@ -71,9 +87,9 @@ const PropertySimulator = () => {
           type={type}
           value={form[field]}
           onChange={onChange(field)}
-          className="w-full rounded-sm border border-[#EFE7DC] bg-[#FDFCFB] px-4 py-3 text-sm font-medium text-[#0B1218] outline-none transition-all focus:border-[#F56A2A] focus:bg-white"
+          className="w-full rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)]"
         />
-        {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#0B1218]/20">{suffix}</span>}
+        {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--text-muted)]">{suffix}</span>}
       </div>
     </div>
   );
@@ -113,12 +129,21 @@ const PropertySimulator = () => {
         {erro && <p className="text-sm text-[#E85C5C]">{erro}</p>}
 
         <div className="flex justify-center gap-3 pt-4">
-          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-sm bg-[#0B1218] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#111923] hover:shadow-xl disabled:opacity-50">
+          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-sm bg-[var(--text-primary)] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-primary)] transition-all hover:bg-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50">
             <Calculator size={18} /> {loading ? 'Calculando...' : 'Calcular Cenários'}
           </button>
-          <button onClick={salvar} disabled={loading} className="flex items-center gap-3 rounded-sm border border-[#0B1218] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] transition-all hover:bg-[#0B1218] hover:text-white disabled:opacity-50">
+          <button onClick={salvar} disabled={loading} className="flex items-center gap-3 rounded-sm border border-[var(--text-primary)] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] disabled:opacity-50">
             <Save size={16} /> Salvar
           </button>
+          {resultado && (
+            <button onClick={() => {
+              sessionStorage.removeItem('sim_res_imovel');
+              sessionStorage.removeItem('sim_form_imovel');
+              setResultado(null);
+            }} className="flex items-center gap-3 rounded-sm border border-[#E85C5C] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#E85C5C] transition-all hover:bg-[#E85C5C] hover:text-white">
+              Nova Simulação
+            </button>
+          )}
         </div>
 
         {resultado && (
@@ -151,8 +176,8 @@ const PropertySimulator = () => {
               <SimulationResultBlock title="Classificação" value={(impacto?.regraDominante || 'neutro').replaceAll('_', ' ')} description="Regra dominante" />
             </div>
 
-            <div className="flex flex-col gap-4 border-t border-[#EFE7DC] pt-12 md:flex-row md:justify-end">
-              <button onClick={calcular} className="flex items-center justify-center gap-2 rounded-sm border border-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] transition-all hover:bg-[#0B1218] hover:text-white">
+            <div className="flex flex-col gap-4 border-t border-[var(--border-color)] pt-12 md:flex-row md:justify-end">
+              <button onClick={calcular} className="flex items-center justify-center gap-2 rounded-sm border border-[var(--border-color)] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--bg-secondary)]">
                 <RefreshCw size={16} /> Recalcular
               </button>
             </div>

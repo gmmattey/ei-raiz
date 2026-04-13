@@ -1,46 +1,74 @@
 @echo off
-REM ========================================
-REM Esquilo Invest - Local Development Start
-REM ========================================
-REM Este script inicia a aplicação em modo desenvolvimento
-REM Acesso: http://localhost:3000
+REM ============================================
+REM Esquilo Invest - Development Environment
+REM ============================================
+REM Este script inicia Frontend (3001) e API (8787)
+REM em terminais separados para facilitar debug
 
 setlocal enabledelayedexpansion
 
+cd /d "%~dp0"
+
+REM Cores e formatação
 echo.
-echo ========================================
-echo   ESQUILO INVEST - Desenvolvimento Local
-echo ========================================
+echo ==========================================
+echo  Esquilo Invest - Dev Environment
+echo ==========================================
 echo.
 
-REM Verificar se Node.js está instalado
-node --version >nul 2>&1
+REM Verificar se Node está instalado
+node --version >/dev/null 2>&1
 if errorlevel 1 (
-    echo [ERRO] Node.js não está instalado!
-    echo [INFO] Baixe em: https://nodejs.org/
+    echo ERROR: Node.js nao encontrado!
+    echo Instale Node.js em: https://nodejs.org/
     pause
     exit /b 1
 )
 
-echo [OK] Node.js detectado:
-node --version
+echo [✓] Node.js detectado
 echo.
 
-REM Ir para o diretório web
-cd /d "%~dp0apps\web"
-
-echo [INFO] Instalando dependências (se necessário)...
-call npm ci --silent
+REM Instalar dependências se necessário
+if not exist "node_modules" (
+    echo [*] Instalando dependências globais...
+    call npm install
+    if errorlevel 1 (
+        echo ERROR: Falha ao instalar dependências
+        pause
+        exit /b 1
+    )
+    echo [✓] Dependências instaladas
+)
 
 echo.
-echo ========================================
-echo [INFO] Iniciando servidor de desenvolvimento...
-echo [INFO] Porta: 3000
-echo [INFO] URL: http://localhost:3000
-echo ========================================
+echo Iniciando servidores...
 echo.
 
-REM Iniciar servidor com Hot Module Replacement
-call npm run dev
+REM Inicia API em um novo terminal
+echo [*] Iniciando API (porta 8787)...
+start "Esquilo API" cmd /k "cd apps\api && npm run dev"
+
+REM Aguarda a API iniciar
+timeout /t 3 /nobreak
+
+REM Inicia Frontend em um novo terminal
+echo [*] Iniciando Frontend (porta 3001)...
+start "Esquilo Frontend" cmd /k "cd apps\web && npm run dev"
+
+echo.
+echo ==========================================
+echo  Ambientes Iniciados!
+echo ==========================================
+echo.
+echo Frontend:  http://localhost:3001
+echo API:       http://localhost:8787
+echo.
+echo Credenciais de teste:
+echo   Email: teste.vera@example.com
+echo   Senha: Teste@1234
+echo.
+echo Para fechar: encerre os terminais ou pressione Ctrl+C
+echo ==========================================
+echo.
 
 pause

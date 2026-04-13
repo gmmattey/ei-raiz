@@ -16,16 +16,21 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Building2,
+  House,
+  Car,
+  PiggyBank,
+  CandlestickChart,
 } from 'lucide-react';
 
 // ─── Constantes de marca ──────────────────────────────────────────────────────
 
 const LABEL_ABA = {
-  acoes: '📈 Ações',
-  fundos: '🏦 Fundos',
-  imoveis: '🏠 Imóveis',
-  veiculos: '🚗 Veículos',
-  poupanca: '💰 Poupança',
+  acoes: 'Ações',
+  fundos: 'Fundos',
+  imoveis: 'Imóveis',
+  veiculos: 'Veículos',
+  poupanca: 'Poupança',
 };
 
 const STATUS_LABEL = { ok: 'Válido', conflito: 'Conflito', erro: 'Erro' };
@@ -162,7 +167,7 @@ function ItemReview({ item, expandido, onToggle }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export default function Importar() {
+export default function Importar({ embedded = false }) {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -256,7 +261,14 @@ export default function Importar() {
         itensValidos: linhasValidas.length,
       });
       localStorage.setItem('hasSeenPreInsight', 'true');
-      navigate('/home', { replace: true });
+      navigate('/home', { 
+        replace: true, 
+        state: { 
+          showSuccessImport: true, 
+          importedItems: linhasValidas.length,
+          importacaoId: preview.importacaoId
+        } 
+      });
     } catch (error) {
       setConfirmError(error instanceof ApiError ? 'Não foi possível confirmar agora. Tente novamente.' : 'Falha ao confirmar importação.');
     } finally {
@@ -296,8 +308,8 @@ export default function Importar() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-full bg-white font-['Inter'] text-[#0B1218] animate-in fade-in duration-500">
-      <div className="w-full max-w-[896px]">
+    <div className={`w-full ${embedded ? 'bg-transparent text-[#0B1218]' : 'bg-white text-[#0B1218] animate-in fade-in duration-500'} font-['Inter']`}>
+      <div className={`w-full ${embedded ? '' : 'max-w-[896px]'}`}>
         <StepIndicator step={step} />
 
         {/* ── UPLOAD ── */}
@@ -386,14 +398,16 @@ export default function Importar() {
             {/* Tipos suportados */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { icon: '📈', label: 'Ações', desc: 'B3 / ETFs / FIIs' },
-                { icon: '🏦', label: 'Fundos', desc: 'Previdência / RF' },
-                { icon: '🏠', label: 'Imóveis', desc: 'Residencial / Comercial' },
-                { icon: '🚗', label: 'Veículos', desc: 'FIPE / Financiado' },
-                { icon: '💰', label: 'Poupança', desc: 'Por instituição' },
+                { icon: <CandlestickChart size={18} />, label: 'Ações', desc: 'B3 / ETFs / FIIs' },
+                { icon: <Building2 size={18} />, label: 'Fundos', desc: 'Previdência / RF' },
+                { icon: <House size={18} />, label: 'Imóveis', desc: 'Residencial / Comercial' },
+                { icon: <Car size={18} />, label: 'Veículos', desc: 'FIPE / Financiado' },
+                { icon: <PiggyBank size={18} />, label: 'Poupança', desc: 'Por instituição' },
               ].map(({ icon, label, desc }) => (
                 <div key={label} className="border border-[#EFE7DC] rounded-sm p-4 text-center">
-                  <p className="text-xl mb-2">{icon}</p>
+                  <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#F56A2A]/10 text-[#F56A2A]">
+                    {icon}
+                  </div>
                   <p className="font-['Sora'] text-xs font-bold text-[#0B1218]">{label}</p>
                   <p className="text-[10px] text-[#0B1218]/40 mt-0.5">{desc}</p>
                 </div>

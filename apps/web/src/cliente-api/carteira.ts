@@ -5,6 +5,18 @@ export function obterResumoCarteira(): Promise<ResumoCarteira> {
   return apiRequest<ResumoCarteira>("/api/carteira/resumo", { method: "GET" });
 }
 
+export type DashboardPatrimonioResponse = {
+  filtros: Record<
+    "todos" | "acao" | "fundo" | "previdencia" | "renda_fixa" | "poupanca" | "bens",
+    Array<{ id: string; nome: string; categoria: string; valor: number; percentual: number }>
+  >;
+  totais: Record<"todos" | "acao" | "fundo" | "previdencia" | "renda_fixa" | "poupanca" | "bens", number>;
+};
+
+export function obterDashboardPatrimonio(): Promise<DashboardPatrimonioResponse> {
+  return apiRequest<DashboardPatrimonioResponse>("/api/carteira/dashboard", { method: "GET" });
+}
+
 export function listarAtivosCarteira(): Promise<AtivoResumo[]> {
   return apiRequest<AtivoResumo[]>("/api/carteira/ativos", { method: "GET" });
 }

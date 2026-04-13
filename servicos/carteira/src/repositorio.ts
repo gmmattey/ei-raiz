@@ -48,6 +48,26 @@ export interface RepositorioCarteira {
 export class RepositorioCarteiraD1 implements RepositorioCarteira {
   constructor(private readonly db: D1Database) {}
 
+  private mapCacheRow(row: {
+    preco_atual: number | null;
+    variacao_percentual: number | null;
+    payload_json: string | null;
+    atualizado_em: string;
+    expira_em: string;
+  }): CacheCotacaoPersistido {
+    const payload = row.payload_json ? JSON.parse(row.payload_json) : null;
+    const payloadObj = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+    const precoPayload = typeof payloadObj?.price === "number" ? payloadObj.price : null;
+    const variacaoPayload = typeof payloadObj?.changePercent === "number" ? payloadObj.changePercent : null;
+    return {
+      precoAtual: row.preco_atual ?? precoPayload ?? null,
+      variacaoPercentual: row.variacao_percentual ?? variacaoPayload ?? null,
+      atualizadoEm: row.atualizado_em,
+      expiraEm: row.expira_em,
+      payload,
+    };
+  }
+
   async listarAtivos(usuarioId: string): Promise<AtivoPersistido[]> {
     const result = await this.db
       .prepare(
@@ -128,13 +148,7 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
         expira_em: string;
       }>();
     if (!row) return null;
-    return {
-      precoAtual: row.preco_atual ?? null,
-      variacaoPercentual: row.variacao_percentual ?? null,
-      atualizadoEm: row.atualizado_em,
-      expiraEm: row.expira_em,
-      payload: row.payload_json ? JSON.parse(row.payload_json) : null,
-    };
+    return this.mapCacheRow(row);
   }
 
   async lerUltimoCache(fonte: FonteMercado, chaveAtivo: string): Promise<CacheCotacaoPersistido | null> {
@@ -157,13 +171,7 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
         expira_em: string;
       }>();
     if (!row) return null;
-    return {
-      precoAtual: row.preco_atual ?? null,
-      variacaoPercentual: row.variacao_percentual ?? null,
-      atualizadoEm: row.atualizado_em,
-      expiraEm: row.expira_em,
-      payload: row.payload_json ? JSON.parse(row.payload_json) : null,
-    };
+    return this.mapCacheRow(row);
   }
 
   async salvarCache(

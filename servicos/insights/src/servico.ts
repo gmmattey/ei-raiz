@@ -10,6 +10,7 @@ type TipoPenalidade =
   | "horizonteCurtoAgressivo"
   | "rendaBaixaVolatilidadeAlta"
   | "maiorAtivoAlto"
+  | "concentracaoExtrema"
   | "top3Concentrado"
   | "classeUnica"
   | "poucosAtivos"
@@ -22,14 +23,12 @@ type TipoPenalidade =
   | "evolucaoNegativa"
   | "liquidezBaixa"
   | "dinheiroParadoAlto"
-  | "concentracaoEmImovel"
   | "dependenciaDeAtivoIliquido"
   | "endividamentoAlto"
-  | "usoExcessivoDaReserva"
-  | "custoFixoElevado"
-  | "compraIncompativelComMomento"
-  | "veiculoAcimaDaCapacidade"
-  | "financiamentoDesfavoravel";
+  // Regras de adequação ao momento de vida por faixa etária
+  | "idadeMaduraRiscoAgressivo"
+  | "idadeJovemSubaproveitada"
+  | "idadePreAposentadoriaDefensiva";
 
 type PenalidadeAplicada = {
   tipo: TipoPenalidade;
@@ -63,6 +62,29 @@ export type ResumoInsightsMotor = {
   acaoPrioritaria: AcaoPrioritaria;
   penalidadesAplicadas: PenalidadeAplicada[];
   impactoDecisoesRecentes: ImpactoDecisoesRecentes;
+  patrimonioConsolidado: {
+    patrimonioBruto: number;
+    patrimonioLiquido: number;
+    ativosLiquidos: number;
+    ativosIliquidos: number;
+    passivoTotal: number;
+    distribuicao: {
+      imoveis: number;
+      veiculos: number;
+      investimentos: number;
+      caixa: number;
+      outros: number;
+    };
+  };
+  pesosProprietarios: {
+    liquidez: number;
+    patrimonioLiquido: number;
+    diversificacao: number;
+    concentracaoIliquida: number;
+    endividamento: number;
+    reservaFinanceira: number;
+    investimentos: number;
+  };
 };
 
 const clamp = (min: number, max: number, value: number): number => Math.max(min, Math.min(max, value));
@@ -88,6 +110,7 @@ const defaultScoreConfig = {
     horizonteCurtoAgressivo: 5,
     rendaBaixaVolatilidadeAlta: 4,
     maiorAtivoAlto: 6,
+    concentracaoExtrema: 20,
     top3Concentrado: 5,
     classeUnica: 6,
     poucosAtivos: 4,
@@ -100,16 +123,23 @@ const defaultScoreConfig = {
     evolucaoNegativa: 8,
     liquidezBaixa: 6,
     dinheiroParadoAlto: 4,
-    concentracaoEmImovel: 5,
     dependenciaDeAtivoIliquido: 5,
     endividamentoAlto: 7,
-    usoExcessivoDaReserva: 5,
-    custoFixoElevado: 4,
-    compraIncompativelComMomento: 6,
-    veiculoAcimaDaCapacidade: 5,
-    financiamentoDesfavoravel: 4,
+    idadeMaduraRiscoAgressivo: 8,
+    idadeJovemSubaproveitada: 4,
+    idadePreAposentadoriaDefensiva: 5,
   },
 };
+
+const proprietaryWeights = {
+  liquidez: 24,
+  patrimonioLiquido: 18,
+  diversificacao: 14,
+  concentracaoIliquida: 12,
+  endividamento: 20,
+  reservaFinanceira: 8,
+  investimentos: 4,
+} as const;
 
 const mapFaixa = (score: number, thresholds: typeof defaultScoreConfig.thresholds): ScoreCarteira["faixa"] => {
   if (score <= thresholds.criticoMax) return "critico";
@@ -140,14 +170,19 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     ]);
     const config = this.montarConfiguracaoScore(configRaw);
     const penalidadesAplicadas = this.calcularPenalidades(metricas, perfil, config);
-    const totalPenalidade = penalidadesAplicadas.reduce((acc, item) => acc + item.peso, 0);
-    const scoreValor = clamp(0, 100, arred(100 - totalPenalidade));
+    const pilares = this.calcularPilares(config, penalidadesAplicadas);
+    const scoreBase = arred(
+      pilares.estrategiaCarteira +
+      pilares.comportamentoFinanceiro +
+      pilares.estruturaPatrimonial +
+      pilares.adequacaoMomentoVida,
+    );
+    const ajusteProprietario = this.calcularAjusteProprietario(metricas);
+    const scoreValor = clamp(0, 100, scoreBase + ajusteProprietario);
     const faixa = mapFaixa(scoreValor, config.thresholds);
     const classificacao = mapClassificacao(scoreValor, config.thresholds);
     const retorno = arred(metricas.evolucaoPatrimonio12m * 100) / 100;
     const atualizadoEm = new Date().toISOString();
-
-    const pilares = this.calcularPilares(config, penalidadesAplicadas);
     const fatoresPositivos = this.calcularFatoresPositivos(metricas, perfil).slice(0, 5);
     const fatoresNegativos = [...penalidadesAplicadas]
       .map((item) => ({ label: item.descricao, impacto: -item.peso }))
@@ -192,14 +227,17 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       severidade: faixa === "critico" || faixa === "fragil" ? "alto" : faixa === "regular" ? "medio" : "baixo",
     };
 
+    const pontosRecuperaveis = penalidadePrincipal?.peso ?? 0;
     const acaoPrioritaria: AcaoPrioritaria = {
       codigo: acaoCodigo,
       titulo: this.tituloAcao(acaoCodigo),
       descricao: insightPrincipal.acao,
-      impactoEsperado: `Melhora esperada na classificação atual (${classificacao}).`,
+      impactoEsperado: pontosRecuperaveis > 0
+        ? `Resolver isso pode recuperar até ${pontosRecuperaveis} pontos no seu score (de ${scoreValor}/100 para até ${Math.min(100, scoreValor + pontosRecuperaveis)}/100).`
+        : `Melhora esperada na classificação atual: ${classificacao}.`,
     };
 
-    const diagnostico = this.gerarDiagnosticoFinal(scoreValor, retorno, insightPrincipal, impactoDecisoesRecentes);
+    const diagnostico = this.gerarDiagnosticoFinal(scoreValor, retorno, insightPrincipal, impactoDecisoesRecentes, config.thresholds);
     const diagnosticoLegado: Diagnostico = {
       resumo: diagnostico.mensagem,
       riscos: [riscoPrincipal],
@@ -217,6 +255,21 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       acaoPrioritaria,
       penalidadesAplicadas,
       impactoDecisoesRecentes,
+      patrimonioConsolidado: {
+        patrimonioBruto: metricas.patrimonioBruto,
+        patrimonioLiquido: metricas.patrimonioLiquido,
+        ativosLiquidos: metricas.ativosLiquidos,
+        ativosIliquidos: metricas.ativosIliquidos,
+        passivoTotal: metricas.passivoTotal,
+        distribuicao: {
+          imoveis: metricas.percentualEmImoveis,
+          veiculos: metricas.percentualEmVeiculos,
+          investimentos: metricas.percentualEmInvestimentos,
+          caixa: metricas.percentualEmCaixa,
+          outros: metricas.percentualEmOutros,
+        },
+      },
+      pesosProprietarios: { ...proprietaryWeights },
     };
   }
 
@@ -289,7 +342,9 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       add("rendaBaixaVolatilidadeAlta", "Volatilidade da carteira incompatível com faixa de renda atual.", "adequacaoMomentoVida");
     }
 
-    if (metricas.maiorParticipacao > 25) {
+    if (metricas.maiorParticipacao > 80) {
+      add("concentracaoExtrema", "Um único ativo concentra mais de 80% do patrimônio.", "estrategiaCarteira");
+    } else if (metricas.maiorParticipacao > 25) {
       add("maiorAtivoAlto", "Carteira concentrada no maior ativo acima de 25%.", "estrategiaCarteira");
     }
     if (metricas.top3Participacao > 60) {
@@ -314,7 +369,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (objetivo.includes("renda") && rf < 20) {
       add("objetivoRendaSemBase", "Objetivo de renda com base fraca em ativos geradores de renda.", "adequacaoMomentoVida");
     }
-    if (objetivo.includes("aposentadoria") && metricas.mesesComAporteUltimos6m < 4) {
+    if (objetivo.includes("aposentadoria") && metricas.mesesComAporteUltimos6m >= 3 && metricas.mesesComAporteUltimos6m < 4) {
       add("objetivoAposentadoriaSemConsistencia", "Objetivo de longo prazo sem consistência de aportes recentes.", "comportamentoFinanceiro");
     }
 
@@ -336,8 +391,47 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (metricas.percentualDividaSobrePatrimonio > 35) {
       add("endividamentoAlto", "Nível de endividamento elevado em relação ao patrimônio.", "comportamentoFinanceiro");
     }
-    if (metricas.percentualDinheiroParado > 35 && metricas.percentualLiquidezImediata < 8) {
-      add("usoExcessivoDaReserva", "Reserva mal distribuída entre liquidez e retorno.", "estruturaPatrimonial");
+    if (metricas.percentualEmImoveis > 55) {
+      add("dependenciaDeAtivoIliquido", "Concentração patrimonial elevada em imóveis.", "estruturaPatrimonial");
+    }
+    if (metricas.percentualEmVeiculos > 25) {
+      add("dinheiroParadoAlto", "Concentração patrimonial elevada em veículos.", "estruturaPatrimonial");
+    }
+    if (metricas.ativosLiquidos > 0 && metricas.passivoTotal / metricas.ativosLiquidos > 0.7) {
+      add("endividamentoAlto", "Passivo pressiona fortemente a liquidez disponível.", "comportamentoFinanceiro");
+    }
+
+    // ── Regras de adequação ao momento de vida por faixa etária ──────────────
+    const faixaEtaria = (perfil?.faixaEtaria ?? "").toLowerCase();
+    const idadeMadura = faixaEtaria.startsWith("46") || faixaEtaria.startsWith("56") || faixaEtaria.startsWith("55+") || faixaEtaria.startsWith("56+");
+    const idadeJovem = faixaEtaria.startsWith("18") || faixaEtaria.startsWith("26") || faixaEtaria.startsWith("20") || faixaEtaria.startsWith("25");
+    const preAposentadoria = faixaEtaria.startsWith("56") || faixaEtaria.startsWith("55+") || faixaEtaria.startsWith("56+");
+
+    // 46+ com >60% em renda variável: risco desproporcional para o momento
+    if (idadeMadura && rv > 60) {
+      add(
+        "idadeMaduraRiscoAgressivo",
+        `Faixa etária ${perfil?.faixaEtaria} com ${rv.toFixed(0)}% em renda variável — risco elevado para o momento de vida.`,
+        "adequacaoMomentoVida",
+      );
+    }
+
+    // 18-35 com >80% em renda fixa e horizonte longo: subaproveitamento do tempo
+    if (idadeJovem && horizonte.includes("longo") && rf > 80) {
+      add(
+        "idadeJovemSubaproveitada",
+        `Investidor jovem (${perfil?.faixaEtaria}) com horizonte longo mas carteira excessivamente conservadora (${rf.toFixed(0)}% em renda fixa).`,
+        "adequacaoMomentoVida",
+      );
+    }
+
+    // 55+ próximo da aposentadoria: exposição em RV acima de 40% é preocupante
+    if (preAposentadoria && rv > 40) {
+      add(
+        "idadePreAposentadoriaDefensiva",
+        `Próximo da aposentadoria (${perfil?.faixaEtaria}) com ${rv.toFixed(0)}% em renda variável — considere migrar gradualmente para ativos mais defensivos.`,
+        "adequacaoMomentoVida",
+      );
     }
 
     return penalidades;
@@ -374,7 +468,31 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if ((perfil?.objetivo ?? "").toLowerCase().includes("crescimento") && metricas.percentualRendaVariavel >= 30) {
       positivos.push({ label: "Alocação compatível com objetivo de crescimento.", impacto: 2 });
     }
+    if (metricas.percentualEmInvestimentos >= 20) positivos.push({ label: "Parcela relevante do patrimônio em investimentos produtivos.", impacto: 3 });
+    if (metricas.ativosLiquidos > 0 && metricas.passivoTotal / metricas.ativosLiquidos < 0.25) positivos.push({ label: "Endividamento controlado frente à liquidez.", impacto: 4 });
     return positivos.sort((a, b) => b.impacto - a.impacto);
+  }
+
+  private calcularAjusteProprietario(metricas: MetricasCarteira): number {
+    const scoreLiquidez =
+      metricas.patrimonioBruto > 0 ? Math.max(0, Math.min(1, metricas.ativosLiquidos / metricas.patrimonioBruto)) : 0;
+    const scorePatrimonioLiquido = metricas.patrimonioBruto > 0 ? Math.max(0, Math.min(1, metricas.patrimonioLiquido / metricas.patrimonioBruto)) : 0;
+    const scoreDiversificacao = Math.max(0, Math.min(1, metricas.quantidadeCategorias / 5));
+    const scoreConcentracaoIliquida = 1 - Math.max(0, Math.min(1, (metricas.percentualEmImoveis + metricas.percentualEmVeiculos) / 100));
+    const scoreEndividamento = 1 - Math.max(0, Math.min(1, metricas.percentualDividaSobrePatrimonio / 100));
+    const scoreReserva = Math.max(0, Math.min(1, metricas.percentualEmCaixa / 20));
+    const scoreInvestimentos = Math.max(0, Math.min(1, metricas.percentualEmInvestimentos / 40));
+
+    const weighted =
+      scoreLiquidez * proprietaryWeights.liquidez +
+      scorePatrimonioLiquido * proprietaryWeights.patrimonioLiquido +
+      scoreDiversificacao * proprietaryWeights.diversificacao +
+      scoreConcentracaoIliquida * proprietaryWeights.concentracaoIliquida +
+      scoreEndividamento * proprietaryWeights.endividamento +
+      scoreReserva * proprietaryWeights.reservaFinanceira +
+      scoreInvestimentos * proprietaryWeights.investimentos;
+
+    return Math.round(weighted - 50);
   }
 
   private traduzirPenalidade(penalidade: PenalidadeAplicada | null): InsightPrincipal {
@@ -396,6 +514,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
           acao: "Reduzir exposição em renda variável e reforçar componente defensivo.",
         };
       case "maiorAtivoAlto":
+      case "concentracaoExtrema":
       case "top3Concentrado":
       case "classeUnica":
       case "poucosAtivos":
@@ -424,11 +543,23 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       case "dinheiroParadoAlto":
       case "dependenciaDeAtivoIliquido":
       case "endividamentoAlto":
-      case "usoExcessivoDaReserva":
         return {
           titulo: "Estrutura patrimonial pressionada",
           descricao: "A composição entre liquidez, ativos ilíquidos e dívidas está frágil.",
           acao: "Reforçar reserva líquida e reduzir exposição ilíquida nos próximos aportes.",
+        };
+      case "idadeMaduraRiscoAgressivo":
+      case "idadePreAposentadoriaDefensiva":
+        return {
+          titulo: "Risco desalinhado com o momento de vida",
+          descricao: "Sua exposição a renda variável está elevada para a faixa etária declarada.",
+          acao: "Migrar gradualmente parte da carteira para ativos de menor volatilidade compatíveis com o horizonte restante.",
+        };
+      case "idadeJovemSubaproveitada":
+        return {
+          titulo: "Potencial de crescimento subutilizado",
+          descricao: "Com seu horizonte de investimento e faixa etária, uma carteira mais diversificada pode gerar retornos superiores no longo prazo.",
+          acao: "Avaliar gradual aumento da exposição a renda variável e diversificação por classes de maior crescimento.",
         };
       default:
         return {
@@ -444,12 +575,16 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     retorno: number,
     insightPrincipal: InsightPrincipal,
     impactoDecisoes: ImpactoDecisoesRecentes,
+    thresholds: typeof defaultScoreConfig.thresholds,
   ): DiagnosticoFinal {
-    const impactoConcreto = score < 70
+    const limiteFragil = thresholds.regularMax;
+    const limiteSolido = thresholds.bomMax + 1;
+
+    const impactoConcreto = score <= limiteFragil
       ? `Seu score está em ${score}/100, abaixo do patamar saudável para execução consistente.`
       : `Seu score está em ${score}/100, com estrutura financeira funcional.`;
 
-    const consequencia = score < 70
+    const consequencia = score <= limiteFragil
       ? "Mantendo o cenário atual, o risco de perda de eficiência e desalinhamento com objetivo aumenta nos próximos ciclos."
       : "Se você mantiver a disciplina atual, a tendência é sustentar evolução com menor volatilidade estrutural.";
 
@@ -457,7 +592,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       ? `Decisões recentes ${impactoDecisoes.deltaTotal >= 0 ? "melhoraram" : "pioraram"} o score em ${impactoDecisoes.deltaTotal.toFixed(1)} pontos acumulados.`
       : "Ainda não há decisões simuladas salvas para calibrar o diagnóstico comportamental.";
 
-    if (retorno > 0 && score < 70) {
+    if (retorno > 0 && score <= limiteFragil) {
       return {
         mensagem: `Sua carteira rendeu ${retorno.toFixed(2)}%, mas a estratégia está frágil. ${efeitoDecisoes}`,
         impactoConcreto,
@@ -466,7 +601,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
         insightPrincipal,
       };
     }
-    if (retorno < 0 && score >= 80) {
+    if (retorno < 0 && score >= limiteSolido) {
       return {
         mensagem: `A estratégia está sólida, mas o mercado pressionou o retorno (${retorno.toFixed(2)}%). ${efeitoDecisoes}`,
         impactoConcreto,
@@ -475,7 +610,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
         insightPrincipal,
       };
     }
-    if (retorno < 0 && score < 70) {
+    if (retorno < 0 && score <= limiteFragil) {
       return {
         mensagem: `Resultado e estrutura estão pressionados (retorno ${retorno.toFixed(2)}%). ${efeitoDecisoes}`,
         impactoConcreto,
@@ -495,13 +630,16 @@ export class ServicoInsightsPadrao implements ServicoInsights {
 
   private codigoRiscoPorPenalidade(tipo?: TipoPenalidade): string {
     if (!tipo) return "sem_risco_estrutural";
-    if (["maiorAtivoAlto", "top3Concentrado", "classeUnica", "poucosAtivos"].includes(tipo)) return "concentracao_renda_variavel";
+    if (["maiorAtivoAlto", "concentracaoExtrema", "top3Concentrado", "classeUnica", "poucosAtivos"].includes(tipo)) return "concentracao_renda_variavel";
     if (["aportesInconsistentes", "evolucaoNegativa"].includes(tipo)) return "inconsistencia_aportes";
     if (["perfilConservadorRvAlto", "perfilModeradoRvAlto", "horizonteCurtoAgressivo", "rendaBaixaVolatilidadeAlta", "semDefensivo"].includes(tipo)) {
       return "risco_incompativel_perfil";
     }
-    if (["liquidezBaixa", "dinheiroParadoAlto", "dependenciaDeAtivoIliquido", "endividamentoAlto", "usoExcessivoDaReserva"].includes(tipo)) {
+    if (["liquidezBaixa", "dinheiroParadoAlto", "dependenciaDeAtivoIliquido", "endividamentoAlto"].includes(tipo)) {
       return "estrutura_patrimonial_fragil";
+    }
+    if (["idadeMaduraRiscoAgressivo", "idadeJovemSubaproveitada", "idadePreAposentadoriaDefensiva"].includes(tipo)) {
+      return "risco_incompativel_momento_vida";
     }
     return "desalinhamento_objetivo";
   }
@@ -512,6 +650,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (riscoPrincipal === "risco_incompativel_perfil") return "reduzir_assimetria_nos_proximos_aportes";
     if (riscoPrincipal === "estrutura_patrimonial_fragil") return "recompor_reserva_e_liquidez";
     if (riscoPrincipal === "sem_risco_estrutural") return "manter_estrategia_com_consistencia";
+    if (riscoPrincipal === "risco_incompativel_momento_vida") return "adequar_carteira_ao_momento_de_vida";
     return "realinhar_carteira_ao_objetivo";
   }
 
@@ -530,6 +669,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (codigo === "risco_incompativel_perfil") return "A exposição de risco não está alinhada com seu perfil e contexto atual.";
     if (codigo === "estrutura_patrimonial_fragil") return "O patrimônio está pouco líquido e com pressão de endividamento ou caixa ineficiente.";
     if (codigo === "sem_risco_estrutural") return "Não foi identificada fragilidade dominante com peso crítico.";
+    if (codigo === "risco_incompativel_momento_vida") return "A exposição ao risco não está adequada à sua faixa etária e momento de vida atual.";
     return "A alocação atual não está totalmente aderente ao objetivo financeiro declarado.";
   }
 
@@ -539,6 +679,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (codigo === "reduzir_assimetria_nos_proximos_aportes") return "Rebalancear risco nos próximos aportes";
     if (codigo === "recompor_reserva_e_liquidez") return "Recompor reserva e liquidez imediata";
     if (codigo === "manter_estrategia_com_consistencia") return "Manter estratégia com disciplina";
+    if (codigo === "risco_incompativel_momento_vida") return "Adequar carteira ao momento de vida";
     return "Realinhar carteira ao objetivo";
   }
 }

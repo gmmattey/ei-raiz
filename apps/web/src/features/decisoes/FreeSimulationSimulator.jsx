@@ -6,6 +6,7 @@ import ScenarioComparisonCard from './components/ScenarioComparisonCard';
 import DecisionDiagnosisCard from './components/DecisionDiagnosisCard';
 import SimulationResultBlock from './components/SimulationResultBlock';
 import { decisoesApi, telemetriaApi } from '../../cliente-api';
+import MaskedInput from '../../components/forms/MaskedInput';
 
 const FreeSimulationSimulator = () => {
   const [loading, setLoading] = useState(false);
@@ -22,46 +23,25 @@ const FreeSimulationSimulator = () => {
   });
 
   const onChange = (key) => (e) => setForm((p) => ({ ...p, [key]: key === 'nome' ? e.target.value : Number(e.target.value || 0) }));
-  const Input = ({ label, field, suffix }) => (
-    <div className="flex flex-col gap-2">
-      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">{label}</label>
-      <div className="relative">
-        <input type={field === 'nome' ? 'text' : 'number'} value={form[field]} onChange={onChange(field)} className="w-full rounded-sm border border-[#EFE7DC] bg-[#FDFCFB] px-4 py-3 text-sm font-medium text-[#0B1218] outline-none focus:border-[#F56A2A] focus:bg-white" />
-        {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#0B1218]/20">{suffix}</span>}
-      </div>
-    </div>
-  );
-
-  const calcular = async () => {
-    try { setLoading(true); setErro(''); await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'livre' }); setResultado(await decisoesApi.calcularSimulacao({ tipo: 'livre', nome: form.nome, premissas: form })); }
-    catch { setErro('Falha ao calcular simulação livre.'); }
-    finally { setLoading(false); }
-  };
-
-  const salvar = async () => {
-    try { setLoading(true); setErro(''); await decisoesApi.salvarSimulacao({ tipo: 'livre', nome: form.nome, premissas: form }); await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'livre' }); }
-    catch { setErro('Falha ao salvar simulação.'); }
-    finally { setLoading(false); }
-  };
 
   return (
     <DecisionSimulatorLayout title="Simulação Livre" subtitle="Defina cenários próprios e compare resultados em estrutura padrão do Esquilo.">
       <div className="space-y-8">
         <DecisionFormSection title="Configuração Geral" description="Parâmetros da simulação" icon={Settings}>
-          <Input label="Nome" field="nome" />
-          <Input label="Prazo" field="prazoAnos" suffix="anos" />
-          <Input label="Score atual" field="scoreAtual" />
+          <MaskedInput label="Nome" value={form.nome} onChange={onChange('nome')} />
+          <MaskedInput label="Prazo" type="number" value={form.prazoAnos} onChange={onChange('prazoAnos')} suffix="anos" />
+          <MaskedInput label="Score atual" type="number" value={form.scoreAtual} onChange={onChange('scoreAtual')} />
         </DecisionFormSection>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <DecisionFormSection title="Cenário A" description="Premissas iniciais" icon={Layers}>
-            <Input label="Valor" field="valorA" suffix="BRL" />
-            <Input label="Retorno" field="retornoA" suffix="aa" />
+            <MaskedInput label="Valor" maskType="currency" value={form.valorA} onChange={onChange('valorA')} suffix="BRL" />
+            <MaskedInput label="Retorno" type="number" value={form.retornoA} onChange={onChange('retornoA')} suffix="aa" step="0.01" />
           </DecisionFormSection>
 
           <DecisionFormSection title="Cenário B" description="Premissas alternativas" icon={Layers}>
-            <Input label="Valor" field="valorB" suffix="BRL" />
-            <Input label="Retorno" field="retornoB" suffix="aa" />
+            <MaskedInput label="Valor" maskType="currency" value={form.valorB} onChange={onChange('valorB')} suffix="BRL" />
+            <MaskedInput label="Retorno" type="number" value={form.retornoB} onChange={onChange('retornoB')} suffix="aa" step="0.01" />
           </DecisionFormSection>
         </div>
 

@@ -3,7 +3,7 @@ export type UsuarioPersistido = {
   nome: string;
   cpf: string;
   email: string;
-  senhaHash: string;
+  senhaHash: string | null;
   criadoEm: string;
 };
 
@@ -41,6 +41,9 @@ export interface RepositorioAutenticacao {
   buscarTokenRecuperacao(tokenHash: string): Promise<TokenRecuperacaoPersistido | null>;
   marcarTokenRecuperacaoComoUsado(id: string): Promise<void>;
   atualizarSenha(usuarioId: string, senhaHash: string): Promise<void>;
+  atualizarCadastroInterrompido(input: { usuarioId: string; nome: string; email: string; senhaHash: string }): Promise<void>;
+  removerUsuarioPorId(usuarioId: string): Promise<void>;
+  removerTokensRecuperacaoPorUsuario(usuarioId: string): Promise<void>;
 }
 
 export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
@@ -55,7 +58,7 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
         nome: string;
         cpf: string;
         email: string;
-        senha_hash: string;
+        senha_hash: string | null;
         criado_em: string;
       }>();
 
@@ -79,7 +82,7 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
         nome: string;
         cpf: string;
         email: string;
-        senha_hash: string;
+        senha_hash: string | null;
         criado_em: string;
       }>();
     if (!row) return null;
@@ -102,7 +105,7 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
         nome: string;
         cpf: string;
         email: string;
-        senha_hash: string;
+        senha_hash: string | null;
         criado_em: string;
       }>();
     if (!row) return null;
@@ -174,6 +177,27 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
     await this.db
       .prepare("UPDATE usuarios SET senha_hash = ? WHERE id = ?")
       .bind(senhaHash, usuarioId)
+      .run();
+  }
+
+  async atualizarCadastroInterrompido(input: { usuarioId: string; nome: string; email: string; senhaHash: string }): Promise<void> {
+    await this.db
+      .prepare("UPDATE usuarios SET nome = ?, email = ?, senha_hash = ? WHERE id = ?")
+      .bind(input.nome, input.email, input.senhaHash, input.usuarioId)
+      .run();
+  }
+
+  async removerUsuarioPorId(usuarioId: string): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM usuarios WHERE id = ?")
+      .bind(usuarioId)
+      .run();
+  }
+
+  async removerTokensRecuperacaoPorUsuario(usuarioId: string): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM recuperacoes_acesso WHERE usuario_id = ?")
+      .bind(usuarioId)
       .run();
   }
 }

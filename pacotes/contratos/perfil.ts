@@ -12,6 +12,8 @@ export type PerfilFinanceiro = {
   experienciaInvestimentos?: string;
   toleranciaRiscoReal?: string;
   maturidade: number;
+  /** Faixa etária declarada pelo usuário. Exemplos: "18-25", "26-35", "36-45", "46-55", "56+" */
+  faixaEtaria?: string;
 };
 
 export type ImovelContexto = {
@@ -54,6 +56,9 @@ export type ContextoFinanceiroUsuario = {
   patrimonioExterno: {
     imoveis: ImovelContexto[];
     veiculos: VeiculoContexto[];
+    /** Valor declarado em poupança (campo explícito). */
+    poupanca?: number;
+    /** @deprecated Use `poupanca`. Mantido por compatibilidade. */
     caixaDisponivel: number;
   };
   dividas: DividaContexto[];

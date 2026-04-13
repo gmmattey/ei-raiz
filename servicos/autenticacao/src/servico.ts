@@ -32,13 +32,16 @@ type DependenciasServicoAutenticacao = {
   repositorio: RepositorioAutenticacao;
   segredoJWT: string;
   gerarId?: () => string;
+  notificarRecuperacaoSenha?: (payload: { email: string; token: string; expiraEm: string }) => Promise<void>;
 };
 
 export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
   private readonly gerarId: () => string;
+  private readonly notificarRecuperacaoSenha?: (payload: { email: string; token: string; expiraEm: string }) => Promise<void>;
 
   constructor(private readonly deps: DependenciasServicoAutenticacao) {
     this.gerarId = deps.gerarId ?? (() => crypto.randomUUID());
+    this.notificarRecuperacaoSenha = deps.notificarRecuperacaoSenha;
   }
 
   async registrar(entrada: RegistrarEntrada): Promise<RegistrarSaida> {
@@ -49,7 +52,50 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
       this.deps.repositorio.buscarPorEmail(input.email.toLowerCase().trim()),
     ]);
     if (existenteCpf) {
-      throw new ErroAutenticacao("CPF_JA_CADASTRADO", 409, "CPF já cadastrado");
+      const cadastroInterrompido = !existenteCpf.senhaHash;
+      if (!cadastroInterrompido) {
+        throw new ErroAutenticacao("CPF_JA_CADASTRADO", 409, "CPF já cadastrado");
+      }
+
+      const criadoEmMs = new Date(existenteCpf.criadoEm).getTime();
+      const expirado = Number.isFinite(criadoEmMs) ? Date.now() - criadoEmMs > 24 * 60 * 60 * 1000 : false;
+      const emailNormalizado = input.email.toLowerCase().trim();
+
+      if (expirado) {
+        await this.deps.repositorio.removerTokensRecuperacaoPorUsuario(existenteCpf.id);
+        await this.deps.repositorio.removerUsuarioPorId(existenteCpf.id);
+      } else {
+        if (existenteCpf.email !== emailNormalizado) {
+          throw new ErroAutenticacao(
+            "CADASTRO_INTERROMPIDO_EMAIL_DIVERGENTE",
+            409,
+            "Cadastro interrompido encontrado para este CPF. Continue com o e-mail original.",
+          );
+        }
+        const senhaHashInterrompido = await gerarHashSenha(input.senha);
+        await this.deps.repositorio.atualizarCadastroInterrompido({
+          usuarioId: existenteCpf.id,
+          nome: input.nome.trim(),
+          email: emailNormalizado,
+          senhaHash: senhaHashInterrompido,
+        });
+        const usuarioAtualizado = await this.deps.repositorio.buscarPorId(existenteCpf.id);
+        if (!usuarioAtualizado) {
+          throw new ErroAutenticacao("ERRO_INTERNO_AUTENTICACAO", 500, "Falha ao atualizar cadastro interrompido");
+        }
+        const sessao = await emitirTokenAcesso(
+          { usuarioId: usuarioAtualizado.id, email: usuarioAtualizado.email },
+          this.deps.segredoJWT,
+        );
+        return {
+          usuario: mapUsuario(usuarioAtualizado),
+          sessao: {
+            token: sessao.token,
+            tipo: "Bearer",
+            expiraEm: sessao.expiraEm,
+          },
+        };
+      }
     }
     if (existenteEmail) {
       throw new ErroAutenticacao("EMAIL_JA_CADASTRADO", 409, "E-mail já cadastrado");
@@ -85,6 +131,9 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
       throw new ErroAutenticacao("CREDENCIAIS_INVALIDAS", 401, "Credenciais inválidas");
     }
 
+    if (!usuario.senhaHash) {
+      throw new ErroAutenticacao("CADASTRO_INCOMPLETO", 409, "Cadastro interrompido: redefina a senha para concluir");
+    }
     const senhaValida = await validarSenha(input.senha, usuario.senhaHash);
     if (!senhaValida) {
       throw new ErroAutenticacao("CREDENCIAIS_INVALIDAS", 401, "Credenciais inválidas");
@@ -122,9 +171,13 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
       this.deps.repositorio.buscarPorCpf(cpf),
       this.deps.repositorio.buscarPorEmail(email),
     ]);
+    const cadastroInterrompido = !!existenteCpf && !existenteCpf.senhaHash;
+    const emailEhDaContaInterrompida = cadastroInterrompido && existenteCpf.email === email;
     return {
-      cpfDisponivel: !existenteCpf,
-      emailDisponivel: !existenteEmail,
+      cpfDisponivel: !existenteCpf || cadastroInterrompido,
+      emailDisponivel: !existenteEmail || emailEhDaContaInterrompida,
+      cadastroInterrompido,
+      destinoMascara: cadastroInterrompido ? mascararEmail(existenteCpf.email) : undefined,
     };
   }
 
@@ -132,51 +185,15 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
     const input = recuperarSenhaPorEmailEntradaSchema.parse(entrada);
     const email = input.email.toLowerCase().trim();
     const usuario = await this.deps.repositorio.buscarPorEmail(email);
-    if (!usuario) {
-      throw new ErroAutenticacao("EMAIL_NAO_ENCONTRADO", 404, "Nao existe conta com este e-mail");
-    }
-    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const tokenHash = await gerarHashToken(token);
-    const expiraEm = new Date(Date.now() + 1000 * 60 * 30).toISOString();
-    await this.deps.repositorio.criarTokenRecuperacao({
-      id: crypto.randomUUID(),
-      usuarioId: usuario.id,
-      tokenHash,
-      destinoEmail: usuario.email,
-      expiraEm,
-    });
-    console.log(`[auth] recovery token for ${usuario.email}: ${token}`);
-    return {
-      solicitado: true,
-      canal: "email",
-      destinoMascara: mascararEmail(usuario.email),
-      observacao: "Se a infraestrutura de e-mail estiver ativa, o link/codigo sera enviado.",
-    };
+    await this.criarRecuperacaoSeUsuarioExiste(usuario);
+    return criarRespostaGenericaRecuperacao(usuario?.email ?? email);
   }
 
   async solicitarRecuperacaoPorCpf(entrada: RecuperarAcessoPorCpfEntrada): Promise<RecuperarAcessoPorCpfSaida> {
     const input = recuperarAcessoPorCpfEntradaSchema.parse(entrada);
     const usuario = await this.deps.repositorio.buscarPorCpf(normalizarCpf(input.cpf));
-    if (!usuario) {
-      throw new ErroAutenticacao("CPF_NAO_ENCONTRADO", 404, "Nao existe conta vinculada a este CPF");
-    }
-    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const tokenHash = await gerarHashToken(token);
-    const expiraEm = new Date(Date.now() + 1000 * 60 * 30).toISOString();
-    await this.deps.repositorio.criarTokenRecuperacao({
-      id: crypto.randomUUID(),
-      usuarioId: usuario.id,
-      tokenHash,
-      destinoEmail: usuario.email,
-      expiraEm,
-    });
-    console.log(`[auth] recovery token by cpf for ${usuario.email}: ${token}`);
-    return {
-      solicitado: true,
-      canal: "email",
-      destinoMascara: mascararEmail(usuario.email),
-      observacao: "Se a infraestrutura de e-mail estiver ativa, o link/codigo sera enviado.",
-    };
+    await this.criarRecuperacaoSeUsuarioExiste(usuario);
+    return criarRespostaGenericaRecuperacao(usuario?.email);
   }
 
   async redefinirSenha(entrada: RedefinirSenhaEntrada): Promise<RedefinirSenhaSaida> {
@@ -196,6 +213,27 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
     await this.deps.repositorio.atualizarSenha(token.usuarioId, novaSenhaHash);
     await this.deps.repositorio.marcarTokenRecuperacaoComoUsado(token.id);
     return { redefinido: true };
+  }
+
+  private async criarRecuperacaoSeUsuarioExiste(usuario: { id: string; email: string } | null): Promise<void> {
+    if (!usuario) return;
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const tokenHash = await gerarHashToken(token);
+    const expiraEm = new Date(Date.now() + 1000 * 60 * 30).toISOString();
+    await this.deps.repositorio.criarTokenRecuperacao({
+      id: crypto.randomUUID(),
+      usuarioId: usuario.id,
+      tokenHash,
+      destinoEmail: usuario.email,
+      expiraEm,
+    });
+    if (this.notificarRecuperacaoSenha) {
+      try {
+        await this.notificarRecuperacaoSenha({ email: usuario.email, token, expiraEm });
+      } catch {
+        // Não falha a requisição para evitar vazamento de existência de conta.
+      }
+    }
   }
 }
 
@@ -230,4 +268,13 @@ function mascararEmail(email: string): string {
   if (!local || !dominio) return "***";
   const primeiro = local.charAt(0);
   return `${primeiro}***@${dominio}`;
+}
+
+function criarRespostaGenericaRecuperacao(email?: string): RecuperarSenhaPorEmailSaida {
+  return {
+    solicitado: true,
+    canal: "email",
+    destinoMascara: email ? mascararEmail(email) : "***@***",
+    observacao: "Se existir conta vinculada, você receberá instruções de recuperação no canal cadastrado.",
+  };
 }

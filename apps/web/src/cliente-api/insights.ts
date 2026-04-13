@@ -58,6 +58,18 @@ export type ResumoInsights = {
     fontes: Array<{ fonte: "brapi" | "cvm" | "nenhuma"; quantidade: number }>;
     cobertura_por_status: Record<"atualizado" | "atrasado" | "indisponivel", number>;
   };
+  scoreUnificado?: {
+    score: number;
+    band: "critical" | "fragile" | "stable" | "good" | "strong";
+    completenessStatus: "empty" | "partial" | "complete";
+    calculatedAt: string;
+  };
+  score_unificado?: {
+    score: number;
+    band: "critical" | "fragile" | "stable" | "good" | "strong";
+    completenessStatus: "empty" | "partial" | "complete";
+    calculatedAt: string;
+  };
 };
 
 export function obterScore(): Promise<ScoreCarteira> {

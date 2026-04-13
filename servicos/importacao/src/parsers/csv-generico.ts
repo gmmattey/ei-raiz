@@ -27,7 +27,24 @@ function splitLine(line: string, delimiter: string): string[] {
 }
 
 function parseNumber(input: string): number {
-  const normalized = input.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+  const sanitized = String(input ?? "").trim().replace(/\s+/g, "");
+  if (!sanitized) return Number.NaN;
+  const onlyNumeric = sanitized.replace(/[^\d,.-]/g, "");
+  const lastComma = onlyNumeric.lastIndexOf(",");
+  const lastDot = onlyNumeric.lastIndexOf(".");
+  let normalized = onlyNumeric;
+
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) {
+      normalized = onlyNumeric.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = onlyNumeric.replace(/,/g, "");
+    }
+  } else if (lastComma > -1) {
+    normalized = onlyNumeric.replace(",", ".");
+  }
+
+  normalized = normalized.replace(/(?!^)-/g, "");
   const value = Number.parseFloat(normalized);
   return Number.isFinite(value) ? value : Number.NaN;
 }
