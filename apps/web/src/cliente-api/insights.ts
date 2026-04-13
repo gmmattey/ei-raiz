@@ -42,6 +42,7 @@ export type ResumoInsights = {
     deltaMedio: number;
     deltaTotal: number;
   };
+  scoreHistorico?: number[];
   confiancaDiagnostico?: "alta" | "limitada";
   confianca_diagnostico?: "alta" | "limitada";
   atualizacaoMercado?: {

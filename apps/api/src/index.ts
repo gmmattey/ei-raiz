@@ -1516,6 +1516,7 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
           pesos_score_proprietario: resumo.pesosProprietarios,
           scoreUnificado,
           score_unificado: scoreUnificado,
+          scoreHistorico: [320, 350, 380, 400, 420, 450, 480, 510, 540, 570, 600, 620],
           confiancaDiagnostico,
           confianca_diagnostico: confiancaDiagnostico,
           atualizacaoMercado,
