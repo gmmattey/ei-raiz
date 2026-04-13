@@ -278,6 +278,11 @@ export default function Carteira({ embedded = false }) {
   const [classificacaoScore, setClassificacaoScore] = useState(null);
   const [dashboardPatrimonio, setDashboardPatrimonio] = useState(null);
   const [benchmark, setBenchmark] = useState(null);
+  const [categoriasColapsadas, setCategoriasColapsadas] = useState({});
+
+  const toggleCategoria = (cat) => {
+    setCategoriasColapsadas(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
 
   const refreshMercado = async (listaAtivos) => {
     const tickers = Array.from(new Set((listaAtivos || []).map((item) => item.ticker).filter(Boolean)));
@@ -397,7 +402,37 @@ export default function Carteira({ embedded = false }) {
     if (ordenacao === "retorno_desc") lista.sort((a, b) => (b.retorno12m || 0) - (a.retorno12m || 0));
     return lista;
   }, [ativosFiltrados, tiposSelecionados, plataformaFiltro, statusFiltro, ordenacao]);
-  const semAtivos = !loading && !error && linhasResumo.length === 0;
+
+  // Novo: Agrupamento por categoria
+  const ORDEM_CATEGORIAS = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
+
+  const ativosPorCategoria = useMemo(() => {
+    const grupos = {};
+
+    // Ativos de investimento
+    for (const cat of ORDEM_CATEGORIAS) {
+      if (!tiposSelecionados.includes(cat)) continue;
+      const itens = ativosFiltradosComRegras.filter(a => a.categoria === cat);
+      if (itens.length > 0) {
+        grupos[cat] = itens;
+      }
+    }
+
+    // Bens e Poupança de dashboardPatrimonio
+    const bensPoupanca = (dashboardPatrimonio?.filtros?.todos ?? [])
+      .filter(item => ["bens", "poupanca"].includes(item.categoria) && tiposSelecionados.includes(item.categoria));
+
+    if (bensPoupanca.length > 0) {
+      const bens = bensPoupanca.filter(i => i.categoria === "bens");
+      const poupanca = bensPoupanca.filter(i => i.categoria === "poupanca");
+      if (bens.length > 0) grupos["bens"] = bens;
+      if (poupanca.length > 0) grupos["poupanca"] = poupanca;
+    }
+
+    return grupos;
+  }, [ativosFiltradosComRegras, dashboardPatrimonio, tiposSelecionados]);
+
+  const semAtivos = !loading && !error && Object.keys(ativosPorCategoria ?? {}).length === 0;
   const scoreValor = scoreUnificado?.score ?? resumo?.score ?? 0;
 
   const badgeScore = (() => {
@@ -445,6 +480,167 @@ export default function Carteira({ embedded = false }) {
       }));
     return [...linhasInvestimentos, ...linhasBensPoupanca];
   }, [dashboardPatrimonio, ativosFiltradosComRegras, tiposSelecionados]);
+
+  // Componente para linha de ativo dentro de grupo
+  const AssetRow = ({ asset, categoria, ocultarValores }) => {
+    const isAcao = categoria === "acao";
+    const isFundoOuRendaFixa = ["fundo", "renda_fixa"].includes(categoria);
+    const isPrevidencia = categoria === "previdencia";
+
+    const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
+    const valorAtual = asset.valorAtual ?? asset.valor ?? 0;
+    const quantidade = asset.quantidade ?? 0;
+    const rentabilidade = asset.retorno12m ?? 0;
+
+    const valorAplicado = quantidade * precoMedio;
+    const ganhoAbsoluto = valorAtual - valorAplicado;
+
+    if (isAcao) {
+      return (
+        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
+          <td className="py-4 px-4 text-sm font-semibold">{asset.ticker}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(precoMedio)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : quantidade.toFixed(0)}</td>
+          <td className="py-4 px-4">
+            <button onClick={() => navigate(`/ativo/${asset.ticker}`)} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
+              <Pencil size={13} />
+            </button>
+          </td>
+        </tr>
+      );
+    }
+
+    if (isFundoOuRendaFixa) {
+      return (
+        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
+          <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+          <td className="py-4 px-4">
+            <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
+              <Pencil size={13} />
+            </button>
+          </td>
+        </tr>
+      );
+    }
+
+    if (isPrevidencia) {
+      return (
+        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
+          <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(ganhoAbsoluto)}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
+          <td className="py-4 px-4">
+            <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
+              <Pencil size={13} />
+            </button>
+          </td>
+        </tr>
+      );
+    }
+
+    // Poupança e Bens (sem colun as de preço)
+    return (
+      <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
+        <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+        <td colSpan="5"></td>
+        <td className="py-4 px-4">
+          <button onClick={() => navigate('/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
+            <Pencil size={13} />
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
+  // Componente para grupo de categoria
+  const GrupoCategoria = ({ categoria, ativos: grupoAtivos, ocultarValores }) => {
+    const isColapsed = categoriasColapsadas[categoria] ?? false;
+    const totalGrupo = grupoAtivos.reduce((acc, a) => acc + Number(a.valorAtual ?? a.valor ?? 0), 0);
+    const percGrupo = resumo?.patrimonioTotal > 0 ? (totalGrupo / resumo.patrimonioTotal) * 100 : 0;
+
+    const colunasPorTipo = {
+      acao: ["Ticker", "Posição", "%Aloc", "Rent.%", "Preço Médio", "Último Preço", "Qtd", ""],
+      fundo: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
+      previdencia: ["Nome", "Posição", "%Aloc", "Rendimento (R$)", "Rentabilidade", "Valor Aplicado", ""],
+      renda_fixa: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
+      poupanca: ["Nome", "Posição", "%Aloc", ""],
+      bens: ["Nome", "Posição", "%Aloc", ""],
+    };
+
+    const colunas = colunasPorTipo[categoria] || [];
+
+    return (
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm mb-6 overflow-hidden fade-in-up">
+        {/* Header do grupo */}
+        <button
+          onClick={() => toggleCategoria(categoria)}
+          className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[#FAFAFA] transition-colors"
+        >
+          <span
+            className="w-4 h-4 rounded-full shrink-0"
+            style={{ backgroundColor: COR_CATEGORIA[categoria] ?? "#EFE7DC" }}
+          />
+          <div className="flex-1 text-left">
+            <p className="font-bold text-[var(--text-primary)]">{LABEL_CATEGORIA[categoria]}</p>
+          </div>
+          <div className="flex items-center gap-6 text-right">
+            <div>
+              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Saldo</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                {ocultarValores ? "••••••••" : moeda(totalGrupo)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">% Patrimônio</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                {ocultarValores ? "••••••••" : `${percGrupo.toFixed(1)}%`}
+              </p>
+            </div>
+          </div>
+          <ChevronDown
+            size={20}
+            className={`text-[var(--text-secondary)] transition-transform ${isColapsed ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {/* Conteúdo (tabela) */}
+        {!isColapsed && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#FAFAFA] border-t border-[#EFE7DC]">
+                  {colunas.map((col, idx) => (
+                    <th key={idx} className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {grupoAtivos.map((asset) => (
+                  <AssetRow key={asset.id} asset={asset} categoria={categoria} ocultarValores={ocultarValores} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={`w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)] ${embedded ? '' : 'animate-in fade-in duration-500'}`}>
@@ -637,56 +833,21 @@ export default function Carteira({ embedded = false }) {
           {loading && <div className="p-6 text-sm text-[#0B1218]/50">Carregando seus ativos...</div>}
           {error && <div className="p-6 text-sm text-[#E85C5C]">Não conseguimos carregar seus dados. Tente novamente.</div>}
 
-          {!loading && !error && linhasResumo.length > 0 && (
-            <>
-            <div className="md:hidden p-4 space-y-3">
-              {linhasResumo.map((row) => (
-                <div key={row.id} className="border border-[#EFE7DC] rounded-sm p-4 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-['Sora'] text-sm font-bold">{row.nome}</p>
-                      <p className="text-[10px] text-[#0B1218]/45 uppercase">{row.tipo}</p>
-                    </div>
-                    <button onClick={() => row.ticker ? navigate(`/ativo/${row.ticker}`) : navigate('/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm">
-                      <Pencil size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {!loading && !error && Object.keys(ativosPorCategoria).length > 0 && (
+            <div className="p-6 space-y-4">
+              {ORDEM_CATEGORIAS.map(cat =>
+                ativosPorCategoria[cat] && (
+                  <GrupoCategoria
+                    key={cat}
+                    categoria={cat}
+                    ativos={ativosPorCategoria[cat]}
+                    ocultarValores={ocultarValores}
+                  />
+                )
+              )}
             </div>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#FAFAFA] border-b border-[#EFE7DC]">
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Nome</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Tipo</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Val. Investido</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Val. Atualizado</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">% Rent.</th>
-                    <th className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">Editar</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {linhasResumo.map((row) => (
-                    <tr key={row.id} className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
-                      <td className="py-4 px-4 text-sm font-semibold">{row.nome}</td>
-                      <td className="py-4 px-4 text-sm uppercase">{row.tipo}</td>
-                      <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(row.valorInvestido)}</td>
-                      <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(row.valorAtualizado)}</td>
-                      <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${row.rentabilidade.toFixed(2)}%`}</td>
-                      <td className="py-4 px-4">
-                        <button onClick={() => row.ticker ? navigate(`/ativo/${row.ticker}`) : navigate('/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
-                          <Pencil size={13} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            </>
           )}
-          {!loading && !error && linhasResumo.length === 0 && (
+          {!loading && !error && Object.keys(ativosPorCategoria).length === 0 && (
             <div className="p-8 text-center">
               <p className="text-sm text-[#0B1218]/60">Nenhum ativo encontrado para esse filtro.</p>
             </div>
