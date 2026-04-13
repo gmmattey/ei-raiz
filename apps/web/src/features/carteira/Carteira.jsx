@@ -6,6 +6,7 @@ import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi } from "../
 import PageHeader from "../../components/design-system/PageHeader";
 import MetricCard from "../../components/design-system/MetricCard";
 import EstadoVazio from "../../components/feedback/EstadoVazio";
+import { IconeCategoria } from "../../components/base/IconeCategoria";
 import { formatarHora } from "../../utils/formatarData";
 import { useModoVisualizacao } from "../../context/ModoVisualizacaoContext";
 
@@ -590,10 +591,9 @@ export default function Carteira({ embedded = false }) {
           onClick={() => toggleCategoria(categoria)}
           className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[#FAFAFA] transition-colors"
         >
-          <span
-            className="w-4 h-4 rounded-full shrink-0"
-            style={{ backgroundColor: COR_CATEGORIA[categoria] ?? "#EFE7DC" }}
-          />
+          <div className="w-8 h-8 shrink-0">
+            <IconeCategoria categoria={categoria} size={24} />
+          </div>
           <div className="flex-1 text-left">
             <p className="font-bold text-[var(--text-primary)]">{LABEL_CATEGORIA[categoria]}</p>
           </div>
