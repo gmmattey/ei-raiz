@@ -35,6 +35,7 @@ import { BrapiProvider } from "./server/providers/brapi.provider";
 import { MarketDataService } from "./server/services/market-data.service";
 import { SessionMarketService } from "./server/services/session-market.service";
 import { UnifiedScoreService } from "./server/services/unified-score.service";
+import { veraBridge } from "./server/services/vera-bridge";
 
 type Env = {
   DB: D1Database;
@@ -57,7 +58,7 @@ const MASSA_TESTE_EI_RAIZ = {
   senha: "Teste@1234",
 } as const;
 
-const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/decisoes", "/api/posicoes", "/api/app", "/api/admin", "/api/telemetria", "/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score"];
+const routePrefixes = ["/api/auth", "/api/carteira", "/api/importacao", "/api/perfil", "/api/insights", "/api/historico", "/api/decisoes", "/api/vera", "/api/posicoes", "/api/app", "/api/admin", "/api/telemetria", "/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score"];
 const forcedFinancialPrefixes = ["/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score"];
 const categoriasPermitidas: CategoriaAtivo[] = ["acao", "fundo", "previdencia", "renda_fixa"];
 
@@ -201,9 +202,10 @@ const contextoFinanceiroSchema = z.object({
           }),
         )
         .default([]),
+      poupanca: z.number().default(0),
       caixaDisponivel: z.number().default(0),
     })
-    .default({ imoveis: [], veiculos: [], caixaDisponivel: 0 }),
+    .default({ imoveis: [], veiculos: [], poupanca: 0, caixaDisponivel: 0 }),
   dividas: z
     .array(
       z.object({
@@ -215,6 +217,22 @@ const contextoFinanceiroSchema = z.object({
     )
     .default([]),
 });
+
+type ItemPatrimonioDashboard = {
+  id: string;
+  nome: string;
+  categoria: "acao" | "fundo" | "previdencia" | "renda_fixa" | "poupanca" | "bens";
+  valor: number;
+  percentual: number;
+};
+
+const calcularPercentuais = (itensBase: Array<Omit<ItemPatrimonioDashboard, "percentual">>): ItemPatrimonioDashboard[] => {
+  const total = itensBase.reduce((acc, item) => acc + item.valor, 0);
+  return itensBase.map((item) => ({
+    ...item,
+    percentual: total > 0 ? Number(((item.valor / total) * 100).toFixed(4)) : 0,
+  }));
+};
 
 // Schema legado CSV
 const uploadImportacaoCsvSchema = z.object({
@@ -394,7 +412,14 @@ const getAuthService = (env: Env): ServicoAutenticacaoPadrao =>
     segredoJWT: env.JWT_SECRET || "dev-secret",
     notificarRecuperacaoSenha: async ({ email, token, expiraEm }) => {
       const webhook = env.PASSWORD_RESET_WEBHOOK_URL?.trim();
-      if (!webhook) return;
+      if (!webhook) {
+        console.log("----------------------------------------------------------");
+        console.log(`[DEV] Recuperação de senha solicitada para: ${email}`);
+        console.log(`[DEV] Token: ${token}`);
+        console.log(`[DEV] Expira em: ${expiraEm}`);
+        console.log("----------------------------------------------------------");
+        return;
+      }
       await fetch(webhook, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -611,12 +636,110 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
       }
     }
     const resumo = await carteiraService.obterResumo(sessao.usuario.id);
+    const ativos = (await carteiraService.listarAtivos(sessao.usuario.id)) as AtivoComMercado[];
+    const contexto = await perfilService.obterContextoFinanceiro(sessao.usuario.id);
+    const patrimonioInvestimentos = ativos.reduce((acc, item) => acc + Number(item.valorAtual ?? 0), 0);
+    const patrimonioImoveis = (contexto?.patrimonioExterno?.imoveis ?? []).reduce(
+      (acc, item) => acc + Math.max(0, Number(item.valorEstimado ?? 0) - Number(item.saldoFinanciamento ?? 0)),
+      0,
+    );
+    const patrimonioVeiculos = (contexto?.patrimonioExterno?.veiculos ?? []).reduce(
+      (acc, item) => acc + Math.max(0, Number(item.valorEstimado ?? 0)),
+      0,
+    );
+    const patrimonioBens = patrimonioImoveis + patrimonioVeiculos;
+    const patrimonioPoupanca = Number(contexto?.patrimonioExterno?.poupanca ?? contexto?.patrimonioExterno?.caixaDisponivel ?? 0);
+    const patrimonioTotalConsolidado = patrimonioInvestimentos + patrimonioBens + patrimonioPoupanca;
+    const distribuicaoBase = [
+      { id: "investimentos", label: "Investimentos", valor: patrimonioInvestimentos },
+      { id: "bens", label: "Bens", valor: patrimonioBens },
+      { id: "poupanca", label: "Poupança", valor: patrimonioPoupanca },
+    ].filter((item) => item.valor > 0);
+    const distribuicaoPatrimonio = distribuicaoBase.map((item) => ({
+      ...item,
+      percentual: patrimonioTotalConsolidado > 0 ? Number(((item.valor / patrimonioTotalConsolidado) * 100).toFixed(4)) : 0,
+    }));
+
+    const resumoConsolidado = {
+      ...resumo,
+      patrimonioTotal: Number(patrimonioTotalConsolidado.toFixed(2)),
+      patrimonioInvestimentos: Number(patrimonioInvestimentos.toFixed(2)),
+      patrimonioBens: Number(patrimonioBens.toFixed(2)),
+      patrimonioPoupanca: Number(patrimonioPoupanca.toFixed(2)),
+      distribuicaoPatrimonio,
+    };
     try {
       const scoreInsights = await insightsService.calcularScore(sessao.usuario.id);
-      return { ok: true, dados: { ...resumo, score: scoreInsights.score } };
+      return { ok: true, dados: { ...resumoConsolidado, score: scoreInsights.score } };
     } catch {
-      return { ok: true, dados: resumo };
+      return { ok: true, dados: resumoConsolidado };
     }
+  }
+
+  if (pathname === "/api/carteira/dashboard" && request.method === "GET") {
+    const refresh = getMarketRefreshService(env);
+    if (refresh) {
+      try {
+        await refresh.refreshUserListedAssets(sessao.usuario.id);
+      } catch {
+        // segue com cache
+      }
+    }
+
+    const ativos = (await carteiraService.listarAtivos(sessao.usuario.id)) as AtivoComMercado[];
+    const contexto = await perfilService.obterContextoFinanceiro(sessao.usuario.id);
+    const itensInvestimento: Array<Omit<ItemPatrimonioDashboard, "percentual">> = ativos
+      .filter((a) => Number(a.valorAtual ?? 0) > 0)
+      .map((a) => ({
+        id: a.id,
+        nome: a.ticker || a.nome || "Ativo",
+        categoria: a.categoria,
+        valor: Number(a.valorAtual ?? 0),
+      }));
+    const itensBens: Array<Omit<ItemPatrimonioDashboard, "percentual">> = [
+      ...(contexto?.patrimonioExterno?.imoveis ?? [])
+        .map((item) => ({
+          id: item.id,
+          nome: item.tipo || "Imóvel",
+          categoria: "bens" as const,
+          valor: Math.max(0, Number(item.valorEstimado ?? 0) - Number(item.saldoFinanciamento ?? 0)),
+        }))
+        .filter((item) => item.valor > 0),
+      ...(contexto?.patrimonioExterno?.veiculos ?? [])
+        .map((item) => ({
+          id: item.id,
+          nome: item.tipo || "Veículo",
+          categoria: "bens" as const,
+          valor: Math.max(0, Number(item.valorEstimado ?? 0)),
+        }))
+        .filter((item) => item.valor > 0),
+    ];
+    const valorPoupanca = Number(contexto?.patrimonioExterno?.poupanca ?? contexto?.patrimonioExterno?.caixaDisponivel ?? 0);
+    const itensPoupanca: Array<Omit<ItemPatrimonioDashboard, "percentual">> =
+      valorPoupanca > 0 ? [{ id: "poupanca", nome: "Poupança", categoria: "poupanca", valor: valorPoupanca }] : [];
+    const todosBase = [...itensInvestimento, ...itensBens, ...itensPoupanca];
+
+    const filtros = { 
+      todos: calcularPercentuais(todosBase),
+      acao: calcularPercentuais(itensInvestimento.filter((item) => item.categoria === "acao")),
+      fundo: calcularPercentuais(itensInvestimento.filter((item) => item.categoria === "fundo")),
+      previdencia: calcularPercentuais(itensInvestimento.filter((item) => item.categoria === "previdencia")),
+      renda_fixa: calcularPercentuais(itensInvestimento.filter((item) => item.categoria === "renda_fixa")),
+      poupanca: calcularPercentuais(itensPoupanca),
+      bens: calcularPercentuais(itensBens),
+    };
+
+    const totais = Object.fromEntries(
+      Object.entries(filtros).map(([key, value]) => [key, Number(value.reduce((acc, item) => acc + item.valor, 0).toFixed(2))]),
+    );
+
+    return {
+      ok: true,
+      dados: {
+        filtros,
+        totais,
+      },
+    };
   }
 
   if (pathname === "/api/carteira/benchmark" && request.method === "GET") {
@@ -996,11 +1119,17 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
 
   if (pathname === "/api/perfil/contexto" && request.method === "PUT") {
     const body = contextoFinanceiroSchema.parse(await parseJsonBody(request));
+    const poupancaNormalizada = Number(body.patrimonioExterno?.poupanca ?? body.patrimonioExterno?.caixaDisponivel ?? 0);
     return {
       ok: true,
       dados: await perfilService.salvarContextoFinanceiro({
         usuarioId: sessao.usuario.id,
         ...body,
+        patrimonioExterno: {
+          ...body.patrimonioExterno,
+          poupanca: poupancaNormalizada,
+          caixaDisponivel: poupancaNormalizada,
+        },
       }),
     };
   }
@@ -1159,6 +1288,13 @@ async function dispatch(pathname: string, request: Request, env: Env, sessao: Se
     const simulacao = await decisoesService.obter(sessao.usuario.id, id);
     if (!simulacao) return { ok: false, status: 404, codigo: "SIMULACAO_NAO_ENCONTRADA", mensagem: "Simulação não encontrada" };
     return { ok: true, dados: simulacao };
+  }
+
+  // Vera — Financial evaluation and insights
+  if (pathname === "/api/vera/avaliar" && request.method === "POST") {
+    const body = await parseJsonBody(request);
+    const result = veraBridge.avaliar(body as any);
+    return { ok: true, dados: result };
   }
 
   if (pathname === "/api/importacao/upload" && request.method === "POST") {
