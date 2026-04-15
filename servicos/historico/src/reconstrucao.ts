@@ -1,6 +1,8 @@
 import type {
   EstadoReconstrucaoCarteira,
+  MapaPrecosHistoricos,
   PayloadHistoricoMensal,
+  ProvedorHistoricoCotacoes,
   ServicoReconstrucaoCarteira,
   StatusReconstrucao,
 } from "@ei/contratos";
@@ -54,26 +56,54 @@ type Dependencias = {
   fila: RepositorioFilaReconstrucao;
   historicoMensal: RepositorioHistoricoMensal;
   fonte: FonteDadosReconstrucao;
+  /**
+   * Provedor opcional de cotações históricas mensais. Quando presente, a
+   * reconstrução usa close real por (ticker, ano-mês). Quando ausente, mantém
+   * o fallback de quantidade × precoMedio constante.
+   */
+  provedorHistorico?: ProvedorHistoricoCotacoes;
 };
 
 const TAMANHO_LOTE_PADRAO = 6; // 6 meses por execução (margem para timeout do Worker)
 
 /**
+ * Calcula o valor de mercado de um ativo num determinado mês.
+ * Usa o close histórico real quando o ticker está presente no mapa, senão cai
+ * no preço médio (aproximação v1).
+ */
+function valorAtivoNoMes(
+  ativo: AtivoParaReconstrucao,
+  anoMes: string,
+  precosHistoricos?: MapaPrecosHistoricos,
+): number {
+  if (precosHistoricos && ativo.ticker) {
+    const porMes = precosHistoricos.get(ativo.ticker.toUpperCase());
+    const close = porMes?.get(anoMes);
+    if (typeof close === "number" && Number.isFinite(close) && close > 0) {
+      return ativo.quantidade * close;
+    }
+  }
+  return ativo.quantidade * ativo.precoMedio;
+}
+
+/**
  * Monta o payload mensal a partir dos ativos que já existiam no mês de referência.
  *
- * Aproximação v1: usa quantidade × precoMedio como valor do ativo no mês (sem
- * variação de mercado histórica). Para bens/poupança usa os valores atuais do
- * contexto — não temos histórico desses campos.
+ * Quando `precosHistoricos` é fornecido, usa close real por (ticker, ano-mês).
+ * Quando ausente, cai no fallback v1 de quantidade × precoMedio constante.
+ * Para bens/poupança usa os valores atuais do contexto — não temos histórico
+ * desses campos.
  */
 export function montarPayloadMesHistorico(
   ativos: AtivoParaReconstrucao[],
   contexto: ContextoReconstrucao,
   anoMes: string,
+  precosHistoricos?: MapaPrecosHistoricos,
 ): PayloadHistoricoMensal {
   const ativosNoMes = ativos.filter((a) => extrairAnoMes(a.dataAquisicao) <= anoMes);
 
   const patrimonioInvestimentos = ativosNoMes.reduce(
-    (acc, a) => acc + a.quantidade * a.precoMedio,
+    (acc, a) => acc + valorAtivoNoMes(a, anoMes, precosHistoricos),
     0,
   );
 
@@ -107,15 +137,20 @@ export function montarPayloadMesHistorico(
 
   return {
     ativos: ativosNoMes.map((a) => {
-      const valorAtivo = a.quantidade * a.precoMedio;
+      const valorAtivo = valorAtivoNoMes(a, anoMes, precosHistoricos);
+      const totalInvestido = a.quantidade * a.precoMedio;
+      const retornoAcumulado =
+        totalInvestido > 0
+          ? Number((((valorAtivo - totalInvestido) / totalInvestido) * 100).toFixed(4))
+          : 0;
       return {
         id: a.id,
         ticker: a.ticker ?? null,
         nome: a.nome,
         categoria: a.categoria,
         valorAtual: Number(valorAtivo.toFixed(2)),
-        totalInvestido: Number(valorAtivo.toFixed(2)),
-        retornoAcumulado: 0,
+        totalInvestido: Number(totalInvestido.toFixed(2)),
+        retornoAcumulado,
         participacao:
           patrimonioTotal > 0
             ? Number(((valorAtivo / patrimonioTotal) * 100).toFixed(4))
@@ -132,6 +167,29 @@ export function montarPayloadMesHistorico(
 
 export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCarteira {
   constructor(private readonly deps: Dependencias) {}
+
+  /**
+   * Busca cotações históricas mensais para todos os tickers únicos da carteira.
+   * Falha silenciosa: provedor ausente ou erro retornam undefined → fallback v1.
+   */
+  private async carregarPrecosHistoricos(
+    ativos: AtivoParaReconstrucao[],
+  ): Promise<MapaPrecosHistoricos | undefined> {
+    if (!this.deps.provedorHistorico) return undefined;
+    const tickers = Array.from(
+      new Set(
+        ativos
+          .map((a) => a.ticker?.trim().toUpperCase())
+          .filter((t): t is string => Boolean(t && t.length > 0)),
+      ),
+    );
+    if (tickers.length === 0) return undefined;
+    try {
+      return await this.deps.provedorHistorico.obterPrecosHistoricosMensais(tickers);
+    } catch {
+      return undefined;
+    }
+  }
 
   async enfileirar(usuarioId: string): Promise<EstadoReconstrucaoCarteira> {
     const ativos = await this.deps.fonte.listarAtivos(usuarioId);
@@ -192,6 +250,10 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
         });
       }
 
+      // Pré-busca cotações históricas uma única vez por execução de lote.
+      // Falhas no provedor não abortam a reconstrução — caímos no fallback.
+      const precosHistoricos = await this.carregarPrecosHistoricos(ativos);
+
       let mesesProcessados = marcado.mesesProcessados;
       let cursorParaGravar = cursorInicial;
       let ultimoGravado: string | null = marcado.anoMesCursor;
@@ -199,7 +261,12 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
       for (let i = 0; i < tamanhoLote; i += 1) {
         if (cursorParaGravar > marcado.anoMesFinal) break;
 
-        const payload = montarPayloadMesHistorico(ativos, contexto, cursorParaGravar);
+        const payload = montarPayloadMesHistorico(
+          ativos,
+          contexto,
+          cursorParaGravar,
+          precosHistoricos,
+        );
 
         const totalInvestido = payload.ativos.reduce(
           (acc, a) => acc + a.totalInvestido,

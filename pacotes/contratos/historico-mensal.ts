@@ -83,3 +83,20 @@ export interface ServicoReconstrucaoCarteira {
     tamanhoLote?: number,
   ): Promise<EstadoReconstrucaoCarteira>;
 }
+
+/**
+ * Mapa de cotações históricas por ticker → (ano-mês → preço de fechamento).
+ * Pré-carregado uma vez por lote para evitar N×M chamadas externas.
+ */
+export type MapaPrecosHistoricos = Map<string, Map<string, number>>;
+
+/**
+ * Provedor opcional de cotações históricas mensais.
+ * Recebe lista de tickers e devolve o mapa consolidado.
+ *
+ * Implementação canônica: adapter sobre BRAPI getHistory(range="10y", interval="1mo").
+ * Quando ausente, a reconstrução cai no fallback (quantidade × precoMedio).
+ */
+export interface ProvedorHistoricoCotacoes {
+  obterPrecosHistoricosMensais(tickers: string[]): Promise<MapaPrecosHistoricos>;
+}

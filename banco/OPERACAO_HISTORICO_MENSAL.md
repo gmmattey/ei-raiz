@@ -131,11 +131,17 @@ crons = ["*/5 * * * *", "0 3 * * *"]
 
 ## 5. Limitações conhecidas (intencionais nesta entrega)
 
-- **Reconstrução é aproximada**: usa `quantidade × precoMedio` constante por mês,
-  já que o schema atual não guarda histórico de aportes incrementais por data.
-  Curva de **acúmulo de patrimônio** é real (entra ativo, soma); mas
-  **variação de mercado intra-passado** é zero. Próxima evolução: integrar com
-  `MarketDataService.getHistory` para enriquecer mês a mês.
+- **Aportes incrementais não são reconstruídos por data**: o schema atual não
+  guarda quando cada lote de quantidade entrou. A reconstrução assume que a
+  `quantidade` atual existia desde `data_aquisicao`.
+- **Variação de mercado histórica para tickers BRAPI** já é aplicada: o
+  `ServicoReconstrucaoCarteira` consulta `MarketDataService.getHistory(ticker, "10y", "1mo")`
+  uma vez por lote e usa o `close` mensal real para ações/ETFs/BDRs. Sem
+  `BRAPI_TOKEN` ou para ativos sem ticker (FIIs por CNPJ, fundos, criptos),
+  cai no fallback `quantidade × precoMedio`.
+- **Bens e poupança usam valores atuais**: não há histórico desses campos no
+  schema. Próxima evolução opcional: registrar snapshots periódicos de
+  `perfil_contexto_financeiro`.
 - **`portfolio_snapshots` não foi alterada**: continua como estado atual da
   carteira. Será deprecada apenas quando 100% dos usuários tiverem reconstrução
   concluída e o frontend tiver migrado totalmente.

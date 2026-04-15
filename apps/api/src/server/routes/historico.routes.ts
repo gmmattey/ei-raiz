@@ -10,6 +10,7 @@ import {
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { erro, sucesso } from "../types/gateway";
+import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
 
 const TAMANHO_LOTE_RECONSTRUCAO = 6;
 
@@ -21,6 +22,7 @@ const construirServicoReconstrucao = (env: Env): ServicoReconstrucaoCarteiraPadr
     fila: new RepositorioFilaReconstrucaoD1(env.DB),
     historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
     fonte: new FonteDadosReconstrucaoD1(env.DB),
+    provedorHistorico: construirProvedorHistoricoCotacoes(env),
   });
 
 export async function handleHistoricoRoutes(

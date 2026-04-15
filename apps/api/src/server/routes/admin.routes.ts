@@ -8,6 +8,7 @@ import {
 } from "@ei/servico-historico";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
+import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
 import {
   obterAppConfig,
   obterConteudoApp,
@@ -327,6 +328,7 @@ export async function handleAdminRoutes(
       fila: new RepositorioFilaReconstrucaoD1(env.DB),
       historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
       fonte: new FonteDadosReconstrucaoD1(env.DB),
+      provedorHistorico: construirProvedorHistoricoCotacoes(env),
     });
 
     let enfileirados = 0;
@@ -365,6 +367,7 @@ export async function handleAdminRoutes(
       fila: new RepositorioFilaReconstrucaoD1(env.DB),
       historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
       fonte: new FonteDadosReconstrucaoD1(env.DB),
+      provedorHistorico: construirProvedorHistoricoCotacoes(env),
     });
 
     let processados = 0;

@@ -12,9 +12,11 @@ import type { RepositorioHistoricoMensal } from "../src/historico-mensal";
 import type {
   EstadoReconstrucaoCarteira,
   HistoricoMensalCompleto,
+  MapaPrecosHistoricos,
   OrigemHistoricoMensal,
   PayloadHistoricoMensal,
   PontoHistoricoMensal,
+  ProvedorHistoricoCotacoes,
 } from "@ei/contratos";
 
 const ativo = (
@@ -215,4 +217,144 @@ test("ServicoReconstrucaoCarteiraPadrao: processar com fila concluída é no-op"
   const estado = await servico.processarProximoLote("u1");
   assert.equal(estado.status, "concluido");
   assert.equal(historico.pontos.length, 0);
+});
+
+// ─── Testes do provedor de cotações históricas ───────────────────────────────
+
+test("montarPayloadMesHistorico: usa preço histórico do mapa quando disponível", () => {
+  const ativos = [ativo("petr4", "2025-01-01T00:00:00Z", 100, 30)]; // precoMedio=30
+  const precos: MapaPrecosHistoricos = new Map([
+    [
+      "PETR4",
+      new Map([
+        ["2025-06", 35], // mês com cobertura → usa 35
+        ["2025-07", 40],
+      ]),
+    ],
+  ]);
+
+  const payloadJun = montarPayloadMesHistorico(ativos, contextoVazio, "2025-06", precos);
+  assert.equal(payloadJun.patrimonioInvestimentos, 3500); // 100 × 35
+  assert.equal(payloadJun.ativos[0].valorAtual, 3500);
+  assert.equal(payloadJun.ativos[0].totalInvestido, 3000); // mantém precoMedio
+  assert.ok(Math.abs(payloadJun.ativos[0].retornoAcumulado - 16.6667) < 0.01);
+
+  // Mês sem cobertura no mapa → fallback para precoMedio
+  const payloadAgo = montarPayloadMesHistorico(ativos, contextoVazio, "2025-08", precos);
+  assert.equal(payloadAgo.patrimonioInvestimentos, 3000); // 100 × 30
+  assert.equal(payloadAgo.ativos[0].retornoAcumulado, 0);
+});
+
+test("montarPayloadMesHistorico: ticker ausente do mapa cai em precoMedio", () => {
+  const ativos = [
+    ativo("petr4", "2025-01-01T00:00:00Z", 100, 30),
+    ativo("vale3", "2025-01-01T00:00:00Z", 50, 60), // não está no mapa
+  ];
+  const precos: MapaPrecosHistoricos = new Map([
+    ["PETR4", new Map([["2025-06", 35]])],
+  ]);
+
+  const payload = montarPayloadMesHistorico(ativos, contextoVazio, "2025-06", precos);
+  // PETR4 com close real (3500) + VALE3 fallback (3000)
+  assert.equal(payload.patrimonioInvestimentos, 6500);
+});
+
+class ProvedorFake implements ProvedorHistoricoCotacoes {
+  public chamadas = 0;
+  constructor(private readonly mapa: MapaPrecosHistoricos) {}
+  async obterPrecosHistoricosMensais(_tickers: string[]): Promise<MapaPrecosHistoricos> {
+    this.chamadas += 1;
+    return this.mapa;
+  }
+}
+
+test("ServicoReconstrucaoCarteiraPadrao: provedor histórico injetado é chamado uma vez por lote", async () => {
+  const ativos = [ativo("petr4", "2025-11-01T00:00:00Z", 100, 30)];
+  const fila = new FilaFake();
+  const historico = new HistoricoFake();
+  const provedor = new ProvedorFake(
+    new Map([
+      [
+        "PETR4",
+        new Map([
+          ["2025-11", 31],
+          ["2025-12", 32],
+          ["2026-01", 33],
+        ]),
+      ],
+    ]),
+  );
+  const servico = new ServicoReconstrucaoCarteiraPadrao({
+    fila,
+    historicoMensal: historico,
+    fonte: new FonteFake(ativos),
+    provedorHistorico: provedor,
+  });
+
+  await fila.criar("u1", "2025-11", "2026-01");
+  await servico.processarProximoLote("u1", 3);
+
+  assert.equal(provedor.chamadas, 1, "deve ser chamado uma única vez no lote");
+  assert.equal(historico.pontos.length, 3);
+  // nov: 100 × 31 = 3100, dez: 100 × 32 = 3200, jan: 100 × 33 = 3300
+  assert.equal(historico.pontos[0].totalAtual, 3100);
+  assert.equal(historico.pontos[1].totalAtual, 3200);
+  assert.equal(historico.pontos[2].totalAtual, 3300);
+});
+
+class ProvedorComErro implements ProvedorHistoricoCotacoes {
+  async obterPrecosHistoricosMensais(): Promise<MapaPrecosHistoricos> {
+    throw new Error("brapi indisponível");
+  }
+}
+
+test("ServicoReconstrucaoCarteiraPadrao: erro no provedor não aborta — usa fallback", async () => {
+  const ativos = [ativo("petr4", "2025-11-01T00:00:00Z", 100, 30)];
+  const fila = new FilaFake();
+  const historico = new HistoricoFake();
+  const servico = new ServicoReconstrucaoCarteiraPadrao({
+    fila,
+    historicoMensal: historico,
+    fonte: new FonteFake(ativos),
+    provedorHistorico: new ProvedorComErro(),
+  });
+
+  await fila.criar("u1", "2025-11", "2025-12");
+  const estado = await servico.processarProximoLote("u1", 2);
+
+  assert.equal(estado.status, "concluido");
+  assert.equal(historico.pontos.length, 2);
+  // Sem cotação → fallback precoMedio: 100 × 30 = 3000 nos dois meses
+  assert.equal(historico.pontos[0].totalAtual, 3000);
+  assert.equal(historico.pontos[1].totalAtual, 3000);
+});
+
+test("ServicoReconstrucaoCarteiraPadrao: provedor não é consultado quando carteira não tem ticker", async () => {
+  const ativos: AtivoParaReconstrucao[] = [
+    {
+      id: "imov1",
+      ticker: null,
+      nome: "Imóvel",
+      categoria: "imovel",
+      quantidade: 1,
+      precoMedio: 500_000,
+      dataAquisicao: "2025-11-01T00:00:00Z",
+    },
+  ];
+  const fila = new FilaFake();
+  const historico = new HistoricoFake();
+  const provedor = new ProvedorFake(new Map());
+  const servico = new ServicoReconstrucaoCarteiraPadrao({
+    fila,
+    historicoMensal: historico,
+    fonte: new FonteFake(ativos),
+    provedorHistorico: provedor,
+  });
+
+  await fila.criar("u1", "2025-11", "2025-11");
+  await servico.processarProximoLote("u1", 1);
+
+  assert.equal(provedor.chamadas, 0, "sem ticker nenhum, não chama o provedor");
+  assert.equal(historico.pontos.length, 1);
+  assert.equal(historico.pontos[0].totalAtual, 500_000);
 });
