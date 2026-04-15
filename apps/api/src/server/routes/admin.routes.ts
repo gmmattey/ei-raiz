@@ -1,5 +1,11 @@
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import { z } from "zod";
+import {
+  FonteDadosReconstrucaoD1,
+  RepositorioFilaReconstrucaoD1,
+  RepositorioHistoricoMensalD1,
+  ServicoReconstrucaoCarteiraPadrao,
+} from "@ei/servico-historico";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
 import {
@@ -264,6 +270,125 @@ export async function handleAdminRoutes(
     }
     await definirAdmin(env.DB, sessao.usuario.email, true, sessao.usuario.email);
     return sucesso({ atualizado: true });
+  }
+
+  // ─── Reconstrução de histórico mensal em massa ─────────────────────────────
+  // Idempotente: pode ser chamado várias vezes. Limitado por usuários com
+  // ativos cadastrados. Cada chamada de "processar-todos" processa 1 lote
+  // (N meses por usuário) — chame em loop até "status" reportar 0 pendentes.
+
+  if (pathname === "/api/admin/historico/reconstruir/status" && request.method === "GET") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const rows = await env.DB
+      .prepare(
+        "SELECT status, COUNT(*) AS total FROM fila_reconstrucao_carteira GROUP BY status",
+      )
+      .all<{ status: string; total: number }>();
+
+    const totais: Record<string, number> = { pendente: 0, processando: 0, concluido: 0, erro: 0 };
+    for (const row of rows.results ?? []) {
+      totais[row.status] = Number(row.total ?? 0);
+    }
+
+    const usuariosComAtivos = await env.DB
+      .prepare("SELECT COUNT(DISTINCT usuario_id) AS total FROM ativos")
+      .first<{ total: number }>();
+
+    return sucesso({
+      totais,
+      usuariosComAtivos: Number(usuariosComAtivos?.total ?? 0),
+      faltamEnfileirar: Math.max(
+        0,
+        Number(usuariosComAtivos?.total ?? 0) -
+          (totais.pendente + totais.processando + totais.concluido + totais.erro),
+      ),
+    });
+  }
+
+  if (pathname === "/api/admin/historico/reconstruir/enfileirar-todos" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const usuariosRows = await env.DB
+      .prepare(
+        [
+          "SELECT DISTINCT a.usuario_id",
+          "FROM ativos a",
+          "LEFT JOIN fila_reconstrucao_carteira f ON f.usuario_id = a.usuario_id",
+          "WHERE f.usuario_id IS NULL",
+        ].join(" "),
+      )
+      .all<{ usuario_id: string }>();
+
+    const usuarios = usuariosRows.results ?? [];
+    const servico = new ServicoReconstrucaoCarteiraPadrao({
+      fila: new RepositorioFilaReconstrucaoD1(env.DB),
+      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
+      fonte: new FonteDadosReconstrucaoD1(env.DB),
+    });
+
+    let enfileirados = 0;
+    const erros: Array<{ usuarioId: string; mensagem: string }> = [];
+    for (const { usuario_id } of usuarios) {
+      try {
+        await servico.enfileirar(usuario_id);
+        enfileirados += 1;
+      } catch (err) {
+        erros.push({
+          usuarioId: usuario_id,
+          mensagem: err instanceof Error ? err.message : "erro desconhecido",
+        });
+      }
+    }
+
+    return sucesso({ enfileirados, totalCandidatos: usuarios.length, erros });
+  }
+
+  if (pathname === "/api/admin/historico/reconstruir/processar-todos" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const body = await parseJsonBody(request).catch(() => ({}));
+    const tamanhoLoteSchema = z.object({ tamanhoLote: z.number().int().min(1).max(12).optional() });
+    const { tamanhoLote = 6 } = tamanhoLoteSchema.parse(body);
+
+    const pendentesRows = await env.DB
+      .prepare(
+        "SELECT usuario_id FROM fila_reconstrucao_carteira WHERE status IN ('pendente', 'processando')",
+      )
+      .all<{ usuario_id: string }>();
+
+    const pendentes = pendentesRows.results ?? [];
+    const servico = new ServicoReconstrucaoCarteiraPadrao({
+      fila: new RepositorioFilaReconstrucaoD1(env.DB),
+      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
+      fonte: new FonteDadosReconstrucaoD1(env.DB),
+    });
+
+    let processados = 0;
+    let concluidos = 0;
+    const erros: Array<{ usuarioId: string; mensagem: string }> = [];
+    for (const { usuario_id } of pendentes) {
+      try {
+        const estado = await servico.processarProximoLote(usuario_id, tamanhoLote);
+        processados += 1;
+        if (estado.status === "concluido") concluidos += 1;
+      } catch (err) {
+        erros.push({
+          usuarioId: usuario_id,
+          mensagem: err instanceof Error ? err.message : "erro desconhecido",
+        });
+      }
+    }
+
+    return sucesso({
+      processados,
+      concluidosAgora: concluidos,
+      restantes: Math.max(0, pendentes.length - concluidos),
+      erros,
+    });
   }
 
   return null;

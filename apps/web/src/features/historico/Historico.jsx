@@ -37,11 +37,24 @@ export default function Historico() {
       try {
         setLoading(true);
         setError("");
-        const [listaSnapshots, listaEventos] = await Promise.all([
+        // Prefere o histórico mensal novo (historico_carteira_mensal); se vazio,
+        // cai para snapshots_patrimonio legado. Eventos seguem o caminho antigo.
+        const [respMensal, listaSnapshotsLegado, listaEventos] = await Promise.all([
+          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
           historicoApi.listarSnapshots(24),
           historicoApi.listarEventos(24),
         ]);
         if (!ativo) return;
+        const pontosMensais = respMensal?.pontos ?? [];
+        const listaSnapshots = pontosMensais.length > 0
+          ? pontosMensais.map((p) => ({
+              id: p.id,
+              usuarioId: p.usuarioId,
+              data: p.dataFechamento,
+              valorTotal: p.totalAtual,
+              variacaoPercentual: p.retornoMes,
+            }))
+          : listaSnapshotsLegado;
         const limiteData = new Date();
         limiteData.setMonth(limiteData.getMonth() - activeRange.months);
         const filtradosSnapshots = listaSnapshots.filter((item) => {
@@ -91,12 +104,12 @@ export default function Historico() {
             <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-2">Evolução Patrimonial</h1>
             <p className="text-[var(--text-secondary)] text-sm font-medium">Acompanhe como seu patrimônio evoluiu ao longo do tempo.</p>
           </div>
-          <div className="flex items-center gap-2 p-1 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-sm">
+          <div className="flex items-center gap-2 p-1 bg-[var(--bg-card-alt)] border border-[var(--border-color)] rounded-xl">
             {ranges.map((range) => (
               <button
                 key={range.label}
                 onClick={() => setActiveRange(range)}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-sm ${activeRange.label === range.label ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-xl ${activeRange.label === range.label ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
               >
                 {range.label}
               </button>
@@ -118,7 +131,7 @@ export default function Historico() {
 
         {!loading && !error && !semHistorico && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 md:gap-16 items-start">
-            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm overflow-hidden mb-6">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden mb-6">
               <div className="p-5 md:p-8 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--bg-card-alt)]">
                 <h3 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]">Snapshots</h3>
                 <span className="flex items-center gap-2 text-[10px] font-bold uppercase text-[var(--text-muted)]">
@@ -142,7 +155,7 @@ export default function Historico() {
             </div>
 
             <aside className="space-y-8">
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] p-6 md:p-8 text-[var(--text-primary)] rounded-sm">
+              <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] p-6 md:p-8 text-[var(--text-primary)] rounded-xl">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-6">Evolução no período ({activeRange.label})</h4>
                 {evolucaoPeriodo !== null ? (
                   <>
@@ -161,7 +174,7 @@ export default function Historico() {
                 )}
               </div>
 
-              <div className="p-6 md:p-8 border border-[var(--border-color)] bg-[var(--bg-card)] rounded-sm">
+              <div className="p-6 md:p-8 border border-[var(--border-color)] bg-[var(--bg-card)] rounded-xl">
                 <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[var(--text-primary)] mb-6">Eventos Relevantes</h4>
                 <div className="space-y-4">
                   {eventos.map((evento) => (

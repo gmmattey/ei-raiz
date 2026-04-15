@@ -2,7 +2,7 @@ import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insigh
 import { RepositorioCarteiraD1, ServicoCarteiraPadrao } from "@ei/servico-carteira";
 import { UnifiedScoreService } from "../services/unified-score.service";
 import { PortfolioViewService } from "../services/portfolio-view.service";
-import { reprocessUserPortfolio } from "../jobs/portfolio-reprocess.job";
+import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 import type { RiscoPrincipal, AcaoPrioritaria, SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { sucesso } from "../types/gateway";
@@ -165,7 +165,7 @@ export async function handleInsightsRoutes(
           : `${resumo.diagnostico.mensagem} Atenção: parte das cotações está ${atualizacaoMercado.statusGeral === "atrasado" ? "atrasada" : "indisponível"}; revise antes de decisão crítica.`;
 
       // Dispara reprocessamento em background para próxima requisição servir do cache
-      ctx.waitUntil(reprocessUserPortfolio(userId, env));
+      ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env, { refrescarMercado: false }));
 
       return sucesso({
         scoreGeral: resumo.scoreDetalhado.score,

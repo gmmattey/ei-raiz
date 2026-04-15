@@ -19,6 +19,7 @@ import { handleAdminRoutes } from "./server/routes/admin.routes";
 import { handleScoreRoutes } from "./server/routes/score.routes";
 import { handleTelemetriaRoutes } from "./server/routes/telemetria.routes";
 import { refreshAllUsersMarketQuotes } from "./server/jobs/market-refresh.job";
+import { registrarFechamentoMensalTodosUsuarios } from "./server/jobs/historico-mensal.job";
 
 // Re-exporta Env para uso em workers bindings
 export type { Env };
@@ -87,7 +88,7 @@ async function dispatch(
     () => handleCarteiraRoutes(pathname, request, env, sessao, ctx),
     () => handleInsightsRoutes(pathname, request, env, sessao, ctx),
     () => handlePerfilRoutes(pathname, request, env, sessao),
-    () => handleHistoricoRoutes(pathname, request, env, sessao),
+    () => handleHistoricoRoutes(pathname, request, env, sessao, ctx),
     () => handlePosicoesRoutes(pathname, request, env, sessao),
     () => handleDecisoesRoutes(pathname, request, env, sessao),
     () => handleImportacaoRoutes(pathname, request, env, sessao, ctx),
@@ -150,8 +151,14 @@ export default {
     }
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    // Cron trigger: atualiza cotações de mercado para todos os usuários
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Dois crons diferenciados via `event.cron` (configurados em wrangler.toml):
+    //   */5 * * * *  → refresh de cotações de mercado
+    //   0 3 * * *    → fechamento mensal D-1 (histórico da carteira)
+    if (event.cron === "0 3 * * *") {
+      ctx.waitUntil(registrarFechamentoMensalTodosUsuarios(env).catch(() => {}));
+      return;
+    }
     ctx.waitUntil(refreshAllUsersMarketQuotes(env).catch(() => {}));
   },
 };

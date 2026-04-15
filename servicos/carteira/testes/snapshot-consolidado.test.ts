@@ -1,0 +1,94 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { calcularSnapshotConsolidado, type AtivoParaSnapshot } from "../src/snapshot-consolidado";
+import type { ContextoFinanceiroUsuario } from "@ei/contratos";
+
+const ativoBase = (overrides: Partial<AtivoParaSnapshot> = {}): AtivoParaSnapshot => ({
+  id: "a1",
+  ticker: "PETR4",
+  nome: "Petrobras",
+  categoria: "acao",
+  valorAtual: 1000,
+  quantidade: 10,
+  precoMedio: 80,
+  retorno12m: 25,
+  participacao: 0,
+  ...overrides,
+});
+
+const contextoVazio: ContextoFinanceiroUsuario = {
+  usuarioId: "u1",
+  patrimonioExterno: { imoveis: [], veiculos: [], poupanca: 0, caixaDisponivel: 0 },
+  dividas: [],
+};
+
+test("calcularSnapshotConsolidado: soma investimentos e calcula retorno total", () => {
+  const ativos = [
+    ativoBase({ valorAtual: 1000, quantidade: 10, precoMedio: 80 }),
+    ativoBase({ id: "a2", ticker: "VALE3", valorAtual: 500, quantidade: 5, precoMedio: 90 }),
+  ];
+
+  const snap = calcularSnapshotConsolidado(ativos, contextoVazio);
+
+  assert.equal(snap.totalAtual, 1500);
+  assert.equal(snap.totalInvestido, 1250); // 800 + 450
+  assert.ok(Math.abs(snap.retornoTotal - 20) < 0.01); // (1500-1250)/1250*100
+  assert.equal(snap.payload.patrimonioInvestimentos, 1500);
+  assert.equal(snap.payload.patrimonioTotal, 1500);
+});
+
+test("calcularSnapshotConsolidado: inclui imóveis líquidos (valor - financiamento)", () => {
+  const ctx: ContextoFinanceiroUsuario = {
+    ...contextoVazio,
+    patrimonioExterno: {
+      imoveis: [
+        { id: "i1", tipo: "casa", valorEstimado: 500_000, saldoFinanciamento: 200_000, geraRenda: false },
+      ],
+      veiculos: [{ id: "v1", tipo: "carro", valorEstimado: 50_000, quitado: true }],
+      poupanca: 10_000,
+      caixaDisponivel: 0,
+    },
+  };
+
+  const snap = calcularSnapshotConsolidado([ativoBase({ valorAtual: 100_000 })], ctx);
+
+  assert.equal(snap.payload.patrimonioBens, 350_000); // 300k + 50k
+  assert.equal(snap.payload.patrimonioPoupanca, 10_000);
+  assert.equal(snap.payload.patrimonioTotal, 460_000);
+});
+
+test("calcularSnapshotConsolidado: distribuição inclui só categorias com valor > 0", () => {
+  const snap = calcularSnapshotConsolidado([ativoBase({ valorAtual: 100 })], contextoVazio);
+  assert.equal(snap.payload.distribuicaoPatrimonio.length, 1);
+  assert.equal(snap.payload.distribuicaoPatrimonio[0]?.id, "investimentos");
+  assert.equal(snap.payload.distribuicaoPatrimonio[0]?.percentual, 100);
+});
+
+test("calcularSnapshotConsolidado: carteira vazia retorna zeros sem dividir por zero", () => {
+  const snap = calcularSnapshotConsolidado([], contextoVazio);
+  assert.equal(snap.totalAtual, 0);
+  assert.equal(snap.totalInvestido, 0);
+  assert.equal(snap.retornoTotal, 0);
+  assert.equal(snap.payload.distribuicaoPatrimonio.length, 0);
+});
+
+test("calcularSnapshotConsolidado: aceita contexto null", () => {
+  const snap = calcularSnapshotConsolidado([ativoBase({ valorAtual: 200 })], null);
+  assert.equal(snap.payload.patrimonioBens, 0);
+  assert.equal(snap.payload.patrimonioPoupanca, 0);
+  assert.equal(snap.payload.patrimonioTotal, 200);
+});
+
+test("calcularSnapshotConsolidado: trata saldoFinanciamento maior que valor (bens > 0)", () => {
+  const ctx: ContextoFinanceiroUsuario = {
+    ...contextoVazio,
+    patrimonioExterno: {
+      imoveis: [{ id: "i1", tipo: "casa", valorEstimado: 100_000, saldoFinanciamento: 200_000, geraRenda: false }],
+      veiculos: [],
+      poupanca: 0,
+      caixaDisponivel: 0,
+    },
+  };
+  const snap = calcularSnapshotConsolidado([], ctx);
+  assert.equal(snap.payload.patrimonioBens, 0); // negativo é zerado
+});

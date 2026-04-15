@@ -6,8 +6,7 @@ import { z } from "zod";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
 import { PortfolioViewService } from "../services/portfolio-view.service";
-import { reprocessUserPortfolio } from "../jobs/portfolio-reprocess.job";
-import { refreshMarketQuotesForUser } from "../jobs/market-refresh.job";
+import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 
 const categoriasPermitidas: CategoriaAtivo[] = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
 
@@ -366,7 +365,7 @@ export async function handleCarteiraRoutes(
       .prepare("UPDATE ativos SET data_aquisicao = ? WHERE id = ? AND usuario_id = ?")
       .bind(body.dataAquisicao, ativoId, userId)
       .run();
-    ctx.waitUntil(reprocessUserPortfolio(userId, env));
+    ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env, { refrescarMercado: false }));
     return sucesso({ atualizado: true, mensagem: "Data de aquisição atualizada com sucesso. Comparativos recalculados." });
   }
 
@@ -415,7 +414,7 @@ export async function handleCarteiraRoutes(
       env.DB.prepare("INSERT INTO ativos_movimentacoes (id, usuario_id, ativo_origem_id, ativo_destino_id, valor, data_movimentacao, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(id, userId, body.ativoOrigemId, body.ativoDestinoId, body.valor, body.dataMovimentacao, body.observacao ?? "", agora),
     ]);
-    ctx.waitUntil(reprocessUserPortfolio(userId, env));
+    ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env, { refrescarMercado: false }));
     return sucesso({
       id,
       mensagem: "Movimentação vinculada e aplicada nas posições com sucesso.",
@@ -457,8 +456,7 @@ export async function handleCarteiraRoutes(
       .bind(novaQ, novoPMedio, novoValor, novoRetorno, ativoId, userId)
       .run();
 
-    ctx.waitUntil(reprocessUserPortfolio(userId, env));
-    ctx.waitUntil(refreshMarketQuotesForUser(userId, env));
+    ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env));
     return sucesso({
       atualizado: true,
       mensagem: "Aporte registrado com sucesso.",
@@ -489,7 +487,7 @@ export async function handleCarteiraRoutes(
     } catch {
       // auditoria não bloqueia exclusão
     }
-    ctx.waitUntil(reprocessUserPortfolio(userId, env));
+    ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env, { refrescarMercado: false }));
     return sucesso({ removido: true, mensagem: "Ativo excluído com sucesso." });
   }
 

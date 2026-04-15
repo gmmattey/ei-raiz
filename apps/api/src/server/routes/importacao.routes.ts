@@ -3,8 +3,7 @@ import type { ItemPatrimonioBruto, SessaoUsuarioSaida } from "@ei/contratos";
 import { z } from "zod";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso } from "../types/gateway";
-import { reprocessUserPortfolio } from "../jobs/portfolio-reprocess.job";
-import { refreshMarketQuotesForUser } from "../jobs/market-refresh.job";
+import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 
 const uploadImportacaoCsvSchema = z.object({
   nomeArquivo: z.string().min(1),
@@ -72,9 +71,8 @@ export async function handleImportacaoRoutes(
     const importacaoId = pathname.replace("/api/importacao/", "").replace("/confirmar", "");
     const body = confirmarImportacaoSchema.parse(await parseJsonBody(request));
     const confirmacao = await importacaoService.confirmarImportacao(importacaoId, body.itensValidos);
-    // Após importação confirmada: reprocessa snapshot e atualiza cotações
-    ctx.waitUntil(reprocessUserPortfolio(userId, env));
-    ctx.waitUntil(refreshMarketQuotesForUser(userId, env));
+    // Após importação confirmada: orquestra refresh + snapshot (sequencial, sem duplicação)
+    ctx.waitUntil(orquestrarPosEscritaCarteira(userId, env));
     return sucesso(confirmacao);
   }
 
