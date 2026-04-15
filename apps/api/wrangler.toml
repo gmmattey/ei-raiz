@@ -8,3 +8,8 @@ database_name = "esquilo-invest-dev"
 database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 preview_database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 migrations_dir = "../../banco/migrations"
+
+# Cron trigger: atualiza cotações de mercado a cada 5 minutos
+# O handler `scheduled()` em src/index.ts chama refreshAllUsersMarketQuotes()
+[[triggers]]
+crons = ["*/5 * * * *"]

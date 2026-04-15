@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import type { WorkSheet } from "xlsx";
 import type {
   AbaImportacao,
   ItemAcaoBruto,
@@ -8,6 +8,17 @@ import type {
   ItemPoupancaBruto,
   ItemVeiculoBruto,
 } from "@ei/contratos";
+
+// ─── Lazy loader — xlsx (~300KB) só carrega quando o parse for chamado ────────
+
+// biome-ignore lint/suspicious/noExplicitAny: variável de runtime carregada dinamicamente
+let XLSX: typeof import("xlsx") = null as any;
+
+async function loadXLSX(): Promise<void> {
+  if (!XLSX) {
+    XLSX = await import("xlsx");
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -217,7 +228,9 @@ export type ResultadoParseXlsx = {
 
 // ─── Parser principal ─────────────────────────────────────────────────────────
 
-export function parseXlsx(arquivo: File): Promise<ResultadoParseXlsx> {
+export async function parseXlsx(arquivo: File): Promise<ResultadoParseXlsx> {
+  await loadXLSX();
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -305,7 +318,7 @@ export function parseXlsx(arquivo: File): Promise<ResultadoParseXlsx> {
 }
 
 // Localiza a linha de cabeçalho real (ignora as linhas de título/instrução no topo)
-function encontrarLinhaHeader(ws: XLSX.WorkSheet): number {
+function encontrarLinhaHeader(ws: WorkSheet): number {
   const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1:A1");
   for (let r = range.s.r; r <= Math.min(range.e.r, 10); r++) {
     for (let c = range.s.c; c <= range.e.c; c++) {

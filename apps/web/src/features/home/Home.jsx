@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from
 import { LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiError, carteiraApi, insightsApi, perfilApi, configApi, getStoredUser } from '../../cliente-api';
+import { cache } from '../../utils/cache';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import Onboarding from '../onboarding/onboarding';
@@ -12,7 +13,7 @@ import PerfilUsuario from '../perfil/PerfilUsuario';
 import Importar from '../importacao/Importar';
 import Configuracoes from '../perfil/Configuracoes';
 
-const HOME_CACHE_KEY = 'ei_home_cache_v1';
+const HOME_CACHE_KEY = 'home_v1';
 const DONUT_COLORS = {
   investimentos: '#F56A2A',
   bens: '#6FCF97',
@@ -143,84 +144,87 @@ export default function HomeLobby() {
         setError('');
         setUsuario(getStoredUser());
 
+        // Tentar carregar do cache para renderização instantânea
         if (!showSuccessImport) {
-          const cacheRaw = sessionStorage.getItem(HOME_CACHE_KEY);
-          if (cacheRaw) {
-            try {
-              const cache = JSON.parse(cacheRaw);
-              if (ativo && cache?.resumo && cache?.insights) {
-                setResumo(cache.resumo);
-                setInsights(cache.insights);
-                setPerfilDados(cache.perfilDados ?? null);
-                setQuickActionMenus(cache.quickActionMenus ?? []);
-                setPerfilIncompleto(Boolean(cache.perfilIncompleto));
-                setCompletudePerfil(Number(cache.completudePerfil ?? 0));
-                setLoading(false);
-                return;
-              }
-            } catch {
-              sessionStorage.removeItem(HOME_CACHE_KEY);
-            }
+          const dadosCache = cache.get(HOME_CACHE_KEY);
+          if (ativo && dadosCache?.resumo) {
+            setResumo(dadosCache.resumo);
+            setInsights(dadosCache.insights ?? null);
+            setPerfilDados(dadosCache.perfilDados ?? null);
+            setQuickActionMenus(dadosCache.quickActionMenus ?? []);
+            setPerfilIncompleto(Boolean(dadosCache.perfilIncompleto));
+            setCompletudePerfil(Number(dadosCache.completudePerfil ?? 0));
+            setLoading(false);
+            
+            // Mesmo com cache, atualizamos em background para dados frescos
+            void recarregarHomeSemPiscada();
+            return;
           }
         }
 
         setLoading(true);
         
-        const [dadosCarteira, dadosInsights, dadosPerfil, appConfig] = await Promise.all([
+        // Dados Críticos: Resumo da Carteira (Patrimônio Total) e Configurações Básicas
+        const [dadosCarteira, dadosPerfil, appConfig] = await Promise.all([
           carteiraApi.obterResumoCarteira(),
-          insightsApi.obterResumo(),
           perfilApi.obterPerfil().catch(() => null),
           configApi.obterAppConfig().catch(() => null),
         ]);
 
-        if (ativo) {
-          setResumo(dadosCarteira);
-          setInsights(dadosInsights);
-          let proxCompletude = 0;
-          let proxPerfilIncompleto = true;
-          if (dadosPerfil) {
-            setPerfilDados(dadosPerfil);
-            let preenchidos = 0;
-            if (dadosPerfil.objetivo) preenchidos++;
-            if (dadosPerfil.horizonte) preenchidos++;
-            if (dadosPerfil.perfilRisco) preenchidos++;
-            if (Number(dadosPerfil.rendaMensal) > 0) preenchidos++;
-            
-            const perc = Math.round((preenchidos / 4) * 100);
-            proxCompletude = perc;
-            proxPerfilIncompleto = perc < 100;
-            setCompletudePerfil(perc);
-            setPerfilIncompleto(proxPerfilIncompleto);
-          } else {
-            setPerfilDados(null);
-            setCompletudePerfil(0);
-            setPerfilIncompleto(true);
-          }
-          const quickMenus = (appConfig?.menus ?? [])
-            .filter((m) => String(m.chave || '').startsWith('quick_'))
-            .sort((a, b) => a.ordem - b.ordem);
-          setQuickActionMenus(quickMenus);
+        if (!ativo) return;
+        setResumo(dadosCarteira);
+        cache.set('carteira_resumo', dadosCarteira); // compartilha com usePortfolioData
 
-          sessionStorage.setItem(
-            HOME_CACHE_KEY,
-            JSON.stringify({
+        // Processar Perfil e Menus (Dados não bloqueantes para a visão inicial)
+        if (dadosPerfil) {
+          setPerfilDados(dadosPerfil);
+          let preenchidos = 0;
+          if (dadosPerfil.objetivo) preenchidos++;
+          if (dadosPerfil.horizonte) preenchidos++;
+          if (dadosPerfil.perfilRisco) preenchidos++;
+          if (Number(dadosPerfil.rendaMensal) > 0) preenchidos++;
+          const perc = Math.round((preenchidos / 4) * 100);
+          setCompletudePerfil(perc);
+          setPerfilIncompleto(perc < 100);
+        }
+
+        const quickMenus = (appConfig?.menus ?? [])
+          .filter((m) => String(m.chave || '').startsWith('quick_'))
+          .sort((a, b) => a.ordem - b.ordem);
+        setQuickActionMenus(quickMenus);
+
+        // Liberar UI assim que o patrimônio estiver pronto
+        setLoading(false);
+
+        // Insights e Score: Carregar em background (pode ser lento)
+        try {
+          const dadosInsights = await insightsApi.obterResumo();
+          cache.set('insights_resumo', dadosInsights); // compartilha com useInsights
+          if (ativo) {
+            setInsights(dadosInsights);
+            
+            // Persistir no cache com tudo completo
+            cache.set(HOME_CACHE_KEY, {
               resumo: dadosCarteira,
               insights: dadosInsights,
               perfilDados: dadosPerfil ?? null,
               quickActionMenus: quickMenus,
-              perfilIncompleto: proxPerfilIncompleto,
-              completudePerfil: proxCompletude,
-            }),
-          );
+              perfilIncompleto: (completudePerfil < 100),
+              completudePerfil: completudePerfil,
+            });
+          }
+        } catch (e) {
+          console.error('Falha ao carregar insights de score:', e);
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/', { replace: true });
           return;
         }
-        if (ativo) setError('Falha ao carregar dados da Home.');
-      } finally {
-        if (ativo) setLoading(false);
+        if (ativo) {
+          setError('Falha ao carregar dados principais.');
+          setLoading(false);
+        }
       }
     })();
 
@@ -232,9 +236,16 @@ export default function HomeLobby() {
   const recarregarHomeSemPiscada = async () => {
     try {
       setError('');
+      const TTL = 60 * 1000;
+      const resumoCached = cache.get('carteira_resumo', TTL);
+      const insightsCached = cache.get('insights_resumo', TTL);
       const [dadosCarteira, dadosInsights, dadosPerfil, appConfig] = await Promise.all([
-        carteiraApi.obterResumoCarteira(),
-        insightsApi.obterResumo(),
+        resumoCached
+          ? Promise.resolve(resumoCached)
+          : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
+        insightsCached
+          ? Promise.resolve(insightsCached)
+          : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
         perfilApi.obterPerfil().catch(() => null),
         configApi.obterAppConfig().catch(() => null),
       ]);
@@ -263,17 +274,14 @@ export default function HomeLobby() {
       setCompletudePerfil(proxCompletude);
       setPerfilIncompleto(proxPerfilIncompleto);
 
-      sessionStorage.setItem(
-        HOME_CACHE_KEY,
-        JSON.stringify({
-          resumo: dadosCarteira,
-          insights: dadosInsights,
-          perfilDados: dadosPerfil ?? null,
-          quickActionMenus: quickMenus,
-          perfilIncompleto: proxPerfilIncompleto,
-          completudePerfil: proxCompletude,
-        }),
-      );
+      cache.set(HOME_CACHE_KEY, {
+        resumo: dadosCarteira,
+        insights: dadosInsights,
+        perfilDados: dadosPerfil ?? null,
+        quickActionMenus: quickMenus,
+        perfilIncompleto: proxPerfilIncompleto,
+        completudePerfil: proxCompletude,
+      });
     } catch {
       setError('Falha ao atualizar dados da Home.');
     }
@@ -310,12 +318,12 @@ export default function HomeLobby() {
   const fallbackQuickActions = [
     { chave: 'quick_perfil', label: 'Perfil', path: '/perfil', ordem: 101 },
     { chave: 'quick_importar', label: 'Importar', path: '/importar', ordem: 102 },
-    { chave: 'quick_acoes', label: 'Ações', path: '/carteira?categoria=acao', ordem: 103 },
-    { chave: 'quick_fundos', label: 'Fundos', path: '/carteira?categoria=fundo', ordem: 104 },
-    { chave: 'quick_previdencia', label: 'Previdência', path: '/carteira?categoria=previdencia', ordem: 105 },
-    { chave: 'quick_renda_fixa', label: 'Renda Fixa', path: '/carteira?categoria=renda_fixa', ordem: 106 },
-    { chave: 'quick_poupanca', label: 'Poupança', path: '/placeholder?modulo=poupanca', ordem: 107 },
-    { chave: 'quick_bens', label: 'Bens', path: '/placeholder?modulo=bens', ordem: 108 },
+    { chave: 'quick_acoes', label: 'Ações', path: '/acoes', ordem: 103 },
+    { chave: 'quick_fundos', label: 'Fundos', path: '/fundos', ordem: 104 },
+    { chave: 'quick_previdencia', label: 'Previdência', path: '/previdencia', ordem: 105 },
+    { chave: 'quick_renda_fixa', label: 'Renda Fixa', path: '/renda-fixa', ordem: 106 },
+    { chave: 'quick_poupanca', label: 'Poupança', path: '/poupanca', ordem: 107 },
+    { chave: 'quick_bens', label: 'Bens', path: '/bens', ordem: 108 },
     { chave: 'quick_simuladores', label: 'Simuladores', path: '/decisoes', ordem: 109 },
     { chave: 'quick_configurar', label: 'Configurar', path: '/configuracoes', ordem: 110 },
   ];
@@ -328,7 +336,7 @@ export default function HomeLobby() {
         setQuickModalOpen(true);
         return;
       }
-      navigate('/carteira');
+      navigate(item.path);
     },
   }));
 
@@ -365,13 +373,13 @@ export default function HomeLobby() {
     return (
       <div className="w-full">
         <div className="mb-12">
-          <div className="h-4 w-24 skeleton mb-2 rounded" />
-          <div className="h-10 w-48 skeleton mb-8 rounded" />
-          <div className="h-64 skeleton rounded-sm" />
+          <div className="h-4 w-24 skeleton mb-2 rounded-xl" />
+          <div className="h-10 w-48 skeleton mb-8 rounded-xl" />
+          <div className="h-64 skeleton rounded-xl" />
         </div>
-        <div className="h-32 skeleton mb-12 rounded-sm" />
+        <div className="h-32 skeleton mb-12 rounded-xl" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 skeleton rounded-sm" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 skeleton rounded-xl" />)}
         </div>
       </div>
     );
@@ -386,7 +394,7 @@ export default function HomeLobby() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="fixed top-24 md:top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 pr-6 rounded-sm shadow-2xl backdrop-blur-md"
+            className="fixed top-24 md:top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 pr-6 rounded-xl shadow-2xl backdrop-blur-md"
           >
             <div className="flex items-center justify-center w-10 h-10 bg-[#6FCF97]/10 rounded-full">
               <CheckCircle2 size={24} className="text-[#6FCF97]" />
@@ -441,8 +449,8 @@ export default function HomeLobby() {
         <section className="mb-12 fade-in-up">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center min-h-[64px]">
-              <h1 className="font-['Sora'] text-3xl font-bold tracking-tight text-[#0B1218] md:text-4xl">
-                {getSaudacao()},{' '}
+              <h1 className="font-['Sora'] text-3xl font-bold tracking-tight text-[#0B1218] md:text-5xl leading-[1.1]">
+                {getSaudacao()},<br />
                 <span className="text-[#F56A2A]">{getNomeExibicao(usuario?.nome)}</span>.
               </h1>
             </div>
@@ -464,7 +472,7 @@ export default function HomeLobby() {
           </div>
 
           {mostrarCardOnboarding && (
-            <div className="mb-6 border border-[var(--border-color)] bg-[var(--bg-card)] px-4 py-3 rounded-sm transition-all">
+            <div className="mb-6 border border-[var(--border-color)] bg-[var(--bg-card)] px-6 py-5 rounded-xl transition-all shadow-md shadow-black/5">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] items-center gap-4 min-w-0 flex-1">
                   <p className="font-['Sora'] text-lg md:text-xl font-bold text-[var(--text-primary)] leading-tight max-w-[280px]">
@@ -505,7 +513,7 @@ export default function HomeLobby() {
                       setOnboardingStep(2);
                       setOnboardingPopupOpen(true);
                     }}
-                    className="shrink-0 px-3 py-1.5 rounded-sm bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-colors"
+                    className="shrink-0 px-4 py-2 rounded-xl bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-colors"
                   >
                     Responder agora
                   </button>
@@ -521,8 +529,8 @@ export default function HomeLobby() {
           )}
 
           {/* Card Principal de Patrimônio */}
-          <div className="rounded border border-[var(--border-color)] bg-[var(--bg-card)] p-8 shadow-md transition-all hover:shadow-lg md:p-10 fade-in-up" style={{ animationDelay: '0.05s' }}>
-            <div className="flex flex-col gap-8">
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-8 shadow-lg shadow-black/8 transition-all hover:shadow-xl md:p-10 fade-in-up" style={{ animationDelay: '0.05s' }}>
+            <div className="flex flex-col md:flex-row justify-between gap-8">
               <div className="flex-1">
                 <div className="mb-4 flex items-center gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">{texto("home.cartao_principal.titulo", "Patrimônio Total")}</p>
@@ -552,39 +560,13 @@ export default function HomeLobby() {
                         </span>
                       </div>
                     )}
-                    {scoreUnificado && (
-                      <div className="flex items-center">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">Score</span>
-                          <span className="font-['Sora'] text-sm font-bold text-[var(--text-primary)]">
-                            {ocultarValores ? (
-                              '••••••••'
-                            ) : (
-                              <>
-                                <AnimatedCounter value={scoreExibicao} isCurrency={false} />
-                                <span className="text-[var(--text-muted)] font-normal">/{scoreEscala}</span>
-                              </>
-                            )}
-                          </span>
-                          {scoreUnificado.band && (
-                            <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 ${classificacaoCor(scoreUnificado.band === 'critical' ? 'critico' : scoreUnificado.band === 'fragile' ? 'baixo' : scoreUnificado.band === 'strong' ? 'excelente' : scoreUnificado.band === 'good' ? 'bom' : 'ok')}`}>
-                              {scoreUnificado.band === 'critical' ? 'Crítico' : scoreUnificado.band === 'fragile' ? 'Frágil' : scoreUnificado.band === 'stable' ? 'Estável' : scoreUnificado.band === 'good' ? 'Bom' : 'Sólido'}
-                            </span>
-                          )}
-                        </div>
-                        <ScoreSparkline historico={insights.scoreHistorico || []} />
-                      </div>
-                    )}
+                    
                     {scoreStatus === 'partial' && (
                       <p className="text-[10px] text-[#F2C94C] uppercase tracking-widest font-bold">
                         Score com dados incompletos — complete seu perfil para leitura precisa
                       </p>
                     )}
-                    {(insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo) && (
-                      <p className="text-[11px] font-medium leading-relaxed text-[#0B1218]/60 max-w-md">
-                        {insights?.diagnosticoFinal?.mensagem || insights?.diagnostico?.resumo}
-                      </p>
-                    )}
+
                     {insights?.impactoDecisoesRecentes?.quantidade > 0 && (
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/45">
                         {ocultarValores
@@ -606,13 +588,13 @@ export default function HomeLobby() {
                           setQuickModalType('quick_importar');
                           setQuickModalOpen(true);
                         }}
-                        className="flex items-center justify-center gap-2 rounded-sm bg-[#F56A2A] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#d95a20] transition-colors"
+                        className="flex items-center justify-center gap-2 rounded-xl bg-[#F56A2A] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#d95a20] transition-colors"
                       >
                         Importar dados <ArrowRight size={14} />
                       </button>
                       <button
                         onClick={() => navigate('/perfil')}
-                        className="flex items-center justify-center gap-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:border-[#F56A2A] transition-colors"
+                        className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:border-[#F56A2A] transition-colors"
                       >
                         Completar perfil <ArrowRight size={14} />
                       </button>
@@ -623,71 +605,60 @@ export default function HomeLobby() {
                 {error && <p className="mt-4 text-xs text-[#E85C5C] font-medium">Não conseguimos carregar seus dados. Tente novamente.</p>}
               </div>
 
-              <div className="flex gap-4 border-t border-[var(--border-color)] pt-6">
-                {!ocultarValores && possuiPatrimonioDeclarado ? (
-                  <DonutDistribuicaoPatrimonio total={patrimonioDeclaradoTotal} itens={distribuicaoPatrimonio} />
-                ) : null}
+              <div className="flex flex-col items-center gap-4">
+                {scoreUnificado && (
+                  <div className="flex flex-col items-center">
+                    <div className="relative h-28 w-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { value: scoreExibicao },
+                              { value: scoreEscala - scoreExibicao }
+                            ]}
+                            cx="50%"
+                            cy="100%"
+                            startAngle={180}
+                            endAngle={0}
+                            innerRadius={55}
+                            outerRadius={75}
+                            paddingAngle={0}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            <Cell fill={
+                              scoreUnificado.band === 'critical' ? '#E85C5C' :
+                              scoreUnificado.band === 'fragile' ? '#F56A2A' :
+                              scoreUnificado.band === 'stable' ? '#F2C94C' :
+                              scoreUnificado.band === 'good' ? '#6FCF97' :
+                              '#1A7A45'
+                            } />
+                            <Cell fill="var(--border-color)" opacity={0.2} />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
+                        <span className="text-2xl font-bold font-['Sora'] leading-none">
+                          {ocultarValores ? '••••' : scoreExibicao}
+                        </span>
+                        <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1">
+                          Score
+                        </span>
+                      </div>
+                    </div>
+                    {scoreUnificado.band && (
+                      <span className={`mt-2 text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${classificacaoCor(scoreUnificado.band === 'critical' ? 'critico' : scoreUnificado.band === 'fragile' ? 'baixo' : scoreUnificado.band === 'strong' ? 'excelente' : scoreUnificado.band === 'good' ? 'bom' : 'ok')}`}>
+                        {scoreUnificado.band === 'critical' ? 'Crítico' : scoreUnificado.band === 'fragile' ? 'Frágil' : scoreUnificado.band === 'stable' ? 'Estável' : scoreUnificado.band === 'good' ? 'Bom' : 'Sólido'}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-4" />
               </div>
             </div>
           </div>
         </section>
-
-        {/* Gráficos de Performance */}
-        {insights?.scoreHistorico && insights.scoreHistorico.length > 0 && (
-          <section className="mb-12 fade-in-up" style={{ animationDelay: '0.12s' }}>
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">Performance</p>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Gráfico: Evolução do Score */}
-              <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Evolução da Saúde Financeira</p>
-                <div className="h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={insights.scoreHistorico.map((v, i) => ({ index: i, score: v }))}>
-                      <XAxis dataKey="index" hide />
-                      <YAxis hide domain={[0, 1000]} />
-                      <Line
-                        type="monotone"
-                        dataKey="score"
-                        stroke="#F56A2A"
-                        strokeWidth={2.2}
-                        dot={false}
-                        isAnimationActive={true}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Gráfico: Distribuição de Patrimônio */}
-              {!ocultarValores && possuiPatrimonioDeclarado && (
-                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded p-6">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Distribuição do Patrimônio</p>
-                  <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={distribuicaoPatrimonio}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={60}
-                          fill="#F56A2A"
-                          dataKey="valor"
-                        >
-                          {distribuicaoPatrimonio.map((item, idx) => {
-                            const cores = ["#F56A2A", "#6FCF97", "#A7B0BC"];
-                            return <Cell key={`cell-${idx}`} fill={cores[idx % cores.length]} />;
-                          })}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
 
         <section className="mb-12 fade-in-up" style={{ animationDelay: '0.14s' }}>
           <Carteira embedded />
@@ -701,7 +672,7 @@ export default function HomeLobby() {
               <button
                 key={item.title}
                 onClick={item.action}
-                className="group flex flex-col items-center gap-2 rounded-sm border border-[var(--border-color)] bg-white p-3 text-center shadow-sm transition-all hover:border-[#F56A2A] hover:shadow-md"
+                className="group flex flex-col items-center gap-2 rounded-xl border border-[var(--border-color)] bg-white p-4 text-center shadow-sm transition-all hover:border-[#F56A2A] hover:shadow-md"
               >
                 <div className="text-[var(--text-muted)] transition-colors group-hover:text-[#F56A2A]">
                   {item.icon}

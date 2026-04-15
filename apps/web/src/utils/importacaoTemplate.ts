@@ -1,4 +1,15 @@
-import * as XLSX from "xlsx";
+import type { CellObject, WorkBook, WorkSheet } from "xlsx";
+
+// ─── Lazy loader — xlsx (~300KB) só carrega quando a função for chamada ────────
+
+// biome-ignore lint/suspicious/noExplicitAny: variável de runtime carregada dinamicamente
+let XLSX: typeof import("xlsx") = null as any;
+
+async function loadXLSX(): Promise<void> {
+  if (!XLSX) {
+    XLSX = await import("xlsx");
+  }
+}
 
 // ─── Paleta Esquilo ───────────────────────────────────────────────────────────
 const COR_LARANJA = "F56A2A";
@@ -82,18 +93,18 @@ function bordaFina() {
   return { top: b, bottom: b, left: b, right: b };
 }
 
-function cel(v: unknown, s?): XLSX.CellObject {
-  return { v, t: typeof v === "number" ? "n" : "s", s } as XLSX.CellObject;
+function cel(v: unknown, s?): CellObject {
+  return { v, t: typeof v === "number" ? "n" : "s", s } as CellObject;
 }
 
-function celVazia(s?): XLSX.CellObject {
-  return { v: "", t: "s", s } as XLSX.CellObject;
+function celVazia(s?): CellObject {
+  return { v: "", t: "s", s } as CellObject;
 }
 
 // ─── Aba Guia / Instruções ────────────────────────────────────────────────────
 
-function criarAbaGuia(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaGuia(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   const linhas: [number, number, unknown, Record<string, unknown>?][] = [
     [0, 0, "🐿 Esquilo Invest", estiloTitulo()],
@@ -166,8 +177,8 @@ function criarAbaGuia(wb: XLSX.WorkBook): void {
 
 // ─── Aba Ações ────────────────────────────────────────────────────────────────
 
-function criarAbaAcoes(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaAcoes(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   // Header instrucional
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
@@ -237,8 +248,8 @@ function criarAbaAcoes(wb: XLSX.WorkBook): void {
 
 // ─── Aba Fundos ───────────────────────────────────────────────────────────────
 
-function criarAbaFundos(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaFundos(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
     "🏦 FUNDOS — Fundos de investimento, previdência e renda fixa",
@@ -301,8 +312,8 @@ function criarAbaFundos(wb: XLSX.WorkBook): void {
 
 // ─── Aba Imóveis ──────────────────────────────────────────────────────────────
 
-function criarAbaImoveis(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaImoveis(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
     "🏠 IMÓVEIS — Residenciais, comerciais, terrenos e rurais",
@@ -363,8 +374,8 @@ function criarAbaImoveis(wb: XLSX.WorkBook): void {
 
 // ─── Aba Veículos ─────────────────────────────────────────────────────────────
 
-function criarAbaVeiculos(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaVeiculos(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
     "🚗 VEÍCULOS — Carros, motos, caminhões e outros",
@@ -424,8 +435,8 @@ function criarAbaVeiculos(wb: XLSX.WorkBook): void {
 
 // ─── Aba Poupança ─────────────────────────────────────────────────────────────
 
-function criarAbaPoupanca(wb: XLSX.WorkBook): void {
-  const ws: XLSX.WorkSheet = {};
+function criarAbaPoupanca(wb: WorkBook): void {
+  const ws: WorkSheet = {};
 
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
     "💰 POUPANÇA — Saldos em caderneta de poupança",
@@ -483,7 +494,9 @@ function criarAbaPoupanca(wb: XLSX.WorkBook): void {
 
 // ─── Geração e download do template ──────────────────────────────────────────
 
-export function gerarTemplateXlsx(): ArrayBuffer {
+export async function gerarTemplateXlsx(): Promise<ArrayBuffer> {
+  await loadXLSX();
+
   const wb = XLSX.utils.book_new();
 
   criarAbaGuia(wb);
@@ -496,8 +509,8 @@ export function gerarTemplateXlsx(): ArrayBuffer {
   return XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
 }
 
-export function baixarTemplateXlsx(): void {
-  const buffer = gerarTemplateXlsx();
+export async function baixarTemplateXlsx(): Promise<void> {
+  const buffer = await gerarTemplateXlsx();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

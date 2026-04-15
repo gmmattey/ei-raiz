@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./servicos/autenticacao" },
+    { "path": "./servicos/carteira" },
+    { "path": "./servicos/decisoes" },
+    { "path": "./servicos/historico" },
+    { "path": "./servicos/importacao" },
+    { "path": "./servicos/insights" },
+    { "path": "./servicos/perfil" }
+  ]
+}

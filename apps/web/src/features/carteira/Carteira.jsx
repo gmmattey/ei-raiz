@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowDownRight, ArrowUpRight, Download, RefreshCw, Search, Pencil, ChevronDown, Check } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from "recharts";
 import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi } from "../../cliente-api";
+import { cache } from "../../utils/cache";
 import PageHeader from "../../components/design-system/PageHeader";
 import MetricCard from "../../components/design-system/MetricCard";
 import EstadoVazio from "../../components/feedback/EstadoVazio";
@@ -12,6 +13,7 @@ import { useModoVisualizacao } from "../../context/ModoVisualizacaoContext";
 
 const tiposDisponiveis = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
 const periodosDisponiveis = [3, 6, 12, 24];
+const ORDEM_CATEGORIAS = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
 
 const COR_CATEGORIA = {
   acao:       "#F56A2A",
@@ -64,7 +66,7 @@ const GraficoAlocacao = ({ ativos, patrimonioTotal, ocultarValores = false }) =>
   if (dados.length === 0) return null;
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm mb-8 p-6 fade-in-up" style={{ animationDelay: "0.05s" }}>
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl mb-8 p-6 fade-in-up" style={{ animationDelay: "0.05s" }}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Alocação por categoria</p>
       <div className="flex flex-col md:flex-row items-center gap-6" style={{ minHeight: 220 }}>
         {/* Donut */}
@@ -187,7 +189,7 @@ const AssetCard = ({ asset, navigate, ocultarValores = false }) => {
     <button
       type="button"
       onClick={() => navigate(`/ativo/${asset.ticker}`)}
-      className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm p-5 text-left hover:bg-[var(--bg-elevated)] transition-colors"
+      className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-5 text-left hover:bg-[var(--bg-elevated)] transition-colors"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -254,6 +256,173 @@ const AssetCard = ({ asset, navigate, ocultarValores = false }) => {
   );
 };
 
+
+// Componente para linha de ativo dentro de grupo
+const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLast = false }) => {
+  const rowBorderClass = isLast ? "" : "border-b border-[#EFE7DC]/50";
+  const isAcao = categoria === "acao";
+  const isFundoOuRendaFixa = ["fundo", "renda_fixa"].includes(categoria);
+  const isPrevidencia = categoria === "previdencia";
+
+  const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
+  const valorAtual = asset.valorAtual ?? asset.valor ?? 0;
+  const quantidade = asset.quantidade ?? 0;
+  const rentabilidade = asset.retorno12m ?? 0;
+
+  const valorAplicado = quantidade * precoMedio;
+  const ganhoAbsoluto = valorAtual - valorAplicado;
+
+  if (isAcao) {
+    return (
+      <tr className={`${rowBorderClass} hover:bg-[#FAFAFA] transition-colors`}>
+        <td className="py-4 px-4 text-sm font-semibold">{asset.ticker}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(precoMedio)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : quantidade.toFixed(0)}</td>
+        <td className="py-4 px-4">
+          <button onClick={() => navigate(`/ativo/${asset.ticker}`)} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
+            <Pencil size={13} />
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  if (isFundoOuRendaFixa) {
+    return (
+      <tr className={`${rowBorderClass} hover:bg-[#FAFAFA] transition-colors`}>
+        <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+        <td className="py-4 px-4">
+          <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
+            <Pencil size={13} />
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  if (isPrevidencia) {
+    return (
+      <tr className={`${rowBorderClass} hover:bg-[#FAFAFA] transition-colors`}>
+        <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(ganhoAbsoluto)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
+        <td className="py-4 px-4">
+          <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
+            <Pencil size={13} />
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className={`${rowBorderClass} hover:bg-[#FAFAFA] transition-colors`}>
+      <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+      <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
+      <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
+      <td colSpan="5"></td>
+      <td className="py-4 px-4">
+        <button onClick={() => navigate('/perfil')} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
+          <Pencil size={13} />
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+// Componente para grupo de categoria
+const GrupoCategoria = React.memo(({ categoria, ativos: grupoAtivos, ocultarValores, resumo, isColapsed, onToggle, navigate }) => {
+  const totalGrupo = grupoAtivos.reduce((acc, a) => acc + Number(a.valorAtual ?? a.valor ?? 0), 0);
+  const percGrupo = resumo?.patrimonioTotal > 0 ? (totalGrupo / resumo.patrimonioTotal) * 100 : 0;
+
+  const colunasPorTipo = {
+    acao: ["Ticker", "Posição", "%Aloc", "Rent.%", "Preço Médio", "Último Preço", "Qtd", ""],
+    fundo: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
+    previdencia: ["Nome", "Posição", "%Aloc", "Rendimento (R$)", "Rentabilidade", "Valor Aplicado", ""],
+    renda_fixa: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
+    poupanca: ["Nome", "Posição", "%Aloc", ""],
+    bens: ["Nome", "Posição", "%Aloc", ""],
+  };
+
+  const colunas = colunasPorTipo[categoria] || [];
+
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl mb-6 overflow-hidden shadow-md shadow-black/5 fade-in-up">
+      {/* Header do grupo */}
+      <button
+        onClick={() => onToggle(categoria)}
+        className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[#FAFAFA] transition-colors"
+      >
+        <div className="w-8 h-8 shrink-0">
+          <IconeCategoria categoria={categoria} size={24} />
+        </div>
+        <div className="flex-1 text-left">
+          <p className="font-bold text-[var(--text-primary)]">{LABEL_CATEGORIA[categoria]}</p>
+        </div>
+        <div className="flex items-center gap-6 text-right">
+          <div>
+            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Saldo</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">
+              {ocultarValores ? "••••••••" : moeda(totalGrupo)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">% Patrimônio</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">
+              {ocultarValores ? "••••••••" : `${percGrupo.toFixed(1)}%`}
+            </p>
+          </div>
+        </div>
+        <ChevronDown
+          size={20}
+          className={`text-[var(--text-secondary)] transition-transform ${isColapsed ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* Conteúdo (tabela) */}
+      {!isColapsed && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#FAFAFA]">
+                {colunas.map((col, idx) => (
+                  <th key={idx} className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grupoAtivos.map((asset, idx) => (
+                <AssetRow
+                  key={asset.id}
+                  asset={asset}
+                  categoria={categoria}
+                  navigate={navigate}
+                  ocultarValores={ocultarValores}
+                  isLast={idx === grupoAtivos.length - 1}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+});
+
 export default function Carteira({ embedded = false }) {
   const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
@@ -279,368 +448,269 @@ export default function Carteira({ embedded = false }) {
   const [classificacaoScore, setClassificacaoScore] = useState(null);
   const [dashboardPatrimonio, setDashboardPatrimonio] = useState(null);
   const [benchmark, setBenchmark] = useState(null);
-  const [categoriasColapsadas, setCategoriasColapsadas] = useState({});
+  const [categoriasColapsadas, setCategoriasColapsadas] = useState(() => 
+    Object.fromEntries(tiposDisponiveis.map(cat => [cat, true]))
+  );
+  const [resumoExpandido, setResumoExpandido] = useState({ acoes: false, fundos: false });
 
-  const toggleCategoria = (cat) => {
+  const toggleCategoria = useCallback((cat) => {
     setCategoriasColapsadas(prev => ({ ...prev, [cat]: !prev[cat] }));
-  };
+  }, []);
 
-  const refreshMercado = async (listaAtivos) => {
-    const tickers = Array.from(new Set((listaAtivos || []).map((item) => item.ticker).filter(Boolean)));
-    if (tickers.length === 0) return;
-    setAtualizandoMercado(true);
+  const carregarDados = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      const [quotes, analyses] = await Promise.all([
-        marketApi.obterCotacoes(tickers),
-        portfolioApi.analisarPosicoes({
-          items: (listaAtivos || [])
-            .map((item) => ({
-              ticker: item.ticker,
-              quantity: Number(item.quantidade ?? 0),
-              averagePrice: Number(item.precoMedio ?? item.preco_medio ?? 0),
-            }))
-            .filter((item) => item.ticker && item.quantity > 0 && item.averagePrice > 0),
-        }),
+      const TTL = 60 * 1000;
+      const resumoCached = cache.get('carteira_resumo', TTL);
+      const insightsCached = cache.get('insights_resumo', TTL);
+      const dashboardCached = cache.get('carteira_dashboard', TTL);
+      const [resumoResp, ativosResp, insightsResp, dashboardResp, benchmarkResp] = await Promise.all([
+        resumoCached
+          ? Promise.resolve(resumoCached)
+          : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
+        carteiraApi.listarAtivosCarteira(),
+        insightsCached
+          ? Promise.resolve(insightsCached)
+          : insightsApi.obterResumo().catch(() => null).then(r => { if (r) cache.set('insights_resumo', r); return r; }),
+        dashboardCached
+          ? Promise.resolve(dashboardCached)
+          : carteiraApi.obterDashboardPatrimonio().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
+        carteiraApi.obterBenchmarkCarteira(periodoMeses).catch(() => null),
       ]);
-
-      const quoteMap = new Map((quotes.items || []).map((item) => [item.ticker, item]));
-      const analysisMap = new Map((analyses.items || []).map((item) => [item.ticker, item]));
-      const merged = (listaAtivos || []).map((item) => {
-        const quote = quoteMap.get(item.ticker);
-        const analysis = analysisMap.get(item.ticker);
-        const quantity = Number(item.quantidade ?? 0);
-        const marketValueByQuote = quote?.price != null && quantity > 0 ? quantity * quote.price : null;
-        const nextValorAtual = analysis?.marketValue ?? marketValueByQuote ?? item.valorAtual;
-        return {
-          ...item,
-          precoAtual: quote?.price ?? item.precoAtual,
-          valorAtual: nextValorAtual,
-          ultimaAtualizacao: quote?.updatedAt || quote?.fetchedAt || item.ultimaAtualizacao || item.ultima_atualizacao,
-          fontePreco: quote?.source || item.fontePreco || item.fonte_preco,
-          statusAtualizacao: quote?.price != null ? "atualizado" : (item.statusAtualizacao || item.status_atualizacao || "indisponivel"),
-          signal: analysis?.signal ?? "hold",
-          signalConfidence: analysis?.confidence ?? "low",
-          signalRationale: analysis?.rationale ?? [],
-          signalDisclaimer: analysis?.disclaimer ?? null,
-          ganhoPerda: analysis?.profitLossValue ?? item.ganhoPerda,
-          retorno12m: analysis?.profitLossPercent ?? item.retorno12m,
-        };
-      });
-      setAtivos(merged);
-      setUltimoRefreshMercado(analyses.updatedAt || quotes.fetchedAt || new Date().toISOString());
-    } catch {
-      // mantém dados atuais sem quebrar a tela
-    } finally {
-      setAtualizandoMercado(false);
-    }
-  };
-
-  useEffect(() => {
-    let ativo = true;
-    const carregar = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const [resumoCarteira, listaAtivos, resumoInsights, dashboard, benchmarkData] = await Promise.all([
-          carteiraApi.obterResumoCarteira(),
-          carteiraApi.listarAtivosCarteira(),
-          insightsApi.obterResumo().catch(() => null),
-          carteiraApi.obterDashboardPatrimonio().catch(() => null),
-          carteiraApi.obterBenchmarkCarteira(periodoMeses).catch(() => null),
-        ]);
-        if (!ativo) return;
-        setResumo(resumoCarteira);
-        setAtivos(listaAtivos);
-        setScoreUnificado(resumoInsights?.scoreUnificado || resumoInsights?.score_unificado || null);
-        setClassificacaoScore(resumoInsights?.classificacao || null);
-        setDashboardPatrimonio(dashboard);
-        setBenchmark(benchmarkData);
-        await refreshMercado(listaAtivos);
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
-          navigate("/", { replace: true });
-          return;
-        }
-        if (ativo) setError("Falha ao carregar dados da carteira.");
-      } finally {
-        if (ativo) setLoading(false);
+      setResumo(resumoResp ?? null);
+      setAtivos(Array.isArray(ativosResp) ? ativosResp : []);
+      setScoreUnificado(insightsResp?.scoreUnificado ?? insightsResp?.score_unificado ?? null);
+      setClassificacaoScore(insightsResp?.classificacao ?? null);
+      setDashboardPatrimonio(dashboardResp ?? null);
+      setBenchmark(benchmarkResp ?? null);
+      setUltimoRefreshMercado(new Date().toISOString());
+      cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosResp, timestamp: Date.now() });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        navigate("/", { replace: true });
+        return;
       }
-    };
-
-    carregar();
-    return () => {
-      ativo = false;
-    };
+      setError("Falha ao carregar carteira.");
+    } finally {
+      setLoading(false);
+    }
   }, [navigate, periodoMeses]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      if (ativos.length > 0) void refreshMercado(ativos);
-    }, 30000);
-    return () => clearInterval(id);
+    void carregarDados();
+  }, [carregarDados]);
+
+  const refreshMercado = useCallback(async () => {
+    setAtualizandoMercado(true);
+    try {
+      await carregarDados();
+    } finally {
+      setAtualizandoMercado(false);
+    }
+  }, [carregarDados]);
+
+  const plataformas = useMemo(() => {
+    const valores = new Set((ativos ?? []).map((a) => String(a.plataforma ?? "N/A")));
+    return ["todas", ...Array.from(valores).sort((a, b) => a.localeCompare(b))];
   }, [ativos]);
 
-  useEffect(() => {
-    if (filtroInicial && tiposDisponiveis.includes(filtroInicial)) {
-      setTiposSelecionados([filtroInicial]);
-    }
-  }, [filtroInicial]);
-
-  const plataformas = useMemo(() => ["todas", ...Array.from(new Set((ativos || []).map((a) => a.plataforma).filter(Boolean)))], [ativos]);
-
   const ativosFiltrados = useMemo(() => {
-    if (!busca.trim()) return ativos;
-    const termo = busca.toLowerCase();
-    return ativos.filter((item) => item.ticker.toLowerCase().includes(termo) || item.nome.toLowerCase().includes(termo));
-  }, [ativos, busca]);
-  const ativosFiltradosComRegras = useMemo(() => {
-    let lista = [...ativosFiltrados];
-    lista = lista.filter((item) => tiposSelecionados.includes(item.categoria));
-    if (plataformaFiltro !== "todas") lista = lista.filter((item) => item.plataforma === plataformaFiltro);
-    if (statusFiltro !== "todos") lista = lista.filter((item) => (item.statusAtualizacao || item.status_atualizacao || "indisponivel") === statusFiltro);
-    if (ordenacao === "valor_desc") lista.sort((a, b) => (b.valorAtual || 0) - (a.valorAtual || 0));
-    if (ordenacao === "participacao_desc") lista.sort((a, b) => (b.participacao || 0) - (a.participacao || 0));
-    if (ordenacao === "retorno_desc") lista.sort((a, b) => (b.retorno12m || 0) - (a.retorno12m || 0));
-    return lista;
-  }, [ativosFiltrados, tiposSelecionados, plataformaFiltro, statusFiltro, ordenacao]);
+    const termo = busca.trim().toLowerCase();
+    let lista = (ativos ?? []).filter((asset) => {
+      const categoria = String(asset.categoria ?? "");
+      if (!tiposSelecionados.includes(categoria)) return false;
+      if (plataformaFiltro !== "todas" && String(asset.plataforma ?? "N/A") !== plataformaFiltro) return false;
+      if (statusFiltro === "atualizado" && !isMercadoDisponivel(asset)) return false;
+      if (statusFiltro === "indisponivel" && isMercadoDisponivel(asset)) return false;
+      if (!termo) return true;
+      const alvo = `${asset.ticker ?? ""} ${asset.nome ?? ""}`.toLowerCase();
+      return alvo.includes(termo);
+    });
 
-  // Novo: Agrupamento por categoria
-  const ORDEM_CATEGORIAS = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
+    lista = [...lista].sort((a, b) => {
+      if (ordenacao === "participacao_desc") return Number(b.participacao ?? 0) - Number(a.participacao ?? 0);
+      if (ordenacao === "retorno_desc") return Number(b.retorno12m ?? 0) - Number(a.retorno12m ?? 0);
+      return Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0);
+    });
+
+    return lista;
+  }, [ativos, busca, ordenacao, plataformaFiltro, statusFiltro, tiposSelecionados]);
 
   const ativosPorCategoria = useMemo(() => {
-    const grupos = {};
+    return ativosFiltrados.reduce((acc, asset) => {
+      const cat = String(asset.categoria ?? "outros");
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(asset);
+      return acc;
+    }, {});
+  }, [ativosFiltrados]);
 
-    // Ativos de investimento
-    for (const cat of ORDEM_CATEGORIAS) {
-      if (!tiposSelecionados.includes(cat)) continue;
-      const itens = ativosFiltradosComRegras.filter(a => a.categoria === cat);
-      if (itens.length > 0) {
-        grupos[cat] = itens;
-      }
-    }
+  const scoreValor = Number(scoreUnificado?.score ?? 0);
+  const badgeScore = classificacaoScore || (scoreUnificado?.band ?? "—");
+  const categoriasUnicas = new Set((ativos ?? []).map((a) => a.categoria).filter(Boolean)).size;
+  const semAtivos = !loading && !error && (ativos?.length ?? 0) === 0;
+  const resumoFundos = useMemo(() => {
+    const fundos = [...(ativosPorCategoria.fundo ?? [])].sort((a, b) => Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0));
+    return fundos.slice(0, 6).map((f) => {
+      const quantidade = Number(f.quantidade ?? 0);
+      const precoMedio = Number(f.precoMedio ?? f.preco_medio ?? 0);
+      const valorAplicado = quantidade > 0 && precoMedio > 0 ? quantidade * precoMedio : Number(f.valorAtual ?? 0);
+      const valorLiquido = Number(f.valorAtual ?? 0);
+      return {
+        id: f.id,
+        nome: f.nome || f.ticker || "Fundo",
+        posicao: valorLiquido,
+        alocacao: Number(f.participacao ?? 0),
+        rentabilidade: Number(f.retorno12m ?? 0),
+        valorAplicado,
+        valorLiquido,
+      };
+    });
+  }, [ativosPorCategoria]);
 
-    // Bens e Poupança de dashboardPatrimonio
-    const bensPoupanca = (dashboardPatrimonio?.filtros?.todos ?? [])
-      .filter(item => ["bens", "poupanca"].includes(item.categoria) && tiposSelecionados.includes(item.categoria));
-
-    if (bensPoupanca.length > 0) {
-      const bens = bensPoupanca.filter(i => i.categoria === "bens");
-      const poupanca = bensPoupanca.filter(i => i.categoria === "poupanca");
-      if (bens.length > 0) grupos["bens"] = bens;
-      if (poupanca.length > 0) grupos["poupanca"] = poupanca;
-    }
-
-    return grupos;
-  }, [ativosFiltradosComRegras, dashboardPatrimonio, tiposSelecionados]);
-
-  const semAtivos = !loading && !error && Object.keys(ativosPorCategoria ?? {}).length === 0;
-  const scoreValor = scoreUnificado?.score ?? resumo?.score ?? 0;
-
-  const badgeScore = (() => {
-    const mapa = {
-      critico:   { bg: "rgba(232,92,92,0.12)",  color: "#E85C5C", label: "Crítico" },
-      baixo:     { bg: "rgba(242,201,76,0.15)", color: "#B8880A", label: "Atenção" },
-      ok:        { bg: "#EFE7DC",               color: "#0B1218", label: "Regular" },
-      bom:       { bg: "rgba(111,207,151,0.15)",color: "#1A7A45", label: "Bom" },
-      excelente: { bg: "rgba(111,207,151,0.25)",color: "#1A7A45", label: "Excelente" },
-    };
-    return classificacaoScore ? mapa[classificacaoScore] ?? null : null;
-  })();
-
-  const categoriasUnicas = useMemo(
-    () => new Set((ativos || []).map((a) => a.categoria).filter(Boolean)).size,
-    [ativos]
-  );
-  const itensGrafico = useMemo(() => {
-    const base = dashboardPatrimonio?.filtros?.todos ?? [];
-    return base
-      .filter((i) => tiposSelecionados.includes(i.categoria))
-      .map((i) => ({ ...i, name: i.nome, value: i.valor }));
-  }, [dashboardPatrimonio, tiposSelecionados]);
-  const serieComparativa = (benchmark?.serie ?? []).map((i) => ({ data: String(i.data || "").slice(5), carteira: Number(i.carteira ?? 0), cdi: Number(i.cdi ?? 0) }));
-  const linhasResumo = useMemo(() => {
-    const linhasInvestimentos = ativosFiltradosComRegras.map((asset) => ({
-      id: asset.id,
-      nome: asset.ticker,
-      tipo: asset.categoria,
-      valorInvestido: Number(asset.quantidade ?? 0) * Number(asset.precoMedio ?? asset.preco_medio ?? 0),
-      valorAtualizado: Number(asset.valorAtual ?? 0),
-      rentabilidade: Number(asset.retorno12m ?? 0),
-      ticker: asset.ticker,
+  const resumoAcoes = useMemo(() => {
+    const acoes = [...(ativosPorCategoria.acao ?? [])].sort((a, b) => Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0));
+    return acoes.slice(0, 8).map((a) => ({
+      id: a.id,
+      ticker: a.ticker || "-",
+      nome: a.nome || a.ticker || "Ação",
+      quantidade: Number(a.quantidade ?? 0),
+      precoMedio: Number(a.precoMedio ?? a.preco_medio ?? 0),
+      precoAtual: Number(a.precoAtual ?? a.precoMedio ?? a.preco_medio ?? 0),
+      posicao: Number(a.valorAtual ?? 0),
+      alocacao: Number(a.participacao ?? 0),
     }));
-    const linhasBensPoupanca = (dashboardPatrimonio?.filtros?.todos ?? [])
-      .filter((item) => ["bens", "poupanca"].includes(item.categoria) && tiposSelecionados.includes(item.categoria))
-      .map((item) => ({
-        id: item.id,
-        nome: item.nome,
-        tipo: item.categoria,
-        valorInvestido: item.valor,
-        valorAtualizado: item.valor,
-        rentabilidade: 0,
-        ticker: null,
-      }));
-    return [...linhasInvestimentos, ...linhasBensPoupanca];
-  }, [dashboardPatrimonio, ativosFiltradosComRegras, tiposSelecionados]);
+  }, [ativosPorCategoria]);
 
-  // Componente para linha de ativo dentro de grupo
-  const AssetRow = ({ asset, categoria, ocultarValores }) => {
-    const isAcao = categoria === "acao";
-    const isFundoOuRendaFixa = ["fundo", "renda_fixa"].includes(categoria);
-    const isPrevidencia = categoria === "previdencia";
-
-    const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
-    const valorAtual = asset.valorAtual ?? asset.valor ?? 0;
-    const quantidade = asset.quantidade ?? 0;
-    const rentabilidade = asset.retorno12m ?? 0;
-
-    const valorAplicado = quantidade * precoMedio;
-    const ganhoAbsoluto = valorAtual - valorAplicado;
-
-    if (isAcao) {
-      return (
-        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
-          <td className="py-4 px-4 text-sm font-semibold">{asset.ticker}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(precoMedio)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : quantidade.toFixed(0)}</td>
-          <td className="py-4 px-4">
-            <button onClick={() => navigate(`/ativo/${asset.ticker}`)} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
-              <Pencil size={13} />
-            </button>
-          </td>
-        </tr>
-      );
-    }
-
-    if (isFundoOuRendaFixa) {
-      return (
-        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
-          <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
-          <td className="py-4 px-4">
-            <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
-              <Pencil size={13} />
-            </button>
-          </td>
-        </tr>
-      );
-    }
-
-    if (isPrevidencia) {
-      return (
-        <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
-          <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(ganhoAbsoluto)}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
-          <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
-          <td className="py-4 px-4">
-            <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
-              <Pencil size={13} />
-            </button>
-          </td>
-        </tr>
-      );
-    }
-
-    // Poupança e Bens (sem colun as de preço)
-    return (
-      <tr className="border-b border-[#EFE7DC]/50 hover:bg-[#FAFAFA] transition-colors">
-        <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td colSpan="5"></td>
-        <td className="py-4 px-4">
-          <button onClick={() => navigate('/perfil')} className="p-2 border border-[#EFE7DC] rounded-sm hover:bg-white">
-            <Pencil size={13} />
-          </button>
-        </td>
-      </tr>
-    );
-  };
-
-  // Componente para grupo de categoria
-  const GrupoCategoria = ({ categoria, ativos: grupoAtivos, ocultarValores }) => {
-    const isColapsed = categoriasColapsadas[categoria] ?? false;
-    const totalGrupo = grupoAtivos.reduce((acc, a) => acc + Number(a.valorAtual ?? a.valor ?? 0), 0);
-    const percGrupo = resumo?.patrimonioTotal > 0 ? (totalGrupo / resumo.patrimonioTotal) * 100 : 0;
-
-    const colunasPorTipo = {
-      acao: ["Ticker", "Posição", "%Aloc", "Rent.%", "Preço Médio", "Último Preço", "Qtd", ""],
-      fundo: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
-      previdencia: ["Nome", "Posição", "%Aloc", "Rendimento (R$)", "Rentabilidade", "Valor Aplicado", ""],
-      renda_fixa: ["Nome", "Posição", "%Aloc", "Rentabilidade", "Valor Aplicado", "Valor Líquido", ""],
-      poupanca: ["Nome", "Posição", "%Aloc", ""],
-      bens: ["Nome", "Posição", "%Aloc", ""],
+  const totaisResumo = useMemo(() => {
+    const total = Number(resumo?.patrimonioTotal ?? 0);
+    const totalAcoes = resumoAcoes.reduce((acc, i) => acc + i.posicao, 0);
+    const totalFundos = resumoFundos.reduce((acc, i) => acc + i.posicao, 0);
+    return {
+      acoes: {
+        valor: totalAcoes,
+        percentual: total > 0 ? (totalAcoes / total) * 100 : 0,
+      },
+      fundos: {
+        valor: totalFundos,
+        percentual: total > 0 ? (totalFundos / total) * 100 : 0,
+      },
     };
+  }, [resumo?.patrimonioTotal, resumoAcoes, resumoFundos]);
 
-    const colunas = colunasPorTipo[categoria] || [];
-
+  if (embedded) {
     return (
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-sm mb-6 overflow-hidden fade-in-up">
-        {/* Header do grupo */}
-        <button
-          onClick={() => toggleCategoria(categoria)}
-          className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[#FAFAFA] transition-colors"
-        >
-          <div className="w-8 h-8 shrink-0">
-            <IconeCategoria categoria={categoria} size={24} />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-bold text-[var(--text-primary)]">{LABEL_CATEGORIA[categoria]}</p>
-          </div>
-          <div className="flex items-center gap-6 text-right">
-            <div>
-              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Saldo</p>
-              <p className="text-sm font-bold text-[var(--text-primary)]">
-                {ocultarValores ? "••••••••" : moeda(totalGrupo)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">% Patrimônio</p>
-              <p className="text-sm font-bold text-[var(--text-primary)]">
-                {ocultarValores ? "••••••••" : `${percGrupo.toFixed(1)}%`}
-              </p>
-            </div>
-          </div>
-          <ChevronDown
-            size={20}
-            className={`text-[var(--text-secondary)] transition-transform ${isColapsed ? "rotate-180" : ""}`}
-          />
-        </button>
+      <div className="w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)]">
+        <div className="w-full space-y-4">
+          <GraficoAlocacao ativos={ativos} patrimonioTotal={resumo?.patrimonioTotal ?? 0} ocultarValores={ocultarValores} />
 
-        {/* Conteúdo (tabela) */}
-        {!isColapsed && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#FAFAFA] border-t border-[#EFE7DC]">
-                  {colunas.map((col, idx) => (
-                    <th key={idx} className="py-4 px-4 text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest">
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {grupoAtivos.map((asset) => (
-                  <AssetRow key={asset.id} asset={asset} categoria={categoria} ocultarValores={ocultarValores} />
-                ))}
-              </tbody>
-            </table>
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4 shadow-md shadow-black/5">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Resumo da carteira</p>
+              <button
+                onClick={() => navigate("/carteira")}
+                className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:border-[#F56A2A]"
+              >
+                Ver carteira
+              </button>
+            </div>
+            {resumoAcoes.length > 0 && (
+              <div className="mt-2 rounded-lg border border-[var(--border-color)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setResumoExpandido((prev) => ({ ...prev, acoes: !prev.acoes }))}
+                  className="w-full bg-[var(--bg-secondary)] px-3 py-2 text-left"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]">Ações</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">
+                    {ocultarValores ? "••••••••" : moeda(totaisResumo.acoes.valor)}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    {ocultarValores ? "••••••••" : `${totaisResumo.acoes.percentual.toFixed(2)}% do patrimônio`}
+                  </p>
+                </button>
+                {resumoExpandido.acoes && (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[760px] w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[var(--bg-secondary)]">
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Ticker</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Posição</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">% Aloc</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Qtd</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Preço médio</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Preço atual</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resumoAcoes.map((row, idx) => (
+                          <tr key={row.id} className={idx === resumoAcoes.length - 1 ? "" : "border-b border-[var(--border-color)]"}>
+                            <td className="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{row.ticker}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.posicao)}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : `${row.alocacao.toFixed(2)}%`}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : row.quantidade.toFixed(0)}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.precoMedio)}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.precoAtual)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {resumoFundos.length > 0 && (
+              <div className="mt-3 rounded-lg border border-[var(--border-color)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setResumoExpandido((prev) => ({ ...prev, fundos: !prev.fundos }))}
+                  className="w-full bg-[var(--bg-secondary)] px-3 py-2 text-left"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]">Fundos</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">
+                    {ocultarValores ? "••••••••" : moeda(totaisResumo.fundos.valor)}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    {ocultarValores ? "••••••••" : `${totaisResumo.fundos.percentual.toFixed(2)}% do patrimônio`}
+                  </p>
+                </button>
+                {resumoExpandido.fundos && (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[720px] w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[var(--bg-secondary)]">
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Nome</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Posição</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">% Aloc</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Rentabilidade</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Valor aplicado</th>
+                          <th className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Valor líquido</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resumoFundos.map((row, idx) => (
+                          <tr key={row.id} className={idx === resumoFundos.length - 1 ? "" : "border-b border-[var(--border-color)]"}>
+                            <td className="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{row.nome}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.posicao)}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : `${row.alocacao.toFixed(2)}%`}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : `${row.rentabilidade.toFixed(2)}%`}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.valorAplicado)}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.valorLiquido)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className={`w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)] ${embedded ? '' : 'animate-in fade-in duration-500'}`}>
@@ -653,11 +723,11 @@ export default function Carteira({ embedded = false }) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => void refreshMercado(ativos)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-xl"
                 >
                   <RefreshCw size={14} className={atualizandoMercado ? "animate-spin" : ""} /> Atualizar
                 </button>
-                <button onClick={() => navigate("/historico")} className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-sm">
+                <button onClick={() => navigate("/historico")} className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-xl">
                   <Download size={14} /> Histórico
                 </button>
               </div>
@@ -702,11 +772,13 @@ export default function Carteira({ embedded = false }) {
           </div>
         )}
 
-        {!embedded && !loading && !error && ativos.length > 0 && (
-          <GraficoAlocacao ativos={ativos} patrimonioTotal={resumo?.patrimonioTotal ?? 0} ocultarValores={ocultarValores} />
+        {embedded && ativos.length > 0 && (
+          <div className="mb-8 w-full">
+            <GraficoAlocacao ativos={ativos} patrimonioTotal={resumo?.patrimonioTotal ?? 0} ocultarValores={ocultarValores} />
+          </div>
         )}
 
-        <div className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg shadow-black/8 fade-in-up" style={{ animationDelay: '0.1s' }}>
           {tickerDestacado && tiposSelecionados.includes("acao") && (
             <div className="px-6 py-3 border-b border-[#EFE7DC] bg-[#FAFAFA] flex items-center justify-between gap-3">
               <p className="text-[11px] text-[#0B1218]/75">
@@ -720,132 +792,87 @@ export default function Carteira({ embedded = false }) {
               </button>
             </div>
           )}
-          <div className="p-6 border-b border-[#EFE7DC] flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setTiposMenuOpen((v) => !v)}
-                  className="px-3 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest min-w-[200px] h-[42px] flex items-center justify-between"
-                >
-                  <span>Tipos ({tiposSelecionados.length})</span>
-                  <ChevronDown size={14} className={`transition-transform ${tiposMenuOpen ? "rotate-180" : ""}`} />
-                </button>
-                {tiposMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setTiposMenuOpen(false)} />
-                    <div className="absolute z-20 mt-1 w-[240px] bg-white border border-[#EFE7DC] shadow-lg rounded-sm p-2 space-y-1">
-                      {tiposDisponiveis.map((tipo) => {
-                        const ativo = tiposSelecionados.includes(tipo);
-                        return (
-                          <button
-                            key={tipo}
-                            type="button"
-                            onClick={() => {
-                              setTiposSelecionados((prev) => {
-                                if (prev.includes(tipo)) {
-                                  const next = prev.filter((t) => t !== tipo);
-                                  return next.length ? next : prev;
-                                }
-                                return [...prev, tipo];
-                              });
-                            }}
-                            className={`w-full px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest flex items-center justify-between border ${
-                              ativo ? "bg-[#0B1218] text-white border-[#0B1218]" : "bg-white text-[#0B1218]/70 border-[#EFE7DC]"
-                            }`}
-                          >
-                            <span>{tipo.replace("_", " ")}</span>
-                            {ativo && <Check size={12} />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-              <select value={periodoMeses} onChange={(e) => setPeriodoMeses(Number(e.target.value))} className="h-[42px] px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
-                {periodosDisponiveis.map((p) => <option key={p} value={p}>{p}M</option>)}
-              </select>
+          <div className="p-6 border-b border-[var(--border-color)] flex flex-col gap-4">
+            <div className="flex flex-wrap gap-2">
+              {tiposDisponiveis.map(tipo => {
+                const isSelected = tiposSelecionados.includes(tipo);
+                return (
+                  <button 
+                    key={tipo}
+                    onClick={() => {
+                      setTiposSelecionados(prev => {
+                        if (prev.includes(tipo)) {
+                          const next = prev.filter(t => t !== tipo);
+                          return next.length ? next : prev;
+                        }
+                        return [...prev, tipo];
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider border transition-all ${
+                      isSelected 
+                        ? 'bg-[#F56A2A] border-[#F56A2A] text-white shadow-sm' 
+                        : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#F56A2A] hover:text-[#F56A2A]'
+                    }`}
+                  >
+                    {LABEL_CATEGORIA[tipo] || tipo}
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0B1218]/20" size={14} />
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <select value={periodoMeses} onChange={(e) => setPeriodoMeses(Number(e.target.value))} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+                  {periodosDisponiveis.map((p) => <option key={p} value={p}>{p}M</option>)}
+                </select>
+              </div>
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
                 <input
                   type="text"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar por ticker ou nome..."
-                  className="pl-10 pr-4 h-[42px] bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-[#F56A2A] w-full md:w-[320px]"
+                  placeholder="Buscar ativos..."
+                  className="pl-9 pr-4 h-[32px] w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]"
                 />
               </div>
-              <select value={plataformaFiltro} onChange={(e) => setPlataformaFiltro(e.target.value)} className="h-[42px] px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
+              <select value={plataformaFiltro} onChange={(e) => setPlataformaFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
                 {plataformas.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
-              <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="h-[42px] px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
-                <option value="todos">Todos os ativos</option>
+              <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+                <option value="todos">Todos os status</option>
                 <option value="atualizado">Com cotação</option>
-                <option value="atrasado">Cotação atrasada</option>
                 <option value="indisponivel">Sem cotação</option>
               </select>
-              <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)} className="h-[42px] px-2 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest">
-                <option value="valor_desc">Ordenar por valor</option>
-                <option value="participacao_desc">Ordenar por alocação</option>
-                <option value="retorno_desc">Ordenar por retorno</option>
+              <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+                <option value="valor_desc">Valor ↓</option>
+                <option value="participacao_desc">Alocação ↓</option>
+                <option value="retorno_desc">Retorno ↓</option>
               </select>
             </div>
           </div>
-
-          {!loading && !error && itensGrafico.length > 0 && (
-            <div className="p-6 border-b border-[#EFE7DC]">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="border border-[#EFE7DC] rounded-sm p-4 bg-[#FAFAFA]">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/50 mb-2">Distribuição</p>
-                  <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={itensGrafico} dataKey="value" nameKey="name" innerRadius={52} outerRadius={84}>
-                          {itensGrafico.map((_, idx) => (
-                            <Cell key={idx} fill={["#F56A2A", "#6FCF97", "#F2C94C", "#5DADE2", "#A7B0BC", "#9B59B6"][idx % 6]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<TooltipDonut ocultarValores={ocultarValores} />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="border border-[#EFE7DC] rounded-sm p-4 bg-[#FAFAFA]">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/50 mb-2">Carteira vs CDI</p>
-                  <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={serieComparativa}>
-                        <XAxis dataKey="data" tick={{ fontSize: 10 }} />
-                        <YAxis hide />
-                        <Line type="monotone" dataKey="carteira" stroke="#F56A2A" strokeWidth={2.2} dot={false} />
-                        <Line type="monotone" dataKey="cdi" stroke="#4A5A6A" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {loading && <div className="p-6 text-sm text-[#0B1218]/50">Carregando seus ativos...</div>}
           {error && <div className="p-6 text-sm text-[#E85C5C]">Não conseguimos carregar seus dados. Tente novamente.</div>}
 
           {!loading && !error && Object.keys(ativosPorCategoria).length > 0 && (
-            <div className="p-6 space-y-4">
-              {ORDEM_CATEGORIAS.map(cat =>
-                ativosPorCategoria[cat] && (
-                  <GrupoCategoria
-                    key={cat}
-                    categoria={cat}
-                    ativos={ativosPorCategoria[cat]}
-                    ocultarValores={ocultarValores}
-                  />
-                )
-              )}
-            </div>
+            <div className="space-y-6">
+            {ORDEM_CATEGORIAS.map(cat => {
+              if (!ativosPorCategoria[cat]) return null;
+              return (
+                <GrupoCategoria
+                  key={cat}
+                  categoria={cat}
+                  ativos={ativosPorCategoria[cat]}
+                  ocultarValores={ocultarValores}
+                  resumo={resumo}
+                  isColapsed={categoriasColapsadas[cat] ?? false}
+                  onToggle={toggleCategoria}
+                  navigate={navigate}
+                />
+              );
+            })}
+          </div>
           )}
           {!loading && !error && Object.keys(ativosPorCategoria).length === 0 && (
             <div className="p-8 text-center">
@@ -866,4 +893,3 @@ export default function Carteira({ embedded = false }) {
     </div>
   );
 }
-
