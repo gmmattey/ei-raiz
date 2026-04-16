@@ -50,6 +50,9 @@ const Configuracoes = React.lazy(() => import('./features/perfil/Configuracoes')
 const PainelAdmin = React.lazy(() => import('./features/admin/PainelAdmin'));
 const Dashboard = React.lazy(() => import('./features/perfil/dashboard'));
 
+// Preview isolado da nova tela de entrada
+const MobileEntryPreview = React.lazy(() => import('./features/autenticacao/MobileEntryPreview'));
+
 // ─── Utilitários de autenticação ─────────────────────────────────────────────
 
 const safeGetStorageItem = (key: string): string | null => {
@@ -98,6 +101,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/0" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/onboarding" element={<PublicRoute><LandingPage /></PublicRoute>} />
+          <Route path="/mobile-entry-test" element={<MobileEntryPreview />} />
           <Route path="/placeholder" element={<AppLayout><Placeholder /></AppLayout>} />
 
           {/* Home */}
