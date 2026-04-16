@@ -58,7 +58,7 @@ const COR_SEVERIDADE = {
 // --- Componentes Base ---
 
 const ExplainerTooltip = ({ title, content, onClose }) => (
-  <div className="absolute z-[100] mt-2 w-72 bg-white border border-[#EFE7DC] shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+  <div className="absolute z-[100] mt-2 w-72 bg-white border border-[#EFE7DC] shadow-2xl p-6 rounded-xl animate-in fade-in zoom-in-95 duration-200">
     <div className="flex justify-between items-start mb-3">
       <h4 className="font-['Sora'] text-xs font-bold text-[#0B1218] uppercase tracking-tight">{title}</h4>
       <button onClick={onClose} className="text-[#0B1218]/20 hover:text-[#E85C5C] transition-colors cursor-pointer">
@@ -105,7 +105,7 @@ const InsightCard = ({ type, severity, title, description, impact, action, infoT
   }
 
   return (
-    <div className={`p-8 border ${theme.border} ${theme.borderL} ${theme.bg} mb-6 transition-all hover:shadow-sm`}>
+    <div className={`p-8 border ${theme.border} ${theme.borderL} ${theme.bg} mb-6 transition-all hover:shadow-sm rounded-xl`}>
       <div className="flex justify-between items-start mb-4">
         <div className={`flex items-center gap-3 ${theme.color}`}>
           {theme.icon}
@@ -336,7 +336,7 @@ export default function Insights() {
               )}
 
               {confiancaDiagnostico !== 'alta' && (
-                <div className="p-5 border border-[#F2C94C]/30 bg-[#F2C94C]/8 rounded-sm">
+                <div className="p-5 border border-[#F2C94C]/30 bg-[#F2C94C]/8 rounded-xl">
                   <p className="text-[11px] font-semibold text-[#0B1218]/80">
                     Leitura com confiança limitada: dados de mercado {atualizacaoMercado?.statusGeral || atualizacaoMercado?.status_geral || 'indisponíveis'}.
                   </p>
@@ -356,7 +356,7 @@ export default function Insights() {
 
             {/* 4.3 — Sidebar Score */}
             <aside className="space-y-8">
-              <div className="bg-[#0B1218] p-8 text-white rounded-sm">
+              <div className="bg-[#0B1218] p-8 text-white rounded-xl">
                 <div className="flex items-center gap-2 mb-6">
                   <Target size={18} className="text-[#F56A2A]" />
                   <h4 className="text-[10px] font-bold uppercase tracking-widest">Score de Saúde</h4>
@@ -367,7 +367,7 @@ export default function Insights() {
                   <span className="font-['Sora'] text-5xl font-bold">{ocultarValores ? '••••••••' : scoreValor}</span>
                   {badgeScore && (
                     <span
-                      className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm"
+                      className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-xl"
                       style={{ background: badgeScore.bg, color: badgeScore.color }}
                     >
                       {badgeScore.label}
@@ -421,7 +421,7 @@ export default function Insights() {
 
               {/* 4.4 — O que está pesando no score */}
               {resumo.diagnostico?.riscos?.length > 0 && (
-                <div className="border border-[#EFE7DC] p-8 rounded-sm">
+                <div className="border border-[#EFE7DC] p-8 rounded-xl">
                   <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-5">O que está pesando no seu score</h4>
                   <ul className="space-y-4">
                     {resumo.diagnostico.riscos.map((risco) => {
@@ -442,7 +442,7 @@ export default function Insights() {
 
               {/* 4.5 — Patrimônio Consolidado */}
               {patrimonio && (
-                <div className="border border-[#EFE7DC] p-8 rounded-sm">
+                <div className="border border-[#EFE7DC] p-8 rounded-xl">
                   <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-5">Patrimônio Consolidado</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -463,7 +463,7 @@ export default function Insights() {
 
               {/* Impacto de decisões recentes */}
               {resumo.impactoDecisoesRecentes?.quantidade > 0 && (
-                <div className="border border-[#EFE7DC] p-8 rounded-sm bg-[#FDFCFB]">
+                <div className="border border-[#EFE7DC] p-8 rounded-xl bg-[#FDFCFB]">
                   <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-3">Impacto das decisões recentes</h4>
                   <p className="text-xs text-[#0B1218]/65 leading-relaxed">
                     {ocultarValores

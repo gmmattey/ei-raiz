@@ -2,7 +2,7 @@ import React from 'react';
 
 export const SimulationResultBlock = ({ title, value, unit, description, trend }) => {
   return (
-    <div className="flex flex-col gap-1 rounded-sm border border-[#EFE7DC] bg-[#FDFCFB] p-6 transition-all hover:bg-white">
+    <div className="flex flex-col gap-1 rounded-xl border border-[#EFE7DC] bg-[#FDFCFB] p-6 transition-all hover:bg-white">
       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">
         {title}
       </p>

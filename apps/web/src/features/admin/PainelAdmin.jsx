@@ -252,7 +252,7 @@ export default function PainelAdmin() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-[10px] font-bold uppercase tracking-widest border ${activeTab === tab.id ? "bg-[#0B1218] text-white border-[#0B1218]" : "bg-white text-[#0B1218]/60 border-[#EFE7DC]"}`}
+            className={`px-3 py-2 text-[10px] font-bold uppercase tracking-widest border rounded-xl transition-all ${activeTab === tab.id ? "bg-[#0B1218] text-white border-[#0B1218] shadow-md shadow-black/10" : "bg-white text-[#0B1218]/60 border-[#EFE7DC] hover:bg-[#FAFAFA]"}`}
           >
             {tab.label}
           </button>
@@ -269,7 +269,7 @@ export default function PainelAdmin() {
             <StatCard label="Admins" value={resumo.admins} />
             <StatCard label="Parâmetros Simulações" value={resumo.parametrosSimulacao} />
           </div>
-          <div className="border border-[#EFE7DC] rounded-sm bg-white p-4">
+          <div className="border border-[#EFE7DC] rounded-xl bg-white p-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-3">Saúde de mercado</p>
             <div className="flex items-center gap-2 mb-3">
               <span className={`inline-block w-2 h-2 rounded-full ${saudeMercado?.statusGeral === "saudavel" ? "bg-[#6FCF97]" : saudeMercado?.statusGeral === "degradado" ? "bg-[#F2C94C]" : "bg-[#E85C5C]"}`} />
@@ -277,7 +277,7 @@ export default function PainelAdmin() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {(saudeMercado?.fontes ?? []).map((fonte) => (
-                <div key={fonte.fonte} className="border border-[#EFE7DC] rounded-sm p-3">
+                <div key={fonte.fonte} className="border border-[#EFE7DC] rounded-xl p-3">
                   <p className="text-xs font-bold uppercase tracking-widest">{fonte.fonte}</p>
                   <p className="text-xs text-[#0B1218]/60">Cobertura: {fonte.coberturaAtualizada}%</p>
                   <p className="text-xs text-[#0B1218]/60">Erros: {fonte.erros} · Expirados: {fonte.expirados}</p>
@@ -291,27 +291,27 @@ export default function PainelAdmin() {
 
       {activeTab === "conteudo" && (
         <div className="space-y-3">
-          <button onClick={salvarConteudo} className="px-4 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">
+          <button onClick={salvarConteudo} className="px-5 py-2.5 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all shadow-md shadow-black/10">
             Salvar conteúdo
           </button>
           {blocos.map((bloco, idx) => (
-            <div key={bloco.chave} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={bloco.chave} className="border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                <input value={bloco.modulo} onChange={(e) => atualizarLista(setBlocos, idx, { modulo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="módulo" />
-                <input value={bloco.chave} onChange={(e) => atualizarLista(setBlocos, idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="chave" />
-                <select value={bloco.tipo} onChange={(e) => atualizarLista(setBlocos, idx, { tipo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs">
+                <input value={bloco.modulo} onChange={(e) => atualizarLista(setBlocos, idx, { modulo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#F56A2A]" placeholder="módulo" />
+                <input value={bloco.chave} onChange={(e) => atualizarLista(setBlocos, idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#F56A2A]" placeholder="chave" />
+                <select value={bloco.tipo} onChange={(e) => atualizarLista(setBlocos, idx, { tipo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#F56A2A]">
                   <option value="texto">texto</option>
                   <option value="markdown">markdown</option>
                   <option value="json">json</option>
                   <option value="boolean">boolean</option>
                 </select>
-                <input type="number" value={bloco.ordem} onChange={(e) => atualizarLista(setBlocos, idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" placeholder="ordem" />
+                <input type="number" value={bloco.ordem} onChange={(e) => atualizarLista(setBlocos, idx, { ordem: Number(e.target.value) || 0 })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#F56A2A]" placeholder="ordem" />
                 <label className="flex items-center gap-2 text-xs">
                   <input type="checkbox" checked={Boolean(bloco.visivel)} onChange={(e) => atualizarLista(setBlocos, idx, { visivel: e.target.checked })} />
                   Visível
                 </label>
               </div>
-              <textarea value={bloco.valor} onChange={(e) => atualizarLista(setBlocos, idx, { valor: e.target.value })} className="mt-2 w-full min-h-[80px] border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
+              <textarea value={bloco.valor} onChange={(e) => atualizarLista(setBlocos, idx, { valor: e.target.value })} className="mt-2 w-full min-h-[80px] border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#F56A2A]" />
             </div>
           ))}
         </div>
@@ -323,7 +323,7 @@ export default function PainelAdmin() {
             Salvar menus
           </button>
           {(config.menus ?? []).map((menu, idx) => (
-            <div key={menu.chave} className="grid grid-cols-1 md:grid-cols-5 gap-2 border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={menu.chave} className="grid grid-cols-1 md:grid-cols-5 gap-2 border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <input value={menu.chave} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
               <input value={menu.label} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { label: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
               <input value={menu.path} onChange={(e) => atualizarListaObj(setConfig, "menus", idx, { path: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
@@ -343,7 +343,7 @@ export default function PainelAdmin() {
             Salvar flags
           </button>
           {Object.entries(config.flags ?? {}).map(([chave, valor]) => (
-            <label key={chave} className="flex items-center justify-between border border-[#EFE7DC] p-3 rounded-sm bg-white text-sm">
+            <label key={chave} className="flex items-center justify-between border border-[#EFE7DC] p-3 rounded-xl bg-white text-sm">
               <span>{chave}</span>
               <input
                 type="checkbox"
@@ -370,7 +370,7 @@ export default function PainelAdmin() {
             Salvar parâmetros
           </button>
           {parametrosSimulacao.map((item, idx) => (
-            <div key={item.chave} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={item.chave} className="border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <input value={item.chave} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { chave: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
                 <input value={item.descricao || ""} onChange={(e) => atualizarLista(setParametrosSimulacao, idx, { descricao: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
@@ -392,7 +392,7 @@ export default function PainelAdmin() {
             Salvar corretoras
           </button>
           {corretoras.map((item, idx) => (
-            <div key={item.codigo} className="grid grid-cols-1 md:grid-cols-4 gap-2 border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={item.codigo} className="grid grid-cols-1 md:grid-cols-4 gap-2 border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <input value={item.codigo} onChange={(e) => atualizarLista(setCorretoras, idx, { codigo: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
               <input value={item.nome} onChange={(e) => atualizarLista(setCorretoras, idx, { nome: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-2 py-2 text-xs" />
               <select value={item.status} onChange={(e) => atualizarLista(setCorretoras, idx, { status: e.target.value })} className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs">
@@ -416,12 +416,12 @@ export default function PainelAdmin() {
               placeholder="email@dominio.com"
               className="flex-1 border border-[#EFE7DC] bg-white text-[#0B1218] placeholder:text-[#0B1218]/40 px-3 py-2 text-sm"
             />
-            <button onClick={() => novoAdminEmail && salvarAdmin(novoAdminEmail, true)} className="px-4 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest">
+            <button onClick={() => novoAdminEmail && salvarAdmin(novoAdminEmail, true)} className="px-5 py-2.5 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all shadow-md shadow-black/10">
               Adicionar admin
             </button>
           </div>
           {admins.map((admin) => (
-            <div key={admin.email} className="flex items-center justify-between border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={admin.email} className="flex items-center justify-between border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <div>
                 <p className="text-sm font-semibold">{admin.email}</p>
                 <p className="text-xs text-[#0B1218]/50">concedido por: {admin.concedidoPor || "n/d"}</p>
@@ -439,7 +439,7 @@ export default function PainelAdmin() {
 
       {activeTab === "auditoria" && (
         <div className="space-y-4">
-          <div className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+          <div className="border border-[#EFE7DC] p-3 rounded-xl bg-white">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/45 mb-2">Exclusões de ativos (filtros)</p>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
               <input value={filtroExclusoes.autorEmail} onChange={(e) => setFiltroExclusoes((p) => ({ ...p, autorEmail: e.target.value }))} placeholder="autor email" className="border border-[#EFE7DC] bg-white text-[#0B1218] px-2 py-2 text-xs" />
@@ -454,7 +454,7 @@ export default function PainelAdmin() {
           </div>
           <div className="space-y-2">
             {auditoriaExclusoes.map((log) => (
-              <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+              <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-xl bg-white">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#0B1218]/50">EXCLUSÃO · {log.ticker} · {log.categoria}</p>
                 <p className="text-xs text-[#0B1218]/60 mt-1">{log.autorEmail} · {new Date(log.criadoEm).toLocaleString("pt-BR")}</p>
                 <p className="text-xs mt-1"><strong>Motivo:</strong> {log.motivo}</p>
@@ -463,7 +463,7 @@ export default function PainelAdmin() {
             ))}
           </div>
           {auditoria.map((log) => (
-            <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-sm bg-white">
+            <div key={log.id} className="border border-[#EFE7DC] p-3 rounded-xl bg-white">
               <p className="text-xs font-bold uppercase tracking-widest text-[#0B1218]/50">{log.acao} · {log.alvo}</p>
               <p className="text-xs text-[#0B1218]/60 mt-1">{log.autorEmail} · {new Date(log.criadoEm).toLocaleString("pt-BR")}</p>
               <pre className="mt-2 text-[11px] bg-[#FAFAFA] p-2 overflow-x-auto">{log.payloadJson}</pre>
@@ -476,7 +476,7 @@ export default function PainelAdmin() {
 }
 
 const StatCard = ({ label, value }) => (
-  <div className="border border-[#EFE7DC] bg-white p-4 rounded-sm">
+  <div className="border border-[#EFE7DC] bg-white p-4 rounded-xl">
     <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40">{label}</p>
     <p className="font-['Sora'] text-2xl font-bold mt-2">{value}</p>
   </div>

@@ -343,7 +343,7 @@ export default function DetalheAtivo() {
 
           <div className="flex flex-col md:flex-row justify-between items-start gap-6">
             <div className="flex gap-5 items-center">
-              <div className="w-14 h-14 rounded-sm bg-[#0B1218] text-white flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-[#0B1218] text-white flex items-center justify-center shrink-0">
                 <CategoriaIcone categoria={ativo.categoria} size={26} />
               </div>
               <div>
@@ -357,7 +357,7 @@ export default function DetalheAtivo() {
             </div>
 
             {/* Cotação atual */}
-            <div className="border border-[#EFE7DC] rounded-sm p-4 min-w-[200px]">
+            <div className="border border-[#EFE7DC] rounded-xl p-4 min-w-[200px]">
               <p className="text-[10px] font-bold text-[#0B1218]/40 uppercase tracking-widest mb-1">Cotação atual</p>
               {temCotacao ? (
                 <>
@@ -367,7 +367,7 @@ export default function DetalheAtivo() {
                       Atualizado às {formatarHoraSimples(ultimaAtualizacao)}
                     </p>
                   )}
-                  <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm bg-[rgba(111,207,151,0.15)] text-[#1A7A45]">
+                  <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-xl bg-[rgba(111,207,151,0.15)] text-[#1A7A45]">
                     Com cotação
                   </span>
                 </>
@@ -375,7 +375,7 @@ export default function DetalheAtivo() {
                 <>
                   <p className="font-['Sora'] text-xl font-bold text-[#0B1218]/40">{moeda(precoMedio)}</p>
                   <p className="text-[10px] text-[#0B1218]/40 mt-1">Preço de importação</p>
-                  <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm bg-[#EFE7DC] text-[#0B1218]/50">
+                  <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-xl bg-[#EFE7DC] text-[#0B1218]/50">
                     Sem cotação
                   </span>
                 </>
@@ -395,7 +395,7 @@ export default function DetalheAtivo() {
         {sucesso && <p className="text-sm text-[#1A7A45] mb-4">{sucesso}</p>}
 
         {/* 3.2 — Métricas */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           {/* Linha 1 — Posição */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pb-5 border-b border-[#EFE7DC]">
             <MetricaItem label="Quantidade" value={`${quantidade % 1 === 0 ? quantidade.toFixed(0) : quantidade.toFixed(2)} ${ativo.categoria === "acao" ? "ações" : "cotas"}`} />
@@ -423,7 +423,7 @@ export default function DetalheAtivo() {
 
         {/* 3.6 — Análise automática */}
         {analysis && (
-          <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+          <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
             <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-4">Análise automática da posição</h2>
             <div className="flex flex-col md:flex-row gap-6 mb-4">
               <div>
@@ -457,7 +457,7 @@ export default function DetalheAtivo() {
               </ul>
             )}
             {analysis.disclaimer && (
-              <div className="flex items-start gap-2 bg-[#FAFAFA] border border-[#EFE7DC] rounded-sm p-3">
+              <div className="flex items-start gap-2 bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl p-3">
                 <AlertTriangle size={14} className="shrink-0 mt-0.5 text-[#0B1218]/40" />
                 <p className="text-xs text-[#0B1218]/55">{analysis.disclaimer}</p>
               </div>
@@ -466,7 +466,7 @@ export default function DetalheAtivo() {
         )}
 
         {/* 3.4 — Desempenho desde a compra */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-4">Desempenho desde a compra</h2>
           {retornoAtivo == null && retornoCDI == null ? (
             <p className="text-sm text-[#0B1218]/55">Para calcular, informe a data de aquisição abaixo.</p>
@@ -504,7 +504,7 @@ export default function DetalheAtivo() {
         </section>
 
         {/* Data de aquisição */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-3">Data de aquisição (base comparativa)</h2>
           <div className="flex flex-col md:flex-row gap-3 md:items-end">
             <div>
@@ -528,7 +528,7 @@ export default function DetalheAtivo() {
         </section>
 
         {/* 3.3 — Evolução da posição */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-3">Evolução do valor da posição</h2>
           {serieTicker.length === 0 ? (
             <p className="text-sm text-[#0B1218]/55">Ainda não há histórico suficiente para este ativo.</p>
@@ -538,7 +538,7 @@ export default function DetalheAtivo() {
         </section>
 
         {/* 3.5 — Registrar nova compra */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-4">Registrar nova compra</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -609,7 +609,7 @@ export default function DetalheAtivo() {
         </section>
 
         {/* 3.7 — Timeline */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-4">Histórico do ativo</h2>
           {eventosTicker.length === 0 ? (
             <p className="text-sm text-[#0B1218]/55">Nenhuma movimentação registrada ainda.</p>
@@ -629,7 +629,7 @@ export default function DetalheAtivo() {
         </section>
 
         {/* 3.8 — Registrar venda ou troca */}
-        <section className="border border-[#EFE7DC] rounded-sm p-5 mb-6">
+        <section className="border border-[#EFE7DC] rounded-xl p-5 mb-6">
           <h2 className="font-['Sora'] text-xs font-bold uppercase tracking-widest mb-4">Registrar venda ou troca de ativo</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -690,7 +690,7 @@ export default function DetalheAtivo() {
             {(ativo.movimentacoes || []).length > 0 && (
               <div className="space-y-2">
                 {(ativo.movimentacoes || []).map((mov) => (
-                  <div key={mov.id} className="border border-[#EFE7DC] p-3 rounded-sm text-sm text-[#0B1218]/80">
+                  <div key={mov.id} className="border border-[#EFE7DC] p-3 rounded-xl text-sm text-[#0B1218]/80">
                     <p><strong>Data:</strong> {formatarData(mov.data_movimentacao) || mov.data_movimentacao}</p>
                     <p><strong>Valor:</strong> {moeda(mov.valor)}</p>
                     <p><strong>Origem:</strong> {mov.ativo_origem_id} | <strong>Destino:</strong> {mov.ativo_destino_id}</p>
@@ -705,7 +705,7 @@ export default function DetalheAtivo() {
         {/* 3.9 — Modal de remoção */}
         {modalExclusaoAberto && (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white border border-[#EFE7DC] rounded-sm p-5">
+            <div className="w-full max-w-lg bg-white border border-[#EFE7DC] rounded-xl p-5">
               <h3 className="font-['Sora'] text-sm font-bold uppercase tracking-widest mb-3">Remover este ativo da carteira</h3>
               <p className="text-xs text-[#0B1218]/65 mb-3">
                 Informe o motivo da remoção para auditoria. Esta ação não poderá ser desfeita.

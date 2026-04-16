@@ -3,7 +3,7 @@ import React from 'react';
 export const ScenarioComparisonCard = ({ title, items, isHighlighted, icon: Icon }) => {
   return (
     <div 
-      className={`rounded-sm border p-8 shadow-sm transition-all hover:shadow-md ${
+      className={`rounded-xl border p-8 shadow-sm transition-all hover:shadow-md ${
         isHighlighted 
           ? 'border-[#0B1218] bg-[#0B1218] text-white' 
           : 'border-[#EFE7DC] bg-white text-[#0B1218]'
@@ -11,7 +11,7 @@ export const ScenarioComparisonCard = ({ title, items, isHighlighted, icon: Icon
     >
       <div className="mb-6 flex items-center gap-4">
         {Icon && (
-          <div className={`flex h-12 w-12 items-center justify-center rounded-sm ${
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
             isHighlighted ? 'bg-white/10 text-[#F56A2A]' : 'bg-[#F56A2A]/10 text-[#F56A2A]'
           }`}>
             <Icon size={24} />

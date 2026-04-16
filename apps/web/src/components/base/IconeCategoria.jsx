@@ -2,17 +2,16 @@ export function IconeCategoria({ categoria, size = 20 }) {
   const mapCategoriaToIcon = {
     acao: "acoes",
     fundo: "fundos",
-    renda_fixa: "renda-fixa",
+    renda_fixa: "grafico",
     previdencia: "previdencia",
-    poupanca: "poupanca",
-    bens: "imovel",
+    poupanca: "carteira",
+    bens: "carteira",
   };
 
   const iconName = mapCategoriaToIcon[categoria] || "carteira";
 
-  // Importar dinamicamente o SVG
-  // Usando um caminho relativo que vite consegue processar
-  const iconPath = new URL(`../../assets/brand/icons/laranja/${iconName}.svg`, import.meta.url).href;
+  // Usar caminho estático público
+  const iconPath = `/assets/icons/laranja/${iconName}.svg`;
 
   return (
     <img

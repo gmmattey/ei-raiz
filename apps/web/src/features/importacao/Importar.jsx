@@ -74,7 +74,7 @@ function StepIndicator({ step }) {
   const passos = ['Upload', 'Revisão', 'Confirmação'];
   const ativo = { upload: 0, processing: 1, review: 1, success: 2 }[step] ?? 0;
   return (
-    <div className="flex items-center gap-3 justify-center mb-10">
+    <div className="flex items-center gap-3 justify-center mb-12 max-w-2xl mx-auto">
       {passos.map((label, i) => (
         <React.Fragment key={label}>
           <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ function StepIndicator({ step }) {
 
 function ResumoCard({ icon, label, valor, cor }) {
   return (
-    <div className="border border-[#EFE7DC] rounded-sm p-5 bg-white flex flex-col gap-2">
+    <div className="border border-[#EFE7DC] rounded-xl p-5 bg-white flex flex-col gap-2">
       <p className="text-[10px] uppercase tracking-widest font-bold text-[#0B1218]/40">{label}</p>
       <div className={`flex items-center gap-2 ${cor}`}>
         {icon}
@@ -154,7 +154,7 @@ function ItemReview({ item, expandido, onToggle }) {
 
       {expandido && item.status !== 'ok' && (
         <div className="px-4 pb-4 ml-7">
-          <div className="bg-[#FAFAFA] border border-[#EFE7DC] rounded-sm p-3">
+          <div className="bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl p-3">
             <p className="text-[11px] text-[#0B1218]/70 leading-relaxed">
               <strong className="font-semibold">Como resolver:</strong> {SUGESTAO_ERRO(item)}
             </p>
@@ -314,7 +314,7 @@ export default function Importar({ embedded = false }) {
 
         {/* ── UPLOAD ── */}
         {step === 'upload' && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-3xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="text-center">
               <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-3">
                 Importar Patrimônio
@@ -325,8 +325,8 @@ export default function Importar({ embedded = false }) {
             </div>
 
             {/* Template CTA */}
-            <div className="border border-[#F56A2A]/30 bg-[#F56A2A]/5 rounded-sm p-6 flex items-start gap-5">
-              <div className="w-10 h-10 bg-[#F56A2A] rounded-sm flex items-center justify-center shrink-0">
+            <div className="border border-[#F56A2A]/30 bg-[#F56A2A]/5 rounded-xl p-6 flex items-start gap-5">
+              <div className="w-10 h-10 bg-[#F56A2A] rounded-xl flex items-center justify-center shrink-0">
                 <FileSpreadsheet size={20} className="text-white" />
               </div>
               <div className="flex-1">
@@ -342,7 +342,7 @@ export default function Importar({ embedded = false }) {
                 <button
                   type="button"
                   onClick={baixarTemplateXlsx}
-                  className="inline-flex items-center gap-2 bg-[#F56A2A] text-white px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95e25] transition-all rounded-sm"
+                  className="inline-flex items-center gap-2 bg-[#F56A2A] text-white px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95e25] transition-all rounded-xl"
                 >
                   <Download size={12} /> Baixar Template .xlsx
                 </button>
@@ -359,7 +359,7 @@ export default function Importar({ embedded = false }) {
             />
 
             <div
-              className={`border-2 border-dashed p-16 rounded-sm text-center cursor-pointer transition-all bg-[#FAFAFA] group ${
+              className={`border-2 border-dashed p-16 rounded-xl text-center cursor-pointer transition-all bg-[#FAFAFA] group ${
                 isDragging ? 'border-[#F56A2A] bg-[#F56A2A]/5' : 'border-[#EFE7DC] hover:border-[#F56A2A] hover:bg-[#F56A2A]/3'
               }`}
               onClick={() => fileInputRef.current?.click()}
@@ -379,7 +379,7 @@ export default function Importar({ embedded = false }) {
               </p>
               <button
                 type="button"
-                className="bg-[#0B1218] text-white px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all rounded-sm"
+                className="bg-[#0B1218] text-white px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all rounded-xl"
               >
                 Selecionar arquivo
               </button>
@@ -389,7 +389,7 @@ export default function Importar({ embedded = false }) {
             </div>
 
             {erroUpload && (
-              <div className="flex items-start gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-sm">
+              <div className="flex items-start gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-xl">
                 <XCircle size={16} className="text-[#E85C5C] shrink-0 mt-0.5" />
                 <p className="text-sm font-medium text-[#E85C5C]">{erroUpload}</p>
               </div>
@@ -404,7 +404,7 @@ export default function Importar({ embedded = false }) {
                 { icon: <Car size={18} />, label: 'Veículos', desc: 'FIPE / Financiado' },
                 { icon: <PiggyBank size={18} />, label: 'Poupança', desc: 'Por instituição' },
               ].map(({ icon, label, desc }) => (
-                <div key={label} className="border border-[#EFE7DC] rounded-sm p-4 text-center">
+                <div key={label} className="border border-[#EFE7DC] rounded-xl p-4 text-center">
                   <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#F56A2A]/10 text-[#F56A2A]">
                     {icon}
                   </div>
@@ -433,7 +433,7 @@ export default function Importar({ embedded = false }) {
 
         {/* ── REVIEW ── */}
         {step === 'review' && preview && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
             <div className="text-center mb-2">
               <h1 className="font-['Sora'] text-3xl font-bold tracking-tight mb-2">
                 Revisão da Importação
@@ -467,7 +467,7 @@ export default function Importar({ embedded = false }) {
 
             {/* Info banner */}
             {(itensConflito.length > 0 || itensErro.length > 0) && (
-              <div className="flex items-start gap-3 p-4 border border-[#EFE7DC] bg-[#FAFAFA] rounded-sm">
+              <div className="flex items-start gap-3 p-4 border border-[#EFE7DC] bg-[#FAFAFA] rounded-xl">
                 <Info size={14} className="text-[#0B1218]/40 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-[#0B1218]/60 leading-relaxed">
                   {itensConflito.length > 0 && (
@@ -494,7 +494,7 @@ export default function Importar({ embedded = false }) {
                     key={s}
                     type="button"
                     onClick={() => setFiltroStatus(s)}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all ${
+                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
                       filtroStatus === s
                         ? 'bg-[#0B1218] text-white'
                         : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50 hover:border-[#0B1218]/30'
@@ -509,7 +509,7 @@ export default function Importar({ embedded = false }) {
                   <button
                     type="button"
                     onClick={() => setFiltroAba('todos')}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-sm transition-all ${filtroAba === 'todos' ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-xl transition-all ${filtroAba === 'todos' ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
                   >
                     Todas as abas
                   </button>
@@ -518,7 +518,7 @@ export default function Importar({ embedded = false }) {
                       key={aba}
                       type="button"
                       onClick={() => setFiltroAba(aba)}
-                      className={`px-3 py-1.5 text-[10px] font-bold rounded-sm transition-all ${filtroAba === aba ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
+                      className={`px-3 py-1.5 text-[10px] font-bold rounded-xl transition-all ${filtroAba === aba ? 'bg-[#F56A2A] text-white' : 'bg-[#FAFAFA] border border-[#EFE7DC] text-[#0B1218]/50'}`}
                     >
                       {LABEL_ABA[aba] ?? aba}
                     </button>
@@ -535,7 +535,7 @@ export default function Importar({ embedded = false }) {
             </div>
 
             {/* Lista de itens */}
-            <div className="border border-[#EFE7DC] rounded-sm overflow-hidden bg-[#FAFAFA]">
+            <div className="border border-[#EFE7DC] rounded-xl overflow-hidden bg-[#FAFAFA]">
               <div className="max-h-[480px] overflow-y-auto divide-y divide-[#EFE7DC]/50">
                 {itensFiltrados.map((item) => (
                   <ItemReview
@@ -555,7 +555,7 @@ export default function Importar({ embedded = false }) {
 
             {/* Contagem final */}
             {itensValidos.length > 0 && (
-              <div className="flex items-center gap-3 p-4 border border-[#6FCF97]/30 bg-[#6FCF97]/5 rounded-sm">
+              <div className="flex items-center gap-3 p-4 border border-[#6FCF97]/30 bg-[#6FCF97]/5 rounded-xl">
                 <CheckCircle2 size={14} className="text-[#6FCF97] shrink-0" />
                 <p className="text-[11px] text-[#0B1218]/70 font-medium">
                   <strong>{itensValidos.length} {itensValidos.length === 1 ? 'item será importado' : 'itens serão importados'}</strong> para a sua carteira.
@@ -570,7 +570,7 @@ export default function Importar({ embedded = false }) {
               <button
                 type="button"
                 onClick={() => setStep('upload')}
-                className="flex-1 py-4 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all rounded-sm"
+                className="flex-1 py-4 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all rounded-xl"
               >
                 Voltar
               </button>
@@ -578,7 +578,7 @@ export default function Importar({ embedded = false }) {
                 type="button"
                 onClick={confirmarImportacao}
                 disabled={itensValidos.length === 0 || isConfirmando}
-                className="flex-[2] py-4 bg-[#0B1218] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 rounded-sm"
+                className="flex-[2] py-4 bg-[#0B1218] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 rounded-xl"
               >
                 {isConfirmando ? (
                   <>
@@ -594,7 +594,7 @@ export default function Importar({ embedded = false }) {
             </div>
 
             {confirmError && (
-              <div className="flex items-center gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-sm">
+              <div className="flex items-center gap-3 p-4 border border-[#E85C5C]/30 bg-[#E85C5C]/5 rounded-xl">
                 <XCircle size={14} className="text-[#E85C5C] shrink-0" />
                 <p className="text-sm font-medium text-[#E85C5C]">{confirmError}</p>
               </div>

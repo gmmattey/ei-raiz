@@ -69,10 +69,10 @@ const SimulationHistory = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar simulação..."
-              className="w-full rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] py-4 pl-12 pr-4 text-sm outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] py-4 pl-12 pr-4 text-sm outline-none focus:border-[var(--accent)]"
             />
           </div>
-          <button className="flex items-center gap-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors">
+          <button className="flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors">
             <Filter size={16} /> Filtros
           </button>
         </div>

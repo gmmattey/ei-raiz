@@ -87,7 +87,7 @@ const PropertySimulator = () => {
           type={type}
           value={form[field]}
           onChange={onChange(field)}
-          className="w-full rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)]"
+          className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)]"
         />
         {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--text-muted)]">{suffix}</span>}
       </div>
@@ -129,10 +129,10 @@ const PropertySimulator = () => {
         {erro && <p className="text-sm text-[#E85C5C]">{erro}</p>}
 
         <div className="flex justify-center gap-3 pt-4">
-          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-sm bg-[var(--text-primary)] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-primary)] transition-all hover:bg-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50">
+          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-xl bg-[var(--text-primary)] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-primary)] transition-all hover:bg-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50">
             <Calculator size={18} /> {loading ? 'Calculando...' : 'Calcular Cenários'}
           </button>
-          <button onClick={salvar} disabled={loading} className="flex items-center gap-3 rounded-sm border border-[var(--text-primary)] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] disabled:opacity-50">
+          <button onClick={salvar} disabled={loading} className="flex items-center gap-3 rounded-xl border border-[var(--text-primary)] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] disabled:opacity-50">
             <Save size={16} /> Salvar
           </button>
           {resultado && (
@@ -140,7 +140,7 @@ const PropertySimulator = () => {
               sessionStorage.removeItem('sim_res_imovel');
               sessionStorage.removeItem('sim_form_imovel');
               setResultado(null);
-            }} className="flex items-center gap-3 rounded-sm border border-[#E85C5C] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#E85C5C] transition-all hover:bg-[#E85C5C] hover:text-white">
+            }} className="flex items-center gap-3 rounded-xl border border-[#E85C5C] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#E85C5C] transition-all hover:bg-[#E85C5C] hover:text-white">
               Nova Simulação
             </button>
           )}
@@ -177,7 +177,7 @@ const PropertySimulator = () => {
             </div>
 
             <div className="flex flex-col gap-4 border-t border-[var(--border-color)] pt-12 md:flex-row md:justify-end">
-              <button onClick={calcular} className="flex items-center justify-center gap-2 rounded-sm border border-[var(--border-color)] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--bg-secondary)]">
+              <button onClick={calcular} className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--bg-secondary)]">
                 <RefreshCw size={16} /> Recalcular
               </button>
             </div>

@@ -25,7 +25,7 @@ const Placeholder: React.FC<PlaceholderProps> = ({ title, description }) => {
         <p className="font-['Inter'] text-[#0B1218]/60 mb-8 leading-relaxed">{pageDescription}</p>
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center justify-center gap-2 self-center rounded-md bg-[#0B1218] px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800"
+          className="flex items-center justify-center gap-2 self-center rounded-xl bg-[#0B1218] px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800"
         >
           <ArrowLeft size={18} /> Voltar para a base
         </button>

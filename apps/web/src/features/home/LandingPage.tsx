@@ -32,7 +32,7 @@ const Icon = ({ name, className = '', size = 24 }) => {
 
 // --- COMPONENTES BASE ---
 const Button = ({ children, variant = 'primary', className = '', disabled = false, ...props }) => {
-  const baseStyle = "font-['Inter'] font-semibold rounded-md px-6 py-3 transition-all duration-200 flex items-center justify-center gap-2";
+  const baseStyle = "font-['Inter'] font-semibold rounded-xl px-6 py-3 transition-all duration-200 flex items-center justify-center gap-2";
   
   const variants = {
     primary: "bg-[#F56A2A] text-white hover:bg-[#d95a20] disabled:bg-[#F56A2A]/50 disabled:cursor-not-allowed",
@@ -220,7 +220,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                       handleLoginSubmit();
                     }
                   }}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                 />
                 <button 
                   onClick={() => setLoginStep('forgotEmail')}
@@ -254,7 +254,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                       if (authError) setAuthError('');
                     }}
                     placeholder="Digite sua senha"
-                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                   />
                   <button
                     type="button"
@@ -268,7 +268,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                   type="button"
                   onClick={handleLoginSubmit}
                   disabled={passwordInput.length < 5 || isSubmitting}
-                  className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
+                  className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
                 >
                   {isSubmitting ? 'Entrando...' : 'Entrar'}
                 </button>
@@ -297,14 +297,14 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                   placeholder="000.000.000-00"
                   value={cpfInput}
                   onChange={(e) => setCpfInput(e.target.value)}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleSolicitarRecuperacaoPorCpf}
                 disabled={isSubmitting}
-                className="w-full mt-4 bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                className="w-full mt-4 bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? 'Localizando...' : 'Localizar e enviar recuperação'}
               </button>
@@ -329,10 +329,10 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                       placeholder="seu@email.com"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                     />
                   </div>
-                  <button type="button" onClick={handleSolicitarRecuperacaoPorEmail} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
+                  <button type="button" onClick={handleSolicitarRecuperacaoPorEmail} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
                     {isSubmitting ? 'Enviando...' : 'Enviar recuperação'}
                   </button>
                 </>
@@ -347,7 +347,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                       placeholder="Cole o token recebido"
                       value={tokenInput}
                       onChange={(e) => setTokenInput(e.target.value)}
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                     />
                   </div>
                   <div>
@@ -358,7 +358,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                         placeholder="Nova senha forte"
                         value={newPasswordInput}
                         onChange={(e) => setNewPasswordInput(e.target.value)}
-                        className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                        className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                       />
                       <button
                         type="button"
@@ -370,7 +370,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                     </div>
                     <p className="mt-2 text-xs text-[#0B1218]/60">8+ caracteres com maiúscula, minúscula, número e especial.</p>
                   </div>
-                  <button type="button" onClick={handleRedefinirSenha} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
+                  <button type="button" onClick={handleRedefinirSenha} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
                     {isSubmitting ? 'Redefinindo...' : 'Redefinir senha'}
                   </button>
                 </>
@@ -398,7 +398,7 @@ const SectionComoFunciona = ({ id, titulo }) => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
         <div className="hidden md:block absolute top-6 left-[15%] right-[15%] h-px bg-[#EFE7DC]"></div>
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">1</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">1</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">Você traz tudo pro mesmo lugar</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Você importa seu CSV no padrão da plataforma e nós consolidamos seus ativos em uma única leitura.
@@ -406,14 +406,14 @@ const SectionComoFunciona = ({ id, titulo }) => (
         </div>
 
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">2</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">2</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">A gente traduz tudo</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Cruza tudo que você tem, calcula onde tá concentrado, o que é mais seguro, o que é mais arriscado.
           </p>
         </div>
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">3</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">3</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">Você fica sabendo o que fazer</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Você ganha um mapa real da carteira. Sem jargão, sem venda de fundo. Só o que importa mesmo.
@@ -450,7 +450,7 @@ const SectionProposta = ({ id, titulo }) => (
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/olho.svg')} className="w-8 h-8 mb-5" alt="Visão Neutra" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Visão Neutra</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -458,7 +458,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/grafico.svg')} className="w-8 h-8 mb-5" alt="Tradução de Risco" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Tradução de Risco</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -466,7 +466,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/aporte.svg')} className="w-8 h-8 mb-5" alt="Consolidação Real" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Consolidação em uma visão única</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -474,7 +474,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/sucesso.svg')} className="w-8 h-8 mb-5" alt="Próximos Passos" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Próximos Passos</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -495,19 +495,19 @@ const SectionFaq = ({ id, titulo, subtitulo }) => (
         <p className="font-['Inter'] text-[#0B1218]/70 text-xl">{subtitulo}</p>
       </div>
       <div className="grid grid-cols-1 gap-6">
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como é calculado o Score da Carteira?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             O Score é uma métrica proprietária de 0 a 100 que avalia quatro pilares: liquidez, diversificação de emissores, exposição a risco e eficiência de taxas. Ele não prevê rentabilidade, prevê a robustez estrutural.
           </p>
         </div>
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">O que acontece após importar o primeiro extrato?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             A plataforma padroniza nomes e ativos em minutos. Em seguida, o dashboard é liberado revelando seu patrimônio consolidado e apontamentos iniciais de risco.
           </p>
         </div>
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como a Esquilo ganha dinheiro?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             O produto está em evolução contínua. O foco atual é consolidar carteira, traduzir risco e orientar próximos passos com base em dados reais.
@@ -643,7 +643,7 @@ export default function LandingPage() {
             <a href="#proposta" onClick={(e) => handleNavClick(e, 'proposta')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">A Proposta</a>
             <a href="#faq" onClick={(e) => handleNavClick(e, 'faq')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">Dúvidas</a>
             <div className="h-px bg-white/10 my-2"></div>
-            <button onClick={handleLoginClick} className="font-['Inter'] font-semibold w-full py-3 text-white hover:bg-white/10 rounded-md transition-colors">Entrar</button>
+            <button onClick={handleLoginClick} className="font-['Inter'] font-semibold w-full py-3 text-white hover:bg-white/10 rounded-xl transition-colors">Entrar</button>
             <Button variant="primary" className="w-full justify-center" onClick={() => navigate('/onboarding')}>Criar conta</Button>
           </div>
         )}
@@ -659,21 +659,15 @@ export default function LandingPage() {
         </div>
         <div className="relative z-20 mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mt-16 fade-in-up">
-            <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-4 text-white tracking-tight">
-              {texto("landing.hero.titulo", "Sua carteira merece")}<br/>
-              <span className="text-[#F56A2A]">{texto("landing.hero.titulo_destaque", "uma visão real.")}</span>
+            <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] mb-12 text-white tracking-tight">
+              Sua carteira merece<br/>
+              <span className="text-[#F56A2A]">consolidação e clareza.</span>
             </h1>
-            <h2 className="font-['Sora'] text-xl md:text-2xl font-semibold text-[#F5F0EB]/90 mb-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
-              {texto("landing.hero.subtitulo", "Consolidação real, diagnóstico claro e decisão orientada.")}
-            </h2>
-            <p className="font-['Inter'] text-lg text-[#F5F0EB]/70 mb-10 leading-relaxed max-w-lg fade-in-up" style={{ animationDelay: '0.2s' }}>
-              {texto("landing.hero.descricao", "Centralize seus ativos, entenda concentração e risco da carteira e receba uma orientação objetiva do próximo passo.")}
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto fade-in-up" style={{ animationDelay: '0.3s' }}>
               <Button variant="primary" className="w-full sm:w-auto text-base px-8 py-3.5 shadow-lg shadow-[#F56A2A]/20" onClick={(e) => handleNavClick(e, 'como-funciona')}>
                 {texto("landing.hero.cta_primario", "Ver como funciona")} <Icon name="arrowRight" size={18} />
               </Button>
-              <button className="font-['Inter'] font-semibold rounded-md px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
+              <button className="font-['Inter'] font-semibold rounded-xl px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
                 {texto("landing.hero.cta_secundario", "Saber mais sobre a gente")}
               </button>
             </div>

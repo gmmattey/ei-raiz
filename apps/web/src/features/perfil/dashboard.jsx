@@ -96,14 +96,14 @@ export default function Dashboard({ embedded = false }) {
         {error && <p className="text-sm text-[#E85C5C]">{error}</p>}
 
         {!loading && !error && semBase && (
-          <div className="border border-[var(--border-color)] bg-[var(--bg-card)] p-6 rounded-sm text-sm text-[var(--text-secondary)]">
+          <div className="border border-[var(--border-color)] bg-[var(--bg-card)] p-6 rounded-xl text-sm text-[var(--text-secondary)]">
             Sem base para o filtro selecionado.
           </div>
         )}
 
         {!loading && !error && !semBase && (
           <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-6">
-            <section className="border border-[var(--border-color)] rounded-sm p-4 bg-[var(--bg-card)]">
+            <section className="border border-[var(--border-color)] rounded-xl p-4 bg-[var(--bg-card)]">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]">Distribuição</h3>
                 <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
@@ -124,7 +124,7 @@ export default function Dashboard({ embedded = false }) {
               </div>
             </section>
 
-            <section className="border border-[var(--border-color)] rounded-sm p-4 bg-[var(--bg-card)]">
+            <section className="border border-[var(--border-color)] rounded-xl p-4 bg-[var(--bg-card)]">
               <h3 className="mb-3 font-['Sora'] text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]">Comparativo</h3>
               <div className="h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">

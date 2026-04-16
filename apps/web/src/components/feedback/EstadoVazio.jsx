@@ -18,7 +18,7 @@ export default function EstadoVazio({ titulo, descricao, acaoTexto, onAcao }) {
       {acaoTexto && onAcao && (
         <button
           onClick={onAcao}
-          className="rounded-sm bg-[var(--accent)] px-8 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#D95B22]"
+          className="rounded-xl bg-[var(--accent)] px-8 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#D95B22]"
         >
           {acaoTexto}
         </button>

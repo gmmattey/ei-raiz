@@ -2,10 +2,10 @@ import React from 'react';
 
 export const DecisionFormSection = ({ title, description, children, icon: Icon }) => {
   return (
-    <section className="rounded-sm border border-[#EFE7DC] bg-white p-6 md:p-8 shadow-sm">
+    <section className="rounded-xl border border-[#EFE7DC] bg-white p-6 md:p-8 shadow-sm">
       <div className="mb-6 flex items-start gap-4">
         {Icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#F56A2A]/10 text-[#F56A2A]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F56A2A]/10 text-[#F56A2A]">
             <Icon size={20} />
           </div>
         )}

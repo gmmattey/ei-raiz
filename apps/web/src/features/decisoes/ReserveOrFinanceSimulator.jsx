@@ -54,8 +54,8 @@ const ReserveOrFinanceSimulator = () => {
         {erro && <p className="text-sm text-[#E85C5C]">{erro}</p>}
 
         <div className="flex justify-center gap-3 pt-4">
-          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-sm bg-[var(--text-primary)] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-primary)] transition-all hover:opacity-90 disabled:opacity-50"><Calculator size={18} /> Calcular</button>
-          <button onClick={salvar} disabled={loading} className="flex items-center gap-2 rounded-sm border border-[var(--text-primary)] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] disabled:opacity-50"><Save size={16} /> Salvar</button>
+          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-xl bg-[var(--text-primary)] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--bg-primary)] transition-all hover:opacity-90 disabled:opacity-50"><Calculator size={18} /> Calcular</button>
+          <button onClick={salvar} disabled={loading} className="flex items-center gap-2 rounded-xl border border-[var(--text-primary)] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] transition-all hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] disabled:opacity-50"><Save size={16} /> Salvar</button>
         </div>
 
         {resultado && (
@@ -76,7 +76,7 @@ const ReserveOrFinanceSimulator = () => {
               <SimulationResultBlock title="Score Projetado" value={`${resultado.impactoScore?.scoreProjetado ?? form.scoreAtual}`} description="Depois" />
               <SimulationResultBlock title="Delta" value={`${(resultado.impactoScore?.delta ?? 0) >= 0 ? '+' : ''}${resultado.impactoScore?.delta ?? 0}`} description={resultado.impactoScore?.regraDominante || 'impacto'} trend={{ label: 'Score', isPositive: (resultado.impactoScore?.delta ?? 0) >= 0 }} />
             </div>
-            <div className="flex justify-end border-t border-[var(--border-color)] pt-8"><button onClick={calcular} className="flex items-center gap-2 rounded-sm border border-[var(--text-primary)] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-all"><RefreshCw size={16} /> Recalcular</button></div>
+            <div className="flex justify-end border-t border-[var(--border-color)] pt-8"><button onClick={calcular} className="flex items-center gap-2 rounded-xl border border-[var(--text-primary)] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-all"><RefreshCw size={16} /> Recalcular</button></div>
           </>
         )}
       </div>

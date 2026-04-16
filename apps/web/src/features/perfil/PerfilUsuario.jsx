@@ -246,7 +246,7 @@ export default function PerfilUsuario({ embedded = false }) {
             <h1 className={`font-['Sora'] font-bold tracking-tight ${embedded ? 'text-3xl' : 'text-4xl'}`}>Meu Perfil</h1>
             <p className="text-[#0B1218]/50 text-sm font-medium mt-2">Suas informações personalizam score, leitura de risco e recomendações.</p>
           </div>
-          <button onClick={salvar} className="flex items-center gap-2 px-6 py-2.5 bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-all rounded-sm shadow-sm">
+          <button onClick={salvar} className="flex items-center gap-2 px-6 py-2.5 bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-all rounded-xl shadow-sm">
             {saving ? <Save className="animate-spin" size={14} /> : <Save size={14} />}
             {saving ? "Salvando..." : "Salvar Alterações"}
           </button>
@@ -257,12 +257,12 @@ export default function PerfilUsuario({ embedded = false }) {
 
         {!loading && (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-2 border border-[#EFE7DC] bg-white p-2 rounded-sm shadow-sm">
+            <div className="flex flex-wrap gap-2 border border-[#EFE7DC] bg-white p-2 rounded-xl shadow-sm">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-2 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-colors ${activeTab === tab.id ? "bg-[#0B1218] text-white shadow-sm" : "bg-[#FAFAFA] text-[#0B1218]/70 hover:bg-[#F5F0EB]"}`}
+                  className={`px-3 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-colors ${activeTab === tab.id ? "bg-[#0B1218] text-white shadow-sm" : "bg-[#FAFAFA] text-[#0B1218]/70 hover:bg-[#F5F0EB]"}`}
                 >
                   {tab.label}
                 </button>
@@ -270,7 +270,7 @@ export default function PerfilUsuario({ embedded = false }) {
             </div>
 
             {activeTab === "dados" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-sm p-6 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-xl p-6 shadow-sm">
                 <SelectField
                   label="Qual é o seu principal objetivo?"
                   value={perfil.objetivo}
@@ -311,7 +311,7 @@ export default function PerfilUsuario({ embedded = false }) {
             )}
 
             {activeTab === "fluxo" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-sm p-6 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-xl p-6 shadow-sm">
                 <Field label="Renda mensal" value={perfil.rendaMensal} onChange={(v) => setPerfil((p) => ({ ...p, rendaMensal: v }))} currency />
                 <Field label="Gasto mensal" value={perfil.gastoMensal} onChange={(v) => setPerfil((p) => ({ ...p, gastoMensal: v }))} currency />
                 <Field label="Aporte mensal" value={perfil.aporteMensal} onChange={(v) => setPerfil((p) => ({ ...p, aporteMensal: v }))} currency />
@@ -461,7 +461,7 @@ export default function PerfilUsuario({ embedded = false }) {
             )}
 
             {activeTab === "risco" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-sm p-6 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-[#EFE7DC] bg-white rounded-xl p-6 shadow-sm">
                 <SelectField
                   label="Perfil de risco"
                   value={perfil.perfilRisco}
@@ -503,7 +503,7 @@ export default function PerfilUsuario({ embedded = false }) {
             )}
 
             {activeTab === "preferencias" && (
-              <div className="mt-2 p-8 bg-[#F5F0EB] rounded-sm border-l-4 border-[#F56A2A] shadow-sm">
+              <div className="mt-2 p-8 bg-[#F5F0EB] rounded-xl border-l-4 border-[#F56A2A] shadow-sm">
                 <div className="flex items-start gap-4">
                   <ShieldCheck className="text-[#F56A2A] shrink-0" size={24} />
                   <div>
@@ -558,7 +558,7 @@ const EscalaMaturidade = ({ value, onChange }) => (
           key={nivel}
           type="button"
           onClick={() => onChange(nivel)}
-          className={`flex items-center gap-3 px-4 py-3 border rounded-sm text-left transition-all ${
+          className={`flex items-center gap-3 px-4 py-3 border rounded-xl text-left transition-all ${
             Number(value) === nivel
               ? "border-[#F56A2A] bg-[#F56A2A]/5"
               : "border-[#EFE7DC] hover:border-[#F56A2A]/40"
@@ -590,7 +590,7 @@ const Field = ({ label, value, onChange, type = "text", currency = false }) => (
 );
 
 const IncrementalSection = ({ title, items, onAdd, onRemove, renderItem }) => (
-  <div className="mt-6 p-6 border border-[#EFE7DC] bg-white rounded-sm shadow-sm">
+  <div className="mt-6 p-6 border border-[#EFE7DC] bg-white rounded-xl shadow-sm">
     <div className="flex items-center justify-between mb-4">
       <h4 className="font-['Sora'] text-sm font-bold text-[#0B1218] uppercase tracking-tight">{title}</h4>
       <button type="button" onClick={onAdd} className="text-[10px] font-bold uppercase tracking-widest text-[#F56A2A]">
@@ -600,7 +600,7 @@ const IncrementalSection = ({ title, items, onAdd, onRemove, renderItem }) => (
     {items.length === 0 && <p className="text-xs text-[#0B1218]/55">Nenhum item adicionado ainda.</p>}
     <div className="space-y-4">
       {items.map((item) => (
-        <div key={item.id} className="p-4 bg-[#FAFAFA] border border-[#EFE7DC] rounded-sm">
+        <div key={item.id} className="p-4 bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl">
           {renderItem(item)}
           <button type="button" onClick={() => onRemove(item.id)} className="mt-3 text-[10px] font-bold uppercase tracking-widest text-[#E85C5C]">
             Remover

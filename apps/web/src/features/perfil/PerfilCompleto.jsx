@@ -84,7 +84,7 @@ const CheckboxGroup = ({ label, options, values, onChange, optional = false }) =
                 onChange([...values, option.value]);
               }
             }}
-            className="h-4 w-4 rounded accent-[#F56A2A]"
+            className="h-4 w-4 rounded-xl accent-[#F56A2A]"
           />
           <span className="text-sm text-[#0B1218]">{option.label}</span>
         </label>
@@ -180,7 +180,7 @@ export default function PerfilCompleto() {
 
         {/* ... (steps 2-5 similar structures) ... */}
         {currentStep === 5 && (
-            <div className="mt-12 p-6 bg-[#6FCF97]/10 border border-[#6FCF97] rounded-sm">
+            <div className="mt-12 p-6 bg-[#6FCF97]/10 border border-[#6FCF97] rounded-xl">
                 <p>Configuração finalizada.</p>
             </div>
         )}
@@ -190,7 +190,7 @@ export default function PerfilCompleto() {
           <button onClick={prevStep} disabled={currentStep === 1} className="flex items-center gap-2 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/60 hover:text-[#0B1218]">
             <ChevronLeft size={16} /> Anterior
           </button>
-          <button onClick={currentStep === 5 ? handleComplete : nextStep} className="ml-auto flex items-center gap-2 px-8 py-3 bg-[#F56A2A] text-white rounded-sm font-bold text-[10px] uppercase tracking-widest hover:bg-[#d95a20]">
+          <button onClick={currentStep === 5 ? handleComplete : nextStep} className="ml-auto flex items-center gap-2 px-8 py-3 bg-[#F56A2A] text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-[#d95a20]">
             {currentStep === 5 ? 'Pronto!' : 'Próximo'} <ChevronRight size={16} />
           </button>
         </div>

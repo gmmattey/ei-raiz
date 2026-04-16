@@ -100,7 +100,7 @@ const MaskedInput = ({
           value={displayValue}
           onChange={handleChange}
           onBlur={handleBlur}
-          className="w-full rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)]"
+          className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)]"
           {...props}
         />
         {suffix && (

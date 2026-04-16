@@ -99,9 +99,9 @@ const DecisionHub = () => {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className="group flex flex-col items-start gap-6 rounded-sm border border-[#EFE7DC] bg-white p-8 text-left transition-all hover:border-[#F56A2A] hover:shadow-lg"
+                  className="group flex flex-col items-start gap-6 rounded-xl border border-[#EFE7DC] bg-white p-8 text-left transition-all hover:border-[#F56A2A] hover:shadow-lg"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-[#F56A2A]/10 text-[#F56A2A] transition-colors group-hover:bg-[#F56A2A] group-hover:text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F56A2A]/10 text-[#F56A2A] transition-colors group-hover:bg-[#F56A2A] group-hover:text-white">
                     {item.icon}
                   </div>
                   <div className="flex-1">
@@ -130,7 +130,7 @@ const DecisionHub = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(`/decisoes/resultado/${item.id}`)}
-                className="rounded-sm border border-[#EFE7DC] bg-white p-4 text-left hover:border-[#F56A2A]"
+                className="rounded-xl border border-[#EFE7DC] bg-white p-4 text-left hover:border-[#F56A2A]"
               >
                 <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">{item.nome}</p>
                 <p className="mt-1 text-[11px] text-[#0B1218]/60">{item.resumoCurto || item.diagnosticoTitulo || 'Sem resumo'}</p>

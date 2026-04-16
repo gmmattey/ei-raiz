@@ -38,7 +38,7 @@ export function VeraCard({ payload, onAction }) {
   const toneClass = toneStyles[tone] || toneStyles.neutral;
 
   return (
-    <div className={`rounded-lg p-4 shadow-sm ${toneClass}`}>
+    <div className={`rounded-xl p-4 shadow-sm ${toneClass}`}>
       {/* Badges */}
       {badges && badges.length > 0 && (
         <div className="flex gap-2 mb-3">

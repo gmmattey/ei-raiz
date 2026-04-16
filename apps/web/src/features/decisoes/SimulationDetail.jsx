@@ -66,7 +66,7 @@ const SimulationDetail = () => {
       <DecisionSimulatorLayout title="Simulação indisponível" subtitle={erro || 'Não foi possível carregar os dados.'}>
         <button
           onClick={() => navigate('/decisoes/historico')}
-          className="rounded-sm border border-[#0B1218] px-6 py-3 text-[10px] font-bold uppercase tracking-widest"
+          className="rounded-xl border border-[#0B1218] px-6 py-3 text-[10px] font-bold uppercase tracking-widest"
         >
           Voltar
         </button>
@@ -81,9 +81,9 @@ const SimulationDetail = () => {
       onBack={() => navigate('/decisoes/historico')}
     >
       <div className="space-y-12">
-        <section className="rounded-sm border border-[#EFE7DC] bg-white p-8">
+        <section className="rounded-xl border border-[#EFE7DC] bg-white p-8">
           <h3 className="mb-6 font-['Sora'] text-lg font-bold text-[#0B1218]">Premissas Utilizadas</h3>
-          <pre className="overflow-auto rounded-sm bg-[#FDFCFB] p-4 text-xs text-[#0B1218]/70">{JSON.stringify(simulation.premissas, null, 2)}</pre>
+          <pre className="overflow-auto rounded-xl bg-[#FDFCFB] p-4 text-xs text-[#0B1218]/70">{JSON.stringify(simulation.premissas, null, 2)}</pre>
         </section>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -109,13 +109,13 @@ const SimulationDetail = () => {
         <div className="flex flex-col gap-4 border-t border-[#EFE7DC] pt-12 md:flex-row md:justify-end">
           <button
             onClick={recalcular}
-            className="flex items-center justify-center gap-2 rounded-sm border border-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] hover:bg-[#0B1218] hover:text-white"
+            className="flex items-center justify-center gap-2 rounded-xl border border-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] hover:bg-[#0B1218] hover:text-white"
           >
             <RefreshCw size={16} /> Recalcular
           </button>
           <button
             onClick={() => navigate(`/decisoes/${simulation.tipo}`)}
-            className="flex items-center justify-center gap-2 rounded-sm bg-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#111923]"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#111923]"
           >
             <Edit3 size={16} /> Editar Premissas
           </button>

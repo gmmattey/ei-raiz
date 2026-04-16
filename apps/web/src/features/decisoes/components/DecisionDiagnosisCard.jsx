@@ -3,9 +3,9 @@ import { AlertCircle, ArrowRight } from 'lucide-react';
 
 export const DecisionDiagnosisCard = ({ recommendation, reason, alert, action, scoreImpact, financialImpact, risk, onClickAction }) => {
   return (
-    <div className="group w-full rounded-sm border border-[#0B1218] bg-[#0B1218] p-1 text-left transition-all hover:border-[#F56A2A]">
+    <div className="group w-full rounded-xl border border-[#0B1218] bg-[#0B1218] p-1 text-left transition-all hover:border-[#F56A2A]">
       <div className="flex flex-col items-start gap-6 border border-white/10 bg-white/5 p-8 md:flex-row md:items-center">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-[#F56A2A]/10 text-[#F56A2A]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F56A2A]/10 text-[#F56A2A]">
           <AlertCircle size={24} />
         </div>
         <div className="flex-1">

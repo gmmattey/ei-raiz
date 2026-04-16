@@ -113,7 +113,7 @@ const Input = ({ label, type = 'text', placeholder, maskType, value, onChange, r
       </div>
       {hasError && <span className="text-[10px] text-[#E85C5C] font-medium px-2 mt-0.5">{!value && required ? 'Campo obrigatório' : maskType === 'date' ? 'Data inválida (mínimo 16 anos)' : 'Formato inválido'}</span>}
       {showEmailSuggestions && (
-        <div className="absolute top-[55px] left-0 w-full bg-white border border-[#EFE7DC] rounded-md shadow-lg z-20 overflow-hidden">
+        <div className="absolute top-[55px] left-0 w-full bg-white border border-[#EFE7DC] rounded-xl shadow-lg z-20 overflow-hidden">
           {emailProviders.map(p => <div key={p} onClick={() => onChange({ target: { value: value.split('@')[0] + p } })} className="px-4 py-2 text-sm hover:bg-[#FAFAFA] cursor-pointer border-b last:border-0">{value.split('@')[0]}<span className="font-bold">{p}</span></div>)}
         </div>
       )}
@@ -132,7 +132,7 @@ const QuestionCard = ({ question, options, selectedValue, onSelect }) => (
     <h3 className="mb-4 font-['Sora'] text-lg font-bold text-[#0B1218]">{question}</h3>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {options.map((opt, idx) => (
-        <button key={idx} onClick={() => onSelect(opt)} className={`border p-4 text-left text-sm transition-all duration-200 rounded-md cursor-pointer ${selectedValue === opt ? 'border-[#F56A2A] bg-[#F56A2A]/5 text-[#F56A2A] font-semibold ring-1 ring-[#F56A2A]/20' : 'border-[#EFE7DC] bg-white text-[#0B1218]/70 hover:border-[#0B1218]/20 hover:bg-[#FAFAFA]'}`}>{opt}</button>
+        <button key={idx} onClick={() => onSelect(opt)} className={`border p-4 text-left text-sm transition-all duration-200 rounded-xl cursor-pointer ${selectedValue === opt ? 'border-[#F56A2A] bg-[#F56A2A]/5 text-[#F56A2A] font-semibold ring-1 ring-[#F56A2A]/20' : 'border-[#EFE7DC] bg-white text-[#0B1218]/70 hover:border-[#0B1218]/20 hover:bg-[#FAFAFA]'}`}>{opt}</button>
       ))}
     </div>
   </div>
@@ -348,7 +348,7 @@ export default function Onboarding({ embedded = false, onClose, mode = 'signup',
         <div className="mt-8 flex items-center justify-center w-16 h-16 rounded-full bg-[#6FCF97]/20 text-[#6FCF97]"><Check size={32} /></div>
         <button 
           onClick={() => navigate('/importar')}
-          className="mt-10 px-6 py-3 bg-[#F56A2A] text-white font-bold rounded-md hover:bg-[#d95a20] transition-colors"
+          className="mt-10 px-6 py-3 bg-[#F56A2A] text-white font-bold rounded-xl hover:bg-[#d95a20] transition-colors"
         >
           Ir para Importacao agora
         </button>
@@ -487,31 +487,31 @@ export default function Onboarding({ embedded = false, onClose, mode = 'signup',
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold mb-2">Estado civil</label>
-                  <select value={dadosPessoais.estadoCivil} onChange={(e) => setDadosPessoais((p) => ({ ...p, estadoCivil: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218]">
+                  <select value={dadosPessoais.estadoCivil} onChange={(e) => setDadosPessoais((p) => ({ ...p, estadoCivil: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
                     <option value="">Selecione</option><option value="solteiro">Solteiro(a)</option><option value="casado">Casado(a)</option><option value="uniao">União estável</option><option value="divorciado">Divorciado(a)</option><option value="viuvo">Viúvo(a)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">Escolaridade</label>
-                  <select value={dadosPessoais.escolaridade} onChange={(e) => setDadosPessoais((p) => ({ ...p, escolaridade: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218]">
+                  <select value={dadosPessoais.escolaridade} onChange={(e) => setDadosPessoais((p) => ({ ...p, escolaridade: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
                     <option value="">Selecione</option><option value="medio">Ensino médio</option><option value="superior">Superior</option><option value="pos">Pós-graduação</option><option value="mestrado">Mestrado/Doutorado</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">Faixa de renda</label>
-                  <select value={dadosPessoais.faixaRenda} onChange={(e) => setDadosPessoais((p) => ({ ...p, faixaRenda: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218]">
+                  <select value={dadosPessoais.faixaRenda} onChange={(e) => setDadosPessoais((p) => ({ ...p, faixaRenda: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
                     <option value="">Selecione</option><option value="ate-3k">Até R$ 3 mil</option><option value="3k-7k">R$ 3 mil a R$ 7 mil</option><option value="7k-15k">R$ 7 mil a R$ 15 mil</option><option value="15k+">Acima de R$ 15 mil</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">Moradia</label>
-                  <select value={dadosPessoais.moradia} onChange={(e) => setDadosPessoais((p) => ({ ...p, moradia: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218]">
+                  <select value={dadosPessoais.moradia} onChange={(e) => setDadosPessoais((p) => ({ ...p, moradia: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
                     <option value="">Selecione</option><option value="propria">Casa própria</option><option value="alugada">Alugada</option><option value="financiada">Financiada</option>
                   </select>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold mb-2">Renda</label>
-                  <select value={dadosPessoais.rendaComposicao} onChange={(e) => setDadosPessoais((p) => ({ ...p, rendaComposicao: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218]">
+                  <select value={dadosPessoais.rendaComposicao} onChange={(e) => setDadosPessoais((p) => ({ ...p, rendaComposicao: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
                     <option value="">Selecione</option><option value="individual">Renda individual</option><option value="familiar">Renda familiar</option>
                   </select>
                 </div>

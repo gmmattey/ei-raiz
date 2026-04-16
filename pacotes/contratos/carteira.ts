@@ -1,4 +1,4 @@
-export type CategoriaAtivo = "acao" | "fundo" | "previdencia" | "renda_fixa";
+export type CategoriaAtivo = "acao" | "fundo" | "previdencia" | "renda_fixa" | "poupanca" | "bens";
 
 export type AtivoResumo = {
   id: string;

@@ -48,8 +48,8 @@ const FreeSimulationSimulator = () => {
         {erro && <p className="text-sm text-[#E85C5C]">{erro}</p>}
 
         <div className="flex justify-center gap-3 pt-4">
-          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-sm bg-[#0B1218] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#111923] disabled:opacity-50"><Calculator size={18} /> Calcular</button>
-          <button onClick={salvar} disabled={loading} className="flex items-center gap-2 rounded-sm border border-[#0B1218] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] hover:bg-[#0B1218] hover:text-white disabled:opacity-50"><Save size={16} /> Salvar</button>
+          <button onClick={calcular} disabled={loading} className="flex items-center gap-3 rounded-xl bg-[#0B1218] px-12 py-5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#111923] disabled:opacity-50"><Calculator size={18} /> Calcular</button>
+          <button onClick={salvar} disabled={loading} className="flex items-center gap-2 rounded-xl border border-[#0B1218] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-[#0B1218] hover:bg-[#0B1218] hover:text-white disabled:opacity-50"><Save size={16} /> Salvar</button>
         </div>
 
         {resultado && (
@@ -71,7 +71,7 @@ const FreeSimulationSimulator = () => {
               <SimulationResultBlock title="Score Projetado" value={`${resultado.impactoScore?.scoreProjetado ?? form.scoreAtual}`} description="Depois" />
               <SimulationResultBlock title="Delta" value={`${(resultado.impactoScore?.delta ?? 0) >= 0 ? '+' : ''}${resultado.impactoScore?.delta ?? 0}`} description={resultado.impactoScore?.regraDominante || 'impacto'} trend={{ label: 'Score', isPositive: (resultado.impactoScore?.delta ?? 0) >= 0 }} />
             </div>
-            <div className="flex justify-end border-t border-[#EFE7DC] pt-8"><button onClick={calcular} className="flex items-center gap-2 rounded-sm border border-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-[#0B1218] hover:text-white"><RefreshCw size={16} /> Recalcular</button></div>
+            <div className="flex justify-end border-t border-[#EFE7DC] pt-8"><button onClick={calcular} className="flex items-center gap-2 rounded-xl border border-[#0B1218] px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-[#0B1218] hover:text-white"><RefreshCw size={16} /> Recalcular</button></div>
           </>
         )}
       </div>
