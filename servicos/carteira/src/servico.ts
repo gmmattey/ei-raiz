@@ -3,6 +3,7 @@ import type {
   CategoriaAtivo,
   ComparativoBenchmarkCarteira,
   DetalheCategoria,
+  ProvedorCotacaoFundosCvm,
   ResumoCarteira,
   ServicoCarteira,
 } from "@ei/contratos";
@@ -24,12 +25,28 @@ type DependenciasServicoCarteira = {
   fetchFn?: typeof fetch;
   brapiToken?: string;
   brapiBaseUrl?: string;
+  /**
+   * Provedor de cotações de fundos vindas da CVM (cache em D1). Quando presente,
+   * é a primeira fonte consultada para ativos com `cnpjFundo`. Se não encontrar
+   * cota em cache, a classe cai no streaming direto ao CSV da CVM (fallback
+   * frágil preservado por retrocompatibilidade — v2 deve remover).
+   */
+  provedorCotacaoFundos?: ProvedorCotacaoFundosCvm;
 };
 
 const nowIso = (): string => new Date().toISOString();
 const toIsoOffset = (mins: number): string => new Date(Date.now() + mins * 60_000).toISOString();
 const toIsoOffsetHours = (hours: number): string => new Date(Date.now() + hours * 3_600_000).toISOString();
 const normalizarCnpj = (value: string): string => value.replace(/\D/g, "");
+const dataIsoAnterior = (dataRef: string): string | null => {
+  // dataRef esperado no formato "YYYY-MM-DD". Retorna o dia anterior no mesmo
+  // formato ou null se a string não parseável.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataRef)) return null;
+  const d = new Date(`${dataRef}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
 const pareceTickerListado = (ticker: string): boolean => /^[A-Z]{4}\d{1,2}$/.test(ticker) || /^[A-Z]{5}\d{1,2}$/.test(ticker) || /^\^[A-Z0-9.]+$/.test(ticker);
 const normalizarPrecoMedioUnitario = (precoMedio: number, quantidade: number, valorAtual: number): number => {
   if (!Number.isFinite(precoMedio) || precoMedio <= 0) return 0;
@@ -336,11 +353,42 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   /**
-   * Busca a cota diária de um fundo via CVM (inf_diario_fi_YYYYMM.csv).
-   * Tenta o mês atual e, em caso de falha (arquivo ainda não publicado), tenta o mês anterior.
-   * O arquivo é lido via streaming para evitar carregar dezenas de MB em memória.
+   * Busca a cota diária de um fundo via CVM.
+   *
+   * Estratégia em cascata:
+   *  1) Provider D1 (cache populado pelo script offline de ingestão) — rápido,
+   *     preferencial. Calcula variação pegando a cota do dia anterior disponível.
+   *  2) Streaming direto ao CSV da CVM — fallback preservado para casos em que
+   *     o provider não foi injetado ou o cache ainda não tem aquele CNPJ.
+   *     Tênue por limites de CPU do Worker; será descontinuado em v2.
    */
   private async buscarCvm(cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown }> {
+    // 1) D1 cache (preferencial)
+    if (this.deps.provedorCotacaoFundos) {
+      try {
+        const atual = await this.deps.provedorCotacaoFundos.obterCotaMaisRecente(cnpj);
+        if (atual) {
+          // Tenta recuperar a cota do dia anterior para calcular variação.
+          const ateAnterior = dataIsoAnterior(atual.dataRef);
+          const anterior = ateAnterior
+            ? await this.deps.provedorCotacaoFundos.obterCotaMaisRecente(cnpj, ateAnterior)
+            : null;
+          const variacaoPercentual =
+            anterior && anterior.vlQuota > 0 && anterior.dataRef !== atual.dataRef
+              ? ((atual.vlQuota - anterior.vlQuota) / anterior.vlQuota) * 100
+              : null;
+          return {
+            precoAtual: atual.vlQuota,
+            variacaoPercentual,
+            payload: { cnpj: atual.cnpj, data: atual.dataRef, cota: atual.vlQuota, fonte: "cvm_d1" },
+          };
+        }
+      } catch {
+        // fail-silent → cai para o streaming
+      }
+    }
+
+    // 2) Streaming direto (fallback)
     const resultado = await this.buscarCotaCvmDiaria(cnpj);
     if (resultado !== null) return resultado;
     throw new Error("CVM_COTA_NAO_ENCONTRADA");

@@ -1,14 +1,8 @@
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import { z } from "zod";
-import {
-  FonteDadosReconstrucaoD1,
-  RepositorioFilaReconstrucaoD1,
-  RepositorioHistoricoMensalD1,
-  ServicoReconstrucaoCarteiraPadrao,
-} from "@ei/servico-historico";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
-import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
+import { construirServicoReconstrucao } from "../services/construir-servico-reconstrucao";
 import {
   obterAppConfig,
   obterConteudoApp,
@@ -38,6 +32,48 @@ const atualizarAdminSchema = z.object({ email: z.string().email(), ativo: z.bool
 const atualizarParametrosSimulacaoSchema = z.object({
   parametros: z.array(z.object({ chave: z.string().min(2), valor: z.record(z.unknown()), descricao: z.string().optional(), ativo: z.boolean().default(true) })),
 });
+
+// ─── CVM fundos ────────────────────────────────────────────────────────────
+const cotaCvmSchema = z.object({
+  cnpj: z.string().min(11),               // aceita com ou sem pontuação
+  dataRef: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  vlQuota: z.number().positive(),
+  vlPatrimLiq: z.number().optional(),
+  nrCotst: z.number().int().optional(),
+});
+const ingerirCotasCvmSchema = z.object({
+  itens: z.array(cotaCvmSchema).min(1).max(5000),
+});
+
+const cadastroCvmSchema = z.object({
+  cnpj: z.string().min(11),
+  denominacaoSocial: z.string().min(2),
+  classe: z.string().optional(),
+  situacao: z.string().optional(),
+});
+const ingerirCadastroCvmSchema = z.object({
+  itens: z.array(cadastroCvmSchema).min(1).max(5000),
+});
+
+const vincularCnpjFundoSchema = z.object({
+  vinculos: z.array(z.object({
+    ativoId: z.string().min(1),
+    cnpj: z.string().min(11),
+  })).min(1).max(500),
+});
+
+const normalizarCnpjDigitos = (cnpj: string): string | null => {
+  const digitos = String(cnpj).replace(/\D/g, "");
+  return digitos.length === 14 ? digitos : null;
+};
+
+const normalizarDenominacao = (nome: string): string =>
+  nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
 
 export async function handleAdminRoutes(
   pathname: string,
@@ -324,12 +360,7 @@ export async function handleAdminRoutes(
       .all<{ usuario_id: string }>();
 
     const usuarios = usuariosRows.results ?? [];
-    const servico = new ServicoReconstrucaoCarteiraPadrao({
-      fila: new RepositorioFilaReconstrucaoD1(env.DB),
-      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
-      fonte: new FonteDadosReconstrucaoD1(env.DB),
-      provedorHistorico: construirProvedorHistoricoCotacoes(env),
-    });
+    const servico = construirServicoReconstrucao(env);
 
     let enfileirados = 0;
     const erros: Array<{ usuarioId: string; mensagem: string }> = [];
@@ -363,12 +394,7 @@ export async function handleAdminRoutes(
       .all<{ usuario_id: string }>();
 
     const pendentes = pendentesRows.results ?? [];
-    const servico = new ServicoReconstrucaoCarteiraPadrao({
-      fila: new RepositorioFilaReconstrucaoD1(env.DB),
-      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
-      fonte: new FonteDadosReconstrucaoD1(env.DB),
-      provedorHistorico: construirProvedorHistoricoCotacoes(env),
-    });
+    const servico = construirServicoReconstrucao(env);
 
     let processados = 0;
     let concluidos = 0;
@@ -391,6 +417,169 @@ export async function handleAdminRoutes(
       concluidosAgora: concluidos,
       restantes: Math.max(0, pendentes.length - concluidos),
       erros,
+    });
+  }
+
+  // ─── CVM: ingestão de cotas de fundos ──────────────────────────────────────
+  // Recebe lotes vindos do script local `scripts/ingerir-cvm-cotas.mjs`, que
+  // baixa o CSV mensal da CVM e filtra pelos CNPJs dos ativos. Upsert por PK
+  // (cnpj, data_ref).
+  if (pathname === "/api/admin/fundos/cvm/ingerir-cotas" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const body = ingerirCotasCvmSchema.parse(await parseJsonBody(request));
+    let inseridos = 0;
+    let invalidos = 0;
+    const stmts: D1PreparedStatement[] = [];
+    for (const item of body.itens) {
+      const cnpj = normalizarCnpjDigitos(item.cnpj);
+      if (!cnpj) { invalidos += 1; continue; }
+      stmts.push(
+        env.DB
+          .prepare(
+            "INSERT INTO cotas_fundos_cvm (cnpj, data_ref, vl_quota, vl_patrim_liq, nr_cotst, atualizado_em) VALUES (?, ?, ?, ?, ?, datetime('now')) ON CONFLICT(cnpj, data_ref) DO UPDATE SET vl_quota = excluded.vl_quota, vl_patrim_liq = excluded.vl_patrim_liq, nr_cotst = excluded.nr_cotst, atualizado_em = excluded.atualizado_em",
+          )
+          .bind(cnpj, item.dataRef, item.vlQuota, item.vlPatrimLiq ?? null, item.nrCotst ?? null),
+      );
+      inseridos += 1;
+    }
+    if (stmts.length > 0) await env.DB.batch(stmts);
+
+    return sucesso({ inseridos, invalidos });
+  }
+
+  // ─── CVM: ingestão do catálogo de fundos (CAD_FI) ──────────────────────────
+  if (pathname === "/api/admin/fundos/cvm/ingerir-cadastro" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const body = ingerirCadastroCvmSchema.parse(await parseJsonBody(request));
+    let inseridos = 0;
+    let invalidos = 0;
+    const stmts: D1PreparedStatement[] = [];
+    for (const item of body.itens) {
+      const cnpj = normalizarCnpjDigitos(item.cnpj);
+      if (!cnpj) { invalidos += 1; continue; }
+      stmts.push(
+        env.DB
+          .prepare(
+            "INSERT INTO fundos_cvm_cadastro (cnpj, denominacao_social, denominacao_norm, classe, situacao, atualizado_em) VALUES (?, ?, ?, ?, ?, datetime('now')) ON CONFLICT(cnpj) DO UPDATE SET denominacao_social = excluded.denominacao_social, denominacao_norm = excluded.denominacao_norm, classe = excluded.classe, situacao = excluded.situacao, atualizado_em = excluded.atualizado_em",
+          )
+          .bind(
+            cnpj,
+            item.denominacaoSocial,
+            normalizarDenominacao(item.denominacaoSocial),
+            item.classe ?? null,
+            item.situacao ?? null,
+          ),
+      );
+      inseridos += 1;
+    }
+    if (stmts.length > 0) await env.DB.batch(stmts);
+
+    return sucesso({ inseridos, invalidos });
+  }
+
+  // ─── CVM: buscar CNPJ por termo (match fuzzy no catálogo) ──────────────────
+  // Útil pro admin descobrir o CNPJ de um fundo usando apenas o nome exibido.
+  // Exemplo: GET /api/admin/fundos/cvm/buscar-cnpj?q=verde%20am&limite=10
+  if (pathname === "/api/admin/fundos/cvm/buscar-cnpj" && request.method === "GET") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const url = new URL(request.url);
+    const q = normalizarDenominacao(url.searchParams.get("q") ?? "");
+    if (q.length < 2) return erro("TERMO_CURTO", "Informe ao menos 2 caracteres", 422);
+    const limite = Math.min(50, Number.parseInt(url.searchParams.get("limite") ?? "20", 10) || 20);
+
+    // LIKE sobre denominacao_norm; cada palavra precisa estar presente.
+    const palavras = q.split(" ").filter(Boolean);
+    const conds = palavras.map(() => "denominacao_norm LIKE ?").join(" AND ");
+    const binds = palavras.map((p) => `%${p}%`);
+
+    const rs = await env.DB
+      .prepare(
+        `SELECT cnpj, denominacao_social, classe, situacao FROM fundos_cvm_cadastro WHERE ${conds} ORDER BY CASE WHEN situacao = 'EM FUNCIONAMENTO NORMAL' THEN 0 ELSE 1 END, denominacao_social ASC LIMIT ?`,
+      )
+      .bind(...binds, limite)
+      .all<{ cnpj: string; denominacao_social: string; classe: string | null; situacao: string | null }>();
+
+    return sucesso({
+      resultados: (rs.results ?? []).map((r) => ({
+        cnpj: r.cnpj,
+        denominacaoSocial: r.denominacao_social,
+        classe: r.classe,
+        situacao: r.situacao,
+      })),
+    });
+  }
+
+  // ─── CVM: vincular CNPJ aos ativos ─────────────────────────────────────────
+  // Atualiza ativos.cnpj_fundo em lote a partir de vínculos explícitos
+  // {ativoId, cnpj}. Passo manual após buscar-cnpj.
+  if (pathname === "/api/admin/fundos/cvm/vincular-cnpj" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const body = vincularCnpjFundoSchema.parse(await parseJsonBody(request));
+    let atualizados = 0;
+    let invalidos = 0;
+    const stmts: D1PreparedStatement[] = [];
+    for (const v of body.vinculos) {
+      const cnpj = normalizarCnpjDigitos(v.cnpj);
+      if (!cnpj) { invalidos += 1; continue; }
+      stmts.push(env.DB.prepare("UPDATE ativos SET cnpj_fundo = ? WHERE id = ?").bind(cnpj, v.ativoId));
+      atualizados += 1;
+    }
+    if (stmts.length > 0) await env.DB.batch(stmts);
+
+    return sucesso({ atualizados, invalidos });
+  }
+
+  // ─── CVM: listar fundos do usuário sem CNPJ vinculado ──────────────────────
+  // Retorna ativos candidatos a receber vínculo manual de CNPJ. Facilita UI
+  // futura e também diagnóstico operacional.
+  if (pathname === "/api/admin/fundos/cvm/ativos-sem-cnpj" && request.method === "GET") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const rs = await env.DB
+      .prepare(
+        "SELECT id, usuario_id, ticker, nome, categoria, quantidade, preco_medio FROM ativos WHERE categoria IN ('fundo','previdencia') AND (cnpj_fundo IS NULL OR cnpj_fundo = '') ORDER BY nome ASC LIMIT 500",
+      )
+      .all<{ id: string; usuario_id: string; ticker: string | null; nome: string; categoria: string; quantidade: number; preco_medio: number }>();
+
+    return sucesso({
+      ativos: (rs.results ?? []).map((r) => ({
+        id: r.id,
+        usuarioId: r.usuario_id,
+        ticker: r.ticker,
+        nome: r.nome,
+        categoria: r.categoria,
+        quantidade: Number(r.quantidade),
+        precoMedio: Number(r.preco_medio),
+      })),
+    });
+  }
+
+  // ─── CVM: status da cobertura de cotas ─────────────────────────────────────
+  if (pathname === "/api/admin/fundos/cvm/status" && request.method === "GET") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const totais = await env.DB
+      .prepare(
+        "SELECT (SELECT COUNT(*) FROM cotas_fundos_cvm) AS total_cotas, (SELECT COUNT(*) FROM fundos_cvm_cadastro) AS total_cadastro, (SELECT COUNT(DISTINCT cnpj) FROM cotas_fundos_cvm) AS cnpjs_com_cota, (SELECT COUNT(*) FROM ativos WHERE categoria IN ('fundo','previdencia') AND cnpj_fundo IS NOT NULL AND cnpj_fundo != '') AS ativos_vinculados, (SELECT COUNT(*) FROM ativos WHERE categoria IN ('fundo','previdencia')) AS ativos_fundo_total",
+      )
+      .first<{ total_cotas: number; total_cadastro: number; cnpjs_com_cota: number; ativos_vinculados: number; ativos_fundo_total: number }>();
+
+    return sucesso({
+      totalCotas: Number(totais?.total_cotas ?? 0),
+      totalCadastro: Number(totais?.total_cadastro ?? 0),
+      cnpjsComCota: Number(totais?.cnpjs_com_cota ?? 0),
+      ativosFundoVinculados: Number(totais?.ativos_vinculados ?? 0),
+      ativosFundoTotal: Number(totais?.ativos_fundo_total ?? 0),
     });
   }
 

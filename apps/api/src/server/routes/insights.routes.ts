@@ -1,7 +1,7 @@
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
-import { RepositorioCarteiraD1, ServicoCarteiraPadrao } from "@ei/servico-carteira";
 import { UnifiedScoreService } from "../services/unified-score.service";
 import { PortfolioViewService } from "../services/portfolio-view.service";
+import { construirServicoCarteira } from "../services/construir-servico-carteira";
 import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 import type { RiscoPrincipal, AcaoPrioritaria, SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
@@ -96,11 +96,7 @@ export async function handleInsightsRoutes(
 
       if (analyticsData && analyticsData._calculadoEm) {
         // Dados vêm do analytics persistido (background job)
-        const carteiraService = new ServicoCarteiraPadrao({
-          repositorio: new RepositorioCarteiraD1(env.DB),
-          brapiToken: env.BRAPI_TOKEN,
-          brapiBaseUrl: env.BRAPI_BASE_URL,
-        });
+        const carteiraService = construirServicoCarteira(env);
         const ativosMercado = (await carteiraService.listarAtivos(userId)) as Array<{
           statusAtualizacao?: StatusAtualizacaoMercado;
           fontePreco?: FonteMercado;
@@ -147,11 +143,7 @@ export async function handleInsightsRoutes(
         scoreUnificado = null;
       }
 
-      const carteiraService = new ServicoCarteiraPadrao({
-        repositorio: new RepositorioCarteiraD1(env.DB),
-        brapiToken: env.BRAPI_TOKEN,
-        brapiBaseUrl: env.BRAPI_BASE_URL,
-      });
+      const carteiraService = construirServicoCarteira(env);
       const ativosMercado = (await carteiraService.listarAtivos(userId)) as Array<{
         statusAtualizacao?: StatusAtualizacaoMercado;
         fontePreco?: FonteMercado;

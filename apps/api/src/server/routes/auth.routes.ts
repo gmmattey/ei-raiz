@@ -1,14 +1,8 @@
 import { ErroAutenticacao, RepositorioAutenticacaoD1, ServicoAutenticacaoPadrao } from "@ei/servico-autenticacao";
-import {
-  FonteDadosReconstrucaoD1,
-  RepositorioFilaReconstrucaoD1,
-  RepositorioHistoricoMensalD1,
-  ServicoReconstrucaoCarteiraPadrao,
-} from "@ei/servico-historico";
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso } from "../types/gateway";
-import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
+import { construirServicoReconstrucao } from "../services/construir-servico-reconstrucao";
 
 const TAMANHO_LOTE_AUTORECONSTRUCAO = 6;
 
@@ -20,12 +14,7 @@ const TAMANHO_LOTE_AUTORECONSTRUCAO = 6;
  */
 async function autoReconstruirHistorico(env: Env, usuarioId: string): Promise<void> {
   try {
-    const servico = new ServicoReconstrucaoCarteiraPadrao({
-      fila: new RepositorioFilaReconstrucaoD1(env.DB),
-      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
-      fonte: new FonteDadosReconstrucaoD1(env.DB),
-      provedorHistorico: construirProvedorHistoricoCotacoes(env),
-    });
+    const servico = construirServicoReconstrucao(env);
     await servico.enfileirar(usuarioId);
     await servico.processarProximoLote(usuarioId, TAMANHO_LOTE_AUTORECONSTRUCAO);
   } catch {

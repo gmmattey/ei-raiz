@@ -64,3 +64,4 @@ docker-compose.override.yml
 .cache/
 temp/
 tmp/
+.tmp-cvm/

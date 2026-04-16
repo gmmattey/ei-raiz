@@ -1,4 +1,3 @@
-import { RepositorioCarteiraD1, ServicoCarteiraPadrao } from "@ei/servico-carteira";
 import { RepositorioPerfilD1, ServicoPerfilPadrao } from "@ei/servico-perfil";
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
 import type { CategoriaAtivo, SessaoUsuarioSaida } from "@ei/contratos";
@@ -6,6 +5,7 @@ import { z } from "zod";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
 import { PortfolioViewService } from "../services/portfolio-view.service";
+import { construirServicoCarteira } from "../services/construir-servico-carteira";
 import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 
 const categoriasPermitidas: CategoriaAtivo[] = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
@@ -146,11 +146,7 @@ export async function handleCarteiraRoutes(
   if (!pathname.startsWith("/api/carteira")) return null;
 
   const userId = sessao.usuario.id;
-  const carteiraService = new ServicoCarteiraPadrao({
-    repositorio: new RepositorioCarteiraD1(env.DB),
-    brapiToken: env.BRAPI_TOKEN,
-    brapiBaseUrl: env.BRAPI_BASE_URL,
-  });
+  const carteiraService = construirServicoCarteira(env);
   const perfilService = new ServicoPerfilPadrao(new RepositorioPerfilD1(env.DB));
   const insightsService = new ServicoInsightsPadrao(new RepositorioInsightsD1(env.DB));
   const portfolioView = new PortfolioViewService(env);

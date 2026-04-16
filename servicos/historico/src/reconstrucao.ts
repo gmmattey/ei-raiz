@@ -2,6 +2,7 @@ import type {
   EstadoReconstrucaoCarteira,
   MapaPrecosHistoricos,
   PayloadHistoricoMensal,
+  ProvedorCotacaoFundosCvm,
   ProvedorHistoricoCotacoes,
   ServicoReconstrucaoCarteira,
   StatusReconstrucao,
@@ -26,7 +27,19 @@ export type AtivoParaReconstrucao = {
   quantidade: number;
   precoMedio: number;
   dataAquisicao: string; // ISO 8601
+  /**
+   * CNPJ do fundo (somente dígitos) quando categoria === "fundo". Permite à
+   * reconstrução usar o histórico CVM de cotas por (cnpj, ano-mês) ao invés
+   * do fallback quantidade × precoMedio.
+   */
+  cnpj?: string | null;
 };
+
+/**
+ * Fechamentos mensais de fundos por CNPJ.
+ * Mapa: cnpj (14 dígitos) → (anoMes "YYYY-MM" → valor da cota no último dia útil do mês).
+ */
+export type MapaFechamentosFundos = Map<string, Map<string, number>>;
 
 export type ContextoReconstrucao = {
   imoveis: Array<{ valorEstimado: number; saldoFinanciamento: number }>;
@@ -62,20 +75,37 @@ type Dependencias = {
    * o fallback de quantidade × precoMedio constante.
    */
   provedorHistorico?: ProvedorHistoricoCotacoes;
+  /**
+   * Provedor opcional de cotações históricas de fundos CVM. Quando presente,
+   * usa a cota mensal real por (cnpj, ano-mês). Complementa BRAPI (que não
+   * cobre fundos de investimento brasileiros).
+   */
+  provedorFundos?: ProvedorCotacaoFundosCvm;
 };
 
 const TAMANHO_LOTE_PADRAO = 6; // 6 meses por execução (margem para timeout do Worker)
 
 /**
  * Calcula o valor de mercado de um ativo num determinado mês.
- * Usa o close histórico real quando o ticker está presente no mapa, senão cai
- * no preço médio (aproximação v1).
+ *
+ * Ordem de prioridade:
+ *   1. Fundo com CNPJ mapeado → cota CVM do mês (produção: tabela cotas_fundos_cvm)
+ *   2. Ativo com ticker mapeado → close BRAPI do mês (acões/ETFs/FIIs/BDRs)
+ *   3. Fallback → quantidade × precoMedio (valor constante desde a aquisição)
  */
 function valorAtivoNoMes(
   ativo: AtivoParaReconstrucao,
   anoMes: string,
   precosHistoricos?: MapaPrecosHistoricos,
+  fechamentosFundos?: MapaFechamentosFundos,
 ): number {
+  if (fechamentosFundos && ativo.cnpj) {
+    const porMes = fechamentosFundos.get(ativo.cnpj);
+    const cota = porMes?.get(anoMes);
+    if (typeof cota === "number" && Number.isFinite(cota) && cota > 0) {
+      return ativo.quantidade * cota;
+    }
+  }
   if (precosHistoricos && ativo.ticker) {
     const porMes = precosHistoricos.get(ativo.ticker.toUpperCase());
     const close = porMes?.get(anoMes);
@@ -99,11 +129,12 @@ export function montarPayloadMesHistorico(
   contexto: ContextoReconstrucao,
   anoMes: string,
   precosHistoricos?: MapaPrecosHistoricos,
+  fechamentosFundos?: MapaFechamentosFundos,
 ): PayloadHistoricoMensal {
   const ativosNoMes = ativos.filter((a) => extrairAnoMes(a.dataAquisicao) <= anoMes);
 
   const patrimonioInvestimentos = ativosNoMes.reduce(
-    (acc, a) => acc + valorAtivoNoMes(a, anoMes, precosHistoricos),
+    (acc, a) => acc + valorAtivoNoMes(a, anoMes, precosHistoricos, fechamentosFundos),
     0,
   );
 
@@ -137,7 +168,7 @@ export function montarPayloadMesHistorico(
 
   return {
     ativos: ativosNoMes.map((a) => {
-      const valorAtivo = valorAtivoNoMes(a, anoMes, precosHistoricos);
+      const valorAtivo = valorAtivoNoMes(a, anoMes, precosHistoricos, fechamentosFundos);
       const totalInvestido = a.quantidade * a.precoMedio;
       const retornoAcumulado =
         totalInvestido > 0
@@ -186,6 +217,37 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
     if (tickers.length === 0) return undefined;
     try {
       return await this.deps.provedorHistorico.obterPrecosHistoricosMensais(tickers);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Busca fechamentos mensais CVM para todos os fundos (por CNPJ) únicos da
+   * carteira. Janela: do mês mais antigo entre aquisições até o mês final da
+   * reconstrução. Falha silenciosa: sem provedor ou erro → undefined.
+   */
+  private async carregarFechamentosFundos(
+    ativos: AtivoParaReconstrucao[],
+    anoMesInicial: string,
+    anoMesFinal: string,
+  ): Promise<MapaFechamentosFundos | undefined> {
+    if (!this.deps.provedorFundos) return undefined;
+    const cnpjs = Array.from(
+      new Set(
+        ativos
+          .filter((a) => a.categoria === "fundo")
+          .map((a) => a.cnpj?.replace(/\D/g, ""))
+          .filter((c): c is string => Boolean(c && c.length === 14)),
+      ),
+    );
+    if (cnpjs.length === 0) return undefined;
+    try {
+      return await this.deps.provedorFundos.obterFechamentosMensais(
+        cnpjs,
+        anoMesInicial,
+        anoMesFinal,
+      );
     } catch {
       return undefined;
     }
@@ -252,7 +314,16 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
 
       // Pré-busca cotações históricas uma única vez por execução de lote.
       // Falhas no provedor não abortam a reconstrução — caímos no fallback.
-      const precosHistoricos = await this.carregarPrecosHistoricos(ativos);
+      // Janela CVM: usa o cursor atual como início (seguro se anoMesInicial
+      // estiver ausente — o lote atual só vai gravar a partir daqui mesmo).
+      const [precosHistoricos, fechamentosFundos] = await Promise.all([
+        this.carregarPrecosHistoricos(ativos),
+        this.carregarFechamentosFundos(
+          ativos,
+          marcado.anoMesInicial ?? cursorInicial,
+          marcado.anoMesFinal,
+        ),
+      ]);
 
       let mesesProcessados = marcado.mesesProcessados;
       let cursorParaGravar = cursorInicial;
@@ -266,6 +337,7 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
           contexto,
           cursorParaGravar,
           precosHistoricos,
+          fechamentosFundos,
         );
 
         const totalInvestido = payload.ativos.reduce(

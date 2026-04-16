@@ -1,12 +1,11 @@
 import {
-  RepositorioCarteiraD1,
-  ServicoCarteiraPadrao,
   calcularSnapshotConsolidado,
   type AtivoParaSnapshot,
 } from "@ei/servico-carteira";
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
 import { RepositorioPerfilD1, ServicoPerfilPadrao } from "@ei/servico-perfil";
 import type { Env } from "../types/gateway";
+import { construirServicoCarteira } from "../services/construir-servico-carteira";
 
 type AnalyticsPayload = Record<string, unknown>;
 
@@ -23,11 +22,7 @@ type AnalyticsPayload = Record<string, unknown>;
  * silenciosa — não bloqueia a gravação do snapshot.
  */
 export async function reprocessUserPortfolio(userId: string, env: Env): Promise<void> {
-  const carteiraService = new ServicoCarteiraPadrao({
-    repositorio: new RepositorioCarteiraD1(env.DB),
-    brapiToken: env.BRAPI_TOKEN,
-    brapiBaseUrl: env.BRAPI_BASE_URL,
-  });
+  const carteiraService = construirServicoCarteira(env);
   const perfilService = new ServicoPerfilPadrao(new RepositorioPerfilD1(env.DB));
 
   const [ativosRaw, contexto] = await Promise.all([

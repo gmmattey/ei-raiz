@@ -1,29 +1,18 @@
 import {
-  RepositorioFilaReconstrucaoD1,
   RepositorioHistoricoD1,
   RepositorioHistoricoMensalD1,
-  FonteDadosReconstrucaoD1,
   ServicoHistoricoMensalPadrao,
   ServicoHistoricoPadrao,
-  ServicoReconstrucaoCarteiraPadrao,
 } from "@ei/servico-historico";
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { erro, sucesso } from "../types/gateway";
-import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
+import { construirServicoReconstrucao } from "../services/construir-servico-reconstrucao";
 
 const TAMANHO_LOTE_RECONSTRUCAO = 6;
 
 const construirServicoHistoricoMensal = (env: Env): ServicoHistoricoMensalPadrao =>
   new ServicoHistoricoMensalPadrao(new RepositorioHistoricoMensalD1(env.DB));
-
-const construirServicoReconstrucao = (env: Env): ServicoReconstrucaoCarteiraPadrao =>
-  new ServicoReconstrucaoCarteiraPadrao({
-    fila: new RepositorioFilaReconstrucaoD1(env.DB),
-    historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
-    fonte: new FonteDadosReconstrucaoD1(env.DB),
-    provedorHistorico: construirProvedorHistoricoCotacoes(env),
-  });
 
 export async function handleHistoricoRoutes(
   pathname: string,

@@ -1,8 +1,9 @@
-import { RepositorioCarteiraD1, ServicoCarteiraPadrao } from "@ei/servico-carteira";
+import { ServicoCarteiraPadrao } from "@ei/servico-carteira";
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
 import { RepositorioPerfilD1, ServicoPerfilPadrao } from "@ei/servico-perfil";
 import { readCache } from "../utils/cache";
 import type { Env } from "../types/gateway";
+import { construirServicoCarteira } from "./construir-servico-carteira";
 
 type SnapshotRow = {
   calculado_em: string;
@@ -37,11 +38,7 @@ export class PortfolioViewService {
   private readonly insightsService: ServicoInsightsPadrao;
 
   constructor(private readonly env: Env) {
-    this.carteiraService = new ServicoCarteiraPadrao({
-      repositorio: new RepositorioCarteiraD1(env.DB),
-      brapiToken: env.BRAPI_TOKEN,
-      brapiBaseUrl: env.BRAPI_BASE_URL,
-    });
+    this.carteiraService = construirServicoCarteira(env);
     this.perfilService = new ServicoPerfilPadrao(new RepositorioPerfilD1(env.DB));
     this.insightsService = new ServicoInsightsPadrao(new RepositorioInsightsD1(env.DB));
   }

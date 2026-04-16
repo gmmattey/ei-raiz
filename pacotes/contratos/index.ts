@@ -5,5 +5,6 @@ export * from "./perfil";
 export * from "./insights";
 export * from "./historico";
 export * from "./historico-mensal";
+export * from "./fundos-cvm";
 export * from "./posicoes";
 export * from "./decisoes";

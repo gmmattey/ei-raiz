@@ -13,6 +13,7 @@ type LinhaAtivo = {
   preco_medio: number | null;
   data_aquisicao: string | null;
   data_cadastro: string | null;
+  cnpj_fundo: string | null;
 };
 
 type LinhaContexto = {
@@ -43,7 +44,7 @@ export class FonteDadosReconstrucaoD1 implements FonteDadosReconstrucao {
       .prepare(
         [
           "SELECT id, ticker, nome, categoria, quantidade, preco_medio,",
-          "data_aquisicao, data_cadastro",
+          "data_aquisicao, data_cadastro, cnpj_fundo",
           "FROM ativos",
           "WHERE usuario_id = ?",
         ].join(" "),
@@ -52,9 +53,12 @@ export class FonteDadosReconstrucaoD1 implements FonteDadosReconstrucao {
       .all<LinhaAtivo>();
 
     return (result.results ?? [])
-      .map((row) => {
+      .map((row): AtivoParaReconstrucao | null => {
         const data = row.data_aquisicao ?? row.data_cadastro;
         if (!data) return null;
+        const cnpjDigitos = row.cnpj_fundo
+          ? row.cnpj_fundo.replace(/\D/g, "")
+          : null;
         return {
           id: row.id,
           ticker: row.ticker,
@@ -63,7 +67,8 @@ export class FonteDadosReconstrucaoD1 implements FonteDadosReconstrucao {
           quantidade: Number(row.quantidade ?? 0),
           precoMedio: Number(row.preco_medio ?? 0),
           dataAquisicao: data,
-        } satisfies AtivoParaReconstrucao;
+          cnpj: cnpjDigitos && cnpjDigitos.length === 14 ? cnpjDigitos : null,
+        };
       })
       .filter((a): a is AtivoParaReconstrucao => a !== null);
   }
