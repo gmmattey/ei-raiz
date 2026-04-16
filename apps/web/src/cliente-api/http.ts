@@ -18,6 +18,7 @@ const API_BASE_URL = configuredBaseUrl
   : executandoLocal
     ? "http://127.0.0.1:8787"
     : "https://ei-api-gateway.giammattey-luiz.workers.dev";
+const API_FALLBACK_URL = "https://ei-api-gateway.giammattey-luiz.workers.dev";
 
 export class ApiError extends Error {
   constructor(
@@ -54,11 +55,26 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
       headers,
     });
   } catch {
-    throw new ApiError(
-      "Nao foi possivel conectar com a API. Verifique se o backend esta em execucao.",
-      0,
-      "API_INDISPONIVEL",
-    );
+    if (API_BASE_URL !== API_FALLBACK_URL) {
+      try {
+        response = await fetch(`${API_FALLBACK_URL}${path}`, {
+          ...init,
+          headers,
+        });
+      } catch {
+        throw new ApiError(
+          "Nao foi possivel conectar com a API. Verifique se o backend esta em execucao.",
+          0,
+          "API_INDISPONIVEL",
+        );
+      }
+    } else {
+      throw new ApiError(
+        "Nao foi possivel conectar com a API. Verifique se o backend esta em execucao.",
+        0,
+        "API_INDISPONIVEL",
+      );
+    }
   }
 
   const raw = await response.text();

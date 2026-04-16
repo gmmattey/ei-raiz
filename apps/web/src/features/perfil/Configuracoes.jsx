@@ -24,7 +24,7 @@ const ConfigItem = ({ icon, title, description, action }) => (
   </div>
 );
 
-export default function Configuracoes() {
+export default function Configuracoes({ embedded = false }) {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(() => getStoredUser());
   const [erro, setErro] = useState('');
@@ -59,8 +59,8 @@ export default function Configuracoes() {
   }, [usuario]);
 
   return (
-    <div className="w-full bg-white font-['Inter'] text-[#0B1218] animate-in fade-in duration-500">
-      <div className="w-full max-w-[896px]">
+    <div className={`w-full bg-transparent font-['Inter'] text-[#0B1218] ${embedded ? '' : 'animate-in fade-in duration-500'}`}>
+      <div className={`w-full ${embedded ? '' : 'max-w-[896px]'}`}>
         <div className="mb-16">
           <div className="flex items-center gap-3 text-[#F56A2A] mb-4">
             <Settings size={24} />
@@ -75,7 +75,7 @@ export default function Configuracoes() {
           
           <section>
             <h3 className="font-['Sora'] text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/30 mb-4 px-6">Identidade</h3>
-            <div className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden">
+            <div className="bg-white border border-[#EFE7DC] rounded-xl overflow-hidden">
               <ConfigItem icon={<User size={20} />} title="Dados Pessoais" description={usuario?.nome || 'Nome nao informado'} />
               <ConfigItem icon={<Globe size={20} />} title="E-mail e Comunicação" description={emailMascarado} />
               <ConfigItem icon={<Smartphone size={20} />} title="Dispositivos Conectados" description="2 aparelhos ativos" />
@@ -84,7 +84,7 @@ export default function Configuracoes() {
 
           <section>
             <h3 className="font-['Sora'] text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/30 mb-4 px-6">Segurança</h3>
-            <div className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden">
+            <div className="bg-white border border-[#EFE7DC] rounded-xl overflow-hidden">
               <ConfigItem icon={<Lock size={20} />} title="Senha Eletrônica" description="Alterar sua senha de 6 dígitos" />
               <ConfigItem icon={<Shield size={20} />} title="Autenticação em Duas Etapas" description="Ativado via SMS/E-mail" />
             </div>
@@ -92,7 +92,7 @@ export default function Configuracoes() {
 
           <section>
             <h3 className="font-['Sora'] text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/30 mb-4 px-6">Privacidade e Dados</h3>
-            <div className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden">
+            <div className="bg-white border border-[#EFE7DC] rounded-xl overflow-hidden">
               <ConfigItem icon={<Database size={20} />} title="Gestão de Dados (LGPD)" description="Exportar ou excluir seus dados" />
               <ConfigItem icon={<Bell size={20} />} title="Alertas de Carteira" description="Configurar notificações de risco" />
             </div>

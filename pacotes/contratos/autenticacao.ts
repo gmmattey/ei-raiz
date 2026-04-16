@@ -57,6 +57,8 @@ export type VerificarCadastroEntrada = {
 export type VerificarCadastroSaida = {
   cpfDisponivel: boolean;
   emailDisponivel: boolean;
+  cadastroInterrompido?: boolean;
+  destinoMascara?: string;
 };
 
 export type RegistrarSaida = {

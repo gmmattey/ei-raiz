@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { baixarTemplateXlsx } from '../../utils/importacaoTemplate';
 import { ApiError, authApi, perfilApi, telemetriaApi } from '../../cliente-api';
-import { ChevronRight, ChevronLeft, ShieldCheck, Eye, EyeOff, Check, UploadCloud, Download, FileSpreadsheet, Home, X, Lock } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Eye, EyeOff, Check, UploadCloud, Download, FileSpreadsheet, X } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
+
+import MaskedInput from '../../components/forms/MaskedInput';
 
 // --- VALIDADORES ---
 const isValidCPF = (cpf) => {
@@ -40,10 +44,16 @@ const isValidDate = (dateString) => {
 
 // --- COMPONENTES BASE ---
 const TextButton = ({ children, onClick, disabled, variant = 'next' }) => {
-  const baseStyle = "flex items-center gap-2 text-sm font-bold transition-all duration-300 font-['Inter'] tracking-wider cursor-pointer";
-  if (disabled) return <button disabled className={`${baseStyle} text-[#0B1218]/20 cursor-not-allowed`}>{children}</button>;
-  if (variant === 'prev' || variant === 'skip') return <button onClick={onClick} className={`${baseStyle} text-[#0B1218]/50 hover:text-[#0B1218]`}>{children}</button>;
-  return <button onClick={onClick} className={`${baseStyle} text-[#F56A2A] hover:text-[#d95a20]`}>{children}</button>;
+  const baseStyle = "flex items-center justify-center gap-2 text-sm font-bold transition-all duration-300 font-['Inter'] tracking-wider cursor-pointer";
+  if (variant === 'prev' || variant === 'skip') {
+    return <button disabled={disabled} onClick={onClick} className={`${baseStyle} px-4 py-2 text-[#0B1218]/50 hover:text-[#0B1218] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0`}>{children}</button>;
+  }
+  
+  if (disabled) {
+    return <button disabled className={`${baseStyle} text-[#0B1218]/20 px-2 py-2 cursor-not-allowed`}>{children}</button>;
+  }
+  
+  return <button onClick={onClick} className={`${baseStyle} text-[#0B1218] px-2 py-2 hover:text-[#F56A2A]`}>{children}</button>;
 };
 
 const Input = ({ label, type = 'text', placeholder, maskType, value, onChange, required, checkboxLabel, forceShowError = false, ...props }) => {
@@ -103,7 +113,7 @@ const Input = ({ label, type = 'text', placeholder, maskType, value, onChange, r
       </div>
       {hasError && <span className="text-[10px] text-[#E85C5C] font-medium px-2 mt-0.5">{!value && required ? 'Campo obrigatório' : maskType === 'date' ? 'Data inválida (mínimo 16 anos)' : 'Formato inválido'}</span>}
       {showEmailSuggestions && (
-        <div className="absolute top-[55px] left-0 w-full bg-white border border-[#EFE7DC] rounded-md shadow-lg z-20 overflow-hidden">
+        <div className="absolute top-[55px] left-0 w-full bg-white border border-[#EFE7DC] rounded-xl shadow-lg z-20 overflow-hidden">
           {emailProviders.map(p => <div key={p} onClick={() => onChange({ target: { value: value.split('@')[0] + p } })} className="px-4 py-2 text-sm hover:bg-[#FAFAFA] cursor-pointer border-b last:border-0">{value.split('@')[0]}<span className="font-bold">{p}</span></div>)}
         </div>
       )}
@@ -122,7 +132,7 @@ const QuestionCard = ({ question, options, selectedValue, onSelect }) => (
     <h3 className="mb-4 font-['Sora'] text-lg font-bold text-[#0B1218]">{question}</h3>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {options.map((opt, idx) => (
-        <button key={idx} onClick={() => onSelect(opt)} className={`border p-4 text-left text-sm transition-all duration-200 rounded-md cursor-pointer ${selectedValue === opt ? 'border-[#F56A2A] bg-[#F56A2A]/5 text-[#F56A2A] font-semibold ring-1 ring-[#F56A2A]/20' : 'border-[#EFE7DC] bg-white text-[#0B1218]/70 hover:border-[#0B1218]/20 hover:bg-[#FAFAFA]'}`}>{opt}</button>
+        <button key={idx} onClick={() => onSelect(opt)} className={`border p-4 text-left text-sm transition-all duration-200 rounded-xl cursor-pointer ${selectedValue === opt ? 'border-[#F56A2A] bg-[#F56A2A]/5 text-[#F56A2A] font-semibold ring-1 ring-[#F56A2A]/20' : 'border-[#EFE7DC] bg-white text-[#0B1218]/70 hover:border-[#0B1218]/20 hover:bg-[#FAFAFA]'}`}>{opt}</button>
       ))}
     </div>
   </div>
@@ -149,32 +159,41 @@ const mapMaturidade = (answer) => {
   return 3;
 };
 
-export default function App() {
+export default function Onboarding({ embedded = false, onClose, mode = 'signup', initialStep = 1 }) {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+  const { setThemeMode } = useTheme();
+  const { setOcultarValores } = useModoVisualizacao();
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [isFinished, setIsFinished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingCadastro, setIsCheckingCadastro] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [showForgotPasswordLink, setShowForgotPasswordLink] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [formData, setFormData] = useState({ name: '', cpf: '', date: '', email: '', phone: '', renda: '', gastoMensal: '', aporteMensal: '', patrimonioAtual: '', bancos: [], password: '' });
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formData, setFormData] = useState({ name: '', cpf: '', date: '', email: '', phone: '', renda: '', gastoMensal: '', aporteMensal: '', patrimonioAtual: '', bancos: [], password: '', confirmPassword: '' });
   const [profileAnswers, setProfileAnswers] = useState({ q1: '', q2: '', q3: '', q4: '', q5: '' });
   const [stepAttempted, setStepAttempted] = useState(false);
+  const [dadosPessoais, setDadosPessoais] = useState({
+    estadoCivil: '',
+    escolaridade: '',
+    faixaRenda: '',
+    moradia: '',
+    rendaComposicao: '',
+  });
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    setCurrentStep(initialStep);
+  }, [initialStep]);
 
-  const steps = [
-    { num: 1, title: 'Seus dados' },
-    { num: 2, title: 'Seu estilo' },
-    { num: 3, title: 'Seu dinheiro' },
-    { num: 4, title: 'Seus ativos' },
-    { num: 5, title: 'Senha' }
-  ];
+  const steps = useMemo(() => {
+    if (mode === 'signup') return [{ num: 1, title: 'Seus dados' }];
+    return [
+      { num: 2, title: 'Seu estilo', displayNum: 1 },
+      { num: 3, title: 'Seus dados', displayNum: 2 },
+      { num: 4, title: 'Seus ativos', displayNum: 3 },
+    ];
+  }, [mode]);
 
   const bancosList = [
     { name: "Nubank", icon: "/assets/icons/original/nubank.svg" }, { name: "Itaú", icon: "/assets/icons/original/itau.svg" },
@@ -187,11 +206,18 @@ export default function App() {
   const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
   
   const isStepValid = () => {
-    if (currentStep === 1) return formData.name.split(' ').length >= 2 && isValidCPF(formData.cpf) && isValidDate(formData.date) && formData.email.includes('.') && formData.phone.replace(/\D/g, '').length === 11;
+    if (mode === 'signup') {
+      return formData.name.split(' ').length >= 2
+        && isValidCPF(formData.cpf)
+        && isValidDate(formData.date)
+        && formData.email.includes('.')
+        && formData.phone.replace(/\D/g, '').length === 11
+        && senhaForteRegex.test(formData.password)
+        && formData.password === formData.confirmPassword;
+    }
     if (currentStep === 2) return true;
-    if (currentStep === 3) return formData.renda.length > 0 && formData.gastoMensal.length > 0 && formData.aporteMensal.length > 0 && formData.patrimonioAtual.length > 0;
+    if (currentStep === 3) return true;
     if (currentStep === 4) return true;
-    if (currentStep === 5) return senhaForteRegex.test(formData.password);
     return false;
   };
 
@@ -199,22 +225,25 @@ export default function App() {
     setStepAttempted(true);
     if (!isStepValid() || isCheckingCadastro) return;
 
-    if (currentStep === 1) {
+    if (mode === 'signup' && currentStep === 1) {
       setIsCheckingCadastro(true);
       setSubmitError('');
+      setShowForgotPasswordLink(false);
       try {
         const cpf = formData.cpf.replace(/\D/g, '');
         const email = formData.email.trim().toLowerCase();
         const verificacao = await authApi.verificarCadastro(cpf, email);
         if (!verificacao.cpfDisponivel) {
-          setSubmitError('CPF já cadastrado. Não é possível continuar o cadastro.');
+          setSubmitError('Usuário já cadastrado. Se não lembrar a senha, recupere o acesso.');
+          setShowForgotPasswordLink(true);
           return;
         }
         if (verificacao.cadastroInterrompido) {
           setSubmitError(`Cadastro interrompido detectado para ${verificacao.destinoMascara || 'este CPF'}. Continue para concluir.`);
         }
         if (!verificacao.emailDisponivel) {
-          setSubmitError('E-mail já cadastrado. Use outro e-mail ou faça login.');
+          setSubmitError('E-mail já cadastrado. Se não lembrar a senha, recupere o acesso.');
+          setShowForgotPasswordLink(true);
           return;
         }
       } catch (error) {
@@ -231,7 +260,7 @@ export default function App() {
       }
     }
 
-    setCurrentStep((p) => Math.min(p + 1, 5));
+    setCurrentStep((p) => Math.min(p + 1, 4));
     setStepAttempted(false);
     await telemetriaApi.registrarEventoTelemetria('onboarding_step_completed', { step: currentStep });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -244,14 +273,28 @@ export default function App() {
     setSubmitError('');
 
     try {
-      await authApi.registrar(
-        formData.name.trim(),
-        formData.cpf.replace(/\D/g, ''),
-        formData.email.trim().toLowerCase(),
-        formData.password,
-      );
+      if (mode === 'signup') {
+        await authApi.registrar(
+          formData.name.trim(),
+          formData.cpf.replace(/\D/g, ''),
+          formData.email.trim().toLowerCase(),
+          formData.password,
+        );
+        await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding_signup_rapido' });
+        setThemeMode('dark');
+        setOcultarValores(true);
+        navigate('/importar', { replace: true });
+        return;
+      }
+
+      const faixaParaValor = {
+        'ate-3k': 3000,
+        '3k-7k': 7000,
+        '7k-15k': 15000,
+        '15k+': 20000,
+      };
       await perfilApi.salvarPerfil({
-        rendaMensal: parseCurrencyToNumber(formData.renda),
+        rendaMensal: faixaParaValor[dadosPessoais.faixaRenda] || 0,
         gastoMensal: parseCurrencyToNumber(formData.gastoMensal),
         aporteMensal: parseCurrencyToNumber(formData.aporteMensal),
         reservaCaixa: parseCurrencyToNumber(formData.patrimonioAtual),
@@ -260,14 +303,24 @@ export default function App() {
         objetivo: mapObjetivo(profileAnswers.q1),
         maturidade: mapMaturidade(profileAnswers.q4),
       });
-      await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding' });
-      setIsFinished(true);
+      await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding_home_popup' });
+      if (onClose) onClose(true);
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.code === 'CADASTRO_INTERROMPIDO_EMAIL_DIVERGENTE') {
           setSubmitError('Cadastro interrompido já existe para este CPF com outro e-mail. Retome com o e-mail original.');
+        } else if (error.code === 'CPF_JA_CADASTRADO') {
+          setSubmitError('CPF já cadastrado. Se não lembrar a senha, use recuperação de acesso.');
+        } else if (error.code === 'EMAIL_JA_CADASTRADO') {
+          setSubmitError('E-mail já cadastrado. Se não lembrar a senha, use recuperação de acesso.');
+        } else if (error.code === 'VALIDACAO') {
+          setSubmitError(`Dados inválidos para cadastro: ${error.message}`);
+        } else if (error.code === 'VALIDACAO_ENTRADA_INVALIDA') {
+          setSubmitError('Senha inválida para a API. Use 8+ caracteres com maiúscula, minúscula, número e símbolo.');
+        } else if (error.code === 'API_INDISPONIVEL') {
+          setSubmitError('API indisponível no momento. Tente novamente em instantes.');
         } else {
-          setSubmitError('Não foi possível concluir o cadastro agora. Revise os dados e tente novamente.');
+          setSubmitError(`${error.message || 'Não foi possível concluir o cadastro agora.'} (código: ${error.code || 'ERRO_API'})`);
         }
       } else {
         setSubmitError('Nao foi possivel concluir o cadastro. Tente novamente.');
@@ -295,7 +348,7 @@ export default function App() {
         <div className="mt-8 flex items-center justify-center w-16 h-16 rounded-full bg-[#6FCF97]/20 text-[#6FCF97]"><Check size={32} /></div>
         <button 
           onClick={() => navigate('/importar')}
-          className="mt-10 px-6 py-3 bg-[#F56A2A] text-white font-bold rounded-md hover:bg-[#d95a20] transition-colors"
+          className="mt-10 px-6 py-3 bg-[#F56A2A] text-white font-bold rounded-xl hover:bg-[#d95a20] transition-colors"
         >
           Ir para Importacao agora
         </button>
@@ -303,23 +356,37 @@ export default function App() {
     );
   }
 
+  const signupCompact = embedded && mode === 'signup';
+
   return (
-    <div className="relative min-h-screen bg-white font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white pb-20 overflow-y-visible">
-      <div className="relative z-10 mx-auto flex w-full max-w-[896px] flex-col px-4 sm:px-6 lg:px-8 fade-in-up">
+    <div className={`${embedded ? `relative w-full max-w-[896px] max-h-[92dvh] overflow-y-auto bg-white rounded-xl shadow-2xl font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white ${signupCompact ? 'p-4 sm:p-5 lg:p-6' : 'p-4 sm:p-6 lg:p-8'}` : 'relative min-h-screen bg-white font-[\'Inter\'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white pb-20 overflow-y-visible'}`}>
+      {embedded && (
+        <button onClick={onClose} className="absolute right-4 top-4 z-20 text-[#0B1218]/40 hover:text-[#0B1218]">
+          <X size={18} />
+        </button>
+      )}
+      <div className={`relative z-10 mx-auto flex w-full max-w-[896px] flex-col fade-in-up ${embedded ? '' : 'px-4 sm:px-6 lg:px-8'}`}>
         {/* TÍTULO PRINCIPAL COMPACTO */}
-        <div className="mb-8 text-center sm:text-left animate-in fade-in slide-in-from-bottom-4 duration-500 fade-in-up">
-          <h1 className="mb-2 font-['Sora'] text-3xl font-bold text-[#0B1218] sm:text-4xl tracking-tight">Vamo entender seu universo</h1>
-          <p className="max-w-xl text-base text-[#0B1218]/60 mx-auto sm:mx-0 font-['Inter'] leading-relaxed">Preciso de alguns dados teus pra entender melhor como você investe e o que pode melhorar.</p>
+        <div className={`${signupCompact ? 'mb-4' : 'mb-8'} text-center sm:text-left animate-in fade-in slide-in-from-bottom-4 duration-500 fade-in-up`}>
+          <h1 className="mb-2 font-['Sora'] text-3xl font-bold text-[#0B1218] sm:text-4xl tracking-tight">
+            {mode === 'signup' ? 'Crie sua conta' : 'Vamo entender seu universo'}
+          </h1>
+          <p className="max-w-xl text-base text-[#0B1218]/60 mx-auto sm:mx-0 font-['Inter'] leading-relaxed">
+            {mode === 'signup'
+              ? 'Cadastro rápido para você entrar na plataforma.'
+              : 'Complete somente os pontos que quiser, sem obrigatoriedade.'}
+          </p>
         </div>
 
         {/* STEPPER ALINHADO */}
+        {mode !== 'signup' && (
         <div className="mb-12 animate-in fade-in duration-700 w-full fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-start justify-between gap-0">
             {steps.map((step, i) => (
               <React.Fragment key={step.num}>
                 <div className="flex flex-col items-center flex-1">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-full border font-['Sora'] text-sm font-bold transition-all duration-300 bg-transparent relative z-10 ${currentStep === step.num ? 'scale-110 border-[#F56A2A] text-[#F56A2A] bg-white' : currentStep > step.num ? 'border-[#6FCF97] text-[#6FCF97] bg-white' : 'border-[#0B1218]/10 text-[#0B1218]/20 bg-white'}`}>
-                    {currentStep > step.num ? <Check size={18} strokeWidth={3} /> : step.num}
+                    {currentStep > step.num ? <Check size={18} strokeWidth={3} /> : (step.displayNum || step.num)}
                   </div>
                   <span className={`mt-3 text-[9px] font-bold tracking-tight text-center w-full ${currentStep === step.num ? 'text-[#F56A2A]' : 'text-[#0B1218]/30'}`}>{step.title}</span>
                 </div>
@@ -332,22 +399,65 @@ export default function App() {
             ))}
           </div>
         </div>
+        )}
 
         {/* ÁREA DO FORMULÁRIO */}
-        <div className="flex-1 fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="fade-in-up flex-1" style={{ animationDelay: '0.2s' }}>
           {currentStep === 1 && (
-            <div className="space-y-8 animate-in slide-in-from-right-8 fade-in duration-500">
-              <div className="text-center sm:text-left border-b border-[#0B1218]/5 pb-4">
+            <div className={`${signupCompact ? 'space-y-4' : 'space-y-8'} animate-in slide-in-from-right-8 fade-in duration-500`}>
+              <div className={`text-center sm:text-left border-b border-[#0B1218]/5 ${signupCompact ? 'pb-2' : 'pb-4'}`}>
                 <p className="text-[10px] font-bold tracking-widest text-[#F56A2A] mb-1">Começa aqui</p>
                 <h2 className="font-['Sora'] text-xl font-bold">Dados básicos teus</h2>
               </div>
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              <div className={`grid grid-cols-1 ${signupCompact ? 'gap-4' : 'gap-8'} sm:grid-cols-2`}>
                 <div className="sm:col-span-2"><Input label="Nome completo" required forceShowError={stepAttempted} name="name" maskType="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Digite seu nome completo" /></div>
                 <Input label="CPF" required forceShowError={stepAttempted} name="cpf" maskType="cpf" value={formData.cpf} onChange={(e) => setFormData({...formData, cpf: e.target.value})} placeholder="000.000.000-00" />
                 <Input label="Data de nascimento" required forceShowError={stepAttempted} name="date" maskType="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} placeholder="DD/MM/AAAA" />
                 <Input label="E-mail" required forceShowError={stepAttempted} type="email" name="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="seu@email.com" checkboxLabel="Aceito receber novidades por e-mail" />
-                <Input label="Celular" required forceShowError={stepAttempted} name="phone" maskType="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="(00) 00000-0000" checkboxLabel="Aceito receber alertas via WhatsApp" />
+                <Input label="Celular" required forceShowError={stepAttempted} name="phone" maskType="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="(00) 00000-0000" checkboxLabel="Aceito receber comunicações e alertas" />
+                <div>
+                  <label className={`text-xs font-semibold transition-colors ${stepAttempted && formData.password.length > 0 && !senhaForteRegex.test(formData.password) ? 'text-[#E85C5C]' : 'text-[#0B1218]'}`}>Senha *</label>
+                  <div className="relative flex items-center">
+                    <input type={showPassword ? 'text' : 'password'} placeholder="crie sua senha" value={formData.password} onChange={(e) => { setFormData((prev) => ({ ...prev, password: e.target.value })); if (submitError) setSubmitError(''); }} className={`w-full border-b border-l-0 border-r-0 border-t-0 bg-transparent px-2 py-3 pr-10 text-base transition-all focus:outline-none focus:ring-0 ${stepAttempted && formData.password.length > 0 && !senhaForteRegex.test(formData.password) ? 'border-[#E85C5C] text-[#E85C5C] placeholder:text-[#E85C5C]/50 focus:border-[#E85C5C]' : 'border-[#EFE7DC] text-[#0B1218] placeholder:text-[#0B1218]/20 focus:border-[#F56A2A]'}`} />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-8 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]">
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                    <div className="absolute right-2 transition-all duration-300">
+                      {senhaForteRegex.test(formData.password) && formData.password ? <Check size={18} className="text-[#6FCF97]" /> : (stepAttempted && formData.password ? <X size={18} className="text-[#E85C5C]" /> : <X size={18} className="text-[#0B1218]/20 grayscale" />)}
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[11px] text-[#0B1218]/60">Use 8+ caracteres com maiúscula, minúscula, número e símbolo.</p>
+                  {!senhaForteRegex.test(formData.password) && formData.password.length > 0 && (
+                    <p className="mt-1 text-xs text-[#E85C5C] font-semibold">Senha fora do padrão de segurança exigido.</p>
+                  )}
+                </div>
+                <div>
+                  <label className={`text-xs font-semibold transition-colors ${stepAttempted && formData.confirmPassword.length > 0 && formData.confirmPassword !== formData.password ? 'text-[#E85C5C]' : 'text-[#0B1218]'}`}>Confirmar senha *</label>
+                  <div className="relative flex items-center">
+                    <input type={showConfirmPassword ? 'text' : 'password'} placeholder="confirme sua senha" value={formData.confirmPassword} onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))} className={`w-full border-b border-l-0 border-r-0 border-t-0 bg-transparent px-2 py-3 pr-10 text-base transition-all focus:outline-none focus:ring-0 ${stepAttempted && formData.confirmPassword.length > 0 && formData.confirmPassword !== formData.password ? 'border-[#E85C5C] text-[#E85C5C] placeholder:text-[#E85C5C]/50 focus:border-[#E85C5C]' : 'border-[#EFE7DC] text-[#0B1218] placeholder:text-[#0B1218]/20 focus:border-[#F56A2A]'}`} />
+                    <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} className="absolute right-8 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]">
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                    <div className="absolute right-2 transition-all duration-300">
+                      {formData.confirmPassword && formData.confirmPassword === formData.password ? <Check size={18} className="text-[#6FCF97]" /> : (stepAttempted && formData.confirmPassword ? <X size={18} className="text-[#E85C5C]" /> : <X size={18} className="text-[#0B1218]/20 grayscale" />)}
+                    </div>
+                  </div>
+                  {formData.confirmPassword.length > 0 && formData.confirmPassword !== formData.password && (
+                    <p className="mt-1 text-xs text-[#E85C5C] font-semibold">As senhas não conferem.</p>
+                  )}
+                </div>
                 {submitError && <p className="sm:col-span-2 text-xs text-[#E85C5C] font-semibold">{submitError}</p>}
+                {showForgotPasswordLink && (
+                  <div className="sm:col-span-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/?abrir=login&step=forgotPassword&email=${encodeURIComponent(formData.email.trim().toLowerCase())}`)}
+                      className="text-xs text-[#F56A2A] hover:text-[#d95a20] font-semibold"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -371,32 +481,39 @@ export default function App() {
           {currentStep === 3 && (
             <div className="space-y-8 animate-in slide-in-from-right-8 fade-in duration-500">
               <div className="text-center sm:text-left border-b border-[#0B1218]/5 pb-4">
-                <p className="text-[10px] font-bold tracking-widest text-[#F56A2A] mb-1">Etapa obrigatória</p>
-                <h2 className="font-['Sora'] text-xl font-bold">Quanto você ganha e pode investir?</h2>
+                <p className="text-[10px] font-bold tracking-widest text-[#F56A2A] mb-1">Opcional</p>
+                <h2 className="font-['Sora'] text-xl font-bold">Seus dados pessoais</h2>
               </div>
-              <div className="grid grid-cols-1 gap-10">
-                <div className="w-full sm:w-1/2">
-                   <Input label="Renda líquida mensal aproximada" required forceShowError={stepAttempted} name="renda" maskType="currency" value={formData.renda} onChange={(e) => setFormData({...formData, renda: e.target.value})} placeholder="R$ 0,00" />
-                </div>
-                <div className="w-full sm:w-1/2">
-                  <Input label="Gasto mensal estimado" required forceShowError={stepAttempted} name="gastoMensal" maskType="currency" value={formData.gastoMensal} onChange={(e) => setFormData({...formData, gastoMensal: e.target.value})} placeholder="R$ 0,00" />
-                </div>
-                <div className="w-full sm:w-1/2">
-                  <Input label="Aporte mensal pretendido" required forceShowError={stepAttempted} name="aporteMensal" maskType="currency" value={formData.aporteMensal} onChange={(e) => setFormData({...formData, aporteMensal: e.target.value})} placeholder="R$ 0,00" />
-                </div>
-                <div className="w-full sm:w-1/2">
-                  <Input label="Patrimônio atual aproximado" required forceShowError={stepAttempted} name="patrimonioAtual" maskType="currency" value={formData.patrimonioAtual} onChange={(e) => setFormData({...formData, patrimonioAtual: e.target.value})} placeholder="R$ 0,00" />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold mb-2">Estado civil</label>
+                  <select value={dadosPessoais.estadoCivil} onChange={(e) => setDadosPessoais((p) => ({ ...p, estadoCivil: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
+                    <option value="">Selecione</option><option value="solteiro">Solteiro(a)</option><option value="casado">Casado(a)</option><option value="uniao">União estável</option><option value="divorciado">Divorciado(a)</option><option value="viuvo">Viúvo(a)</option>
+                  </select>
                 </div>
                 <div>
-                   <label className="font-['Inter'] text-sm font-semibold text-[#0B1218] mb-6 block">Onde você guarda a grana? (Opcional)</label>
-                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                     {bancosList.map((b) => (
-                       <button key={b.name} onClick={() => toggleBanco(b.name)} className={`flex flex-col items-center gap-2 p-4 rounded-md border text-center transition-all cursor-pointer ${formData.bancos.includes(b.name) ? 'border-[#F56A2A] bg-[#F56A2A]/5 text-[#F56A2A] ring-1 ring-[#F56A2A]/20' : 'border-[#EFE7DC] bg-white text-[#0B1218]/70 hover:bg-[#FAFAFA]'}`}>
-                         <img src={b.icon} className={`h-8 w-8 object-contain transition-opacity ${formData.bancos.includes(b.name) ? 'opacity-100' : 'opacity-40'}`} alt={b.name} />
-                         <span className="text-[10px] font-bold leading-tight tracking-tight">{b.name}</span>
-                       </button>
-                     ))}
-                   </div>
+                  <label className="block text-xs font-semibold mb-2">Escolaridade</label>
+                  <select value={dadosPessoais.escolaridade} onChange={(e) => setDadosPessoais((p) => ({ ...p, escolaridade: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
+                    <option value="">Selecione</option><option value="medio">Ensino médio</option><option value="superior">Superior</option><option value="pos">Pós-graduação</option><option value="mestrado">Mestrado/Doutorado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">Faixa de renda</label>
+                  <select value={dadosPessoais.faixaRenda} onChange={(e) => setDadosPessoais((p) => ({ ...p, faixaRenda: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
+                    <option value="">Selecione</option><option value="ate-3k">Até R$ 3 mil</option><option value="3k-7k">R$ 3 mil a R$ 7 mil</option><option value="7k-15k">R$ 7 mil a R$ 15 mil</option><option value="15k+">Acima de R$ 15 mil</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">Moradia</label>
+                  <select value={dadosPessoais.moradia} onChange={(e) => setDadosPessoais((p) => ({ ...p, moradia: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
+                    <option value="">Selecione</option><option value="propria">Casa própria</option><option value="alugada">Alugada</option><option value="financiada">Financiada</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold mb-2">Renda</label>
+                  <select value={dadosPessoais.rendaComposicao} onChange={(e) => setDadosPessoais((p) => ({ ...p, rendaComposicao: e.target.value }))} className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218]">
+                    <option value="">Selecione</option><option value="individual">Renda individual</option><option value="familiar">Renda familiar</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -433,63 +550,17 @@ export default function App() {
             </div>
           )}
 
-          {currentStep === 5 && (
-            <div className="space-y-8 animate-in slide-in-from-right-8 fade-in duration-500 pb-10">
-              <div className="text-center sm:text-left border-b border-[#0B1218]/5 pb-4">
-                <p className="text-[10px] font-bold tracking-widest text-[#F56A2A] mb-1">Etapa obrigatória</p>
-                <h2 className="font-['Sora'] text-2xl font-bold">Segurança da Conta</h2>
-                <p className="mt-2 text-sm text-[#0B1218]/60">Crie sua senha (mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial).</p>
-              </div>
-              
-              <div className="max-w-md mx-auto sm:mx-0 pt-4">
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2">Senha</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, password: e.target.value }));
-                        if (submitError) setSubmitError('');
-                      }}
-                      placeholder="Crie uma senha forte"
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  <p className="mt-2 text-[11px] text-[#0B1218]/60">
-                    Use no mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.
-                  </p>
-                  {!senhaForteRegex.test(formData.password) && formData.password.length > 0 && (
-                    <p className="mt-1 text-xs text-[#E85C5C] font-semibold">Senha fora do padrão de segurança.</p>
-                  )}
-                </div>
-                {submitError && <p className="mt-4 text-xs text-[#E85C5C] font-semibold">{submitError}</p>}
-                
-                <div className="mt-8 flex items-center gap-2 text-[10px] font-bold text-[#0B1218]/30 tracking-widest">
-                  <Lock size={12} />
-                  Sua senha é criptografada.
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* NAVEGAÇÃO INTEGRADA (NÃO FIXA) */}
-        <div className="mt-12 py-8 flex items-center justify-between border-t border-[#0B1218]/5">
+        <div className={`${signupCompact ? 'mt-4 py-4' : 'mt-12 py-8'} flex items-center justify-between border-t border-[#0B1218]/5`}>
            <div className="flex-1">
              {currentStep > 1 && <TextButton variant="prev" onClick={handlePrev}><ChevronLeft size={18} /> Voltar</TextButton>}
            </div>
            <div className="flex items-center gap-8">
-             {(currentStep === 2 || currentStep === 4) && <TextButton variant="skip" onClick={handleNext}>Pular etapa</TextButton>}
-             <TextButton disabled={isSubmitting || isCheckingCadastro} onClick={currentStep === 5 ? handleFinish : handleNext}>
-               {currentStep === 5 ? (isSubmitting ? 'Cadastrando...' : 'Feito!') : (isCheckingCadastro ? 'Validando...' : 'Continuar')} <ChevronRight size={18} />
+             {mode !== 'signup' && currentStep < 4 && <TextButton variant="skip" onClick={handleNext}>Pular etapa</TextButton>}
+             <TextButton disabled={isSubmitting || isCheckingCadastro} onClick={mode === 'signup' || currentStep === 4 ? handleFinish : handleNext}>
+               {isSubmitting || isCheckingCadastro ? 'Validando...' : 'Feito!'} <Check size={16} className="text-[#F56A2A]" />
              </TextButton>
            </div>
         </div>

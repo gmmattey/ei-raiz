@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, carteiraApi, perfilApi } from "../../cliente-api";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
+const parseCurrencyInput = (value) => {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits ? Number(digits) / 100 : 0;
+};
+const formatCurrencyInput = (value) => moeda(Number(value || 0));
 
 export default function Aportes() {
   const navigate = useNavigate();
@@ -80,11 +85,11 @@ export default function Aportes() {
         {error && <p className="text-sm text-[#E85C5C]">{error}</p>}
 
         {semBase && (
-          <div className="p-8 border border-[#EFE7DC] rounded-sm text-center">
+          <div className="p-8 border border-[#EFE7DC] rounded-xl text-center">
             <p className="text-sm text-[#0B1218]/60">Sem carteira importada, ainda não há recomendação real de aporte.</p>
             <button
-              onClick={() => navigate("/importar")}
-              className="mt-4 px-5 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all"
+              onClick={() => navigate("/home", { state: { openQuickModal: "quick_importar" } })}
+              className="mt-4 px-5 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all rounded-xl"
             >
               Importar primeiro extrato
             </button>
@@ -92,24 +97,24 @@ export default function Aportes() {
         )}
 
         {!loading && !error && !semBase && (
-          <div className="p-8 border border-[#EFE7DC] rounded-sm space-y-6">
+          <div className="p-8 border border-[#EFE7DC] rounded-xl space-y-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-3">Base atual</p>
             <p className="text-sm text-[#0B1218]/70 mb-2">Patrimonio: <span className="font-semibold text-[#0B1218]">{moeda(resumo?.patrimonioTotal)}</span></p>
             <p className="text-sm text-[#0B1218]/70 mb-6">Ativos: <span className="font-semibold text-[#0B1218]">{resumo?.quantidadeAtivos ?? 0}</span></p>
-            <div className="border border-[#EFE7DC] rounded-sm p-5 bg-[#FAFAFA]">
+            <div className="border border-[#EFE7DC] rounded-xl p-5 bg-[#FAFAFA]">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-2">Meta de aporte mensal</label>
               <input
-                type="number"
-                min={0}
-                value={aporteMensal}
-                onChange={(e) => setAporteMensal(Number(e.target.value))}
-                className="w-full md:w-64 bg-white border border-[#EFE7DC] px-4 py-3 text-sm focus:outline-none focus:border-[#F56A2A]"
+                type="text"
+                inputMode="numeric"
+                value={formatCurrencyInput(aporteMensal)}
+                onChange={(e) => setAporteMensal(parseCurrencyInput(e.target.value))}
+                className="w-full md:w-64 bg-white border border-[#EFE7DC] px-4 py-3 text-sm focus:outline-none focus:border-[#F56A2A] rounded-xl"
               />
               <p className="text-xs text-[#0B1218]/60 mt-2">A meta é usada pelo diagnóstico para medir consistência de aportes.</p>
               <button
                 onClick={salvarAporteMensal}
                 disabled={salvando}
-                className="mt-4 px-5 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50"
+                className="mt-4 px-5 py-2 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50 rounded-xl"
               >
                 {salvando ? "Salvando..." : "Salvar meta"}
               </button>
@@ -120,7 +125,7 @@ export default function Aportes() {
             </p>
             <button
               onClick={() => navigate("/insights")}
-              className="px-5 py-2 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all"
+              className="px-5 py-2 border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#FAFAFA] transition-all rounded-xl"
             >
               Ver diagnóstico da carteira
             </button>

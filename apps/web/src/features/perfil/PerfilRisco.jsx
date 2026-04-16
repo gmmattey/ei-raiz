@@ -82,7 +82,7 @@ export default function PerfilRisco() {
               </button>
             </div>
 
-            <div className="bg-[#0B1218] p-8 text-white rounded-sm">
+            <div className="bg-[#0B1218] p-8 text-white rounded-xl">
               <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-6">Diagnóstico de Desvio</h4>
               <p className="text-xs leading-relaxed mb-8">
                 Sua carteira hoje está <span className="text-[#E85C5C] font-bold">12.4% desalinhada</span> com o perfil moderado. Isso significa que você está correndo mais risco do que deveria.
@@ -94,7 +94,7 @@ export default function PerfilRisco() {
           </aside>
 
           {/* Comparativo de Alocação */}
-          <section className="bg-white border border-[#EFE7DC] rounded-sm overflow-hidden">
+          <section className="bg-white border border-[#EFE7DC] rounded-xl overflow-hidden">
             <div className="p-8 border-b border-[#EFE7DC] flex justify-between items-center bg-[#FAFAFA]">
               <h3 className="font-['Sora'] text-sm font-bold uppercase tracking-widest text-[#0B1218]">Alocação Alvo vs Atual</h3>
               <InfoTrigger title="Cálculo de Reequilibrio" text="O Alvo é definido pela nossa inteligência com base no seu perfil. O Atual é lido diretamente das suas notas de corretagem." />

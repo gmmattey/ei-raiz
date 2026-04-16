@@ -36,8 +36,15 @@ export async function registrar(nome: string, cpf: string, email: string, senha:
   return resposta;
 }
 
-export function verificarCadastro(cpf: string, email: string): Promise<{ cpfDisponivel: boolean; emailDisponivel: boolean }> {
-  return apiRequest<{ cpfDisponivel: boolean; emailDisponivel: boolean }>("/api/auth/verificar-cadastro", {
+export type VerificacaoCadastroResposta = {
+  cpfDisponivel: boolean;
+  emailDisponivel: boolean;
+  cadastroInterrompido?: boolean;
+  destinoMascara?: string;
+};
+
+export function verificarCadastro(cpf: string, email: string): Promise<VerificacaoCadastroResposta> {
+  return apiRequest<VerificacaoCadastroResposta>("/api/auth/verificar-cadastro", {
     method: "POST",
     body: JSON.stringify({ cpf, email }),
   });

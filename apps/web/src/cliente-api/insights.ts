@@ -42,6 +42,7 @@ export type ResumoInsights = {
     deltaMedio: number;
     deltaTotal: number;
   };
+  scoreHistorico?: number[];
   confiancaDiagnostico?: "alta" | "limitada";
   confianca_diagnostico?: "alta" | "limitada";
   atualizacaoMercado?: {
@@ -57,6 +58,18 @@ export type ResumoInsights = {
     ultima_atualizacao: string | null;
     fontes: Array<{ fonte: "brapi" | "cvm" | "nenhuma"; quantidade: number }>;
     cobertura_por_status: Record<"atualizado" | "atrasado" | "indisponivel", number>;
+  };
+  scoreUnificado?: {
+    score: number;
+    band: "critical" | "fragile" | "stable" | "good" | "strong";
+    completenessStatus: "empty" | "partial" | "complete";
+    calculatedAt: string;
+  };
+  score_unificado?: {
+    score: number;
+    band: "critical" | "fragile" | "stable" | "good" | "strong";
+    completenessStatus: "empty" | "partial" | "complete";
+    calculatedAt: string;
   };
 };
 

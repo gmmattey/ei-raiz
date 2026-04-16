@@ -1,382 +1,155 @@
-# 🚀 Esquilo Invest - Guia do Ambiente Local
+# 🚀 Esquilo Invest - Guia do Ambiente Local (Monorepo)
 
-Bem-vindo! Este documento explica como rodar a aplicação Esquilo Invest em seu computador com uma configuração simples, sem reconfiguração constante de rotas.
+Bem-vindo! Este documento explica como rodar a aplicação Esquilo Invest em seu computador com a arquitetura de **Monorepo**.
+
+---
+
+## 🏗️ Estrutura do Monorepo
+
+O projeto está dividido em workspaces (npm):
+
+1. **`apps/web`**: Frontend React + Vite + Tailwind.
+2. **`apps/api`**: Gateway API em Cloudflare Worker.
+3. **`servicos/*`**: Lógica de negócio modularizada.
+4. **`pacotes/*`**: Contratos e utilitários compartilhados.
 
 ---
 
 ## 📋 Pré-requisitos
 
-### Opção 1: Desenvolvimento Direto (Recomendado para Dev)
-- **Node.js** 18+ ([Download](https://nodejs.org/))
-- **npm** (vem com Node.js)
-- ~500MB de espaço em disco
-
-### Opção 2: Docker (Recomendado para Produção Local)
-- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop))
-- ~2GB de espaço em disco
+- **Node.js** 18.0.0+ ([Download](https://nodejs.org/))
+- **npm** v9.0.0+ (incluso no Node.js)
+- **Wrangler CLI** para emular Cloudflare localmente:
+  ```bash
+  npm install -g wrangler
+  ```
 
 ---
 
 ## 🎯 Iniciação Rápida
 
-### Windows - Modo Desenvolvimento
-
-**Clique duplo em:** `start-dev.bat`
-
-Ou via terminal:
+### 1. Instalar Tudo
+Na raiz do projeto:
 ```bash
-.\start-dev.bat
+npm install
 ```
 
-Pronto! Acesse: **http://localhost:3000**
-
----
-
-### macOS / Linux - Modo Desenvolvimento
-
-**Primeiro, dê permissão ao script:**
+### 2. Preparar Banco Local (D1/SQLite)
+O projeto usa Cloudflare D1. Para rodar localmente:
 ```bash
-chmod +x start-dev.sh
+cd apps/api
+wrangler d1 migrations apply ei-raiz --local
+wrangler d1 execute ei-raiz --local --file ../../banco/seed.sql
+cd ../..
 ```
 
-**Depois execute:**
+### 3. Rodar Tudo (Recomendado)
+Para iniciar o **Frontend (3000)** e a **API (8787)** ao mesmo tempo:
 ```bash
-./start-dev.sh
-```
-
-Pronto! Acesse: **http://localhost:3000**
-
----
-
-### Docker (Qualquer SO)
-
-**Windows - Clique duplo em:** `start-docker.bat`
-
-**macOS/Linux:**
-```bash
-chmod +x start-docker.sh
-./start-docker.sh
+npm run dev:all
 ```
 
 Acesse: **http://localhost:3000**
 
 ---
 
-## 🔧 Configuração Manual
+## 🔧 Scripts Úteis (Raiz)
 
-Se preferir não usar os scripts:
-
-### 1. Instalar Dependências
-```bash
-cd apps/web
-npm install
-```
-
-### 2. Iniciar Servidor (Dev)
-```bash
-npm run dev
-```
-
-### 3. Build para Produção
-```bash
-npm run build
-npm run preview
-```
+| Comando | Função |
+|---------|--------|
+| `npm run dev` | Inicia apenas o Frontend |
+| `npm run dev:api` | Inicia apenas a API |
+| `npm run dev:all` | Inicia ambos (Frontend + API) |
+| `npm run build` | Faz build de todos os projetos |
+| `npm run typecheck`| Verifica tipos (TypeScript) |
 
 ---
 
-## 📍 URLs Disponíveis
+## 📍 Portas e URLs
 
-| URL | O que é | Quando usar |
-|-----|---------|-----------|
-| `http://localhost:3000` | App React (Dev) | Desenvolvimento com Hot Reload |
-| `http://localhost:3000` | App React (Docker) | Produção local |
-| `http://0.0.0.0:3000` | Acesso externo | Testar em outro dispositivo |
-
----
-
-## 🌐 Acessar de Outro Computador na Rede
-
-Se ambos estão na mesma rede WiFi/Ethernet:
-
-1. **Descubra seu IP local:**
-
-   **Windows:**
-   ```bash
-   ipconfig
-   ```
-   (Procure por "IPv4 Address" tipo `192.168.1.X`)
-
-   **macOS/Linux:**
-   ```bash
-   ifconfig
-   ```
-
-2. **No outro computador, acesse:**
-   ```
-   http://SEU_IP_LOCAL:3000
-   ```
-   
-   Exemplo: `http://192.168.1.50:3000`
-
----
-
-## 📁 Estrutura de Arquivos
-
-```
-Esquilo Invest/
-├── apps/web/                 # Aplicação React
-│   ├── src/                 # Código fonte
-│   ├── public/              # Assets (logos, ícones)
-│   ├── Dockerfile           # Build para Docker
-│   ├── package.json         # Dependências
-│   ├── vite.config.ts       # Configuração Vite (PORTA FIXA: 3000)
-│   └── .env.local           # Variáveis de ambiente locais
-├── docker-compose.yml       # Orquestração Docker
-├── start-dev.bat           # Script para Windows (Dev)
-├── start-dev.sh            # Script para Mac/Linux (Dev)
-├── start-docker.bat        # Script para Windows (Docker)
-└── start-docker.sh         # Script para Mac/Linux (Docker)
-```
+| Serviço | URL Local | Porta |
+|---------|-----------|-------|
+| Frontend (Vite) | `http://localhost:3000` | 3000 |
+| API (Wrangler) | `http://localhost:8787` | 8787 |
 
 ---
 
 ## ⚙️ Variáveis de Ambiente
 
-O arquivo `.env.local` contém:
-
+### Frontend (`apps/web/.env.local`)
 ```env
-# Aplicação
+VITE_API_URL=http://localhost:8787
 VITE_APP_NAME=Esquilo Invest
-VITE_API_URL=http://localhost:3001
-
-# Features
-VITE_ENABLE_MOCK_DATA=true          # Usar dados fake
-VITE_ENABLE_DEV_TOOLS=true          # Ferramentas dev ativas
-VITE_LOG_LEVEL=debug                # Logs detalhados
-
-# Segurança
-VITE_AUTH_ENABLED=true
-VITE_SESSION_TIMEOUT=3600000        # 1 hora
-
-# Analytics (desativado localmente)
-VITE_ANALYTICS_ENABLED=false
 ```
 
-### Customizar Variáveis
+### API (`apps/api/.dev.vars`)
+Copie do `.dev.vars.example`:
+```bash
+cp apps/api/.dev.vars.example apps/api/.dev.vars
+```
 
-Edite `.env.local` e reinicie o servidor.
+---
+
+## 📁 Arquitetura de Pastas
+
+```
+Esquilo Invest/
+├── apps/
+│   ├── web/                 # React (Vite)
+│   └── api/                 # Workers (Gateway)
+├── servicos/                # Domínio modular
+│   ├── autenticacao/
+│   ├── carteira/
+│   └── insights/
+├── pacotes/                 # Compartilhados
+│   ├── contratos/           # Types/Interfaces
+│   └── validacao/           # Schemas (Zod)
+├── banco/                   # SQL/Migrations
+├── package.json             # Workspaces config
+└── README.md                # Visão geral
+```
 
 ---
 
 ## 🐛 Solução de Problemas
 
-### Porta 3000 já está em uso
+### Erro "Workspaces not found"
+Certifique-se que você rodou `npm install` na **raiz** do projeto, e não apenas dentro de um app.
 
-**Opção 1: Encerrar processo**
+### API não responde (CORS)
+O frontend em `localhost:3000` faz requisições para `localhost:8787`. O Worker da API já está configurado para aceitar CORS em modo dev, mas verifique se o script `dev:api` está rodando.
 
-Windows:
+### Banco de Dados não existe
+Se receber erros SQL, refaça as migrations:
 ```bash
-netstat -ano | findstr :3000
-taskkill /PID <PID> /F
-```
-
-macOS/Linux:
-```bash
-lsof -i :3000
-kill -9 <PID>
-```
-
-**Opção 2: Usar outra porta**
-
-Edite `vite.config.ts` e mude:
-```typescript
-server: {
-  port: 3001  // Mude aqui
-}
+cd apps/api
+wrangler d1 migrations apply ei-raiz --local
 ```
 
 ---
 
-### Node.js não encontrado
+## 📊 Monitoramento Local
 
-**Windows:**
-1. Baixe em https://nodejs.org/
-2. Execute o instalador
-3. Reinicie o terminal
+### Logs da API (Worker)
+Os logs do worker aparecem no terminal onde rodou `npm run dev:api` ou `npm run dev:all`.
 
-**macOS:**
-```bash
-brew install node
-```
-
-**Linux:**
-```bash
-sudo apt-get install nodejs npm
-```
+### Logs do Frontend
+Console do navegador (F12).
 
 ---
 
-### Docker não inicia
-
-1. **Verifique se Docker está rodando:**
-   - Windows/Mac: Abra "Docker Desktop"
-   - Linux: `sudo systemctl start docker`
-
-2. **Limpe containers antigos:**
-   ```bash
-   docker-compose down -v
-   docker system prune
-   ```
-
-3. **Rebuild:**
-   ```bash
-   docker-compose up --build
-   ```
-
----
-
-### Página em branco / CSS não carrega
-
-Limpe o cache:
-- **Windows/Mac:** `Ctrl/Cmd + Shift + Delete` → Limpar cache
-- **Linux:** Limpe manualmente em `~/.cache/`
-
-Ou reinicie com Ctrl+Shift+R (hard refresh)
-
----
-
-## 📊 Monitoramento
-
-### Ver logs em tempo real
-
-**Desenvolvimento:**
-```
-Abra o console (F12) no navegador
-```
-
-**Docker:**
-```bash
-docker-compose logs -f esquilo-web
-```
-
-### Status da aplicação
-
-**Desenvolvimento:**
-```
-Terminal mostra: "Local: http://localhost:3000"
-```
-
-**Docker:**
-```bash
-docker-compose ps
-```
-
----
-
-## 🔄 Fluxo de Desenvolvimento Típico
-
-1. **Inicie o servidor:**
-   ```bash
-   ./start-dev.sh
-   ```
-
-2. **Faça mudanças no código** em `apps/web/src/`
-
-3. **Veja as mudanças em tempo real** (Hot Module Replacement)
-   - Não precisa recarregar manualmente
-   - Não precisa reconfigurar rotas
-
-4. **Abra DevTools** (F12) para ver logs e erros
-
-5. **Commit quando pronto**
-   ```bash
-   git add .
-   git commit -m "Descrição da mudança"
-   ```
-
----
-
-## 🚢 Build para Produção
+## ship Build para Produção
 
 ### Localmente
-
 ```bash
-cd apps/web
-npm run build        # Cria dist/
-npm run preview      # Testa build localmente (http://localhost:3000)
+npm run build
 ```
 
-### Via Docker
-
-```bash
-docker-compose --file docker-compose.yml build
-docker-compose up
-```
+### Deploy Cloudflare
+Consulte **[docs/arquitetura/deploy-cloudflare.md](./docs/arquitetura/deploy-cloudflare.md)** para o passo a passo completo.
 
 ---
 
-## 🔐 Segurança Local
-
-A aplicação roda em **localhost** por padrão (apenas seu computador).
-
-Para acessar de outra máquina:
-- Mude `host: 'localhost'` para `host: '0.0.0.0'` em `vite.config.ts`
-- Reinicie o servidor
-- Acesse via seu IP local
-
-⚠️ **NUNCA exponha a porta 3000 para a internet** (use VPN ou firewall)
-
----
-
-## 📝 Checklist de Setup
-
-- [ ] Node.js v18+ instalado (`node --version`)
-- [ ] Pasta `Esquilo Invest` clonada/extraída
-- [ ] Terminal aberto na pasta raiz
-- [ ] Executou `start-dev.sh` ou `start-dev.bat`
-- [ ] Navegador abriu em `http://localhost:3000`
-- [ ] Vê LandingPage com logo do Esquilo
-- [ ] DevTools aberto (F12) sem erros
-
----
-
-## 🆘 Precisa de Ajuda?
-
-1. **Verificar se Node/Docker estão instalados:**
-   ```bash
-   node --version
-   npm --version
-   docker --version
-   ```
-
-2. **Limpar tudo e começar do zero:**
-   ```bash
-   rm -rf node_modules
-   npm ci
-   npm run dev
-   ```
-
-3. **Verificar porta:**
-   ```bash
-   netstat -ano | findstr :3000
-   ```
-
-4. **Ver logs de erro:**
-   - Abra DevTools (F12)
-   - Vá para "Console"
-   - Procure por mensagens vermelhas
-
----
-
-## 📞 Suporte
-
-Arquivo de log: `~/.esquilo-invest/app.log`
-
-Versão atual: **0.1.0**
-
-Data: **2026-04-07**
-
----
-
-**Pronto! Agora você consegue rodar a aplicação localmente sem reconfigurar nada. Boa sorte! 🚀**
+**Versão:** 1.1.0 (Monorepo)  
+**Data:** 2026-04-11  
+**Status:** Atualizado para Monorepo ✅

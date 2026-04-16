@@ -58,6 +58,16 @@ const defaultMenus: MenuConfig[] = [
   { chave: "insights", label: "Insights", path: "/insights", ordem: 5, visivel: true },
   { chave: "historico", label: "Histórico", path: "/historico", ordem: 6, visivel: true },
   { chave: "importar", label: "Importar", path: "/importar", ordem: 7, visivel: true },
+  { chave: "quick_perfil", label: "Perfil", path: "/perfil", ordem: 101, visivel: true },
+  { chave: "quick_importar", label: "Importar", path: "/importar", ordem: 102, visivel: true },
+  { chave: "quick_acoes", label: "Ações", path: "/carteira?categoria=acao", ordem: 103, visivel: true },
+  { chave: "quick_fundos", label: "Fundos", path: "/carteira?categoria=fundo", ordem: 104, visivel: true },
+  { chave: "quick_previdencia", label: "Previdência", path: "/carteira?categoria=previdencia", ordem: 105, visivel: true },
+  { chave: "quick_renda_fixa", label: "Renda Fixa", path: "/carteira?categoria=renda_fixa", ordem: 106, visivel: true },
+  { chave: "quick_poupanca", label: "Poupança", path: "/placeholder?modulo=poupanca", ordem: 107, visivel: true },
+  { chave: "quick_bens", label: "Bens", path: "/placeholder?modulo=bens", ordem: 108, visivel: true },
+  { chave: "quick_simuladores", label: "Simuladores", path: "/decisoes", ordem: 109, visivel: true },
+  { chave: "quick_configurar", label: "Configurar", path: "/configuracoes", ordem: 110, visivel: true },
 ];
 
 const defaultFlags: Record<string, boolean> = {
@@ -90,6 +100,7 @@ const defaultScoreConfig = {
     horizonteCurtoAgressivo: 5,
     rendaBaixaVolatilidadeAlta: 4,
     maiorAtivoAlto: 6,
+    concentracaoExtrema: 20,
     top3Concentrado: 5,
     classeUnica: 6,
     poucosAtivos: 4,
@@ -102,14 +113,23 @@ const defaultScoreConfig = {
     evolucaoNegativa: 8,
     liquidezBaixa: 6,
     dinheiroParadoAlto: 4,
-    concentracaoEmImovel: 5,
     dependenciaDeAtivoIliquido: 5,
     endividamentoAlto: 7,
-    usoExcessivoDaReserva: 5,
-    custoFixoElevado: 4,
-    compraIncompativelComMomento: 6,
-    veiculoAcimaDaCapacidade: 5,
-    financiamentoDesfavoravel: 4,
+  },
+  unifiedModel: {
+    pillarWeights: {
+      liquidity: 0.25,
+      financial_health: 0.25,
+      patrimonial_structure: 0.2,
+      investment_behavior: 0.15,
+      efficiency_evolution: 0.15,
+    },
+    ranges: {
+      criticalMax: 299,
+      fragileMax: 499,
+      stableMax: 699,
+      goodMax: 849,
+    },
   },
 };
 

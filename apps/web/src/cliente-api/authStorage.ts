@@ -15,6 +15,8 @@ export function saveSession(session: SessaoArmazenada): void {
   localStorage.setItem(TOKEN_KEY, session.token);
   localStorage.setItem(USER_KEY, JSON.stringify(session.usuario));
   localStorage.setItem("isAuthenticated", "true");
+  localStorage.setItem("theme", "dark");
+  localStorage.setItem("ocultarValores", "true");
 }
 
 export function clearSession(): void {

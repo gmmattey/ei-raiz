@@ -120,6 +120,7 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
         patrimonioExterno: {
           imoveis: parsed.patrimonioExterno?.imoveis ?? [],
           veiculos: parsed.patrimonioExterno?.veiculos ?? [],
+          poupanca: parsed.patrimonioExterno?.poupanca ?? parsed.patrimonioExterno?.caixaDisponivel ?? 0,
           caixaDisponivel: parsed.patrimonioExterno?.caixaDisponivel ?? 0,
         },
         dividas: parsed.dividas ?? [],
@@ -136,6 +137,7 @@ export class RepositorioPerfilD1 implements RepositorioPerfil {
       patrimonioExterno: {
         imoveis: contexto.patrimonioExterno?.imoveis ?? [],
         veiculos: contexto.patrimonioExterno?.veiculos ?? [],
+        poupanca: contexto.patrimonioExterno?.poupanca ?? contexto.patrimonioExterno?.caixaDisponivel ?? 0,
         caixaDisponivel: contexto.patrimonioExterno?.caixaDisponivel ?? 0,
       },
       dividas: contexto.dividas ?? [],

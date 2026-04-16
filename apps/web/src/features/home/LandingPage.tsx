@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { ApiError, authApi, consumirMotivoSaidaSessao, telemetriaApi } from '../../cliente-api';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
+import { useTheme } from '../../context/ThemeContext';
+import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
+import Onboarding from '../onboarding/onboarding';
 import { 
   Menu, X, ChevronRight, ArrowRight, Lock, 
   Eye, BarChart2, Shield, Info, FileText, AlertTriangle, CheckCircle2
@@ -29,7 +32,7 @@ const Icon = ({ name, className = '', size = 24 }) => {
 
 // --- COMPONENTES BASE ---
 const Button = ({ children, variant = 'primary', className = '', disabled = false, ...props }) => {
-  const baseStyle = "font-['Inter'] font-semibold rounded-md px-6 py-3 transition-all duration-200 flex items-center justify-center gap-2";
+  const baseStyle = "font-['Inter'] font-semibold rounded-xl px-6 py-3 transition-all duration-200 flex items-center justify-center gap-2";
   
   const variants = {
     primary: "bg-[#F56A2A] text-white hover:bg-[#d95a20] disabled:bg-[#F56A2A]/50 disabled:cursor-not-allowed",
@@ -46,8 +49,10 @@ const Button = ({ children, variant = 'primary', className = '', disabled = fals
 };
 
 // --- MODAL DE LOGIN (ESTILO BANCO) ---
-const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
+const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'default', initialEmail = '' }) => {
   const navigate = useNavigate();
+  const { setThemeMode } = useTheme();
+  const { setOcultarValores } = useModoVisualizacao();
   const [loginStep, setLoginStep] = useState('default');
   const [passwordInput, setPasswordInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
@@ -59,6 +64,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
   const [recoveryInfo, setRecoveryInfo] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forgotPasswordStage, setForgotPasswordStage] = useState<'email' | 'reset'>('email');
   const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
   const mapApiAuthError = (error) => {
     if (!(error instanceof ApiError)) return 'Não foi possível concluir a ação agora.';
@@ -69,20 +75,21 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setLoginStep('default');
+      setLoginStep(initialStep === 'forgotPassword' ? 'forgotPassword' : 'default');
       setPasswordInput('');
-      setEmailInput('');
+      setEmailInput(initialEmail || '');
       setCpfInput('');
       setTokenInput('');
       setNewPasswordInput('');
       setRecoveryInfo('');
       setAuthError(alertaInicial);
+      setForgotPasswordStage('email');
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
     return () => { document.body.style.overflow = 'auto'; };
-  }, [alertaInicial, isOpen]);
+  }, [alertaInicial, initialEmail, initialStep, isOpen]);
 
   const handleLoginSubmit = async () => {
     const email = emailInput.trim().toLowerCase();
@@ -95,10 +102,14 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
     try {
       await authApi.entrar(email, passwordInput);
       await telemetriaApi.registrarEventoTelemetria('login_success', { origem: 'landing_modal' });
+      setThemeMode('dark');
+      setOcultarValores(true);
       onClose();
       navigate('/home');
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
+      if (error instanceof ApiError && error.code === 'CADASTRO_INCOMPLETO') {
+        setAuthError('Cadastro interrompido. Use "Esqueci minha senha" para concluir o acesso.');
+      } else if (error instanceof ApiError && error.status === 401) {
         setAuthError('E-mail ou senha incorretos');
       } else {
         setAuthError('Falha ao autenticar');
@@ -118,7 +129,8 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
     setAuthError('');
     try {
       const resposta = await authApi.solicitarRecuperacaoPorEmail(email);
-      setRecoveryInfo(`Solicitação enviada para ${resposta.destinoMascara}. Confira seu e-mail e use o token para redefinir a senha nesta mesma tela.`);
+      setRecoveryInfo(`Solicitação enviada para ${resposta.destinoMascara}.`);
+      setForgotPasswordStage('reset');
     } catch (error) {
       setAuthError(mapApiAuthError(error));
     } finally {
@@ -172,7 +184,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative animate-in zoom-in-95 duration-200">
         
         <div className="flex justify-between items-center p-6 border-b border-[#EFE7DC]">
@@ -190,7 +202,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
           {loginStep === 'default' && (
             <div className="space-y-6">
               <div className="flex justify-center">
-                <img src={assetPath('/assets/logo/logo-horizontal-invest-laranja.svg')} alt="Esquilo Invest" className="h-10 object-contain" />
+                <img src={assetPath('/assets/logo/simbolo-padrao.svg')} alt="Esquilo Invest" className="h-10 w-10 object-contain" />
               </div>
               <div>
                 <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
@@ -208,7 +220,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                       handleLoginSubmit();
                     }
                   }}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                 />
                 <button 
                   onClick={() => setLoginStep('forgotEmail')}
@@ -222,7 +234,11 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                 <div className="flex justify-between items-center mb-2">
                   <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218]">Senha Eletrônica</label>
                   <button 
-                    onClick={() => setLoginStep('forgotPassword')}
+                    onClick={() => {
+                      setForgotPasswordStage('email');
+                      setRecoveryInfo('');
+                      setLoginStep('forgotPassword');
+                    }}
                     className="text-xs text-[#F56A2A] hover:text-[#d95a20] font-medium"
                   >
                     Esqueci minha senha
@@ -238,7 +254,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                       if (authError) setAuthError('');
                     }}
                     placeholder="Digite sua senha"
-                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                   />
                   <button
                     type="button"
@@ -252,7 +268,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                   type="button"
                   onClick={handleLoginSubmit}
                   disabled={passwordInput.length < 5 || isSubmitting}
-                  className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
+                  className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
                 >
                   {isSubmitting ? 'Entrando...' : 'Entrar'}
                 </button>
@@ -281,14 +297,14 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
                   placeholder="000.000.000-00"
                   value={cpfInput}
                   onChange={(e) => setCpfInput(e.target.value)}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleSolicitarRecuperacaoPorCpf}
                 disabled={isSubmitting}
-                className="w-full mt-4 bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                className="w-full mt-4 bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? 'Localizando...' : 'Localizar e enviar recuperação'}
               </button>
@@ -303,55 +319,62 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '' }) => {
 
           {loginStep === 'forgotPassword' && (
             <div className="space-y-6">
-               <p className="font-['Inter'] text-sm text-[#0B1218]/70">Informe seu e-mail para envio de recuperação. Depois, redefina com o token recebido.</p>
-              <div>
-                <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
-                <input 
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                />
-              </div>
-              
-              <button type="button" onClick={handleSolicitarRecuperacaoPorEmail} className="w-full bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-gray-800 transition-colors disabled:opacity-50" disabled={isSubmitting}>
-                {isSubmitting ? 'Enviando...' : 'Enviar recuperação'}
-              </button>
-
-              <div>
-                <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Token/Código</label>
-                <input
-                  type="text"
-                  placeholder="Cole o token recebido"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Nova senha</label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    placeholder="Nova senha forte"
-                    value={newPasswordInput}
-                    onChange={(e) => setNewPasswordInput(e.target.value)}
-                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-md px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]"
-                  >
-                    {showNewPassword ? <Eye size={18} /> : <Icon name="eye" size={18} />}
+              {forgotPasswordStage === 'email' && (
+                <>
+                  <p className="font-['Inter'] text-sm text-[#0B1218]/70">Informe seu e-mail para envio de recuperação.</p>
+                  <div>
+                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
+                    <input 
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                    />
+                  </div>
+                  <button type="button" onClick={handleSolicitarRecuperacaoPorEmail} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
+                    {isSubmitting ? 'Enviando...' : 'Enviar recuperação'}
                   </button>
-                </div>
-                <p className="mt-2 text-xs text-[#0B1218]/60">8+ caracteres com maiúscula, minúscula, número e especial.</p>
-              </div>
-              <button type="button" onClick={handleRedefinirSenha} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-md py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
-                {isSubmitting ? 'Redefinindo...' : 'Redefinir senha'}
-              </button>
+                </>
+              )}
+              {forgotPasswordStage === 'reset' && (
+                <>
+                  <p className="font-['Inter'] text-sm text-[#0B1218]/70">Token enviado. Informe o código e defina sua nova senha.</p>
+                  <div>
+                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Token/Código</label>
+                    <input
+                      type="text"
+                      placeholder="Cole o token recebido"
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Nova senha</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Nova senha forte"
+                        value={newPasswordInput}
+                        onChange={(e) => setNewPasswordInput(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]"
+                      >
+                        {showNewPassword ? <Eye size={18} /> : <Icon name="eye" size={18} />}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-[#0B1218]/60">8+ caracteres com maiúscula, minúscula, número e especial.</p>
+                  </div>
+                  <button type="button" onClick={handleRedefinirSenha} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
+                    {isSubmitting ? 'Redefinindo...' : 'Redefinir senha'}
+                  </button>
+                </>
+              )}
               {authError && <p className="text-xs text-[#E85C5C] font-medium">{authError}</p>}
               {recoveryInfo && <p className="text-xs text-[#6FCF97] font-medium">{recoveryInfo}</p>}
 
@@ -375,7 +398,7 @@ const SectionComoFunciona = ({ id, titulo }) => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
         <div className="hidden md:block absolute top-6 left-[15%] right-[15%] h-px bg-[#EFE7DC]"></div>
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">1</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">1</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">Você traz tudo pro mesmo lugar</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Você importa seu CSV no padrão da plataforma e nós consolidamos seus ativos em uma única leitura.
@@ -383,14 +406,14 @@ const SectionComoFunciona = ({ id, titulo }) => (
         </div>
 
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">2</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">2</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">A gente traduz tudo</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Cruza tudo que você tem, calcula onde tá concentrado, o que é mais seguro, o que é mais arriscado.
           </p>
         </div>
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-md flex items-center justify-center mb-6 border-4 border-white shadow-sm">3</div>
+          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">3</div>
           <h3 className="font-['Sora'] font-bold text-xl mb-3">Você fica sabendo o que fazer</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
             Você ganha um mapa real da carteira. Sem jargão, sem venda de fundo. Só o que importa mesmo.
@@ -427,7 +450,7 @@ const SectionProposta = ({ id, titulo }) => (
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/olho.svg')} className="w-8 h-8 mb-5" alt="Visão Neutra" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Visão Neutra</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -435,7 +458,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/grafico.svg')} className="w-8 h-8 mb-5" alt="Tradução de Risco" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Tradução de Risco</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -443,7 +466,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/aporte.svg')} className="w-8 h-8 mb-5" alt="Consolidação Real" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Consolidação em uma visão única</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -451,7 +474,7 @@ const SectionProposta = ({ id, titulo }) => (
             </p>
           </div>
 
-          <div className="bg-white border border-[#EFE7DC] rounded-none p-8 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <img src={assetPath('/assets/icons/laranja/sucesso.svg')} className="w-8 h-8 mb-5" alt="Próximos Passos" />
             <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Próximos Passos</h4>
             <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
@@ -472,19 +495,19 @@ const SectionFaq = ({ id, titulo, subtitulo }) => (
         <p className="font-['Inter'] text-[#0B1218]/70 text-xl">{subtitulo}</p>
       </div>
       <div className="grid grid-cols-1 gap-6">
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como é calculado o Score da Carteira?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             O Score é uma métrica proprietária de 0 a 100 que avalia quatro pilares: liquidez, diversificação de emissores, exposição a risco e eficiência de taxas. Ele não prevê rentabilidade, prevê a robustez estrutural.
           </p>
         </div>
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">O que acontece após importar o primeiro extrato?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             A plataforma padroniza nomes e ativos em minutos. Em seguida, o dashboard é liberado revelando seu patrimônio consolidado e apontamentos iniciais de risco.
           </p>
         </div>
-        <div className="border border-[#EFE7DC] rounded-none p-8 hover:border-[#F56A2A]/30 transition-colors">
+        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
           <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como a Esquilo ganha dinheiro?</h3>
           <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
             O produto está em evolução contínua. O foco atual é consolidar carteira, traduzir risco e orientar próximos passos com base em dados reais.
@@ -498,12 +521,16 @@ const SectionFaq = ({ id, titulo, subtitulo }) => (
 export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { setThemeMode } = useTheme();
   const { texto, booleano } = useConteudoApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [onboardingInitialStep, setOnboardingInitialStep] = useState(1);
+  const [loginInitialStep, setLoginInitialStep] = useState('default');
+  const [loginInitialEmail, setLoginInitialEmail] = useState('');
   const [alertaLogin, setAlertaLogin] = useState('');
   const [scrolled, setScrolled] = useState(false);
-  const [visibleSections, setVisibleSections] = useState<string[]>([]);
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
 
   const heroImages = [
@@ -526,30 +553,44 @@ export default function LandingPage() {
   }, [heroImages.length]);
 
   useEffect(() => {
+    setThemeMode('light');
+  }, [setThemeMode]);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const abrirLogin = params.get('abrir') === 'login';
+    const stepLogin = params.get('step') || 'default';
+    const emailLogin = params.get('email') || '';
+    if (location.pathname === '/onboarding') {
+      const passo = Number(params.get('passo') || 1);
+      setOnboardingInitialStep(Number.isFinite(passo) && passo > 0 ? passo : 1);
+      setIsOnboardingModalOpen(true);
+    } else {
+      setIsOnboardingModalOpen(false);
+    }
+    if (abrirLogin) {
+      setLoginInitialStep(stepLogin);
+      setLoginInitialEmail(emailLogin);
+      setIsLoginModalOpen(true);
+      return;
+    }
     const sessaoExpiradaPorQuery = params.get('sessao') === 'expirada';
     const sessaoExpiradaPorStorage = consumirMotivoSaidaSessao() === 'expirada';
     if (sessaoExpiradaPorQuery || sessaoExpiradaPorStorage) {
+      setLoginInitialStep('default');
+      setLoginInitialEmail('');
       setAlertaLogin('Sua sessão expirou por segurança. Entre novamente para continuar.');
       setIsLoginModalOpen(true);
       return;
     }
     setAlertaLogin('');
-  }, [location.search]);
+  }, [location.pathname, location.search]);
 
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
     setIsMobileMenuOpen(false);
-    if (!visibleSections.includes(sectionId)) {
-      setVisibleSections(prev => [...prev, sectionId]);
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 150);
-    } else {
-      const element = document.getElementById(sectionId);
-      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    const element = document.getElementById(sectionId);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleLoginClick = () => {
@@ -559,7 +600,23 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0B1218] font-['Inter'] text-[#F5F0EB] selection:bg-[#F56A2A] selection:text-white">
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} alertaInicial={alertaLogin} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        alertaInicial={alertaLogin}
+        initialStep={loginInitialStep}
+        initialEmail={loginInitialEmail}
+      />
+      {isOnboardingModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <Onboarding
+            embedded
+            mode="signup"
+            initialStep={onboardingInitialStep}
+            onClose={() => { setIsOnboardingModalOpen(false); navigate('/'); }}
+          />
+        </div>
+      )}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#0B1218]/95 backdrop-blur-md border-b border-white/10 shadow-lg py-4' : 'bg-gradient-to-b from-[#0B1218]/80 to-transparent border-transparent py-6'}`}>
         <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
@@ -586,7 +643,7 @@ export default function LandingPage() {
             <a href="#proposta" onClick={(e) => handleNavClick(e, 'proposta')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">A Proposta</a>
             <a href="#faq" onClick={(e) => handleNavClick(e, 'faq')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">Dúvidas</a>
             <div className="h-px bg-white/10 my-2"></div>
-            <button onClick={handleLoginClick} className="font-['Inter'] font-semibold w-full py-3 text-white hover:bg-white/10 rounded-md transition-colors">Entrar</button>
+            <button onClick={handleLoginClick} className="font-['Inter'] font-semibold w-full py-3 text-white hover:bg-white/10 rounded-xl transition-colors">Entrar</button>
             <Button variant="primary" className="w-full justify-center" onClick={() => navigate('/onboarding')}>Criar conta</Button>
           </div>
         )}
@@ -602,21 +659,15 @@ export default function LandingPage() {
         </div>
         <div className="relative z-20 mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mt-16 fade-in-up">
-            <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-4 text-white tracking-tight">
-              {texto("landing.hero.titulo", "Sua carteira merece")}<br/>
-              <span className="text-[#F56A2A]">{texto("landing.hero.titulo_destaque", "uma visão real.")}</span>
+            <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] mb-12 text-white tracking-tight">
+              Sua carteira merece<br/>
+              <span className="text-[#F56A2A]">consolidação e clareza.</span>
             </h1>
-            <h2 className="font-['Sora'] text-xl md:text-2xl font-semibold text-[#F5F0EB]/90 mb-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
-              {texto("landing.hero.subtitulo", "Consolidação real, diagnóstico claro e decisão orientada.")}
-            </h2>
-            <p className="font-['Inter'] text-lg text-[#F5F0EB]/70 mb-10 leading-relaxed max-w-lg fade-in-up" style={{ animationDelay: '0.2s' }}>
-              {texto("landing.hero.descricao", "Centralize seus ativos, entenda concentração e risco da carteira e receba uma orientação objetiva do próximo passo.")}
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto fade-in-up" style={{ animationDelay: '0.3s' }}>
               <Button variant="primary" className="w-full sm:w-auto text-base px-8 py-3.5 shadow-lg shadow-[#F56A2A]/20" onClick={(e) => handleNavClick(e, 'como-funciona')}>
                 {texto("landing.hero.cta_primario", "Ver como funciona")} <Icon name="arrowRight" size={18} />
               </Button>
-              <button className="font-['Inter'] font-semibold rounded-md px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
+              <button className="font-['Inter'] font-semibold rounded-xl px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
                 {texto("landing.hero.cta_secundario", "Saber mais sobre a gente")}
               </button>
             </div>
@@ -624,27 +675,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {visibleSections.length > 0 && (
-        <div className="relative z-30 bg-white">
-          {visibleSections.map(sectionId => {
-            if (sectionId === 'como-funciona') return <SectionComoFunciona key={sectionId} id={sectionId} titulo={texto("landing.como_funciona.titulo", "Entenda como a gente te ajuda")} />;
-            if (sectionId === 'proposta') return <SectionProposta key={sectionId} id={sectionId} titulo={texto("landing.proposta.titulo", "Acesso apenas leitura. Zero execução.")} />;
-            if (sectionId === 'faq' && booleano("landing.secao.faq.visivel", true)) {
-              return (
-                <SectionFaq
-                  key={sectionId}
-                  id={sectionId}
-                  titulo={texto("landing.faq.titulo", "Entenda a ferramenta")}
-                  subtitulo={texto("landing.faq.subtitulo", "Como o sistema opera e lê os seus dados.")}
-                />
-              );
-            }
-            return null;
-          })}
-        </div>
-      )}
+      <div className="relative z-30 bg-white">
+        <SectionComoFunciona id="como-funciona" titulo={texto("landing.como_funciona.titulo", "Entenda como a gente te ajuda")} />
+        <SectionProposta id="proposta" titulo={texto("landing.proposta.titulo", "Acesso apenas leitura. Zero execução.")} />
+        {booleano("landing.secao.faq.visivel", true) && (
+          <SectionFaq
+            id="faq"
+            titulo={texto("landing.faq.titulo", "Entenda a ferramenta")}
+            subtitulo={texto("landing.faq.subtitulo", "Como o sistema opera e lê os seus dados.")}
+          />
+        )}
+      </div>
 
-      <footer className="bg-[#EFE7DC] pt-32 pb-8 text-[#0B1218] relative z-30">
+      <footer className="bg-[#EFE7DC] pt-16 pb-8 text-[#0B1218] relative z-30">
         <div className="mx-auto mb-32 w-full max-w-[896px] px-4 text-center">
           <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6">{texto("landing.footer.cta_titulo", "O diagnóstico leva menos de 5 minutos.")}</h2>
           <p className="font-['Inter'] text-[#0B1218]/70 text-xl mb-10">{texto("landing.footer.cta_descricao", "Crie sua conta, importe seu CSV e tenha uma leitura clara da sua carteira em minutos.")}</p>

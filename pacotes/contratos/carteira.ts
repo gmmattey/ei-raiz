@@ -1,4 +1,4 @@
-export type CategoriaAtivo = "acao" | "fundo" | "previdencia" | "renda_fixa";
+export type CategoriaAtivo = "acao" | "fundo" | "previdencia" | "renda_fixa" | "poupanca" | "bens";
 
 export type AtivoResumo = {
   id: string;
@@ -25,12 +25,26 @@ export type AtivoResumo = {
   data_aquisicao?: string;
   valorAtual: number;
   participacao: number;
+  /** Rendimento acumulado desde a aquisição (ganho/perda sobre preço médio). Não é retorno de 12 meses. */
   retorno12m: number;
 };
 
 export type ResumoCarteira = {
   patrimonioTotal: number;
+  patrimonioInvestimentos?: number;
+  patrimonioBens?: number;
+  patrimonioPoupanca?: number;
+  distribuicaoPatrimonio?: Array<{
+    id: string;
+    label: string;
+    valor: number;
+    percentual: number;
+  }>;
+  /** Retorno acumulado desde a data de aquisição dos ativos (não é retorno de 12 meses). */
   retorno12m: number;
+  retornoDisponivel?: boolean;
+  motivoRetornoIndisponivel?: string;
+  /** @deprecated Não usar como score de saúde financeira. Use scoreUnificado da API de insights. */
   score: number;
   quantidadeAtivos: number;
 };

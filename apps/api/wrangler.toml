@@ -8,3 +8,9 @@ database_name = "esquilo-invest-dev"
 database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 preview_database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 migrations_dir = "../../banco/migrations"
+
+# Cron triggers (handler `scheduled()` em src/index.ts diferencia via `event.cron`):
+#   */5 * * * *  → refresh de cotações de mercado
+#   0 3 * * *    → fechamento mensal D-1 em historico_carteira_mensal
+[[triggers]]
+crons = ["*/5 * * * *", "0 3 * * *"]

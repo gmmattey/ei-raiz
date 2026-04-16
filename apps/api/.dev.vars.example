@@ -1,1 +1,7 @@
 JWT_SECRET=trocar_em_dev_local
+BRAPI_TOKEN=trocar_em_dev_local
+BRAPI_BASE_URL=https://brapi.dev/api
+CVM_BASE_URL=https://dados.cvm.gov.br
+GOOGLE_FINANCE_BASE_URL=https://www.google.com/finance
+FIPE_BASE_URL=https://brasilapi.com.br/api
+PASSWORD_RESET_WEBHOOK_URL=

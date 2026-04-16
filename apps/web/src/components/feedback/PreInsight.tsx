@@ -93,8 +93,8 @@ const PreInsight: React.FC = () => {
 
             {/* Card de Ação Recomendada */}
             <div className="pt-12 md:col-span-4 md:pt-32 fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-start gap-5 p-6 rounded-sm border border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all hover:bg-white/[0.04] hover:border-white/10">
-                <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#f56a2a]">
+              <div className="flex items-start gap-5 p-6 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all hover:bg-white/[0.04] hover:border-white/10">
+                <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f56a2a]">
                   <img
                     src={assetPath('/assets/icons/original/aporte.svg')}
                     alt="Ação"
