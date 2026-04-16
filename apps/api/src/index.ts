@@ -81,7 +81,7 @@ async function dispatch(
 
   // Domínios de aplicação
   const routers = [
-    () => handleAuthRoutes(pathname, request, env, sessao),
+    () => handleAuthRoutes(pathname, request, env, sessao, ctx),
     () => handleTelemetriaRoutes(pathname, request, env, sessao),
     () => handleAppRoutes(pathname, request, env, sessao),
     () => handleAdminRoutes(pathname, request, env, sessao),

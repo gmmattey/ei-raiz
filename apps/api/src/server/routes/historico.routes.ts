@@ -57,6 +57,29 @@ export async function handleHistoricoRoutes(
     const limite = Number.parseInt(url.searchParams.get("limite") ?? "24", 10);
     const servico = construirServicoHistoricoMensal(env);
     const pontos = await servico.listarPontos(userId, Number.isNaN(limite) ? 24 : limite);
+
+    // Fallback: se o usuário nunca teve histórico gravado (ex: logou antes do
+    // hook de auto-reconstrução no login), dispara reconstrução em background.
+    // Na próxima requisição os pontos já estarão disponíveis.
+    if (pontos.length === 0 && ctx) {
+      const servicoReconstrucao = construirServicoReconstrucao(env);
+      ctx.waitUntil(
+        (async () => {
+          try {
+            const estado = await servicoReconstrucao.obterEstado(userId);
+            if (!estado) {
+              await servicoReconstrucao.enfileirar(userId);
+              await servicoReconstrucao.processarProximoLote(userId, TAMANHO_LOTE_RECONSTRUCAO);
+            } else if (estado.status === "pendente" || estado.status === "processando") {
+              await servicoReconstrucao.processarProximoLote(userId, TAMANHO_LOTE_RECONSTRUCAO);
+            }
+          } catch {
+            // fail-silent
+          }
+        })(),
+      );
+    }
+
     return sucesso({ pontos });
   }
 

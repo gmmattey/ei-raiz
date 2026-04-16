@@ -1,7 +1,37 @@
 import { ErroAutenticacao, RepositorioAutenticacaoD1, ServicoAutenticacaoPadrao } from "@ei/servico-autenticacao";
+import {
+  FonteDadosReconstrucaoD1,
+  RepositorioFilaReconstrucaoD1,
+  RepositorioHistoricoMensalD1,
+  ServicoReconstrucaoCarteiraPadrao,
+} from "@ei/servico-historico";
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso } from "../types/gateway";
+import { construirProvedorHistoricoCotacoes } from "../services/provedor-historico-cotacoes";
+
+const TAMANHO_LOTE_AUTORECONSTRUCAO = 6;
+
+/**
+ * Dispara reconstrução retroativa em background após login — idempotente.
+ * Se o usuário já tem fila concluída, `enfileirar()` retorna o estado existente
+ * e `processarProximoLote()` vira no-op. Falhas são silenciadas (o cron D-1
+ * segue gravando o ponto corrente de qualquer forma).
+ */
+async function autoReconstruirHistorico(env: Env, usuarioId: string): Promise<void> {
+  try {
+    const servico = new ServicoReconstrucaoCarteiraPadrao({
+      fila: new RepositorioFilaReconstrucaoD1(env.DB),
+      historicoMensal: new RepositorioHistoricoMensalD1(env.DB),
+      fonte: new FonteDadosReconstrucaoD1(env.DB),
+      provedorHistorico: construirProvedorHistoricoCotacoes(env),
+    });
+    await servico.enfileirar(usuarioId);
+    await servico.processarProximoLote(usuarioId, TAMANHO_LOTE_AUTORECONSTRUCAO);
+  } catch {
+    // fail-silent: não impede o login
+  }
+}
 
 const MASSA_TESTE_EI_RAIZ = {
   nome: "Teste EI Raiz",
@@ -95,6 +125,7 @@ export async function handleAuthRoutes(
   request: Request,
   env: Env,
   sessao: SessaoUsuarioSaida | null,
+  ctx?: ExecutionContext,
 ): Promise<ServiceResponse<unknown> | null> {
   const authService = buildAuthService(env);
 
@@ -105,12 +136,21 @@ export async function handleAuthRoutes(
 
   if ((pathname === "/api/auth/entrar" || pathname === "/api/auth/login") && request.method === "POST") {
     const body = (await parseJsonBody(request)) as { email?: string; senha?: string };
+    const disparaReconstrucao = (saida: SessaoUsuarioSaida): void => {
+      const usuarioId = saida?.usuario?.id;
+      if (!usuarioId || !ctx) return;
+      ctx.waitUntil(autoReconstruirHistorico(env, usuarioId));
+    };
     try {
-      return sucesso(await authService.entrar(body as never));
+      const saida = await authService.entrar(body as never);
+      disparaReconstrucao(saida);
+      return sucesso(saida);
     } catch (e) {
       if (body.email === MASSA_TESTE_EI_RAIZ.email && body.senha === MASSA_TESTE_EI_RAIZ.senha) {
         await resetMassaTesteEiRaiz(env);
-        return sucesso(await authService.entrar(body as never));
+        const saida = await authService.entrar(body as never);
+        disparaReconstrucao(saida);
+        return sucesso(saida);
       }
       throw e;
     }
