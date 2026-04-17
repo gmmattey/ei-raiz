@@ -89,8 +89,12 @@ const TAMANHO_LOTE_PADRAO = 6; // 6 meses por execução (margem para timeout do
  * Calcula o valor de mercado de um ativo num determinado mês.
  *
  * Ordem de prioridade:
- *   1. Fundo com CNPJ mapeado → cota CVM do mês (produção: tabela cotas_fundos_cvm)
- *   2. Ativo com ticker mapeado → close BRAPI do mês (acões/ETFs/FIIs/BDRs)
+ *   1. Fundo com CNPJ mapeado → variação de cota CVM sobre o custo total.
+ *      Para fundos, o usuário registra `quantidade = 1` e `precoMedio = total investido`.
+ *      A cota CVM é o preço por unidade de cota (escala diferente). Portanto usamos:
+ *        valor = custoTotal × (cotaMes / cotaAquisicao)
+ *      Onde cotaAquisicao é a primeira cota disponível no mapa (mês de aquisição).
+ *   2. Ativo com ticker mapeado → close BRAPI do mês (ações/ETFs/FIIs/BDRs)
  *   3. Fallback → quantidade × precoMedio (valor constante desde a aquisição)
  */
 function valorAtivoNoMes(
@@ -101,9 +105,23 @@ function valorAtivoNoMes(
 ): number {
   if (fechamentosFundos && ativo.cnpj) {
     const porMes = fechamentosFundos.get(ativo.cnpj);
-    const cota = porMes?.get(anoMes);
-    if (typeof cota === "number" && Number.isFinite(cota) && cota > 0) {
-      return ativo.quantidade * cota;
+    const cotaMes = porMes?.get(anoMes);
+    if (typeof cotaMes === "number" && Number.isFinite(cotaMes) && cotaMes > 0) {
+      // Encontra a cota de referência: mês de aquisição do ativo (ou a mais antiga disponível)
+      const anoMesAquisicao = extrairAnoMes(ativo.dataAquisicao);
+      const cotaRef = porMes?.get(anoMesAquisicao);
+      if (typeof cotaRef === "number" && Number.isFinite(cotaRef) && cotaRef > 0) {
+        // Variação da cota sobre o custo total
+        const custoTotal = ativo.quantidade * ativo.precoMedio;
+        return custoTotal * (cotaMes / cotaRef);
+      }
+      // Se não temos cota no mês de aquisição, usa cota mais antiga do mapa como proxy
+      const mesesOrdenados = Array.from(porMes!.keys()).sort();
+      const cotaMaisAntiga = mesesOrdenados.length > 0 ? porMes!.get(mesesOrdenados[0]) : null;
+      if (typeof cotaMaisAntiga === "number" && cotaMaisAntiga > 0) {
+        const custoTotal = ativo.quantidade * ativo.precoMedio;
+        return custoTotal * (cotaMes / cotaMaisAntiga);
+      }
     }
   }
   if (precosHistoricos && ativo.ticker) {

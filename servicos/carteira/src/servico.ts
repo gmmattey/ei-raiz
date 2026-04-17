@@ -18,6 +18,12 @@ type AtualizacaoMercado = {
   precoAtual: number | null;
   variacaoPercentual: number | null;
   atualizadoEm: string | null;
+  /**
+   * Para fundos CVM: cota na data de aquisição do ativo. Quando presente,
+   * indica que `precoAtual` é uma cota unitária e o retorno deve ser calculado
+   * pela variação (cotaAtual / cotaAquisicao − 1), não pelo par precoAtual × qtd.
+   */
+  cotaAquisicao?: number | null;
 };
 
 type DependenciasServicoCarteira = {
@@ -116,11 +122,25 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
 
     for (const ativo of ativos) {
       const meta = await this.obterAtualizacaoMercado(ativo);
-      const precoAtual = meta.precoAtual ?? ativo.valorAtual / ativo.quantidade;
-      
-      const valorMercadoAtual = precoAtual * ativo.quantidade;
       const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
       const custoAquisicao = precoMedioUnitario * ativo.quantidade;
+
+      // Para fundos CVM: variação da cota sobre o custo (mesma lógica de mapComAtualizacao)
+      let valorMercadoAtual: number;
+      const usarVariacaoCota =
+        meta.fonte === "cvm" &&
+        meta.precoAtual !== null &&
+        meta.cotaAquisicao != null &&
+        meta.cotaAquisicao > 0;
+
+      if (usarVariacaoCota) {
+        const retornoCota = (meta.precoAtual! - meta.cotaAquisicao!) / meta.cotaAquisicao!;
+        valorMercadoAtual = custoAquisicao * (1 + retornoCota);
+      } else {
+        const precoAtual = meta.precoAtual ?? (ativo.quantidade > 0 ? ativo.valorAtual / ativo.quantidade : 0);
+        valorMercadoAtual = precoAtual * ativo.quantidade;
+      }
+
       if (!(Number.isFinite(ativo.precoMedio) && ativo.precoMedio > 0)) {
         todosComBaseCusto = false;
       }
@@ -219,7 +239,24 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       return this.obterCotacaoComCache("brapi", tickerListado);
     }
     if (ativo.categoria === "fundo" && ativo.cnpjFundo) {
-      return this.obterCotacaoComCache("cvm", normalizarCnpj(ativo.cnpjFundo));
+      const meta = await this.obterCotacaoComCache("cvm", normalizarCnpj(ativo.cnpjFundo));
+      // Busca cota na data de aquisição para calcular retorno por variação de cota.
+      // Sem isso, o cálculo precoAtual × quantidade dá errado (cota ≠ preço total).
+      if (meta.precoAtual !== null && this.deps.provedorCotacaoFundos) {
+        const dataAq = ativo.dataAquisicao ?? ativo.dataCadastro;
+        if (dataAq) {
+          try {
+            const cotaAq = await this.deps.provedorCotacaoFundos.obterCotaMaisRecente(
+              normalizarCnpj(ativo.cnpjFundo),
+              dataAq.slice(0, 10),
+            );
+            meta.cotaAquisicao = cotaAq?.vlQuota ?? null;
+          } catch {
+            // fail-silent
+          }
+        }
+      }
+      return meta;
     }
     return {
       fonte: "nenhuma",
@@ -234,9 +271,36 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
     const precoAtual = meta.precoAtual;
     const custoTotal = precoMedioUnitario * ativo.quantidade;
-    const valorAtual = precoAtual !== null ? precoAtual * ativo.quantidade : ativo.valorAtual;
+
+    // ── Cálculo de valor_atual e retorno ──────────────────────────────────────
+    // Para fundos CVM o "precoAtual" é a cota unitária (ex: R$ 16,87), enquanto
+    // "precoMedio" é o total investido (ex: R$ 29.500). Multiplicar cota × qtd
+    // dá errado. Quando temos a cota na data de aquisição, usamos a variação
+    // percentual da cota para derivar valorAtual e retorno sobre o total investido.
+    let valorAtual: number;
+    let ganhoPerdaPercentual: number;
+
+    const usarVariacaoCota =
+      meta.fonte === "cvm" &&
+      precoAtual !== null &&
+      meta.cotaAquisicao != null &&
+      meta.cotaAquisicao > 0;
+
+    if (usarVariacaoCota) {
+      const retornoCota = (precoAtual - meta.cotaAquisicao!) / meta.cotaAquisicao!;
+      valorAtual = custoTotal * (1 + retornoCota);
+      ganhoPerdaPercentual = retornoCota * 100;
+    } else if (precoAtual !== null && meta.fonte !== "cvm") {
+      // Ações / FIIs / BDRs — lógica original: precoAtual × quantidade
+      valorAtual = precoAtual * ativo.quantidade;
+      ganhoPerdaPercentual = custoTotal > 0 ? ((valorAtual - custoTotal) / custoTotal) * 100 : 0;
+    } else {
+      // Sem cotação disponível: mantém valor do DB
+      valorAtual = ativo.valorAtual;
+      ganhoPerdaPercentual = custoTotal > 0 ? ((valorAtual - custoTotal) / custoTotal) * 100 : 0;
+    }
+
     const ganhoPerda = valorAtual - custoTotal;
-    const ganhoPerdaPercentual = custoTotal > 0 ? (ganhoPerda / custoTotal) * 100 : 0;
 
     return {
       id: ativo.id,
