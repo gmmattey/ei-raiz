@@ -4,7 +4,11 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') !== 'light';
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    // Default em light para nao "forcar" dark em dispositivos sem toggle visivel (ex: mobile).
+    return false;
   });
 
   useEffect(() => {

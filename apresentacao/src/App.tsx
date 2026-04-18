@@ -97,10 +97,15 @@ const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =
   return children;
 };
 
-// Fallback de loading para Suspense — usa o Placeholder existente
+// Fallback de loading para Suspense.
+// Nao use Placeholder aqui: ele mostra "Pagina em construcao" e pisca durante navegacao / troca de layout.
 const Loading: React.FC = () => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-    <Placeholder title="" description="" />
+  <div className="flex min-h-[100vh] w-full items-center justify-center bg-[#F5F0EB] p-6">
+    <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-[#EFE7DC] bg-white p-10 shadow-xl">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#EFE7DC] border-t-[#F56A2A]" />
+      <div className="mt-5 font-['Sora'] text-lg font-bold text-[#0B1218]">Carregando...</div>
+      <div className="mt-2 font-['Inter'] text-sm text-[#0B1218]/60">Aguarde um instante.</div>
+    </div>
   </div>
 );
 

@@ -64,14 +64,15 @@ export default function GlobalHeader() {
     };
   }, []);
 
+  const iconVariant = isDarkMode ? 'branco' : 'preto';
   const profileItems = [
-    { label: 'Meu Perfil', icon: assetPath('/assets/icons/preto/perfil.svg'), action: () => navigate('/perfil') },
-    { label: 'Perfil de Risco', icon: assetPath('/assets/icons/preto/radar.svg'), action: () => navigate('/perfil-de-risco') },
-    { label: 'Configurações', icon: assetPath('/assets/icons/preto/configuracoes.svg'), action: () => navigate('/configuracoes') },
-    ...(isAdmin ? [{ label: 'Painel Admin', icon: assetPath('/assets/icons/preto/score.svg'), action: () => navigate('/admin') }] : []),
+    { label: 'Meu Perfil', icon: assetPath(`/assets/icons/${iconVariant}/perfil.svg`), action: () => navigate('/perfil') },
+    { label: 'Perfil de Risco', icon: assetPath(`/assets/icons/${iconVariant}/radar.svg`), action: () => navigate('/perfil-de-risco') },
+    { label: 'Configurações', icon: assetPath(`/assets/icons/${iconVariant}/configuracoes.svg`), action: () => navigate('/configuracoes') },
+    ...(isAdmin ? [{ label: 'Painel Admin', icon: assetPath(`/assets/icons/${iconVariant}/score.svg`), action: () => navigate('/admin') }] : []),
     { 
       label: 'Sair da conta', 
-      icon: assetPath('/assets/icons/preto/fechar.svg'),
+      icon: assetPath(`/assets/icons/${iconVariant}/fechar.svg`),
       color: 'text-[#E85C5C]', 
       action: () => {
         clearSession();
@@ -163,12 +164,12 @@ export default function GlobalHeader() {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)}></div>
-                  <div className="absolute right-0 z-[60] mt-4 w-52 rounded-xl border border-[#EFE7DC] bg-white p-2 text-left shadow-2xl animate-in slide-in-from-top-2">
+                  <div className="absolute right-0 z-[60] mt-4 w-52 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-2 text-left shadow-2xl animate-in slide-in-from-top-2">
                     {profileItems.map((item) => (
                       <button
                         key={item.label}
                         onClick={() => { item.action(); setMenuOpen(false); }}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-[#F5F0EB] ${item.color || 'text-[#0B1218]/60'}`}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-[var(--bg-card-alt)] ${item.color || 'text-[var(--text-secondary)]'}`}
                       >
                         <img src={item.icon} alt="" className="h-[14px] w-[14px] shrink-0" />
                         {item.label}

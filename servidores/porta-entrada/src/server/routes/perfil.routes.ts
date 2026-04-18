@@ -43,6 +43,11 @@ const contextoFinanceiroSchema = z.object({
   dividas: z.array(z.object({ id: z.string().min(1), tipo: z.string().min(1), saldoDevedor: z.number(), parcelaMensal: z.number().optional() })).default([]),
 });
 
+const preferenciasUsuarioSchema = z.object({
+  tema: z.enum(["light", "dark"]).optional(),
+  ocultarValores: z.boolean().optional(),
+});
+
 export async function handlePerfilRoutes(
   pathname: string,
   request: Request,
@@ -98,6 +103,51 @@ export async function handlePerfilRoutes(
 
   if (pathname === "/api/perfil/plataformas" && request.method === "GET") {
     return sucesso(await perfilService.listarPlataformas(userId));
+  }
+
+  if (pathname === "/api/perfil/preferencias" && request.method === "GET") {
+    const row = await env.DB
+      .prepare("SELECT tema, ocultar_valores, atualizado_em FROM preferencias_usuario WHERE usuario_id = ? LIMIT 1")
+      .bind(userId)
+      .first<{ tema: string | null; ocultar_valores: number | null; atualizado_em: string | null }>();
+
+    return sucesso({
+      tema: row?.tema === "dark" ? "dark" : "light",
+      ocultarValores: row?.ocultar_valores === 1,
+      atualizadoEm: row?.atualizado_em ?? null,
+    });
+  }
+
+  if (pathname === "/api/perfil/preferencias" && request.method === "PUT") {
+    const body = preferenciasUsuarioSchema.parse(await parseJsonBody(request));
+    const existente = await env.DB
+      .prepare("SELECT tema, ocultar_valores FROM preferencias_usuario WHERE usuario_id = ? LIMIT 1")
+      .bind(userId)
+      .first<{ tema: string | null; ocultar_valores: number | null }>();
+
+    const temaFinal = body.tema ?? (existente?.tema === "dark" ? "dark" : "light");
+    const ocultarValoresFinal = body.ocultarValores ?? (existente?.ocultar_valores === 1);
+    const agora = new Date().toISOString();
+
+    await env.DB
+      .prepare(
+        [
+          "INSERT INTO preferencias_usuario (id, usuario_id, tema, ocultar_valores, atualizado_em)",
+          "VALUES (?, ?, ?, ?, ?)",
+          "ON CONFLICT(usuario_id) DO UPDATE SET",
+          "tema = excluded.tema,",
+          "ocultar_valores = excluded.ocultar_valores,",
+          "atualizado_em = excluded.atualizado_em",
+        ].join(" "),
+      )
+      .bind(`pref_${userId}`, userId, temaFinal, ocultarValoresFinal ? 1 : 0, agora)
+      .run();
+
+    return sucesso({
+      tema: temaFinal,
+      ocultarValores: ocultarValoresFinal,
+      atualizadoEm: agora,
+    });
   }
 
   return null;

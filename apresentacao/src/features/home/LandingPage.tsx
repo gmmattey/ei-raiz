@@ -51,7 +51,7 @@ const Button = ({ children, variant = 'primary', className = '', disabled = fals
 // --- MODAL DE LOGIN (ESTILO BANCO) ---
 const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'default', initialEmail = '' }) => {
   const navigate = useNavigate();
-  const { setThemeMode } = useTheme();
+  const { isDarkMode, setThemeMode } = useTheme();
   const { setOcultarValores } = useModoVisualizacao();
   const [loginStep, setLoginStep] = useState('default');
   const [passwordInput, setPasswordInput] = useState('');
@@ -521,7 +521,7 @@ const SectionFaq = ({ id, titulo, subtitulo }) => (
 export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setThemeMode } = useTheme();
+  const { isDarkMode, setThemeMode } = useTheme();
   const { texto, booleano } = useConteudoApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
