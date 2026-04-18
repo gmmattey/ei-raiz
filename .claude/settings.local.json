@@ -31,7 +31,8 @@
       "Bash(rm -f node_modules/@ei/servico-carteira)",
       "Bash(rm -f node_modules/@ei/servico-decisoes)",
       "Bash(rm -f node_modules/@ei/servico-historico)",
-      "Bash(rm -f node_modules/@ei/servico-importacao)"
+      "Bash(rm -f node_modules/@ei/servico-importacao)",
+      "Bash(tasklist)"
     ]
   }
 }
