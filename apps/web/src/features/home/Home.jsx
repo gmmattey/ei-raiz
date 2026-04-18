@@ -98,26 +98,41 @@ export default function HomeLobby() {
 
     return <motion.span>{displayValue}</motion.span>;
   };
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [resumo, setResumo] = useState(null);
-  const [insights, setInsights] = useState(null);
-  const [perfilIncompleto, setPerfilIncompleto] = useState(false);
-  const [completudePerfil, setCompletudePerfil] = useState(0);
-  const [usuario, setUsuario] = useState(() => getStoredUser());
-  const [perfilDados, setPerfilDados] = useState(null);
-  const [quickActionMenus, setQuickActionMenus] = useState([]);
-  const [onboardingPopupOpen, setOnboardingPopupOpen] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(2);
-  const [ocultarBannerOnboarding, setOcultarBannerOnboarding] = useState(false);
-  const [quickModalOpen, setQuickModalOpen] = useState(false);
-  const [quickModalType, setQuickModalType] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { ocultarValores } = useModoVisualizacao();
   const showSuccessImport = location.state?.showSuccessImport;
   const importedItems = location.state?.importedItems;
   const openQuickModalFromState = location.state?.openQuickModal;
+  const [loading, setLoading] = useState(() => {
+    if (showSuccessImport) return true;
+    return !cache.get(HOME_CACHE_KEY)?.resumo;
+  });
+  const [error, setError] = useState('');
+  const [resumo, setResumo] = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.resumo ?? null)
+  );
+  const [insights, setInsights] = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.insights ?? null)
+  );
+  const [perfilIncompleto, setPerfilIncompleto] = useState(() =>
+    showSuccessImport ? false : Boolean(cache.get(HOME_CACHE_KEY)?.perfilIncompleto)
+  );
+  const [completudePerfil, setCompletudePerfil] = useState(() =>
+    showSuccessImport ? 0 : Number(cache.get(HOME_CACHE_KEY)?.completudePerfil ?? 0)
+  );
+  const [usuario, setUsuario] = useState(() => getStoredUser());
+  const [perfilDados, setPerfilDados] = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.perfilDados ?? null)
+  );
+  const [quickActionMenus, setQuickActionMenus] = useState(() =>
+    showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.quickActionMenus ?? [])
+  );
+  const [onboardingPopupOpen, setOnboardingPopupOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(2);
+  const [ocultarBannerOnboarding, setOcultarBannerOnboarding] = useState(false);
+  const [quickModalOpen, setQuickModalOpen] = useState(false);
+  const [quickModalType, setQuickModalType] = useState(null);
 
   useEffect(() => {
     if (showSuccessImport) {

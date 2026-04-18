@@ -7,6 +7,7 @@ import {
 import EstadoVazio from '../../components/feedback/EstadoVazio';
 import { formatarData } from '../../utils/formatarData';
 import { ApiError, insightsApi, telemetriaApi, avaliarComVera } from '../../cliente-api';
+import { cache } from '../../utils/cache';
 import { useNavigate } from 'react-router-dom';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { VeraCard } from '../vera/VeraCard';
@@ -136,21 +137,41 @@ const resolverUrlAcao = (codigo) => {
   return '/decisoes';
 };
 
+const INSIGHTS_CACHE_KEY = 'insights_resumo';
+const INSIGHTS_CACHE_TTL = 300 * 1000; // 5 min
+
 export default function Insights() {
   const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL));
   const [error, setError] = useState('');
-  const [resumo, setResumo] = useState(null);
+  const [resumo, setResumo] = useState(() => cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL) ?? null);
   const [veraPayload, setVeraPayload] = useState(null);
 
   useEffect(() => {
     let ativo = true;
     (async () => {
       try {
+        const cached = cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL);
+        if (cached) {
+          setResumo(cached);
+          setLoading(false);
+          // atualiza em background sem mostrar loading
+          void (async () => {
+            try {
+              const dados = await insightsApi.obterResumo();
+              if (ativo) {
+                cache.set(INSIGHTS_CACHE_KEY, dados);
+                setResumo(dados);
+              }
+            } catch { /* silencioso */ }
+          })();
+          return;
+        }
         setLoading(true);
         setError('');
         const dados = await insightsApi.obterResumo();
+        if (ativo) cache.set(INSIGHTS_CACHE_KEY, dados);
         if (!ativo) return;
         setResumo(dados);
         await telemetriaApi.registrarEventoTelemetria('insight_opened', { score: dados?.score?.score ?? 0 });

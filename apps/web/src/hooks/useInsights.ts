@@ -4,7 +4,7 @@ import type { ResumoInsights } from "../cliente-api/insights";
 import { cache } from "../utils/cache";
 
 const CACHE_KEY = "insights_resumo";
-const CACHE_TTL_MS = 60 * 1000; // 60s
+const CACHE_TTL_MS = 300 * 1000; // 5 min
 
 export function useInsights() {
   const [dados, setDados] = useState<ResumoInsights | null>(() =>

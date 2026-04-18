@@ -438,15 +438,29 @@ export default function Carteira({ embedded = false }) {
   const [plataformaFiltro, setPlataformaFiltro] = useState("todas");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [ordenacao, setOrdenacao] = useState("valor_desc");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    const cv1 = cache.get('carteira_v1');
+    return !cv1?.resumo || !Array.isArray(cv1?.ativos);
+  });
   const [error, setError] = useState("");
-  const [resumo, setResumo] = useState(null);
-  const [ativos, setAtivos] = useState([]);
+  const [resumo, setResumo] = useState(() => cache.get('carteira_v1')?.resumo ?? null);
+  const [ativos, setAtivos] = useState(() => {
+    const cv1 = cache.get('carteira_v1');
+    return Array.isArray(cv1?.ativos) ? cv1.ativos : [];
+  });
   const [atualizandoMercado, setAtualizandoMercado] = useState(false);
   const [ultimoRefreshMercado, setUltimoRefreshMercado] = useState(null);
-  const [scoreUnificado, setScoreUnificado] = useState(null);
-  const [classificacaoScore, setClassificacaoScore] = useState(null);
-  const [dashboardPatrimonio, setDashboardPatrimonio] = useState(null);
+  const [scoreUnificado, setScoreUnificado] = useState(() => {
+    const ins = cache.get('insights_resumo', 300_000);
+    return ins?.scoreUnificado ?? ins?.score_unificado ?? null;
+  });
+  const [classificacaoScore, setClassificacaoScore] = useState(() => {
+    const ins = cache.get('insights_resumo', 300_000);
+    return ins?.classificacao ?? null;
+  });
+  const [dashboardPatrimonio, setDashboardPatrimonio] = useState(() =>
+    cache.get('carteira_dashboard', 300_000) ?? null
+  );
   const [benchmark, setBenchmark] = useState(null);
   const [categoriasColapsadas, setCategoriasColapsadas] = useState(() => 
     Object.fromEntries(tiposDisponiveis.map(cat => [cat, true]))
@@ -458,10 +472,13 @@ export default function Carteira({ embedded = false }) {
   }, []);
 
   const carregarDados = useCallback(async () => {
-    setLoading(true);
+    const cv1Cache = cache.get('carteira_v1');
+    if (!cv1Cache?.resumo) {
+      setLoading(true);
+    }
     setError("");
     try {
-      const TTL = 60 * 1000;
+      const TTL = 300 * 1000;
       const resumoCached = cache.get('carteira_resumo', TTL);
       const insightsCached = cache.get('insights_resumo', TTL);
       const dashboardCached = cache.get('carteira_dashboard', TTL);

@@ -6,7 +6,7 @@ import { cache } from "../utils/cache";
 
 const CACHE_KEY_RESUMO = "carteira_resumo";
 const CACHE_KEY_DASHBOARD = "carteira_dashboard";
-const CACHE_TTL_MS = 60 * 1000; // 60s
+const CACHE_TTL_MS = 300 * 1000; // 5 min
 
 export type PortfolioData = {
   resumo: ResumoCarteira | null;
