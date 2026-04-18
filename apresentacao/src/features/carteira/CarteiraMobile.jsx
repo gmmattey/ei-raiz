@@ -4,6 +4,48 @@ import { carteiraApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { assetPath } from '../../utils/assetPath';
 
+const getConsolidationKey = (asset) => {
+  if (asset.categoria === 'acao') return asset.ticker;
+  if (asset.categoria === 'fundo') return `fundo_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'renda_fixa') return `rf_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'previdencia') return `prev_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'poupanca') return `poup_${asset.nome}`;
+  if (asset.categoria === 'bens') return `bem_${asset.nome}`;
+  return asset.ticker || asset.nome;
+};
+
+const consolidarAtivos = (ativos) => {
+  const mapa = {};
+
+  for (const ativo of ativos) {
+    const chave = getConsolidationKey(ativo);
+
+    if (!mapa[chave]) {
+      mapa[chave] = { ...ativo };
+    } else {
+      const existing = mapa[chave];
+      const qtdNova = Number(ativo.quantidade ?? 0);
+      const precoNovo = Number(ativo.precoMedio ?? ativo.preco_medio ?? 0);
+      const qtdExisting = Number(existing.quantidade ?? 0);
+      const precoExisting = Number(existing.precoMedio ?? existing.preco_medio ?? 0);
+      const valorAtualNovo = Number(ativo.valorAtual ?? 0);
+      const valorAtualExisting = Number(existing.valorAtual ?? 0);
+
+      const totalQtd = qtdExisting + qtdNova;
+      const precoMedioPonderado = totalQtd > 0
+        ? ((qtdExisting * precoExisting) + (qtdNova * precoNovo)) / totalQtd
+        : precoExisting;
+
+      existing.quantidade = totalQtd;
+      existing.precoMedio = precoMedioPonderado;
+      existing.preco_medio = precoMedioPonderado;
+      existing.valorAtual = valorAtualExisting + valorAtualNovo;
+    }
+  }
+
+  return Object.values(mapa);
+};
+
 const CATEGORIAS = [
   { key: 'acao', label: 'Acoes', route: '/acoes', icon: '/assets/icons/laranja/grafico-premium.svg' },
   { key: 'fundo', label: 'Fundos', route: '/fundos', icon: '/assets/icons/laranja/fundos-premium.svg' },
@@ -22,15 +64,23 @@ export default function CarteiraMobile() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [dashboard, setDashboard] = useState(null);
+  const [ativos, setAtivos] = useState([]);
 
   useEffect(() => {
     let ativo = true;
     (async () => {
       try {
         setLoading(true);
-        const dados = await carteiraApi.obterDashboardPatrimonio();
+        const [dados, ativos] = await Promise.all([
+          carteiraApi.obterDashboardPatrimonio(),
+          carteiraApi.listarAtivosCarteira(),
+        ]);
         if (!ativo) return;
+
+        const ativosConsolidados = Array.isArray(ativos) ? consolidarAtivos(ativos) : [];
+
         setDashboard(dados);
+        setAtivos(ativosConsolidados);
         setErro('');
       } catch {
         if (ativo) setErro('Nao foi possivel carregar a carteira.');
@@ -44,12 +94,21 @@ export default function CarteiraMobile() {
   }, []);
 
   const cards = useMemo(() => {
-    const totais = dashboard?.totais ?? {};
+    const totaisPorCategoria = {};
+    const total = { todos: 0 };
+
+    for (const ativo of ativos) {
+      const cat = ativo.categoria || 'outros';
+      const valor = Number(ativo.valorAtual ?? 0);
+      totaisPorCategoria[cat] = (totaisPorCategoria[cat] ?? 0) + valor;
+      total.todos += valor;
+    }
+
     return CATEGORIAS.map((categoria) => ({
       ...categoria,
-      valor: Number(totais[categoria.key] ?? 0),
+      valor: totaisPorCategoria[categoria.key] ?? 0,
     })).sort((a, b) => b.valor - a.valor);
-  }, [dashboard]);
+  }, [ativos]);
 
   return (
     <section className="space-y-4 pb-4">
@@ -61,7 +120,7 @@ export default function CarteiraMobile() {
         <div className="flex items-center justify-between text-[12px]">
           <span className="text-[var(--text-secondary)]">Patrimonio consolidado</span>
           <span className="font-bold text-[#F56A2A]">
-            {ocultarValores ? '••••••' : formatCurrency(dashboard?.totais?.todos ?? 0)}
+            {ocultarValores ? '••••••' : formatCurrency(ativos.reduce((acc, a) => acc + Number(a.valorAtual ?? 0), 0))}
           </span>
         </div>
       </article>
