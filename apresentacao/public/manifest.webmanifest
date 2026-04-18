@@ -1,0 +1,18 @@
+{
+  "name": "Esquilo Invest",
+  "short_name": "Esquilo",
+  "description": "Consolidar carteira, traduzir riscos e orientar decisoes com dados reais.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1218",
+  "theme_color": "#0B1218",
+  "icons": [
+    {
+      "src": "/assets/logo/esquilo-invest-simbolo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
