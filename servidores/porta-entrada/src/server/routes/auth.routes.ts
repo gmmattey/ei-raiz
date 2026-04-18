@@ -3,6 +3,7 @@ import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso } from "../types/gateway";
 import { construirServicoReconstrucao } from "../services/construir-servico-reconstrucao";
+import { notificarRecuperacaoSenha } from "../services/email/password-reset";
 
 const TAMANHO_LOTE_AUTORECONSTRUCAO = 6;
 
@@ -34,20 +35,7 @@ export function buildAuthService(env: Env): ServicoAutenticacaoPadrao {
     repositorio: new RepositorioAutenticacaoD1(env.DB),
     segredoJWT: env.JWT_SECRET || "dev-secret",
     notificarRecuperacaoSenha: async ({ email, token, expiraEm }) => {
-      const webhook = env.PASSWORD_RESET_WEBHOOK_URL?.trim();
-      if (!webhook) {
-        console.log("----------------------------------------------------------");
-        console.log(`[DEV] Recuperação de senha solicitada para: ${email}`);
-        console.log(`[DEV] Token: ${token}`);
-        console.log(`[DEV] Expira em: ${expiraEm}`);
-        console.log("----------------------------------------------------------");
-        return;
-      }
-      await fetch(webhook, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: "password_reset", email, token, expiraEm }),
-      });
+      await notificarRecuperacaoSenha(env, { email, token, expiraEm });
     },
   });
 }

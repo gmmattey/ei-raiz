@@ -16,6 +16,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        // ES5-only: roda também em navegadores bem antigos.
+        // Objetivo: só desliga o "premium" quando o navegador não consegue nem carregar a versão moderna.
+        var html = document && document.documentElement;
+        if (!html) return;
+
+        var supportsDynamicImport = false;
+        try {
+          // Detecta suporte ao `import()` (usado pelo Vite para chunks/lazy).
+          // Em browsers sem suporte, isso dispara SyntaxError e cai no catch.
+          new Function('return import(\"data:text/javascript,export default 1\")');
+          supportsDynamicImport = true;
+        } catch (e) {
+          supportsDynamicImport = false;
+        }
+
+        var hasTouch = false;
+        try {
+          hasTouch = 'ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0);
+        } catch (e) {}
+
+        // Heurística: navegadores que não suportam `import()` precisam do bundle legacy (e devem receber CSS/UX simplificado).
+        // Em geral, isso cobre iPads/ iOS antigos e WebViews legadas.
+        var isLegacy = !supportsDynamicImport;
+
+        if (isLegacy) {
+          html.className = (html.className ? html.className + ' ' : '') + 'legacy';
+          try {
+            window.__EI_LEGACY__ = { reason: 'no-dynamic-import', touch: hasTouch };
+          } catch (e) {}
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

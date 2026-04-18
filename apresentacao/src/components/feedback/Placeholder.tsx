@@ -5,9 +5,10 @@ import { ArrowLeft, Construction } from 'lucide-react';
 interface PlaceholderProps {
   title?: string;
   description?: string;
+  actions?: React.ReactNode;
 }
 
-const Placeholder: React.FC<PlaceholderProps> = ({ title, description }) => {
+const Placeholder: React.FC<PlaceholderProps> = ({ title, description, actions }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -23,12 +24,16 @@ const Placeholder: React.FC<PlaceholderProps> = ({ title, description }) => {
         <Construction size={64} className="mb-6 self-center text-[#F56A2A] animate-pulse" />
         <h1 className="font-['Sora'] text-3xl font-bold text-[var(--text-primary)] mb-4">{pageTitle}</h1>
         <p className="font-['Inter'] text-[var(--text-secondary)] mb-8 leading-relaxed">{pageDescription}</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center justify-center gap-2 self-center rounded-xl bg-[var(--text-primary)] px-6 py-3 font-semibold text-[var(--bg-primary)] transition-all hover:opacity-90"
-        >
-          <ArrowLeft size={18} /> Voltar para a base
-        </button>
+        {actions ? (
+          actions
+        ) : (
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center justify-center gap-2 self-center rounded-xl bg-[var(--text-primary)] px-6 py-3 font-semibold text-[var(--bg-primary)] transition-all hover:opacity-90"
+          >
+            <ArrowLeft size={18} /> Voltar para a base
+          </button>
+        )}
       </div>
     </div>
   );

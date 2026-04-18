@@ -8,6 +8,9 @@ export type Env = {
   CVM_BASE_URL?: string;
   FIPE_BASE_URL?: string;
   PASSWORD_RESET_WEBHOOK_URL?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  WEB_BASE_URL?: string;
 };
 
 export type ServiceError = {

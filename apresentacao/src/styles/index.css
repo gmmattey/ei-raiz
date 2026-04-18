@@ -80,6 +80,37 @@
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Modo Legacy (ex.: iPad antigo / WebView antiga)
+   - Premium continua sendo o default.
+   - Aqui só entra quando o navegador não consegue carregar a versão moderna.
+   - Objetivo: abrir SEM quebrar e manter UI limpa, mesmo que com menos efeitos.
+   ────────────────────────────────────────────────────────────────────────── */
+
+html.legacy {
+  scroll-behavior: auto;
+}
+
+html.legacy *,
+html.legacy *::before,
+html.legacy *::after {
+  /* Evita travamentos/reflows pesados em hardware antigo */
+  animation: none !important;
+  transition: none !important;
+}
+
+html.legacy * {
+  /* Backdrop/filter costumam derrubar performance e podem falhar em Safari antigo */
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.legacy img {
+  /* `content-visibility` pode causar artefatos em engines antigas */
+  content-visibility: visible;
+}
+
 /* Fallback para telas antigas com classes hardcoded */
 .dark [class*="bg-white"],
 .dark [class*="bg-[#FAFAFA]"],

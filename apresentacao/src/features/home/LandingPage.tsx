@@ -49,7 +49,7 @@ const Button = ({ children, variant = 'primary', className = '', disabled = fals
 };
 
 // --- MODAL DE LOGIN (ESTILO BANCO) ---
-const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'default', initialEmail = '' }) => {
+const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'default', initialEmail = '', initialToken = '' }) => {
   const navigate = useNavigate();
   const { isDarkMode, setThemeMode } = useTheme();
   const { setOcultarValores } = useModoVisualizacao();
@@ -79,17 +79,17 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
       setPasswordInput('');
       setEmailInput(initialEmail || '');
       setCpfInput('');
-      setTokenInput('');
+      setTokenInput(initialToken || '');
       setNewPasswordInput('');
       setRecoveryInfo('');
       setAuthError(alertaInicial);
-      setForgotPasswordStage('email');
+      setForgotPasswordStage(initialStep === 'forgotPassword' && initialToken ? 'reset' : 'email');
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
     return () => { document.body.style.overflow = 'auto'; };
-  }, [alertaInicial, initialEmail, initialStep, isOpen]);
+  }, [alertaInicial, initialEmail, initialStep, initialToken, isOpen]);
 
   const handleLoginSubmit = async () => {
     const email = emailInput.trim().toLowerCase();
@@ -529,6 +529,7 @@ export default function LandingPage() {
   const [onboardingInitialStep, setOnboardingInitialStep] = useState(1);
   const [loginInitialStep, setLoginInitialStep] = useState('default');
   const [loginInitialEmail, setLoginInitialEmail] = useState('');
+  const [loginInitialToken, setLoginInitialToken] = useState('');
   const [alertaLogin, setAlertaLogin] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
@@ -561,6 +562,7 @@ export default function LandingPage() {
     const abrirLogin = params.get('abrir') === 'login';
     const stepLogin = params.get('step') || 'default';
     const emailLogin = params.get('email') || '';
+    const tokenLogin = params.get('token') || '';
     if (location.pathname === '/onboarding') {
       const passo = Number(params.get('passo') || 1);
       setOnboardingInitialStep(Number.isFinite(passo) && passo > 0 ? passo : 1);
@@ -571,6 +573,7 @@ export default function LandingPage() {
     if (abrirLogin) {
       setLoginInitialStep(stepLogin);
       setLoginInitialEmail(emailLogin);
+      setLoginInitialToken(tokenLogin);
       setIsLoginModalOpen(true);
       return;
     }
@@ -579,6 +582,7 @@ export default function LandingPage() {
     if (sessaoExpiradaPorQuery || sessaoExpiradaPorStorage) {
       setLoginInitialStep('default');
       setLoginInitialEmail('');
+      setLoginInitialToken('');
       setAlertaLogin('Sua sessão expirou por segurança. Entre novamente para continuar.');
       setIsLoginModalOpen(true);
       return;
@@ -606,6 +610,7 @@ export default function LandingPage() {
         alertaInicial={alertaLogin}
         initialStep={loginInitialStep}
         initialEmail={loginInitialEmail}
+        initialToken={loginInitialToken}
       />
       {isOnboardingModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { consumirMotivoSaidaSessao } from './cliente-api';
 
@@ -185,6 +185,59 @@ const ResponsiveSimulator: React.FC<{ title: string; desktop: React.ReactElement
   return isMobile ? <DecisionScenarioMobile title={title} /> : desktop;
 };
 
+const DesktopOnlyGate: React.FC<{ title: string; description: string; desktop: React.ReactElement }> = ({
+  title,
+  description,
+  desktop,
+}) => {
+  const isMobile = useIsMobile();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const storageKey = `ei:force-desktop:${location.pathname}`;
+  const [forceDesktop, setForceDesktop] = React.useState(() => {
+    try {
+      return window.sessionStorage.getItem(storageKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  if (!isMobile || forceDesktop) return desktop;
+
+  return (
+    <div className="p-6">
+      <Placeholder
+        title={title}
+        description={description}
+        actions={
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              className="rounded-xl border border-[#EFE7DC] bg-white px-4 py-3 text-sm font-semibold text-[#0B1218] shadow-sm transition hover:bg-[#FAFAFA]"
+              onClick={() => navigate('/home')}
+            >
+              Voltar para Home
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-[#0B1218] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              onClick={() => {
+                try {
+                  window.sessionStorage.setItem(storageKey, '1');
+                } catch {}
+                setForceDesktop(true);
+              }}
+            >
+              Abrir mesmo assim
+            </button>
+          </div>
+        }
+      />
+    </div>
+  );
+};
+
 // ─── Rotas ───────────────────────────────────────────────────────────────────
 
 const AnimatedRoutes: React.FC = () => {
@@ -204,7 +257,20 @@ const AnimatedRoutes: React.FC = () => {
           {/* Home */}
           <Route path="/home" element={<ProtectedRoute><ResponsiveLayout><ResponsiveHome /></ResponsiveLayout></ProtectedRoute>} />
           <Route path="/pre-insight" element={<ProtectedRoute><ResponsiveLayout><PreInsight /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><ResponsiveLayout><Dashboard /></ResponsiveLayout></ProtectedRoute>} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <ResponsiveLayout>
+                  <DesktopOnlyGate
+                    title="Dashboard ainda não está pronto para mobile"
+                    description="No PWA/mobile, esta tela ainda renderiza a versão desktop e fica ruim de usar. Estamos adaptando. Se precisar, você pode abrir mesmo assim."
+                    desktop={<Dashboard />}
+                  />
+                </ResponsiveLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Carteira */}
           <Route path="/carteira" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCarteira /></ResponsiveLayout></ProtectedRoute>} />
@@ -230,7 +296,20 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/decisoes/reserva-ou-financiar" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Reserva ou financiar" desktop={<ReserveOrFinanceSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
           <Route path="/decisoes/gastar-ou-investir" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Gastar ou investir" desktop={<SpendOrInvestSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
           <Route path="/decisoes/livre" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Simulador livre" desktop={<FreeSimulationSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/historico" element={<ProtectedRoute><ResponsiveLayout><SimulationHistory /></ResponsiveLayout></ProtectedRoute>} />
+          <Route
+            path="/decisoes/historico"
+            element={
+              <ProtectedRoute>
+                <ResponsiveLayout>
+                  <DesktopOnlyGate
+                    title="Histórico de simulações ainda não está pronto para mobile"
+                    description="No PWA/mobile, esta tela ainda abre a versão desktop. Se você precisar acessar agora, dá para abrir mesmo assim."
+                    desktop={<SimulationHistory />}
+                  />
+                </ResponsiveLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/decisoes/resultado/:id" element={<ProtectedRoute><ResponsiveLayout><ResponsiveResultadoSimulacao /></ResponsiveLayout></ProtectedRoute>} />
 
           {/* Perfil */}
@@ -239,7 +318,20 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/configuracoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveConfiguracoes /></ResponsiveLayout></ProtectedRoute>} />
 
           {/* Admin */}
-          <Route path="/admin" element={<ProtectedRoute><ResponsiveLayout><PainelAdmin /></ResponsiveLayout></ProtectedRoute>} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <ResponsiveLayout>
+                  <DesktopOnlyGate
+                    title="Admin é desktop-only no momento"
+                    description="Esta área ainda não foi adaptada para mobile/PWA. Para evitar uma experiência ruim, ela fica protegida aqui. Se precisar, você pode abrir mesmo assim."
+                    desktop={<PainelAdmin />}
+                  />
+                </ResponsiveLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
           <Route
