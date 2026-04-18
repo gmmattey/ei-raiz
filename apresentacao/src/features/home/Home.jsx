@@ -1,151 +1,135 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowRight, TrendingUp, AlertCircle, CheckCircle2, UserRound, UploadCloud, CandlestickChart, Landmark, WalletCards, PiggyBank, House, Gem, X } from 'lucide-react';
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { LineChart, Line, ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  TrendingUp, AlertCircle, CheckCircle2,
+  UploadCloud, X, Search, ChevronRight,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AreaChart, Area, LineChart, Line, ResponsiveContainer,
+  XAxis, YAxis, Tooltip,
+} from 'recharts';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ApiError, carteiraApi, insightsApi, perfilApi, configApi, getStoredUser } from '../../cliente-api';
+import {
+  ApiError, carteiraApi, insightsApi, perfilApi, configApi,
+  historicoApi, getStoredUser,
+} from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
+import { useTheme } from '../../context/ThemeContext';
+import { assetPath } from '../../utils/assetPath';
 import Onboarding from '../onboarding/onboarding';
-import Carteira from '../carteira/Carteira';
 import PerfilUsuario from '../perfil/PerfilUsuario';
 import Importar from '../importacao/Importar';
 import Configuracoes from '../perfil/Configuracoes';
 
 const HOME_CACHE_KEY = 'home_v1';
-const DONUT_COLORS = {
-  investimentos: '#F56A2A',
-  bens: '#6FCF97',
-  poupanca: '#A7B0BC',
+
+const ALOCACAO_CONFIG = [
+  { key: 'acao',        label: 'Ações',       cor: '#F56A2A' },
+  { key: 'renda_fixa',  label: 'Renda Fixa',  cor: '#6FCF97' },
+  { key: 'fundo',       label: 'FIIs',         cor: '#3B82F6' },
+  { key: 'previdencia', label: 'Previdência',  cor: '#F2C94C' },
+  { key: 'poupanca',    label: 'Poupança',     cor: '#A7B0BC' },
+  { key: 'bens',        label: 'Bens',         cor: '#9B59B6' },
+];
+
+const QUICK_ACTIONS = [
+  { label: 'Importar',     icon: 'importar',      path: '/importar' },
+  { label: 'Carteira',     icon: 'carteira',      path: '/carteira' },
+  { label: 'Decisões',     icon: 'score',         path: '/decisoes' },
+  { label: 'Histórico',    icon: 'historico',     path: '/historico' },
+  { label: 'Perfil',       icon: 'perfil',        path: '/perfil' },
+  { label: 'Config.',      icon: 'configuracoes', path: '/configuracoes' },
+];
+
+const FILTROS_ALL = ['1M', '3M', '6M', '1A', 'Max'];
+const FILTROS_MESES = { '1M': 1, '3M': 3, '6M': 6, '1A': 12 };
+
+const fmt = (v) =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: 'BRL', maximumFractionDigits: 0,
+  }).format(Number(v || 0));
+
+const fmtPct = (v) =>
+  `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
+
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const formatMes = (anoMes) => {
+  const [, mes] = (anoMes || '').split('-');
+  return MESES_ABREV[parseInt(mes, 10) - 1] ?? anoMes;
 };
 
-const DonutDistribuicaoPatrimonio = ({ total = 0, itens = [] }) => {
-  const itensValidos = itens.filter((i) => i.valor > 0);
-  if (!itensValidos.length || total <= 0) return null;
-  let acumulado = 0;
-  const segmentos = itensValidos.map((item) => {
-    const inicio = acumulado;
-    const fatia = (item.valor / total) * 100;
-    acumulado += fatia;
-    return `${item.cor} ${inicio.toFixed(2)}% ${acumulado.toFixed(2)}%`;
-  });
-  const background = `conic-gradient(${segmentos.join(',')})`;
+const getSaudacao = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+};
 
-  return (
-    <div className="w-full md:w-[220px] shrink-0">
-      <div className="mx-auto relative h-[136px] w-[136px]">
-        <div className="h-full w-full rounded-full" style={{ background }} />
-        <div className="absolute inset-[18px] rounded-full bg-[var(--bg-card)] border border-[var(--border-color)]" />
-      </div>
-      <div className="mt-3 space-y-1.5">
-        {itensValidos.map((item) => (
-          <div key={item.id} className="flex items-center justify-between gap-3 text-[10px]">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.cor }} />
-              <span className="font-semibold text-[var(--text-secondary)] truncate">{item.label}</span>
-            </div>
-            <span className="text-[var(--text-muted)] font-bold">{item.percentual.toFixed(0)}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+const getNomeExibicao = (nomeCompleto) => {
+  const partes = String(nomeCompleto || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return 'investidor(a)';
+  if (partes.length >= 2) return `${partes[0]} ${partes[1]}`;
+  return partes[0];
 };
 
 export default function HomeLobby() {
   const { texto } = useConteudoApp();
-
-  const ScoreSparkline = ({ historico }) => {
-    if (!historico || historico.length < 2) return null;
-    const isPositivo = historico[historico.length - 1] >= historico[0];
-    const corBase = isPositivo ? '#F56A2A' : '#E85C5C';
-    const data = historico.map((v, i) => ({ value: v, index: i }));
-  
-    return (
-      <div className={`h-8 w-16 ml-3 opacity-80 mix-blend-plus-lighter`}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              stroke={corBase} 
-              strokeWidth={2} 
-              dot={false} 
-              isAnimationActive={true}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  };
-
-  const AnimatedCounter = ({ value, isCurrency = false }) => {
-    const motionValue = useMotionValue(0);
-    const springValue = useSpring(motionValue, {
-      damping: 30,
-      stiffness: 70
-    });
-    const displayValue = useTransform(springValue, (v) => 
-      isCurrency 
-        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
-        : Math.round(v)
-    );
-    
-    useEffect(() => {
-      motionValue.set(value || 0);
-    }, [value, motionValue]);
-
-    return <motion.span>{displayValue}</motion.span>;
-  };
   const navigate = useNavigate();
   const location = useLocation();
   const { ocultarValores } = useModoVisualizacao();
-  const showSuccessImport = location.state?.showSuccessImport;
-  const importedItems = location.state?.importedItems;
+  const { isDarkMode } = useTheme();
+
+  const showSuccessImport       = location.state?.showSuccessImport;
+  const importedItems           = location.state?.importedItems;
   const openQuickModalFromState = location.state?.openQuickModal;
-  const [loading, setLoading] = useState(() => {
+
+  const [loading, setLoading]   = useState(() => {
     if (showSuccessImport) return true;
     return !cache.get(HOME_CACHE_KEY)?.resumo;
   });
-  const [error, setError] = useState('');
-  const [resumo, setResumo] = useState(() =>
-    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.resumo ?? null)
-  );
+  const [error, setError]       = useState('');
+  const [resumo, setResumo]     = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.resumo ?? null));
   const [insights, setInsights] = useState(() =>
-    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.insights ?? null)
-  );
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.insights ?? null));
   const [perfilIncompleto, setPerfilIncompleto] = useState(() =>
-    showSuccessImport ? false : Boolean(cache.get(HOME_CACHE_KEY)?.perfilIncompleto)
-  );
+    showSuccessImport ? false : Boolean(cache.get(HOME_CACHE_KEY)?.perfilIncompleto));
   const [completudePerfil, setCompletudePerfil] = useState(() =>
-    showSuccessImport ? 0 : Number(cache.get(HOME_CACHE_KEY)?.completudePerfil ?? 0)
-  );
-  const [usuario, setUsuario] = useState(() => getStoredUser());
+    showSuccessImport ? 0 : Number(cache.get(HOME_CACHE_KEY)?.completudePerfil ?? 0));
   const [perfilDados, setPerfilDados] = useState(() =>
-    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.perfilDados ?? null)
-  );
-  const [quickActionMenus, setQuickActionMenus] = useState(() =>
-    showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.quickActionMenus ?? [])
-  );
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.perfilDados ?? null));
+  const [ativos, setAtivos]       = useState(() =>
+    showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.ativos ?? []));
+  const [dashboard, setDashboard] = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.dashboard ?? null));
+  const [historicoMensal, setHistoricoMensal] = useState(() =>
+    showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.historicoMensal ?? []));
+  const [benchmark, setBenchmark] = useState(() =>
+    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.benchmark ?? null));
+  const [usuario, setUsuario]     = useState(() => getStoredUser());
+
+  const [filtroTempo, setFiltroTempo]   = useState('1A');
+  const [showCDI, setShowCDI]           = useState(false);
+  const [buscaAtivo, setBuscaAtivo]     = useState('');
   const [onboardingPopupOpen, setOnboardingPopupOpen] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(2);
+  const [onboardingStep, setOnboardingStep]           = useState(2);
   const [ocultarBannerOnboarding, setOcultarBannerOnboarding] = useState(false);
   const [quickModalOpen, setQuickModalOpen] = useState(false);
   const [quickModalType, setQuickModalType] = useState(null);
 
+  const salvarCache = (dados) => cache.set(HOME_CACHE_KEY, dados);
+
   useEffect(() => {
-    if (showSuccessImport) {
-      const timer = setTimeout(() => {
-        navigate('/home', { replace: true, state: {} });
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (!showSuccessImport) return;
+    const timer = setTimeout(() => navigate('/home', { replace: true, state: {} }), 5000);
+    return () => clearTimeout(timer);
   }, [showSuccessImport, navigate]);
 
   useEffect(() => {
     if (!openQuickModalFromState) return;
-    if (openQuickModalFromState === 'quick_importar' || openQuickModalFromState === 'quick_perfil' || openQuickModalFromState === 'quick_configurar') {
+    if (['quick_importar', 'quick_perfil', 'quick_configurar'].includes(openQuickModalFromState)) {
       setQuickModalType(openQuickModalFromState);
       setQuickModalOpen(true);
       navigate('/home', { replace: true, state: {} });
@@ -158,547 +142,604 @@ export default function HomeLobby() {
       try {
         setError('');
         setUsuario(getStoredUser());
-
-        // Tentar carregar do cache para renderização instantânea
         if (!showSuccessImport) {
           const dadosCache = cache.get(HOME_CACHE_KEY);
           if (ativo && dadosCache?.resumo) {
             setResumo(dadosCache.resumo);
             setInsights(dadosCache.insights ?? null);
             setPerfilDados(dadosCache.perfilDados ?? null);
-            setQuickActionMenus(dadosCache.quickActionMenus ?? []);
+            setAtivos(dadosCache.ativos ?? []);
+            setDashboard(dadosCache.dashboard ?? null);
+            setHistoricoMensal(dadosCache.historicoMensal ?? []);
+            setBenchmark(dadosCache.benchmark ?? null);
             setPerfilIncompleto(Boolean(dadosCache.perfilIncompleto));
             setCompletudePerfil(Number(dadosCache.completudePerfil ?? 0));
             setLoading(false);
-            
-            // Mesmo com cache, atualizamos em background para dados frescos
             void recarregarHomeSemPiscada();
             return;
           }
         }
-
         setLoading(true);
-        
-        // Dados Críticos: Resumo da Carteira (Patrimônio Total) e Configurações Básicas
-        const [dadosCarteira, dadosPerfil, appConfig] = await Promise.all([
-          carteiraApi.obterResumoCarteira(),
-          perfilApi.obterPerfil().catch(() => null),
-          configApi.obterAppConfig().catch(() => null),
-        ]);
-
+        const [dadosCarteira, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
+          await Promise.all([
+            carteiraApi.obterResumoCarteira(),
+            perfilApi.obterPerfil().catch(() => null),
+            carteiraApi.listarAtivosCarteira().catch(() => []),
+            carteiraApi.obterDashboardPatrimonio().catch(() => null),
+            historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
+            carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+          ]);
         if (!ativo) return;
+        const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
         setResumo(dadosCarteira);
-        cache.set('carteira_resumo', dadosCarteira); // compartilha com usePortfolioData
-
-        // Processar Perfil e Menus (Dados não bloqueantes para a visão inicial)
+        setAtivos(dadosAtivos);
+        setDashboard(dadosDashboard);
+        setHistoricoMensal(pontos);
+        setBenchmark(dadosBenchmark);
+        cache.set('carteira_resumo', dadosCarteira);
+        let perc = 0;
         if (dadosPerfil) {
           setPerfilDados(dadosPerfil);
-          let preenchidos = 0;
-          if (dadosPerfil.objetivo) preenchidos++;
-          if (dadosPerfil.horizonte) preenchidos++;
-          if (dadosPerfil.perfilRisco) preenchidos++;
-          if (Number(dadosPerfil.rendaMensal) > 0) preenchidos++;
-          const perc = Math.round((preenchidos / 4) * 100);
+          let pre = 0;
+          if (dadosPerfil.objetivo)   pre++;
+          if (dadosPerfil.horizonte)  pre++;
+          if (dadosPerfil.perfilRisco) pre++;
+          if (Number(dadosPerfil.rendaMensal) > 0) pre++;
+          perc = Math.round((pre / 4) * 100);
           setCompletudePerfil(perc);
           setPerfilIncompleto(perc < 100);
         }
-
-        const quickMenus = (appConfig?.menus ?? [])
-          .filter((m) => String(m.chave || '').startsWith('quick_'))
-          .sort((a, b) => a.ordem - b.ordem);
-        setQuickActionMenus(quickMenus);
-
-        // Liberar UI assim que o patrimônio estiver pronto
         setLoading(false);
-
-        // Insights e Score: Carregar em background (pode ser lento)
         try {
           const dadosInsights = await insightsApi.obterResumo();
-          cache.set('insights_resumo', dadosInsights); // compartilha com useInsights
+          cache.set('insights_resumo', dadosInsights);
           if (ativo) {
             setInsights(dadosInsights);
-            
-            // Persistir no cache com tudo completo
-            cache.set(HOME_CACHE_KEY, {
-              resumo: dadosCarteira,
-              insights: dadosInsights,
+            salvarCache({
+              resumo: dadosCarteira, insights: dadosInsights,
               perfilDados: dadosPerfil ?? null,
-              quickActionMenus: quickMenus,
-              perfilIncompleto: (completudePerfil < 100),
-              completudePerfil: completudePerfil,
+              ativos: dadosAtivos, dashboard: dadosDashboard,
+              historicoMensal: pontos, benchmark: dadosBenchmark,
+              perfilIncompleto: perc < 100, completudePerfil: perc,
             });
           }
-        } catch (e) {
-          console.error('Falha ao carregar insights de score:', e);
-        }
+        } catch (e) { console.error('Falha insights:', e); }
       } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
-          navigate('/', { replace: true });
-          return;
-        }
-        if (ativo) {
-          setError('Falha ao carregar dados principais.');
-          setLoading(false);
-        }
+        if (err instanceof ApiError && err.status === 401) { navigate('/', { replace: true }); return; }
+        if (ativo) { setError('Falha ao carregar dados.'); setLoading(false); }
       }
     })();
-
-    return () => {
-      ativo = false;
-    };
+    return () => { ativo = false; };
   }, [navigate, showSuccessImport]);
 
   const recarregarHomeSemPiscada = async () => {
     try {
       setError('');
       const TTL = 60 * 1000;
-      const resumoCached = cache.get('carteira_resumo', TTL);
-      const insightsCached = cache.get('insights_resumo', TTL);
-      const [dadosCarteira, dadosInsights, dadosPerfil, appConfig] = await Promise.all([
-        resumoCached
-          ? Promise.resolve(resumoCached)
-          : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
-        insightsCached
-          ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
-        perfilApi.obterPerfil().catch(() => null),
-        configApi.obterAppConfig().catch(() => null),
-      ]);
-
+      const rC = cache.get('carteira_resumo', TTL);
+      const iC = cache.get('insights_resumo', TTL);
+      const [dadosCarteira, dadosInsights, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
+        await Promise.all([
+          rC ? Promise.resolve(rC) : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
+          iC ? Promise.resolve(iC) : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
+          perfilApi.obterPerfil().catch(() => null),
+          carteiraApi.listarAtivosCarteira().catch(() => []),
+          carteiraApi.obterDashboardPatrimonio().catch(() => null),
+          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
+          carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+        ]);
+      const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setResumo(dadosCarteira);
       setInsights(dadosInsights);
-
-      let proxCompletude = 0;
-      let proxPerfilIncompleto = true;
+      setAtivos(dadosAtivos);
+      setDashboard(dadosDashboard);
+      setHistoricoMensal(pontos);
+      setBenchmark(dadosBenchmark);
+      let proxC = 0, proxPI = true;
       if (dadosPerfil) {
         setPerfilDados(dadosPerfil);
-        let preenchidos = 0;
-        if (dadosPerfil.objetivo) preenchidos++;
-        if (dadosPerfil.horizonte) preenchidos++;
-        if (dadosPerfil.perfilRisco) preenchidos++;
-        if (Number(dadosPerfil.rendaMensal) > 0) preenchidos++;
-        proxCompletude = Math.round((preenchidos / 4) * 100);
-        proxPerfilIncompleto = proxCompletude < 100;
-      } else {
-        setPerfilDados(null);
-      }
-      const quickMenus = (appConfig?.menus ?? [])
-        .filter((m) => String(m.chave || '').startsWith('quick_'))
-        .sort((a, b) => a.ordem - b.ordem);
-      setQuickActionMenus(quickMenus);
-      setCompletudePerfil(proxCompletude);
-      setPerfilIncompleto(proxPerfilIncompleto);
-
-      cache.set(HOME_CACHE_KEY, {
-        resumo: dadosCarteira,
-        insights: dadosInsights,
+        let pre = 0;
+        if (dadosPerfil.objetivo) pre++;
+        if (dadosPerfil.horizonte) pre++;
+        if (dadosPerfil.perfilRisco) pre++;
+        if (Number(dadosPerfil.rendaMensal) > 0) pre++;
+        proxC = Math.round((pre / 4) * 100);
+        proxPI = proxC < 100;
+      } else { setPerfilDados(null); }
+      setCompletudePerfil(proxC);
+      setPerfilIncompleto(proxPI);
+      salvarCache({
+        resumo: dadosCarteira, insights: dadosInsights,
         perfilDados: dadosPerfil ?? null,
-        quickActionMenus: quickMenus,
-        perfilIncompleto: proxPerfilIncompleto,
-        completudePerfil: proxCompletude,
+        ativos: dadosAtivos, dashboard: dadosDashboard,
+        historicoMensal: pontos, benchmark: dadosBenchmark,
+        perfilIncompleto: proxPI, completudePerfil: proxC,
       });
-    } catch {
-      setError('Falha ao atualizar dados da Home.');
-    }
+    } catch { setError('Falha ao atualizar dados.'); }
   };
 
-  const getSaudacao = () => {
-    const hora = new Date().getHours();
-    if (hora < 12) return 'Bom dia';
-    if (hora < 18) return 'Boa tarde';
-    return 'Boa noite';
-  };
-  const getNomeExibicao = (nomeCompleto) => {
-    const partes = String(nomeCompleto || '')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (partes.length === 0) return 'investidor(a)';
-    if (partes.length >= 3) return `${partes[0]} ${partes[1]}`;
-    return partes[0];
-  };
+  /* ─── Valores derivados ─── */
+  const scoreUnificado   = insights?.scoreUnificado || insights?.score_unificado;
+  const scoreExibicao    = scoreUnificado?.score ?? 0;
+  const patrimonioTotal  = Number(resumo?.patrimonioTotal ?? 0);
+  const patrimonioInvest = Number(resumo?.patrimonioInvestimentos ?? patrimonioTotal);
+  const alertasCount     = insights?.diagnostico?.riscos?.length ?? 0;
+  const primeiroAlerta   = insights?.diagnostico?.riscos?.[0];
+  const bandLabel        = { critical:'Crítico', fragile:'Frágil', stable:'Estável', good:'Bom', strong:'Sólido' }[scoreUnificado?.band ?? ''] ?? '';
 
-  const quickIconByKey = {
-    quick_perfil: <UserRound size={24} />,
-    quick_importar: <UploadCloud size={24} />,
-    quick_acoes: <CandlestickChart size={24} />,
-    quick_fundos: <Landmark size={24} />,
-    quick_previdencia: <WalletCards size={24} />,
-    quick_renda_fixa: <Gem size={24} />,
-    quick_poupanca: <PiggyBank size={24} />,
-    quick_bens: <House size={24} />,
-    quick_simuladores: <TrendingUp size={24} />,
-    quick_configurar: <ArrowRight size={24} />,
-  };
-  const fallbackQuickActions = [
-    { chave: 'quick_perfil', label: 'Perfil', path: '/perfil', ordem: 101 },
-    { chave: 'quick_importar', label: 'Importar', path: '/importar', ordem: 102 },
-    { chave: 'quick_acoes', label: 'Ações', path: '/acoes', ordem: 103 },
-    { chave: 'quick_fundos', label: 'Fundos', path: '/fundos', ordem: 104 },
-    { chave: 'quick_previdencia', label: 'Previdência', path: '/previdencia', ordem: 105 },
-    { chave: 'quick_renda_fixa', label: 'Renda Fixa', path: '/renda-fixa', ordem: 106 },
-    { chave: 'quick_poupanca', label: 'Poupança', path: '/poupanca', ordem: 107 },
-    { chave: 'quick_bens', label: 'Bens', path: '/bens', ordem: 108 },
-    { chave: 'quick_simuladores', label: 'Simuladores', path: '/decisoes', ordem: 109 },
-    { chave: 'quick_configurar', label: 'Configurar', path: '/configuracoes', ordem: 110 },
-  ];
-  const quickActions = (quickActionMenus.length ? quickActionMenus : fallbackQuickActions).map((item) => ({
-    title: item.label,
-    icon: quickIconByKey[item.chave] ?? <ArrowRight size={24} />,
-    action: () => {
-      if (item.chave === 'quick_perfil' || item.chave === 'quick_importar' || item.chave === 'quick_configurar') {
-        setQuickModalType(item.chave);
-        setQuickModalOpen(true);
-        return;
-      }
-      navigate(item.path);
-    },
-  }));
-
-  const insightPrioritario = insights?.riscoPrincipal || insights?.acaoPrioritaria;
-  const scoreUnificado = insights?.scoreUnificado || insights?.score_unificado;
-  // Score sempre no sistema unificado (0-1000). Nunca usar fallbacks de sistemas legados.
-  const scoreExibicao = scoreUnificado?.score ?? 0;
-  const scoreEscala = 1000;
-  const scoreStatus = scoreUnificado?.completenessStatus ?? null;
-  const patrimonioDeclaradoTotal = Number(resumo?.patrimonioTotal ?? 0);
-  const possuiPatrimonioDeclarado = patrimonioDeclaradoTotal > 0;
-  const distribuicaoPatrimonio = (resumo?.distribuicaoPatrimonio ?? []).map((item) => ({
-    ...item,
-    cor: DONUT_COLORS[item.id] ?? '#F2C94C',
-  }));
   const trilhaOnboarding = [
-    { num: 1, titulo: 'Seu estilo', step: 2, completo: Boolean(perfilDados?.objetivo && perfilDados?.perfilRisco) },
-    { num: 2, titulo: 'Seus dados', step: 3, completo: Boolean(Number(perfilDados?.rendaMensal) > 0) },
-    { num: 3, titulo: 'Seus ativos', step: 4, completo: Boolean(Number(perfilDados?.reservaCaixa) > 0 || Number(perfilDados?.aporteMensal) > 0) },
+    { num:1, titulo:'Seu estilo', step:2, completo: Boolean(perfilDados?.objetivo && perfilDados?.perfilRisco) },
+    { num:2, titulo:'Seus dados', step:3, completo: Boolean(Number(perfilDados?.rendaMensal) > 0) },
+    { num:3, titulo:'Seus ativos', step:4, completo: Boolean(Number(perfilDados?.reservaCaixa) > 0 || Number(perfilDados?.aporteMensal) > 0) },
   ];
-  const onboardingCompleto = trilhaOnboarding.every((item) => item.completo);
-  const mostrarCardOnboarding = !onboardingCompleto && !ocultarBannerOnboarding;
+  const mostrarCardOnboarding = !trilhaOnboarding.every(i => i.completo) && !ocultarBannerOnboarding;
 
-  const classificacaoCor = (c) => {
-    if (c === 'critico') return 'bg-[#E85C5C]/10 text-[#E85C5C]';
-    if (c === 'baixo') return 'bg-[#F2C94C]/10 text-[#F2C94C]';
-    if (c === 'ok') return 'bg-[#0B1218]/5 text-[#0B1218]/60';
-    if (c === 'bom') return 'bg-[#6FCF97]/10 text-[#6FCF97]';
-    if (c === 'excelente') return 'bg-[#6FCF97]/20 text-[#6FCF97]';
-    return 'bg-[#0B1218]/5 text-[#0B1218]/50';
-  };
+  /* Composição do patrimônio */
+  const composicaoFrase = useMemo(() => {
+    const dist = resumo?.distribuicaoPatrimonio ?? [];
+    if (!dist.length) return null;
+    return dist
+      .filter(d => d.percentual > 0)
+      .sort((a, b) => b.percentual - a.percentual)
+      .map(d => `${d.label} ${Math.round(d.percentual)}%`)
+      .join(' · ');
+  }, [resumo]);
 
+  /* Alocação */
+  const alocacaoData = useMemo(() => {
+    const totais = dashboard?.totais ?? {};
+    return ALOCACAO_CONFIG
+      .map(c => ({ ...c, value: Number(totais[c.key] ?? 0) }))
+      .filter(c => c.value > 0);
+  }, [dashboard]);
+  const totalAlocacao = alocacaoData.reduce((acc, c) => acc + c.value, 0);
+
+  /* Filtros disponíveis baseado em dados reais */
+  const filtrosDisponiveis = useMemo(() => {
+    const n = historicoMensal.length;
+    return FILTROS_ALL.filter(f => {
+      if (f === 'Max') return n > 0;
+      return n >= FILTROS_MESES[f];
+    });
+  }, [historicoMensal]);
+
+  /* Garante filtro válido */
+  const filtroEfetivo = filtrosDisponiveis.includes(filtroTempo)
+    ? filtroTempo
+    : (filtrosDisponiveis[filtrosDisponiveis.length - 1] ?? 'Max');
+
+  /* Histórico filtrado + CDI mesclado */
+  /* benchmark.serie usa índice base-100 (ex: 108.5 = +8.5% acum.) — escala incompatível com R$ absoluto.
+     Quando CDI está ON, troca para os dados do benchmark diretamente. */
+  const isCdiMode = showCDI && Boolean(benchmark?.serie?.length);
+  const dadosGrafico = useMemo(() => {
+    if (isCdiMode) {
+      const serie = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
+      const filtrada = filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
+      return filtrada.map(p => ({ ...p, anoMes: p.data?.slice(0, 7) }));
+    }
+    if (!historicoMensal.length) return [];
+    return filtroEfetivo === 'Max' ? historicoMensal : historicoMensal.slice(-FILTROS_MESES[filtroEfetivo]);
+  }, [historicoMensal, filtroEfetivo, isCdiMode, benchmark]);
+
+  /* Ativos filtrados */
+  const ativosFiltrados = useMemo(() => {
+    const busca = buscaAtivo.toLowerCase();
+    const lista = busca
+      ? ativos.filter(a => a.ticker?.toLowerCase().includes(busca) || a.nome?.toLowerCase().includes(busca))
+      : [...ativos].sort((a, b) => b.valorAtual - a.valorAtual);
+    return lista.slice(0, 5);
+  }, [ativos, buscaAtivo]);
+
+  /* Alertas laterais — oportunidades (riscos já foram ao KPI card) */
+  const oportunidadesList = useMemo(() => {
+    const acoes = insights?.diagnostico?.acoes ?? [];
+    return acoes.slice(0, 2).map(a => ({ tipo: 'oportunidade', titulo: a.titulo, descricao: a.descricao }));
+  }, [insights]);
+
+  /* Loading skeleton */
   if (loading) {
     return (
-      <div className="w-full">
-        <div className="mb-12">
-          <div className="h-4 w-24 skeleton mb-2 rounded-xl" />
-          <div className="h-10 w-48 skeleton mb-8 rounded-xl" />
-          <div className="h-64 skeleton rounded-xl" />
+      <div className="w-full space-y-6">
+        <div className="h-16 skeleton rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-24 skeleton rounded-xl" />)}
         </div>
-        <div className="h-32 skeleton mb-12 rounded-xl" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 skeleton rounded-xl" />)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-64 skeleton rounded-xl" /><div className="h-56 skeleton rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-52 skeleton rounded-xl" /><div className="h-32 skeleton rounded-xl" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)] selection:bg-[#F56A2A] selection:text-white">
+    <div className="w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)] space-y-6 selection:bg-[#F56A2A] selection:text-white">
+
+      {/* Toast importação */}
       <AnimatePresence>
         {showSuccessImport && (
           <motion.div
-            initial={{ opacity: 0, y: -50, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="fixed top-24 md:top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 pr-6 rounded-xl shadow-2xl backdrop-blur-md"
+            initial={{ opacity:0, y:-40, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }}
+            exit={{ opacity:0, y:-20, scale:0.95 }} transition={{ duration:0.4, ease:'easeOut' }}
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 pr-6 rounded-xl shadow-2xl backdrop-blur-md"
           >
             <div className="flex items-center justify-center w-10 h-10 bg-[#6FCF97]/10 rounded-full">
               <CheckCircle2 size={24} className="text-[#6FCF97]" />
             </div>
             <div>
-              <h3 className="font-['Sora'] text-sm font-bold text-[var(--text-primary)]">Importação Concluída</h3>
+              <h3 className="font-['Sora'] text-sm font-bold">Importação Concluída</h3>
               <p className="text-[11px] text-[var(--text-secondary)] font-medium">
-                {importedItems} {importedItems === 1 ? 'item importado' : 'itens importados'}. Seu score foi recalculado!
+                {importedItems} {importedItems === 1 ? 'item importado' : 'itens importados'}. Score recalculado!
               </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <div className="w-full">
-        {onboardingPopupOpen && (
-          <div className="fixed inset-0 z-[120] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <Onboarding
-              embedded
-              mode="profile"
-              initialStep={onboardingStep}
-              onClose={(concluido) => {
-                setOnboardingPopupOpen(false);
-                if (concluido) recarregarHomeSemPiscada();
-              }}
-            />
+
+      {/* Modal onboarding */}
+      {onboardingPopupOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <Onboarding embedded mode="profile" initialStep={onboardingStep}
+            onClose={concluido => { setOnboardingPopupOpen(false); if (concluido) recarregarHomeSemPiscada(); }} />
+        </div>
+      )}
+
+      {/* Modal quick */}
+      {quickModalOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-[1120px] h-[90dvh] overflow-hidden rounded-xl bg-white shadow-2xl">
+            <button type="button" onClick={() => { setQuickModalOpen(false); setQuickModalType(null); }}
+              className="absolute right-4 top-4 text-[#0B1218]/40 hover:text-[#0B1218]"><X size={20} /></button>
+            <div className="h-full overflow-y-auto px-4 pb-4 pt-12 sm:px-6">
+              {quickModalType === 'quick_perfil'     && <PerfilUsuario embedded />}
+              {quickModalType === 'quick_importar'   && <Importar embedded />}
+              {quickModalType === 'quick_configurar' && <Configuracoes embedded />}
+            </div>
           </div>
-        )}
-        {quickModalOpen && (
-          <div className="fixed inset-0 z-[120] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-[1120px] h-[90dvh] overflow-hidden rounded-xl bg-white shadow-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setQuickModalOpen(false);
-                  setQuickModalType(null);
-                }}
-                className="absolute right-4 top-4 text-[#0B1218]/40 hover:text-[#0B1218]"
-              >
-                <X size={20} />
-              </button>
-              <div className="h-full overflow-y-auto px-4 pb-4 pt-12 sm:px-6">
-                {quickModalType === 'quick_perfil' && <PerfilUsuario embedded />}
-                {quickModalType === 'quick_importar' && <Importar embedded />}
-                {quickModalType === 'quick_configurar' && <Configuracoes embedded />}
+        </div>
+      )}
+
+      {/* Banner onboarding */}
+      {mostrarCardOnboarding && (
+        <div className="border border-[#F56A2A]/30 bg-[#F56A2A]/5 px-5 py-4 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <p className="font-['Sora'] text-sm font-bold">Complete seu perfil</p>
+              <div className="flex items-center gap-1.5">
+                {trilhaOnboarding.map((item, idx) => (
+                  <React.Fragment key={item.step}>
+                    <button onClick={() => { setOnboardingStep(item.step); setOnboardingPopupOpen(true); }}
+                      className={`flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold transition-colors ${
+                        item.completo ? 'bg-[#F56A2A] border-[#F56A2A] text-white' : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#F56A2A]'
+                      }`}>
+                      {item.completo ? <CheckCircle2 size={12} /> : item.num}
+                    </button>
+                    {idx < trilhaOnboarding.length - 1 && <div className="h-px w-4 bg-[var(--border-color)]" />}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Header / Saudação */}
-        <section className="mb-12 fade-in-up">
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center min-h-[64px]">
-              <h1 className="font-['Sora'] text-3xl font-bold tracking-tight text-[#0B1218] md:text-5xl leading-[1.1]">
-                {getSaudacao()},<br />
-                <span className="text-[#F56A2A]">{getNomeExibicao(usuario?.nome)}</span>.
-              </h1>
+            <div className="flex items-center gap-3">
+              <button onClick={() => { setOnboardingStep(2); setOnboardingPopupOpen(true); }}
+                className="px-3 py-1.5 rounded-lg bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-wider hover:bg-[#d95a20] transition-colors">
+                Completar
+              </button>
+              <button onClick={() => setOcultarBannerOnboarding(true)}
+                className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                Depois
+              </button>
             </div>
+          </div>
+        </div>
+      )}
 
-            {(insights?.insightPrincipal?.titulo || insightPrioritario?.titulo) && (
-              <div className="lg:max-w-[58%] text-right">
-                <p className="font-['Sora'] text-sm md:text-base font-semibold leading-snug text-[#F56A2A]">
-                  {possuiPatrimonioDeclarado
-                    ? (insights?.insightPrincipal?.titulo || insightPrioritario?.titulo)
-                    : 'Importe seus dados para liberar insights personalizados.'}
+      {/* Saudação */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-['Sora'] text-base font-semibold text-[var(--text-primary)]">{getSaudacao()},</p>
+          <h1 className="font-['Sora'] text-3xl font-bold leading-tight mt-0.5">
+            <span className="text-[#F56A2A]">{getNomeExibicao(usuario?.nome)}</span>
+            <span className="text-[var(--text-primary)]">.</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-3 mt-1">
+          <div className="relative">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
+            <input type="text" value={buscaAtivo} onChange={e => setBuscaAtivo(e.target.value)}
+              placeholder="Buscar ativo..."
+              className="pl-8 pr-3 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:border-[#F56A2A] w-52 placeholder:text-[var(--text-muted)] transition-colors" />
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-xs text-[#E85C5C] font-medium">
+          <AlertCircle size={14} /> {error}
+        </div>
+      )}
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {/* Patrimônio total */}
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5 lg:col-span-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">
+            {texto('home.kpi.patrimonio', 'Patrimônio total')}
+          </p>
+          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+            {ocultarValores ? '••••••••' : fmt(patrimonioTotal)}
+          </p>
+          {resumo?.retornoDisponivel ? (
+            <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+              {ocultarValores ? '••••' : fmtPct(resumo.retorno12m)}{' '}
+              <span className="text-[var(--text-muted)] font-normal">ao ano</span>
+            </p>
+          ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+          {composicaoFrase && (
+            <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-snug">
+              {composicaoFrase}
+            </p>
+          )}
+        </div>
+
+        {/* Investimentos */}
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Investimentos</p>
+          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+            {ocultarValores ? '••••••••' : fmt(patrimonioInvest)}
+          </p>
+          {resumo?.retornoDisponivel ? (
+            <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+              {ocultarValores ? '••••' : fmtPct(resumo.retorno12m)}{' '}
+              <span className="text-[var(--text-muted)] font-normal">a.a.</span>
+            </p>
+          ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+        </div>
+
+        {/* Score */}
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Score</p>
+          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+            {ocultarValores ? '•••• / 1000' : `${scoreExibicao} / 1000`}
+          </p>
+          {bandLabel && (
+            <p className={`text-xs font-semibold mt-1.5 ${
+              scoreUnificado?.band === 'critical' ? 'text-[#E85C5C]' :
+              scoreUnificado?.band === 'fragile'  ? 'text-[#F2C94C]' : 'text-[#6FCF97]'
+            }`}>
+              {bandLabel}{scoreUnificado?.band === 'good' && <span className="text-[var(--text-muted)] font-normal"> — acima de 88%</span>}
+            </p>
+          )}
+        </div>
+
+        {/* Alertas — com texto do primeiro alerta */}
+        <button onClick={() => navigate('/insights')}
+          className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5 text-left hover:border-[#F56A2A] transition-colors">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Alertas</p>
+          <p className="font-['Sora'] text-2xl font-bold leading-tight">{alertasCount}</p>
+          <p className={`text-xs font-semibold mt-1.5 ${alertasCount > 0 ? 'text-[#E85C5C]' : 'text-[#6FCF97]'}`}>
+            {alertasCount > 0 ? 'ações necessárias' : 'tudo em ordem'}
+          </p>
+          {primeiroAlerta && (
+            <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-snug line-clamp-2">
+              {primeiroAlerta.titulo}
+            </p>
+          )}
+        </button>
+      </div>
+
+      {/* Grid principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Coluna esquerda (2/3) */}
+        <div className="lg:col-span-2 space-y-6">
+
+          {/* Evolução patrimonial */}
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h3 className="font-['Sora'] text-sm font-bold">Evolução patrimonial</h3>
+              <div className="flex items-center gap-2">
+                {/* Toggle CDI */}
+                <button onClick={() => setShowCDI(v => !v)}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors ${
+                    showCDI
+                      ? 'border-[#6FCF97] bg-[#6FCF97]/15 text-[#6FCF97]'
+                      : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#6FCF97]'
+                  }`}>
+                  vs CDI
+                </button>
+                {/* Filtros de tempo */}
+                <div className="flex gap-1">
+                  {filtrosDisponiveis.map(f => (
+                    <button key={f} onClick={() => setFiltroTempo(f)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-colors ${
+                        filtroEfetivo === f ? 'bg-[#F56A2A] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={`h-48 ${ocultarValores ? 'opacity-20 blur-sm pointer-events-none' : ''}`}>
+              {dadosGrafico.length > 1 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dadosGrafico} margin={{ top:4, right:0, left:0, bottom:0 }}>
+                    <defs>
+                      <linearGradient id="gradPatrimonio" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#F56A2A" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#F56A2A" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="anoMes" tick={{ fontSize:10, fill:'var(--text-muted)' }} tickLine={false} axisLine={false}
+                      tickFormatter={formatMes} interval="preserveStartEnd" />
+                    <YAxis hide />
+                    <Tooltip
+                      formatter={(v, name) => [
+                        ocultarValores ? '••••••' : (
+                          isCdiMode
+                            ? `${Number(v - 100 || 0) >= 0 ? '+' : ''}${Number(v - 100 || 0).toFixed(2)}%`
+                            : (name === 'totalAtual' ? fmt(v) : `${Number(v||0).toFixed(2)}%`)
+                        ),
+                        name === 'carteira' ? 'Carteira' : (name === 'cdi' ? 'CDI' : 'Patrimônio'),
+                      ]}
+                      labelFormatter={formatMes}
+                      contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:8, fontSize:11 }}
+                    />
+                    <Area type="monotone" dataKey={isCdiMode ? 'carteira' : 'totalAtual'} stroke="#F56A2A" strokeWidth={2}
+                      fill="url(#gradPatrimonio)" dot={false} isAnimationActive={false} />
+                    {isCdiMode && (
+                      <Line type="monotone" dataKey="cdi" stroke="#6FCF97" strokeWidth={1.5}
+                        dot={false} strokeDasharray="4 2" isAnimationActive={false} connectNulls />
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center gap-3">
+                  <TrendingUp size={24} className="text-[var(--text-muted)]" />
+                  <p className="text-sm text-[var(--text-muted)]">Sem histórico disponível</p>
+                  <button onClick={() => navigate('/importar')} className="text-xs font-semibold text-[#F56A2A] hover:underline">
+                    Importar dados
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Principais Ativos */}
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-['Sora'] text-sm font-bold">Principais Ativos</h3>
+              <button onClick={() => navigate('/carteira')} className="text-xs font-semibold text-[#F56A2A] hover:underline flex items-center gap-0.5">
+                Ver tudo <ChevronRight size={12} />
+              </button>
+            </div>
+            {ativosFiltrados.length > 0 ? (
+              <>
+                <div className="grid grid-cols-[1fr_96px_68px_52px] px-2 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Var. 12m</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Cart.</span>
+                </div>
+                <div className="space-y-0.5">
+                  {ativosFiltrados.map(ativo => {
+                    const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
+                    return (
+                      <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
+                        className="w-full grid grid-cols-[1fr_96px_68px_52px] px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
+                          <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                        </div>
+                        <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                          {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
+                        </p>
+                        <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${ativo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                          {ocultarValores ? '••••' : fmtPct(ativo.retorno12m)}
+                        </p>
+                        <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                          {ocultarValores ? '••%' : `${pct}%`}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="py-8 text-center space-y-3">
+                <p className="text-sm text-[var(--text-muted)]">
+                  {buscaAtivo ? `Nenhum ativo encontrado para "${buscaAtivo}"` : 'Nenhum ativo cadastrado'}
                 </p>
-                <p className="mt-1 font-['Inter'] text-sm md:text-[15px] font-medium text-[var(--text-secondary)] leading-snug">
-                  {possuiPatrimonioDeclarado
-                    ? (insights?.insightPrincipal?.acao || insightPrioritario?.descricao || '')
-                    : 'Conecte sua carteira para começarmos com recomendações práticas e objetivas.'}
-                </p>
+                {!buscaAtivo && (
+                  <div className="flex justify-center gap-3">
+                    <button onClick={() => { setQuickModalType('quick_importar'); setQuickModalOpen(true); }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#F56A2A] text-white text-xs font-bold">
+                      <UploadCloud size={14} /> Importar
+                    </button>
+                    <button onClick={() => navigate('/carteira')}
+                      className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--text-primary)] hover:border-[#F56A2A] transition-colors">
+                      Cadastrar manualmente
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
+        </div>
 
-          {mostrarCardOnboarding && (
-            <div className="mb-6 border border-[var(--border-color)] bg-[var(--bg-card)] px-6 py-5 rounded-xl transition-all shadow-md shadow-black/5">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] items-center gap-4 min-w-0 flex-1">
-                  <p className="font-['Sora'] text-lg md:text-xl font-bold text-[var(--text-primary)] leading-tight max-w-[280px]">
-                    Queremos te conhecer melhor
-                  </p>
-                  <div className="flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar">
-                    {trilhaOnboarding.map((item, idx) => (
-                      <React.Fragment key={item.step}>
-                        <button
-                          onClick={() => {
-                            setOnboardingStep(item.step);
-                            setOnboardingPopupOpen(true);
-                          }}
-                          className="flex flex-col items-center justify-center min-w-[68px] px-1 py-0.5 transition-colors"
-                          title={item.titulo}
-                        >
-                          <span className={`flex items-center justify-center min-w-[34px] h-[34px] rounded-full border text-xs font-bold ${
-                            item.completo
-                              ? 'bg-[#F56A2A] border-[#F56A2A] text-white'
-                              : 'bg-transparent border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#F56A2A] hover:text-[#F56A2A]'
-                          }`}>
-                            {item.completo ? <CheckCircle2 size={14} /> : item.num}
-                          </span>
-                          <span className={`mt-1 text-[8px] font-bold uppercase tracking-widest ${item.completo ? 'text-[#F56A2A]' : 'text-[var(--text-muted)]'}`}>
-                            {item.titulo}
-                          </span>
-                        </button>
-                        {idx < trilhaOnboarding.length - 1 && (
-                          <div className="h-[2px] w-5 bg-[var(--border-color)]" />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col items-start lg:items-end gap-1">
-                  <button
-                    onClick={() => {
-                      setOnboardingStep(2);
-                      setOnboardingPopupOpen(true);
-                    }}
-                    className="shrink-0 px-4 py-2 rounded-xl bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-colors"
-                  >
-                    Responder agora
-                  </button>
-                  <button
-                    onClick={() => setOcultarBannerOnboarding(true)}
-                    className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                  >
-                    Depois eu respondo
-                  </button>
-                </div>
+        {/* Coluna direita (1/3) */}
+        <div className="space-y-4">
+
+          {/* Alocação */}
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+            <h3 className="font-['Sora'] text-sm font-bold mb-4">Alocação</h3>
+            {alocacaoData.length > 0 ? (
+              <div className="space-y-3">
+                {alocacaoData.map(item => {
+                  const pct = totalAlocacao > 0 ? (item.value / totalAlocacao) * 100 : 0;
+                  return (
+                    <div key={item.key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.cor }} />
+                          <span className="text-xs text-[var(--text-secondary)]">{item.label}</span>
+                        </div>
+                        <span className="text-xs font-bold">{ocultarValores ? '••%' : `${pct.toFixed(0)}%`}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-[var(--border-color)]">
+                        <div className="h-1.5 rounded-full transition-all duration-700" style={{ width:`${pct}%`, backgroundColor:item.cor }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            ) : (
+              <p className="text-sm text-[var(--text-muted)] text-center py-4">Sem dados de alocação</p>
+            )}
+          </div>
+
+          {/* Oportunidades (acoes do diagnostico) */}
+          {oportunidadesList.length > 0 && (
+            <div className="space-y-3">
+              {oportunidadesList.map((item, idx) => (
+                <div key={idx} className="rounded-xl border border-[#6FCF97]/25 bg-[#6FCF97]/5 p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#6FCF97]">● Oportunidade</span>
+                    <button onClick={() => navigate('/insights')} className="text-[10px] font-bold text-[#F56A2A] hover:underline flex-shrink-0">
+                      Explorar →
+                    </button>
+                  </div>
+                  <p className="text-xs font-semibold">{item.titulo}</p>
+                  {item.descricao && <p className="text-[11px] text-[var(--text-muted)] mt-1 line-clamp-2">{item.descricao}</p>}
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Card Principal de Patrimônio */}
-          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-8 shadow-lg shadow-black/8 transition-all hover:shadow-xl md:p-10 fade-in-up" style={{ animationDelay: '0.05s' }}>
-            <div className="flex flex-col md:flex-row justify-between gap-8">
-              <div className="flex-1">
-                <div className="mb-4 flex items-center gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F56A2A]">{texto("home.cartao_principal.titulo", "Patrimônio Total")}</p>
-                </div>
-
-                <h2 className="font-['Sora'] text-4xl font-bold md:text-5xl mb-6">
-                  {ocultarValores ? '••••••••' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(patrimonioDeclaradoTotal || 0)}
-                </h2>
-
-                {possuiPatrimonioDeclarado && (
-                  <div className="mt-6 flex flex-col gap-4">
-                    {resumo?.retornoDisponivel ? (
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp size={16} className={resumo?.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"} />
-                          <span className={`text-xs font-bold ${resumo?.retorno12m >= 0 ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>
-                            {ocultarValores ? '••••••••' : `${resumo?.retorno12m >= 0 ? '+' : ''}${resumo?.retorno12m?.toFixed?.(2) ?? '0.00'}%`}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold pl-6">Rendimento acumulado desde a aquisição</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <AlertCircle size={16} className="text-[#F2C94C]" />
-                        <span className="text-xs font-bold text-[#0B1218]/70">
-                          {resumo?.motivoRetornoIndisponivel || 'Adicione o preço médio dos ativos para ver o rendimento'}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {scoreStatus === 'partial' && (
-                      <p className="text-[10px] text-[#F2C94C] uppercase tracking-widest font-bold">
-                        Score com dados incompletos — complete seu perfil para leitura precisa
-                      </p>
-                    )}
-
-                    {insights?.impactoDecisoesRecentes?.quantidade > 0 && (
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/45">
-                        {ocultarValores
-                          ? 'Decisões recentes: ••••••••'
-                          : `Decisões recentes: ${insights.impactoDecisoesRecentes.deltaTotal >= 0 ? '+' : ''}${insights.impactoDecisoesRecentes.deltaTotal.toFixed(1)} pts no score (${insights.impactoDecisoesRecentes.quantidade} simulações)`}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {!possuiPatrimonioDeclarado && !error && (
-                  <div className="mt-6">
-                    <p className="text-xs text-[#0B1218]/60 leading-relaxed mb-4">
-                      Você ainda não informou patrimônio ou bens. Para liberar sua leitura completa, importe dados e complete seu perfil.
-                    </p>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <button
-                        onClick={() => {
-                          setQuickModalType('quick_importar');
-                          setQuickModalOpen(true);
-                        }}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-[#F56A2A] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#d95a20] transition-colors"
-                      >
-                        Importar dados <ArrowRight size={14} />
-                      </button>
-                      <button
-                        onClick={() => navigate('/perfil')}
-                        className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] hover:border-[#F56A2A] transition-colors"
-                      >
-                        Completar perfil <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {error && <p className="mt-4 text-xs text-[#E85C5C] font-medium">Não conseguimos carregar seus dados. Tente novamente.</p>}
-              </div>
-
-              <div className="flex flex-col items-center gap-4">
-                {scoreUnificado && (
-                  <div className="flex flex-col items-center">
-                    <div className="relative h-28 w-44">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { value: scoreExibicao },
-                              { value: scoreEscala - scoreExibicao }
-                            ]}
-                            cx="50%"
-                            cy="100%"
-                            startAngle={180}
-                            endAngle={0}
-                            innerRadius={55}
-                            outerRadius={75}
-                            paddingAngle={0}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            <Cell fill={
-                              scoreUnificado.band === 'critical' ? '#E85C5C' :
-                              scoreUnificado.band === 'fragile' ? '#F56A2A' :
-                              scoreUnificado.band === 'stable' ? '#F2C94C' :
-                              scoreUnificado.band === 'good' ? '#6FCF97' :
-                              '#1A7A45'
-                            } />
-                            <Cell fill="var(--border-color)" opacity={0.2} />
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-                        <span className="text-2xl font-bold font-['Sora'] leading-none">
-                          {ocultarValores ? '••••' : scoreExibicao}
-                        </span>
-                        <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1">
-                          Score
-                        </span>
-                      </div>
-                    </div>
-                    {scoreUnificado.band && (
-                      <span className={`mt-2 text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${classificacaoCor(scoreUnificado.band === 'critical' ? 'critico' : scoreUnificado.band === 'fragile' ? 'baixo' : scoreUnificado.band === 'strong' ? 'excelente' : scoreUnificado.band === 'good' ? 'bom' : 'ok')}`}>
-                        {scoreUnificado.band === 'critical' ? 'Crítico' : scoreUnificado.band === 'fragile' ? 'Frágil' : scoreUnificado.band === 'stable' ? 'Estável' : scoreUnificado.band === 'good' ? 'Bom' : 'Sólido'}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex gap-4" />
-              </div>
+          {/* Acesso rápido */}
+          <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-3">Acesso rápido</p>
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_ACTIONS.map(item => (
+                <button key={item.path} onClick={() => navigate(item.path)}
+                  className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-[#F56A2A] hover:bg-[#F56A2A]/8 transition-all group">
+                  <img src={assetPath(`/assets/icons/laranja/${item.icon}-premium.svg`)} alt={item.label}
+                    className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-opacity"
+                    onError={e => { e.currentTarget.src = assetPath(`/assets/icons/laranja/${item.icon}.svg`); }} />
+                  <span className="text-[9px] font-bold text-[var(--text-secondary)] group-hover:text-[#F56A2A] text-center leading-tight transition-colors">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
-        </section>
-
-        <section className="mb-12 fade-in-up" style={{ animationDelay: '0.14s' }}>
-          <Carteira embedded />
-        </section>
-
-        {/* Acesso Rápido */}
-        <section className="fade-in-up" style={{ animationDelay: '0.15s' }}>
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">{texto("home.quick_actions.titulo", "Acesso Rápido")}</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {quickActions.map((item) => (
-              <button
-                key={item.title}
-                onClick={item.action}
-                className="group flex flex-col items-center gap-2 rounded-xl border border-[var(--border-color)] bg-white p-4 text-center shadow-sm transition-all hover:border-[#F56A2A] hover:shadow-md"
-              >
-                <div className="text-[var(--text-muted)] transition-colors group-hover:text-[#F56A2A]">
-                  {item.icon}
-                </div>
-                <div>
-                  <h4 className="font-['Sora'] text-xs font-bold text-[var(--text-primary)]">{item.title}</h4>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   );

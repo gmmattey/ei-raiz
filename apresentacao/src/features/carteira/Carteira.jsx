@@ -145,6 +145,48 @@ const formatarQtd = (asset) => {
   return asset.categoria === "acao" ? qtd.toFixed(0) : qtd.toFixed(2);
 };
 
+const getConsolidationKey = (asset) => {
+  if (asset.categoria === 'acao') return asset.ticker;
+  if (asset.categoria === 'fundo') return `fundo_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'renda_fixa') return `rf_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'previdencia') return `prev_${asset.nome || asset.ticker}`;
+  if (asset.categoria === 'poupanca') return `poup_${asset.nome}`;
+  if (asset.categoria === 'bens') return `bem_${asset.nome}`;
+  return asset.ticker || asset.nome;
+};
+
+const consolidarAtivos = (ativos) => {
+  const mapa = {};
+
+  for (const ativo of ativos) {
+    const chave = getConsolidationKey(ativo);
+
+    if (!mapa[chave]) {
+      mapa[chave] = { ...ativo };
+    } else {
+      const existing = mapa[chave];
+      const qtdNova = Number(ativo.quantidade ?? 0);
+      const precoNovo = Number(ativo.precoMedio ?? ativo.preco_medio ?? 0);
+      const qtdExisting = Number(existing.quantidade ?? 0);
+      const precoExisting = Number(existing.precoMedio ?? existing.preco_medio ?? 0);
+      const valorAtualNovo = Number(ativo.valorAtual ?? 0);
+      const valorAtualExisting = Number(existing.valorAtual ?? 0);
+
+      const totalQtd = qtdExisting + qtdNova;
+      const precoMedioPonderado = totalQtd > 0
+        ? ((qtdExisting * precoExisting) + (qtdNova * precoNovo)) / totalQtd
+        : precoExisting;
+
+      existing.quantidade = totalQtd;
+      existing.precoMedio = precoMedioPonderado;
+      existing.preco_medio = precoMedioPonderado;
+      existing.valorAtual = valorAtualExisting + valorAtualNovo;
+    }
+  }
+
+  return Object.values(mapa);
+};
+
 const GanhoPerdaCell = ({ asset, className = "", ocultarValores = false }) => {
   const ganho = isMercadoDisponivel(asset) ? calcGanhoPerda(asset) : null;
   const perc = isMercadoDisponivel(asset) ? calcGanhoPerdaPerc(asset) : null;
@@ -447,7 +489,8 @@ export default function Carteira({ embedded = false }) {
   const [resumo, setResumo] = useState(() => cache.get('carteira_v1')?.resumo ?? null);
   const [ativos, setAtivos] = useState(() => {
     const cv1 = cache.get('carteira_v1');
-    return Array.isArray(cv1?.ativos) ? cv1.ativos : [];
+    const ativosFromCache = Array.isArray(cv1?.ativos) ? cv1.ativos : [];
+    return ativosFromCache.length > 0 ? consolidarAtivos(ativosFromCache) : [];
   });
   const [atualizandoMercado, setAtualizandoMercado] = useState(false);
   const [ultimoRefreshMercado, setUltimoRefreshMercado] = useState(null);
@@ -499,7 +542,8 @@ export default function Carteira({ embedded = false }) {
         historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
       ]);
       setResumo(resumoResp ?? null);
-      setAtivos(Array.isArray(ativosResp) ? ativosResp : []);
+      const ativosConsolidados = Array.isArray(ativosResp) ? consolidarAtivos(ativosResp) : [];
+      setAtivos(ativosConsolidados);
       setScoreUnificado(insightsResp?.scoreUnificado ?? insightsResp?.score_unificado ?? null);
       setClassificacaoScore(insightsResp?.classificacao ?? null);
       setDashboardPatrimonio(dashboardResp ?? null);
@@ -507,7 +551,7 @@ export default function Carteira({ embedded = false }) {
       const pontos = [...(historicoResp?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setHistoricoMensal(pontos);
       setUltimoRefreshMercado(new Date().toISOString());
-      cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosResp, timestamp: Date.now() });
+      cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosConsolidados, timestamp: Date.now() });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         navigate("/", { replace: true });

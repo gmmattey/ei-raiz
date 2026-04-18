@@ -86,9 +86,11 @@ export default function GlobalHeader() {
   const scoreBand = insights?.scoreUnificado?.band || insights?.score_unificado?.band;
   const scoreRaw = insights?.scoreUnificado?.score ?? insights?.score_unificado?.score ?? 0;
   const scorePercent = Math.max(0, Math.min(100, (Number(scoreRaw) / 1000) * 100));
+  const temAlertas = Boolean(insights?.riscoPrincipal || insights?.acaoPrioritaria ||
+    (insights?.diagnostico?.riscos?.length ?? 0) > 0);
   const notificacaoCor =
     scoreBand === 'critical' ? '#E85C5C' :
-    scoreBand === 'fragile' || scoreBand === 'stable' ? '#F56A2A' :
+    temAlertas ? '#F56A2A' :
     '#6FCF97';
   const notificacaoTitulo =
     scoreBand === 'critical' ? 'Risco detectado' :
@@ -99,15 +101,31 @@ export default function GlobalHeader() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-[var(--border-color)] backdrop-blur-md bg-[var(--bg-primary)]/90 ${scrolled ? 'shadow-md shadow-black/5' : ''}`}>
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="shrink-0 cursor-pointer" onClick={() => navigate('/home')}>
+      <div className="flex h-16 items-center">
+        {/* Área alinhada à sidebar (220px) */}
+        <div
+          className="hidden lg:flex w-[220px] flex-shrink-0 items-center justify-start px-5 border-r border-[var(--border-color)] h-full cursor-pointer"
+          onClick={() => navigate('/home')}
+        >
+          <img
+            src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
+            alt="Esquilo Invest"
+            className="h-7 object-contain"
+          />
+        </div>
+
+        {/* Área do conteúdo (restante do header) */}
+        <div className="flex flex-1 items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Logo mobile (não está no sidebar) */}
+          <div className="lg:hidden cursor-pointer" onClick={() => navigate('/home')}>
             <img
-              src={assetPath('/assets/logo/esquilo-invest-simbolo.png')}
+              src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
               alt="Logo Esquilo Invest"
-              className="h-8 w-8 object-contain"
+              className="h-6 object-contain"
             />
           </div>
+          {/* Spacer no desktop (nada à esquerda da área de conteúdo) */}
+          <div className="hidden lg:block" />
 
           <div className="flex shrink-0 items-center gap-5">
             <button onClick={toggleOcultarValores} className="h-8 w-8 flex items-center justify-center text-[var(--text-muted)] transition-all duration-200 hover:text-[#F56A2A]">
@@ -124,9 +142,9 @@ export default function GlobalHeader() {
                 style={{ color: notificacaoCor }}
               >
                 <Bell size={18} />
-                {scoreBand === 'critical' && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-[#E85C5C] text-[8px] font-bold text-white">
-                    1
+                {temAlertas && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                    style={{ background: notificacaoCor }}>
                   </span>
                 )}
               </button>
@@ -185,3 +203,4 @@ export default function GlobalHeader() {
     </header>
   );
 }
+

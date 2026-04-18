@@ -83,7 +83,6 @@ export default function MobileAppLayout({ children }) {
                   className={`h-[22px] w-[22px] ${isActive ? '' : 'opacity-50'}`}
                 />
                 <span>{item.label}</span>
-                {isActive && <span className="mt-[2px] h-1 w-1 rounded-full bg-[#F56A2A]" />}
               </NavLink>
             );
           })}
