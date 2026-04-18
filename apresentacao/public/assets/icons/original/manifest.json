@@ -1,0 +1,20 @@
+{
+  "package": "esquilo_icons_final_webapp_v1",
+  "stroke": "1.5",
+  "style": "outline round, currentColor",
+  "grid": "24x24",
+  "recommended_usage": {
+    "main": "use icons in root folder as default webapp set",
+    "filled_active": "use only for selected/active states when necessary"
+  },
+  "counts": {
+    "main_icons": 33,
+    "filled_active": 5,
+    "total": 38
+  },
+  "notes": [
+    "Package curated from prior sets with premium variants preferred.",
+    "Use currentColor in CSS for consistent theming.",
+    "Avoid mixing with external icon packs."
+  ]
+}

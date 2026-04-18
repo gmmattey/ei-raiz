@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^\\\\.\\\\.$\")",
+      "Bash(mkdir -p apresentacao)",
+      "Bash(mkdir -p servidores/porta-entrada)",
+      "Bash(mkdir -p servidores/modulos-backend)",
+      "Bash(mkdir -p bibliotecas)",
+      "Bash(mkdir -p infra/banco)",
+      "Bash(cp -r apps/web/* apresentacao/)",
+      "Bash(cp -r apps/api/* servidores/porta-entrada/)",
+      "Bash(cp -r servicos/* servidores/modulos-backend/)",
+      "Bash(cp -r pacotes/* bibliotecas/)",
+      "Bash(cp -r banco/* infra/banco/)",
+      "Bash(cp -r tests/* testes/)",
+      "Bash(cp -r docs/* documentacao/)",
+      "Bash(cp -r assets/* midia/)",
+      "Bash(mkdir -p utilitarios/scripts utilitarios/dev)",
+      "Bash(cp -r scripts/* utilitarios/scripts/)",
+      "Bash(cp -r dev/* utilitarios/dev/)",
+      "Bash(cp docker-compose.yml infra/)",
+      "Bash(cp iniciar-ambiente-teste.bat utilitarios/)",
+      "Bash(find servidores/modulos-backend -maxdepth 2 -name \"package.json\" -exec sh -c 'echo \"$\\(dirname {}\\)\"; grep \"\\\\\"name\\\\\"\" {}' \\\\;)",
+      "Bash(find bibliotecas:*)",
+      "Bash(rm -rf apps servicos pacotes banco tests dev scripts dashboard.txt RULES_ENGINE_*.md AMBIENTE_LOCAL.md)",
+      "Bash(rm -f docker-compose.yml iniciar-ambiente-teste.bat)",
+      "Bash(rm -rf .continue)",
+      "Bash(rm -rf apps servicos pacotes banco tests dev scripts .continue)",
+      "Bash(rm -f docker-compose.yml iniciar-ambiente-teste.bat dashboard.txt RULES_ENGINE_*.md AMBIENTE_LOCAL.md)",
+      "Bash(rm -f node_modules/@ei/servico-autenticacao)",
+      "Bash(rm -f node_modules/@ei/servico-carteira)",
+      "Bash(rm -f node_modules/@ei/servico-decisoes)",
+      "Bash(rm -f node_modules/@ei/servico-historico)",
+      "Bash(rm -f node_modules/@ei/servico-importacao)"
+    ]
+  }
+}

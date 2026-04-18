@@ -1,6 +1,0 @@
-name = "ei-raiz-web"
-compatibility_date = "2026-04-09"
-pages_build_output_dir = "./dist"
-
-[vars]
-VITE_API_BASE_URL = "https://ei-api-gateway.giammattey-luiz.workers.dev"

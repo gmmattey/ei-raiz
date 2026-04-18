@@ -1,0 +1,13 @@
+{
+  "name": "@ei/validacao",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./autenticacao": "./src/autenticacao.ts"
+  }
+}

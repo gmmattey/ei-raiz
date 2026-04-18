@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*",
-    "servicos/*",
-    "pacotes/*"
+    "apresentacao",
+    "servidores/*",
+    "bibliotecas/*"
   ],
   "scripts": {
     "dev": "npm run dev -w @ei/web",

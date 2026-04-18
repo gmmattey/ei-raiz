@@ -1,7 +1,0 @@
-data,ticker,nome,categoria,plataforma,quantidade,valor
-2026-04-01,PETR4,Petrobras PN,acao,B3,25,35.50
-2026-04-01,VALE3,Vale ON,acao,B3,15,58.20
-2026-04-01,BOVA11,BOVA11 ETF,fundo,XP,20,108.10
-2026-04-01,MXRF11,Maxi Renda,fundo,XP,120,10.15
-2026-04-01,TESOURO-IPCA-2035,Tesouro IPCA+,renda_fixa,Tesouro,2,2990.00
-2026-04-01,PREV-ALFA,Previdencia Alfa,previdencia,XP,1,12000.00
