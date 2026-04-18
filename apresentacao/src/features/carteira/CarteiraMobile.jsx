@@ -54,8 +54,7 @@ export default function CarteiraMobile() {
   return (
     <section className="space-y-4 pb-4">
       <header className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Carteira</p>
-        <h1 className="font-['Sora'] text-[22px] font-bold text-[var(--text-primary)]">Visao por categoria</h1>
+        <h1 className="font-['Sora'] text-[22px] font-bold text-[var(--text-primary)]">Sua Carteira</h1>
       </header>
 
       <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
@@ -89,12 +88,9 @@ export default function CarteiraMobile() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => navigate('/aportes')} className="rounded-[12px] bg-[#F56A2A] px-3 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white">
-          Registrar aporte
-        </button>
-        <button onClick={() => navigate('/historico')} className="rounded-[12px] border border-[var(--border-color)] bg-[var(--bg-card)] px-3 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]">
-          Ver historico
+      <div className="w-full">
+        <button onClick={() => navigate('/importar')} className="w-full rounded-[12px] bg-[#F56A2A] px-3 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+          Importar
         </button>
       </div>
 

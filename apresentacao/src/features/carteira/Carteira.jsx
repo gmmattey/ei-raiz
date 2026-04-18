@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowDownRight, ArrowUpRight, Download, RefreshCw, Search, Pencil, ChevronDown, Check } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from "recharts";
-import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi } from "../../cliente-api";
+import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi, historicoApi } from "../../cliente-api";
 import { cache } from "../../utils/cache";
 import PageHeader from "../../components/design-system/PageHeader";
 import MetricCard from "../../components/design-system/MetricCard";
@@ -10,6 +10,7 @@ import EstadoVazio from "../../components/feedback/EstadoVazio";
 import { IconeCategoria } from "../../components/base/IconeCategoria";
 import { formatarHora } from "../../utils/formatarData";
 import { useModoVisualizacao } from "../../context/ModoVisualizacaoContext";
+import GraficoRentabilidade from "./GraficoRentabilidade";
 
 const tiposDisponiveis = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
 const periodosDisponiveis = [3, 6, 12, 24];
@@ -462,7 +463,8 @@ export default function Carteira({ embedded = false }) {
     cache.get('carteira_dashboard', 300_000) ?? null
   );
   const [benchmark, setBenchmark] = useState(null);
-  const [categoriasColapsadas, setCategoriasColapsadas] = useState(() => 
+  const [historicoMensal, setHistoricoMensal] = useState([]);
+  const [categoriasColapsadas, setCategoriasColapsadas] = useState(() =>
     Object.fromEntries(tiposDisponiveis.map(cat => [cat, true]))
   );
   const [resumoExpandido, setResumoExpandido] = useState({ acoes: false, fundos: false });
@@ -482,7 +484,7 @@ export default function Carteira({ embedded = false }) {
       const resumoCached = cache.get('carteira_resumo', TTL);
       const insightsCached = cache.get('insights_resumo', TTL);
       const dashboardCached = cache.get('carteira_dashboard', TTL);
-      const [resumoResp, ativosResp, insightsResp, dashboardResp, benchmarkResp] = await Promise.all([
+      const [resumoResp, ativosResp, insightsResp, dashboardResp, benchmarkResp, historicoResp] = await Promise.all([
         resumoCached
           ? Promise.resolve(resumoCached)
           : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
@@ -494,6 +496,7 @@ export default function Carteira({ embedded = false }) {
           ? Promise.resolve(dashboardCached)
           : carteiraApi.obterDashboardPatrimonio().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
         carteiraApi.obterBenchmarkCarteira(periodoMeses).catch(() => null),
+        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
       ]);
       setResumo(resumoResp ?? null);
       setAtivos(Array.isArray(ativosResp) ? ativosResp : []);
@@ -501,6 +504,8 @@ export default function Carteira({ embedded = false }) {
       setClassificacaoScore(insightsResp?.classificacao ?? null);
       setDashboardPatrimonio(dashboardResp ?? null);
       setBenchmark(benchmarkResp ?? null);
+      const pontos = [...(historicoResp?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+      setHistoricoMensal(pontos);
       setUltimoRefreshMercado(new Date().toISOString());
       cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosResp, timestamp: Date.now() });
     } catch (e) {
@@ -565,6 +570,8 @@ export default function Carteira({ embedded = false }) {
 
   const scoreValor = Number(scoreUnificado?.score ?? 0);
   const badgeScore = classificacaoScore || (scoreUnificado?.band ?? "—");
+  const patrimonioTotal = Number(resumo?.patrimonioTotal ?? 0);
+  const patrimonioInvest = Number(resumo?.patrimonioInvestimentos ?? patrimonioTotal);
   const categoriasUnicas = new Set((ativos ?? []).map((a) => a.categoria).filter(Boolean)).size;
   const semAtivos = !loading && !error && (ativos?.length ?? 0) === 0;
   const resumoFundos = useMemo(() => {
@@ -735,58 +742,71 @@ export default function Carteira({ embedded = false }) {
         {!embedded && (
           <PageHeader
             title="Sua Carteira"
-            subtitle="Acompanhe todos os seus ativos em um só lugar"
             actions={
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate("/importar")}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#F56A2A] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[#d95a20] transition-all rounded-xl"
+                >
+                  <Download size={14} /> Importar
+                </button>
                 <button
                   onClick={() => void refreshMercado(ativos)}
                   className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-xl"
                 >
                   <RefreshCw size={14} className={atualizandoMercado ? "animate-spin" : ""} /> Atualizar
                 </button>
-                <button onClick={() => navigate("/historico")} className="flex items-center gap-2 px-4 py-2 bg-[#FAFAFA] border border-[#EFE7DC] text-[10px] font-bold uppercase tracking-widest hover:bg-[#EFE7DC] transition-all rounded-xl">
-                  <Download size={14} /> Histórico
-                </button>
               </div>
             }
           />
         )}
         {ultimoRefreshMercado && (() => {
-          const isAoVivo = (new Date() - new Date(ultimoRefreshMercado)) < 5 * 60 * 1000;
+          const data = new Date(ultimoRefreshMercado);
+          const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          const horaFormatada = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
           return (
-            <div className="flex items-center gap-2 mb-4 group cursor-pointer" onClick={() => void refreshMercado(ativos)}>
-              <div 
-                className={`w-2 h-2 rounded-full ${isAoVivo ? 'bg-[#1A7A45] animate-pulse' : 'bg-gray-400'}`} 
-                title={isAoVivo ? "Cotação ao vivo" : "Cotação desatualizada — atualizar"}
-              />
-              <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">
-                Cotações atualizadas {isAoVivo ? 'agora' : `às ${formatarHora(ultimoRefreshMercado)}`}
-              </p>
+            <div className="flex items-center gap-2 mb-4 text-[10px] text-[var(--text-muted)] uppercase tracking-widest">
+              <p>Atualizado em {dataFormatada} às {horaFormatada}</p>
             </div>
           );
         })()}
 
         {!embedded && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <MetricCard
-              label="Patrimônio investido"
-              value={moeda(resumo?.patrimonioTotal)}
-            />
-            <MetricCard
-              label="Retorno da carteira"
-              value={resumo?.retornoDisponivel ? `${resumo?.retorno12m?.toFixed?.(2) ?? "0.00"}%` : "Sem histórico"}
-            />
-            <MetricCard
-              label="Score de saúde"
-              value={`${scoreValor}`}
-              badge={badgeScore}
-            />
-            <MetricCard
-              label="Ativos na carteira"
-              value={`${resumo?.quantidadeAtivos ?? 0}`}
-              subtitle={categoriasUnicas > 0 ? `em ${categoriasUnicas} ${categoriasUnicas === 1 ? "categoria" : "categorias"}` : undefined}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Investimentos</p>
+              <p className="font-['Sora'] text-2xl font-bold leading-tight">
+                {ocultarValores ? '••••••••' : moeda(patrimonioInvest)}
+              </p>
+              {resumo?.retornoDisponivel ? (
+                <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                  {ocultarValores ? '••••' : `${(resumo.retorno12m ?? 0).toFixed(2)}%`}{' '}
+                  <span className="text-[var(--text-muted)] font-normal">a.a.</span>
+                </p>
+              ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+            </div>
+
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Score da Carteira</p>
+              <p className="font-['Sora'] text-2xl font-bold leading-tight">
+                {ocultarValores ? '•••• / 1000' : `${scoreValor} / 1000`}
+              </p>
+              <p className={`text-xs font-semibold mt-1.5 ${
+                scoreUnificado?.band === 'critical' ? 'text-[#E85C5C]' :
+                scoreUnificado?.band === 'fragile'  ? 'text-[#F2C94C]' : 'text-[#6FCF97]'
+              }`}>
+                {badgeScore}
+              </p>
+            </div>
           </div>
+        )}
+
+        {!embedded && (
+          <GraficoRentabilidade
+            historicoMensal={historicoMensal}
+            benchmark={benchmark}
+            ativos={ativos}
+          />
         )}
 
         {embedded && ativos.length > 0 && (
