@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight, AlertTriangle, Info, X
+  AlertTriangle, Info, X, Zap, CheckCircle2, ArrowRight
 } from 'lucide-react';
 import EstadoVazio from '../../components/feedback/EstadoVazio';
 import { formatarData } from '../../utils/formatarData';
@@ -9,7 +9,6 @@ import { cache } from '../../utils/cache';
 import { useNavigate } from 'react-router-dom';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { useVeraEvaluation } from './hooks/useVeraEvaluation';
-import { ScoreSemiCircle } from './components/ScoreSemiCircle';
 
 const moeda = (v) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -253,6 +252,18 @@ export default function Insights() {
     return lista;
   }, [resumo]);
 
+  const parseVeraBody = (body) => {
+    if (!body) return { problem: '', why: '', how: '' };
+    const sections = body.split(/\n\n+/);
+    return {
+      problem: sections[0] || '',
+      why: sections[1] || '',
+      how: sections[2] || '',
+    };
+  };
+
+  const veraSections = veraPayload ? parseVeraBody(veraPayload.body) : { problem: '', why: '', how: '' };
+
   const confiancaDiagnostico = resumo?.confiancaDiagnostico || resumo?.confianca_diagnostico || 'alta';
   const atualizacaoMercado = resumo?.atualizacaoMercado || resumo?.atualizacao_mercado;
   const dadosMercadoSessao = resumo?.dadosMercadoSessao || resumo?.dados_mercado_sessao;
@@ -300,77 +311,78 @@ export default function Insights() {
 
         {!loading && !error && resumo && !semBaseInsights && (
           <div className="space-y-12">
-            {/* Row 1: Score + 3 Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Score Card com meia lua */}
-              <div className="bg-[#0B1218] rounded-xl p-6 text-white flex flex-col items-center justify-center">
-                <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">Score</p>
-                <ScoreSemiCircle score={scoreValor} maxScore={1000} ocultarValores={ocultarValores} />
-                {badgeScore && (
-                  <div className="mt-4 px-3 py-1 text-xs font-bold rounded-full" style={{ background: badgeScore.bg, color: badgeScore.color }}>
-                    {badgeScore.label}
+            {/* Row 1: 3 Vera Insight Cards */}
+            {veraPayload && (
+              <div className="space-y-4">
+                {/* Card 1: Problem */}
+                {veraSections.problem && (
+                  <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
+                    <p className="text-xs text-[#0B1218]">{veraSections.problem}</p>
+                  </div>
+                )}
+
+                {/* Card 2: Why */}
+                {veraSections.why && (
+                  <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
+                    <p className="text-xs text-[#0B1218]">{veraSections.why}</p>
+                  </div>
+                )}
+
+                {/* Card 3: How */}
+                {veraSections.how && (
+                  <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
+                    <p className="text-xs text-[#0B1218]">{veraSections.how}</p>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Card 1: Problema */}
-              {resumo.riscoPrincipal && (
-                <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6 flex flex-col">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
-                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.riscoPrincipal.titulo}</h3>
-                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">{resumo.riscoPrincipal.descricao}</p>
-                  <button
-                    onClick={() => {
-                      void telemetriaApi.registrarEventoTelemetria('problema_action', { titulo: resumo.riscoPrincipal.titulo });
-                      navigate(resolverUrlAcao(resumo.riscoPrincipal.codigo));
-                    }}
-                    className="text-[#E85C5C] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
-                  >
-                    Ver mais <ArrowRight size={12} />
-                  </button>
-                </div>
-              )}
+            {/* Fallback to resumo if no veraPayload */}
+            {!veraPayload && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {resumo.riscoPrincipal && (
+                  <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6 flex flex-col">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
+                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.riscoPrincipal.titulo}</h3>
+                    <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.riscoPrincipal.descricao}</p>
+                  </div>
+                )}
 
-              {/* Card 2: Porque (if available) */}
-              {resumo.diagnostico && (
-                <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6 flex flex-col">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Porque</p>
-                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">
-                    {resumo.diagnostico.titulo || resumo.diagnosticoFinal?.titulo || 'Análise de risco'}
-                  </h3>
-                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">
-                    {resumo.diagnostico.resumo || resumo.diagnosticoFinal?.resumo || resumo.diagnostico.descricao}
-                  </p>
-                  <button
-                    onClick={() => navigate('/carteira')}
-                    className="text-[#B8880A] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
-                  >
-                    Entender <ArrowRight size={12} />
-                  </button>
-                </div>
-              )}
+                {resumo.diagnostico && (
+                  <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6 flex flex-col">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
+                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">
+                      {resumo.diagnostico.titulo || resumo.diagnosticoFinal?.titulo || 'Análise de risco'}
+                    </h3>
+                    <p className="text-xs text-[#0B1218]/70 flex-grow">
+                      {resumo.diagnostico.resumo || resumo.diagnosticoFinal?.resumo || resumo.diagnostico.descricao}
+                    </p>
+                  </div>
+                )}
 
-              {/* Card 3: O que fazer */}
-              {resumo.acaoPrioritaria && (
-                <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6 flex flex-col">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
-                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.acaoPrioritaria.titulo}</h3>
-                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">{resumo.acaoPrioritaria.descricao}</p>
-                  <button
-                    onClick={() => {
-                      void telemetriaApi.registrarEventoTelemetria('acao_prioritaria_clicked', { titulo: resumo.acaoPrioritaria.titulo });
-                      navigate(resolverUrlAcao(resumo.acaoPrioritaria.codigo));
-                    }}
-                    className="text-[#1A7A45] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
-                  >
-                    Executar <ArrowRight size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
+                {resumo.acaoPrioritaria && (
+                  <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6 flex flex-col">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
+                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.acaoPrioritaria.titulo}</h3>
+                    <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.acaoPrioritaria.descricao}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Row 2: Detailed Explanation */}
-            {resumo.diagnosticoFinal?.mensagem && (
+            {/* Row 2: Vera Full Explanation */}
+            {veraPayload?.title && (
+              <div className="bg-white rounded-xl p-8 border border-[var(--border-color)]">
+                <h2 className="font-['Sora'] text-xl font-bold text-[#0B1218] mb-4">{veraPayload.title}</h2>
+                <p className="text-sm text-[#0B1218]/70 leading-relaxed">{veraPayload.body}</p>
+              </div>
+            )}
+
+            {/* Row 2: Fallback Detailed Explanation */}
+            {!veraPayload && resumo.diagnosticoFinal?.mensagem && (
               <div className="bg-white rounded-xl p-8 border border-[var(--border-color)]">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#0B1218] mb-4">O que você precisa saber</h2>
                 <p className="text-sm text-[#0B1218]/70 leading-relaxed mb-6">
