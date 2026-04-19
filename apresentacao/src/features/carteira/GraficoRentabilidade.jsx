@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { TrendingUp } from 'lucide-react';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -16,11 +15,17 @@ const fmtPct = (v) => {
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 };
 
-export default function GraficoRentabilidade({ historicoMensal, benchmark, ativos }) {
+export default function GraficoRentabilidade({ historicoMensal, monthlyPerformance, benchmark, ativos }) {
   const { ocultarValores } = useModoVisualizacao();
   const [showCDI, setShowCDI] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroTempo, setFiltroTempo] = useState('1A');
+
+  // Regra de produto: sem série mensal real suficiente, não renderiza o card.
+  // Sem placeholder, sem "sem dados", sem gráfico vazio.
+  if (!monthlyPerformance?.available || (monthlyPerformance.points?.length ?? 0) < 2) {
+    return null;
+  }
 
   const tiposDisponiveis = useMemo(() => {
     const tipos = new Set();
@@ -82,6 +87,11 @@ export default function GraficoRentabilidade({ historicoMensal, benchmark, ativo
 
   const semDados = dadosGrafico.length < 2 || dadosGrafico.every(p => p.carteira === null);
 
+  // Defesa-em-profundidade: mesmo com monthlyPerformance.available=true, a
+  // derivação por tipo/tempo pode zerar os pontos úteis (ex: filtroTipo sem
+  // cobertura). Nesse caso, oculta o card por completo — nunca placeholder.
+  if (semDados) return null;
+
   return (
     <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-6 mb-8 fade-in-up">
       <div className="flex flex-col gap-4 mb-6">
@@ -139,9 +149,8 @@ export default function GraficoRentabilidade({ historicoMensal, benchmark, ativo
 
       {/* Gráfico */}
       <div className={`h-64 ${ocultarValores ? 'opacity-20 blur-sm pointer-events-none' : ''}`}>
-        {!semDados ? (
-          <ResponsiveContainer width="100%" height="100%">
-            {isCdiMode ? (
+        <ResponsiveContainer width="100%" height="100%">
+          {isCdiMode ? (
               <LineChart data={dadosGrafico} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <XAxis
                   dataKey="anoMes"
@@ -238,19 +247,13 @@ export default function GraficoRentabilidade({ historicoMensal, benchmark, ativo
                   dot={false}
                   isAnimationActive={false}
                 />
-              </AreaChart>
-            )}
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center gap-3">
-            <TrendingUp size={24} className="text-[var(--text-muted)]" />
-            <p className="text-sm text-[var(--text-muted)]">Dados insuficientes para exibição</p>
-          </div>
-        )}
+            </AreaChart>
+          )}
+        </ResponsiveContainer>
       </div>
 
       {/* Legenda CDI */}
-      {isCdiMode && !semDados && (
+      {isCdiMode && (
         <div className="flex items-center gap-5 mt-3">
           <div className="flex items-center gap-1.5">
             <span className="h-0.5 w-4 rounded-full bg-[#F56A2A] inline-block" />

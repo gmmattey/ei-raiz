@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  avaliarRentabilidadeMensal,
   calcularRetornosMensais,
   calcularUltimoDiaDoMes,
   extrairAnoMes,
@@ -145,4 +146,109 @@ test("ServicoHistoricoMensalPadrao: calcula retorno mensal e acumulado vs primei
 
   assert.ok(Math.abs(ponto.retornoMes - 9.0909) < 0.01); // (1200-1100)/1100
   assert.equal(ponto.retornoAcum, 20); // (1200-1000)/1000
+});
+
+// ─── avaliarRentabilidadeMensal ─────────────────────────────────────────────
+const criarPonto = (
+  anoMes: string,
+  totalInvestido: number,
+  totalAtual: number,
+): PontoHistoricoMensal => ({
+  id: `p_${anoMes}`,
+  usuarioId: "u1",
+  anoMes,
+  dataFechamento: `${anoMes}-28T23:59:59Z`,
+  totalInvestido,
+  totalAtual,
+  retornoMes: 0,
+  retornoAcum: 0,
+  origem: "fechamento_mensal",
+});
+
+test("avaliarRentabilidadeMensal: zero pontos -> indisponível", () => {
+  const r = avaliarRentabilidadeMensal([]);
+  assert.equal(r.available, false);
+  assert.equal(r.points.length, 0);
+});
+
+test("avaliarRentabilidadeMensal: um ponto único -> indisponível", () => {
+  const r = avaliarRentabilidadeMensal([criarPonto("2026-01", 1000, 1050)]);
+  assert.equal(r.available, false);
+  assert.equal(r.points.length, 0);
+});
+
+test("avaliarRentabilidadeMensal: 2 pontos válidos -> disponível com base100 e returnPercent", () => {
+  const r = avaliarRentabilidadeMensal([
+    criarPonto("2026-01", 1000, 1000),
+    criarPonto("2026-02", 1000, 1050),
+  ]);
+  assert.equal(r.available, true);
+  assert.equal(r.points.length, 2);
+  assert.equal(r.points[0].month, "2026-01");
+  assert.equal(r.points[0].base100, 100);
+  assert.equal(r.points[0].returnPercent, 0);
+  assert.equal(r.points[1].month, "2026-02");
+  assert.equal(r.points[1].base100, 105);
+  assert.equal(r.points[1].returnPercent, 5);
+});
+
+test("avaliarRentabilidadeMensal: base 100 ancora no primeiro mês, mesmo com rentabilidade inicial != 0", () => {
+  // mês 1: 1000 -> 1100 (retorno 10%); mês 2: 1000 investido, 1210 atual (retorno 21%)
+  // base100[0] = 100, base100[1] = (1.21 / 1.10) * 100 = 110
+  const r = avaliarRentabilidadeMensal([
+    criarPonto("2026-01", 1000, 1100),
+    criarPonto("2026-02", 1000, 1210),
+  ]);
+  assert.equal(r.available, true);
+  assert.equal(r.points[0].base100, 100);
+  assert.ok(Math.abs(r.points[1].base100 - 110) < 0.001);
+  assert.ok(Math.abs(r.points[1].returnPercent - 10) < 0.001);
+});
+
+test("avaliarRentabilidadeMensal: pontos fora de ordem são reordenados cronologicamente", () => {
+  const r = avaliarRentabilidadeMensal([
+    criarPonto("2026-03", 1000, 1100),
+    criarPonto("2026-01", 1000, 1000),
+    criarPonto("2026-02", 1000, 1050),
+  ]);
+  assert.equal(r.available, true);
+  assert.deepEqual(r.points.map((p) => p.month), ["2026-01", "2026-02", "2026-03"]);
+});
+
+test("avaliarRentabilidadeMensal: pontos duplicados por anoMes são deduplicados (mantém mais recente)", () => {
+  const antigo: PontoHistoricoMensal = { ...criarPonto("2026-01", 1000, 1000), dataFechamento: "2026-01-10T00:00:00Z" };
+  const novo: PontoHistoricoMensal = { ...criarPonto("2026-01", 1000, 1080), dataFechamento: "2026-01-31T23:59:59Z" };
+  const r = avaliarRentabilidadeMensal([antigo, novo, criarPonto("2026-02", 1000, 1100)]);
+  assert.equal(r.available, true);
+  assert.equal(r.points.length, 2);
+  assert.equal(r.points[0].totalAtual, 1080);
+});
+
+test("avaliarRentabilidadeMensal: pontos com totalInvestido=0 são descartados", () => {
+  // apenas 1 ponto válido após filtro -> indisponível
+  const r = avaliarRentabilidadeMensal([
+    criarPonto("2026-01", 0, 0),
+    criarPonto("2026-02", 1000, 1050),
+  ]);
+  assert.equal(r.available, false);
+});
+
+test("avaliarRentabilidadeMensal: valores NaN ou anoMes inválido são descartados", () => {
+  const r = avaliarRentabilidadeMensal([
+    { ...criarPonto("2026-01", 1000, 1000), totalAtual: Number.NaN },
+    { ...criarPonto("2026-13", 1000, 1050) }, // mês inválido
+    criarPonto("2026-02", 1000, 1050),
+    criarPonto("2026-03", 1000, 1100),
+  ]);
+  assert.equal(r.available, true);
+  assert.deepEqual(r.points.map((p) => p.month), ["2026-02", "2026-03"]);
+});
+
+test("avaliarRentabilidadeMensal: razão base inválida no primeiro ponto -> indisponível", () => {
+  // totalInvestido válido mas totalAtual = 0 faz razão = 0 -> não é ancorável
+  const r = avaliarRentabilidadeMensal([
+    criarPonto("2026-01", 1000, 0),
+    criarPonto("2026-02", 1000, 1050),
+  ]);
+  assert.equal(r.available, false);
 });

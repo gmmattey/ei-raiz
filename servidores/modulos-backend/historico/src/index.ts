@@ -5,6 +5,7 @@ export { ServicoHistoricoPadrao } from "./servico";
 export type { RepositorioHistoricoMensal } from "./historico-mensal";
 export {
   ServicoHistoricoMensalPadrao,
+  avaliarRentabilidadeMensal,
   calcularRetornosMensais,
   calcularUltimoDiaDoMes,
   extrairAnoMes,

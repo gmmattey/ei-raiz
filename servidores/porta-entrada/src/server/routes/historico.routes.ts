@@ -3,6 +3,7 @@ import {
   RepositorioHistoricoMensalD1,
   ServicoHistoricoMensalPadrao,
   ServicoHistoricoPadrao,
+  avaliarRentabilidadeMensal,
 } from "@ei/servico-historico";
 import type { SessaoUsuarioSaida } from "@ei/contratos";
 import type { Env, ServiceResponse } from "../types/gateway";
@@ -69,7 +70,15 @@ export async function handleHistoricoRoutes(
       );
     }
 
-    return sucesso({ pontos });
+    // monthlyPerformance: série ordenada com base100/returnPercent para o
+    // gráfico de rentabilidade mensal. `available = false` quando não há
+    // histórico real suficiente — nesse caso o frontend deve ocultar o card
+    // inteiro (sem placeholder, sem "sem dados").
+    const monthlyPerformance = avaliarRentabilidadeMensal(
+      [...pontos].sort((a, b) => a.anoMes.localeCompare(b.anoMes)),
+    );
+
+    return sucesso({ pontos, monthlyPerformance });
   }
 
   if (pathname.startsWith("/api/historico/mensal/") && request.method === "GET") {

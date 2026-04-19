@@ -532,6 +532,7 @@ export default function Carteira({ embedded = false }) {
   );
   const [benchmark, setBenchmark] = useState(null);
   const [historicoMensal, setHistoricoMensal] = useState([]);
+  const [monthlyPerformance, setMonthlyPerformance] = useState({ available: false, points: [] });
   const [categoriasColapsadas, setCategoriasColapsadas] = useState(() =>
     Object.fromEntries(tiposDisponiveis.map(cat => [cat, true]))
   );
@@ -564,7 +565,7 @@ export default function Carteira({ embedded = false }) {
           ? Promise.resolve(dashboardCached)
           : carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
         carteiraApi.obterBenchmarkCarteiraComFallback(periodoMeses).catch(() => null),
-        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
+        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [], monthlyPerformance: { available: false, points: [] } })),
       ]);
       setResumo(resumoResp ?? null);
       const ativosConsolidados = Array.isArray(ativosResp) ? consolidarAtivos(ativosResp) : [];
@@ -575,6 +576,7 @@ export default function Carteira({ embedded = false }) {
       setBenchmark(benchmarkResp ?? null);
       const pontos = [...(historicoResp?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setHistoricoMensal(pontos);
+      setMonthlyPerformance(historicoResp?.monthlyPerformance ?? { available: false, points: [] });
       setUltimoRefreshMercado(new Date().toISOString());
       cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosConsolidados, timestamp: Date.now() });
     } catch (e) {
@@ -873,9 +875,10 @@ export default function Carteira({ embedded = false }) {
           </div>
         )}
 
-        {!embedded && (
+        {!embedded && monthlyPerformance.available && (
           <GraficoRentabilidade
             historicoMensal={historicoMensal}
+            monthlyPerformance={monthlyPerformance}
             benchmark={benchmark}
             ativos={ativos}
           />

@@ -110,6 +110,7 @@ export default function CarteiraMobile() {
   const [ativos, setAtivos]           = useState(() => cached?.ativos ?? []);
   const [insights, setInsights]       = useState(() => cached?.insights ?? null);
   const [historicoMensal, setHistoricoMensal] = useState(() => cached?.historicoMensal ?? []);
+  const [monthlyPerformance, setMonthlyPerformance] = useState(() => cached?.monthlyPerformance ?? { available: false, points: [] });
   const [benchmark, setBenchmark]     = useState(() => cached?.benchmark ?? null);
 
   // Controles do gráfico
@@ -126,20 +127,22 @@ export default function CarteiraMobile() {
         insightsCached
           ? Promise.resolve(insightsCached)
           : insightsApi.obterResumoComFallback().catch(() => null),
-        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
+        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [], monthlyPerformance: { available: false, points: [] } })),
         carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
       ]);
 
       const consolidados = Array.isArray(dadosAtivos) ? consolidarAtivos(dadosAtivos) : [];
       const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+      const monthlyPerf = dadosHistorico?.monthlyPerformance ?? { available: false, points: [] };
 
       setAtivos(consolidados);
       setInsights(dadosInsights);
       setHistoricoMensal(pontos);
+      setMonthlyPerformance(monthlyPerf);
       setBenchmark(dadosBenchmark);
       setErro('');
 
-      cache.set(CACHE_KEY, { ativos: consolidados, insights: dadosInsights, historicoMensal: pontos, benchmark: dadosBenchmark });
+      cache.set(CACHE_KEY, { ativos: consolidados, insights: dadosInsights, historicoMensal: pontos, monthlyPerformance: monthlyPerf, benchmark: dadosBenchmark });
       if (dadosInsights) cache.set('insights_resumo', dadosInsights);
     } catch {
       if (!silencioso) setErro('Não foi possível carregar a carteira.');
@@ -295,7 +298,9 @@ export default function CarteiraMobile() {
         </article>
       </div>
 
-      {/* Gráfico de Rentabilidade */}
+      {/* Gráfico de Rentabilidade — só aparece com série mensal real suficiente.
+          Sem dados reais = card oculto por completo. Sem placeholder. */}
+      {monthlyPerformance.available && (
       <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
         {/* Cabeçalho do gráfico */}
         <div className="flex items-center justify-between mb-3">
@@ -356,8 +361,7 @@ export default function CarteiraMobile() {
 
         {/* Área do gráfico */}
         <div className={`h-[110px] ${ocultarValores ? 'opacity-20 blur-sm pointer-events-none' : ''}`}>
-          {dadosGrafico.length > 1 && !dadosGrafico.every(p => p.carteira === null) ? (
-            <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%">
               {isCdiMode ? (
                 <LineChart data={dadosGrafico} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                   <XAxis
@@ -444,13 +448,6 @@ export default function CarteiraMobile() {
                 </AreaChart>
               )}
             </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-[12px] text-[var(--text-muted)]">
-                {loading ? 'Carregando...' : 'Dados insuficientes para exibição'}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Legenda CDI */}
@@ -467,6 +464,7 @@ export default function CarteiraMobile() {
           </div>
         )}
       </article>
+      )}
 
       {/* Cards por categoria — apenas categorias com ativos cadastrados */}
       {cards.length > 0 && (

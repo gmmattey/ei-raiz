@@ -1,5 +1,29 @@
 export type OrigemHistoricoMensal = "fechamento_mensal" | "reconstrucao";
 
+/**
+ * Mínimo de pontos mensais válidos para renderizar o gráfico de rentabilidade.
+ * Abaixo disso o gráfico deve ser ocultado — nunca placeholder.
+ */
+export const MIN_PONTOS_RENTABILIDADE_MENSAL = 2;
+
+export type PontoRentabilidadeMensal = {
+  month: string;           // "YYYY-MM"
+  totalInvestido: number;
+  totalAtual: number;
+  base100: number;         // índice base 100 no primeiro ponto
+  returnPercent: number;   // retorno acumulado desde o primeiro ponto (%)
+};
+
+export type RentabilidadeMensal = {
+  available: boolean;
+  points: PontoRentabilidadeMensal[];
+};
+
+export type RespostaHistoricoMensal = {
+  pontos: PontoHistoricoMensal[];
+  monthlyPerformance: RentabilidadeMensal;
+};
+
 export type PontoHistoricoMensal = {
   id: string;
   usuarioId: string;
