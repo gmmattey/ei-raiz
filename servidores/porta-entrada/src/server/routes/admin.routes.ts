@@ -143,9 +143,29 @@ export async function handleAdminRoutes(
     return sucesso(await resetMassaTesteEiRaiz(env));
   }
 
-  if (!sessao) return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
+  // Service token para rotas CVM: aceita x-admin-token OU Authorization: Bearer <ADMIN_TOKEN>.
+  // Permite que o script externo (GitHub Action) use secret de longa duração
+  // em vez de JWT de usuário (que expira em 8h). Só vale para rotas /api/admin/cvm/*
+  // e /api/admin/fundos/cvm/*, que são de ingestão/manutenção operacional.
+  const ehRotaCvm = pathname.startsWith("/api/admin/cvm/") || pathname.startsWith("/api/admin/fundos/cvm/");
+  const serviceTokenValido =
+    ehRotaCvm && !!env.ADMIN_TOKEN && (
+      request.headers.get("x-admin-token") === env.ADMIN_TOKEN ||
+      request.headers.get("authorization") === `Bearer ${env.ADMIN_TOKEN}`
+    );
+
+  // Para rotas não-CVM, sessão continua obrigatória. Para rotas CVM, service
+  // token OU sessão admin são aceitos.
+  if (!sessao && !serviceTokenValido) {
+    return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
+  }
+  if (!ehRotaCvm && !sessao) {
+    return { ok: false, status: 401, codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" };
+  }
 
   const validarAdmin = async (): Promise<ServiceResponse<unknown> | null> => {
+    if (serviceTokenValido) return null;
+    if (!sessao) return erro("ACESSO_NEGADO", "Sessão ausente", 401);
     const autorizado = await usuarioEhAdmin(env.DB, sessao.usuario.email, {
       adminTokenHeader: request.headers.get("x-admin-token"),
       adminTokenEnv: env.ADMIN_TOKEN,
@@ -156,7 +176,7 @@ export async function handleAdminRoutes(
   };
 
   if (pathname === "/api/admin/me" && request.method === "GET") {
-    return sucesso({ email: sessao.usuario.email, isAdmin: !(await validarAdmin()) });
+    return sucesso({ email: sessao!.usuario.email, isAdmin: !(await validarAdmin()) });
   }
 
   if (pathname === "/api/admin/config" && request.method === "GET") {
@@ -175,7 +195,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarScoreConfigSchema.parse(await parseJsonBody(request));
-    await atualizarScoreConfig(env.DB, body.score, sessao.usuario.email);
+    await atualizarScoreConfig(env.DB, body.score, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -183,7 +203,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarFlagsSchema.parse(await parseJsonBody(request));
-    await atualizarFeatureFlags(env.DB, body.flags, sessao.usuario.email);
+    await atualizarFeatureFlags(env.DB, body.flags, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -191,7 +211,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarMenusSchema.parse(await parseJsonBody(request));
-    await atualizarMenus(env.DB, body.menus, sessao.usuario.email);
+    await atualizarMenus(env.DB, body.menus, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -199,7 +219,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarConteudoSchema.parse(await parseJsonBody(request));
-    await atualizarConteudoApp(env.DB, body.blocos, sessao.usuario.email);
+    await atualizarConteudoApp(env.DB, body.blocos, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -213,7 +233,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarCorretorasSchema.parse(await parseJsonBody(request));
-    await atualizarCorretorasSuportadas(env.DB, body.corretoras, sessao.usuario.email);
+    await atualizarCorretorasSuportadas(env.DB, body.corretoras, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -249,7 +269,7 @@ export async function handleAdminRoutes(
     if (stmts.length > 0) await env.DB.batch(stmts);
     await env.DB
       .prepare("INSERT INTO admin_auditoria (id, acao, alvo, payload_json, autor_email, criado_em) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(crypto.randomUUID(), "simulacoes.parametros.atualizar", "simulacoes_parametros", JSON.stringify({ quantidade: body.parametros.length }), sessao.usuario.email, now)
+      .bind(crypto.randomUUID(), "simulacoes.parametros.atualizar", "simulacoes_parametros", JSON.stringify({ quantidade: body.parametros.length }), sessao!.usuario.email, now)
       .run();
     return sucesso({ atualizado: true });
   }
@@ -264,7 +284,7 @@ export async function handleAdminRoutes(
     const erroAdmin = await validarAdmin();
     if (erroAdmin) return erroAdmin;
     const body = atualizarAdminSchema.parse(await parseJsonBody(request));
-    await definirAdmin(env.DB, body.email, body.ativo, sessao.usuario.email);
+    await definirAdmin(env.DB, body.email, body.ativo, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 
@@ -356,7 +376,7 @@ export async function handleAdminRoutes(
     if (!env.ADMIN_TOKEN || !tokenHeader || tokenHeader !== env.ADMIN_TOKEN) {
       return erro("ACESSO_NEGADO", "Token administrativo inválido", 403);
     }
-    await definirAdmin(env.DB, sessao.usuario.email, true, sessao.usuario.email);
+    await definirAdmin(env.DB, sessao!.usuario.email, true, sessao!.usuario.email);
     return sucesso({ atualizado: true });
   }
 

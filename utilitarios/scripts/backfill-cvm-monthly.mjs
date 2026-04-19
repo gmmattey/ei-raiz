@@ -25,7 +25,9 @@
  *   EI_ADMIN_TOKEN=<jwt> npm run backfill:cvm-monthly -- --origem=github_action
  *
  * ─── Variáveis de ambiente ────────────────────────────────────────────────
- *   EI_ADMIN_TOKEN (obrigatório)  JWT admin
+ *   EI_ADMIN_TOKEN (obrigatório)  Service token de longa duração — deve bater
+ *                                 com `ADMIN_TOKEN` do Worker (env). Também
+ *                                 aceita JWT admin (mas expira em 8h).
  *   EI_API_URL     (opcional)     Default: https://ei-api.esquiloinvest.workers.dev
  */
 
@@ -76,6 +78,7 @@ async function apiJson(path, opts = {}) {
       ...(opts.headers ?? {}),
       "content-type": "application/json",
       authorization: `Bearer ${ADMIN_TOKEN}`,
+      "x-admin-token": ADMIN_TOKEN,
     },
   });
   const body = await res.json().catch(() => ({}));

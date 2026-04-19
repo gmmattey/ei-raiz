@@ -9,7 +9,10 @@ name: Ingestão CVM (diária)
 # Reexecução manual: Actions → "Ingestão CVM (diária)" → Run workflow.
 # Parâmetros opcionais: mês específico (YYYY-MM), rótulo de origem.
 #
-# Credencial requerida: secret EI_ADMIN_TOKEN (JWT de admin válido).
+# Credencial requerida: secret EI_ADMIN_TOKEN. Deve bater com a env
+# `ADMIN_TOKEN` do Worker (service token de longa duração). O script envia o
+# valor tanto em `x-admin-token` quanto em `Authorization: Bearer`, e o
+# Worker aceita qualquer um para rotas /api/admin/cvm/*.
 # Base URL padrão: EI_API_URL secret (se ausente, usa o default do script).
 
 on:

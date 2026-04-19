@@ -24,7 +24,10 @@
  *
  * ─── Variáveis de ambiente ──────────────────────────────────────────────────
  *
- *   EI_ADMIN_TOKEN (obrigatório) JWT de admin válido
+ *   EI_ADMIN_TOKEN (obrigatório) Service token de longa duração — deve bater
+ *                                com `ADMIN_TOKEN` do Worker (env). Também
+ *                                aceita JWT admin (expira em 8h, não serve
+ *                                para cron).
  *   EI_API_URL     (opcional)    Default: https://ei-api.esquiloinvest.workers.dev
  *   EI_ORIGEM      (opcional)    Alternativa a --origem
  *
@@ -136,6 +139,7 @@ async function apiJson(path, opts = {}) {
       ...(opts.headers ?? {}),
       "content-type": "application/json",
       authorization: `Bearer ${ADMIN_TOKEN}`,
+      "x-admin-token": ADMIN_TOKEN,
     },
   });
   const body = await res.json().catch(() => ({}));
