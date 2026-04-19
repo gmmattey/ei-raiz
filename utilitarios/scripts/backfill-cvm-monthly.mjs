@@ -92,9 +92,25 @@ async function apiJson(path, opts = {}) {
 async function baixarArquivo(url, nomeLocal) {
   if (!existsSync(TMP_DIR)) mkdirSync(TMP_DIR, { recursive: true });
   const destino = `${TMP_DIR}/${nomeLocal}`;
-  const res = await fetchComRetry(url);
-  if (!res.ok) throw new Error(`download_${res.status}`);
-  await pipeline(Readable.fromWeb(res.body), createWriteStream(destino));
+  // Ver nota em ingest-cvm-funds.mjs: curl em vez de fetch.
+  try {
+    execFileSync(
+      "curl",
+      [
+        "-sSfL",
+        "--retry", "3",
+        "--retry-delay", "2",
+        "--connect-timeout", "30",
+        "--max-time", "300",
+        "-A", "Mozilla/5.0 (compatible; EsquiloInvestBot/1.0)",
+        "-o", destino,
+        url,
+      ],
+      { stdio: ["ignore", "pipe", "pipe"] },
+    );
+  } catch (err) {
+    throw new Error(`download: ${err.stderr?.toString?.() || err.message}`);
+  }
   return destino;
 }
 

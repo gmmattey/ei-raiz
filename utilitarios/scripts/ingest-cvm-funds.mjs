@@ -178,10 +178,27 @@ async function baixarArquivo(url, nomeLocal) {
   if (!existsSync(TMP_DIR)) mkdirSync(TMP_DIR, { recursive: true });
   const destino = `${TMP_DIR}/${nomeLocal}`;
   console.log(`  Baixando ${url}`);
-  const res = await fetchComRetry(url);
-  if (!res.ok) throw new Error(`download_falhou_${res.status}`);
-  const ws = createWriteStream(destino);
-  await pipeline(Readable.fromWeb(res.body), ws);
+  // Usa curl em vez de fetch para downloads: o undici do Node 20 tem falhas
+  // intermitentes (`fetch failed`) com o portal da CVM em runners do GitHub,
+  // mesmo quando o recurso responde 200 para curl. Mantém retry/TLS padrão.
+  try {
+    execFileSync(
+      "curl",
+      [
+        "-sSfL",
+        "--retry", "3",
+        "--retry-delay", "2",
+        "--connect-timeout", "30",
+        "--max-time", "300",
+        "-A", "Mozilla/5.0 (compatible; EsquiloInvestBot/1.0)",
+        "-o", destino,
+        url,
+      ],
+      { stdio: ["ignore", "pipe", "pipe"] },
+    );
+  } catch (err) {
+    throw new Error(`download_falhou: ${err.stderr?.toString?.() || err.message}`);
+  }
   console.log(`  Salvo em ${destino}`);
   return destino;
 }
