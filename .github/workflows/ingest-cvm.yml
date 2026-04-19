@@ -1,0 +1,61 @@
+name: Ingestão CVM (diária)
+
+# Baixa o CSV de informes diários da CVM e envia em lotes ao Worker via
+# endpoint admin. Roda fora do Worker por design: o volume do CSV mensal é
+# incompatível com limites de CPU/memória do Cloudflare Worker. O Worker só
+# serve os dados (tabela cotas_fundos_cvm) e registra execuções em
+# cvm_ingestion_runs.
+#
+# Reexecução manual: Actions → "Ingestão CVM (diária)" → Run workflow.
+# Parâmetros opcionais: mês específico (YYYY-MM), rótulo de origem.
+#
+# Credencial requerida: secret EI_ADMIN_TOKEN (JWT de admin válido).
+# Base URL padrão: EI_API_URL secret (se ausente, usa o default do script).
+
+on:
+  schedule:
+    # Todo dia às 02:00 BRT (UTC-3) = 05:00 UTC.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: "Mês de referência (YYYY-MM). Vazio = mês corrente + fallback anterior."
+        required: false
+        default: ""
+      origem:
+        description: "Rótulo de origem (manual|scheduled|github_action|trigger)"
+        required: false
+        default: "github_action"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Executar ingestão CVM
+        env:
+          EI_ADMIN_TOKEN: ${{ secrets.EI_ADMIN_TOKEN }}
+          EI_API_URL: ${{ secrets.EI_API_URL }}
+        run: |
+          set -e
+          ARGS=""
+          if [ -n "${{ github.event.inputs.mes }}" ]; then
+            ARGS="$ARGS --mes=${{ github.event.inputs.mes }}"
+          fi
+          ORIGEM="${{ github.event.inputs.origem }}"
+          if [ -z "$ORIGEM" ]; then
+            ORIGEM="github_action"
+          fi
+          ARGS="$ARGS --origem=$ORIGEM"
+          echo "Executando: npm run ingest:cvm -- $ARGS"
+          npm run ingest:cvm -- $ARGS

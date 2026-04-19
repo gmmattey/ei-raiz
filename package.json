@@ -14,7 +14,10 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "deploy:api": "npm run deploy -w @ei/api",
-    "deploy:web": "npm run build -w @ei/web && npm run deploy -w @ei/web"
+    "deploy:web": "npm run build -w @ei/web && npm run deploy -w @ei/web",
+    "ingest:cvm": "node utilitarios/scripts/ingest-cvm-funds.mjs",
+    "backfill:cvm-monthly": "node utilitarios/scripts/backfill-cvm-monthly.mjs",
+    "test:api": "npm run test -w @ei/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
