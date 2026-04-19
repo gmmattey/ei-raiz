@@ -10,6 +10,7 @@ import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { assetPath } from '../../utils/assetPath';
 
 const HOME_MOBILE_CACHE_KEY = 'home_mobile_v1';
+const HOME_MOBILE_CACHE_FRESCA_TTL = 60 * 1000;
 const FILTROS_ALL = ['1M', '3M', '6M', '1A', 'Max'];
 const FILTROS_MESES = { '1M': 1, '3M': 3, '6M': 6, '1A': 12 };
 
@@ -20,6 +21,9 @@ const fmt = (v) =>
 
 const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
+
+const retornoDesdeAquisicao = (obj) =>
+  obj?.retornoDesdeAquisicao ?? obj?.retorno_desde_aquisicao ?? obj?.retorno12m ?? 0;
 
 const getSaudacao = () => {
   const h = new Date().getHours();
@@ -68,13 +72,13 @@ export default function HomeMobile() {
       const [dadosResumo, dadosInsights, dadosAtivos, dadosHistorico, dadosBenchmark] = await Promise.all([
         resumoCached
           ? Promise.resolve(resumoCached)
-          : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
+          : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
         insightsCached
           ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
+          : insightsApi.obterResumoComFallback().then(r => { cache.set('insights_resumo', r); return r; }),
         carteiraApi.listarAtivosCarteira().catch(() => []),
         historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-        carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+        carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
       ]);
 
       const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
@@ -101,23 +105,28 @@ export default function HomeMobile() {
 
         const dadosCache = cache.get(HOME_MOBILE_CACHE_KEY);
         if (dadosCache?.resumo) {
+          // Renderizar imediatamente com cache existente
           setResumo(dadosCache.resumo);
           setInsights(dadosCache.insights ?? null);
           setAtivos(dadosCache.ativos ?? []);
           setHistoricoMensal(dadosCache.historicoMensal ?? []);
           setBenchmark(dadosCache.benchmark ?? null);
           setLoading(false);
-          if (ativo) void recarregarSemPiscada();
+          // Recarregar em background só se cache tiver mais de 60s
+          const cacheEstaFresco = Boolean(cache.get(HOME_MOBILE_CACHE_KEY, HOME_MOBILE_CACHE_FRESCA_TTL));
+          if (!cacheEstaFresco && ativo) {
+            setTimeout(() => { if (ativo) void recarregarSemPiscada(); }, 0);
+          }
           return;
         }
 
         setLoading(true);
         const [dadosResumo, dadosInsights, dadosAtivos, dadosHistorico, dadosBenchmark] = await Promise.all([
-          carteiraApi.obterResumoCarteira(),
-          insightsApi.obterResumo(),
+          carteiraApi.obterResumoCarteiraComFallback(),
+          insightsApi.obterResumoComFallback(),
           carteiraApi.listarAtivosCarteira().catch(() => []),
           historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-          carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+          carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
         ]);
         if (!ativo) return;
 
@@ -128,6 +137,7 @@ export default function HomeMobile() {
         setAtivos(dadosAtivos);
         setHistoricoMensal(pontos);
         setBenchmark(dadosBenchmark);
+        // Salvar cache imediatamente
         salvarCache({
           resumo: dadosResumo, insights: dadosInsights,
           ativos: dadosAtivos, historicoMensal: pontos, benchmark: dadosBenchmark,
@@ -204,9 +214,9 @@ export default function HomeMobile() {
 
         <div className="mt-3 flex items-center gap-5 flex-wrap">
           <div>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Rentab. 12m</p>
-            <p className={`text-[14px] font-bold mt-0.5 ${(resumo?.retorno12m ?? 0) >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-              <HiddenValue hidden={ocultarValores}>{fmtPct(resumo?.retorno12m ?? 0)}</HiddenValue>
+            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Desde aquisição</p>
+            <p className={`text-[14px] font-bold mt-0.5 ${retornoDesdeAquisicao(resumo) >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+              <HiddenValue hidden={ocultarValores}>{fmtPct(retornoDesdeAquisicao(resumo))}</HiddenValue>
             </p>
           </div>
           <div>
@@ -328,8 +338,8 @@ export default function HomeMobile() {
                   <p className="text-[13px] font-bold text-[var(--text-primary)]">
                     <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtual)}</HiddenValue>
                   </p>
-                  <p className={`text-[11px] font-semibold ${ativo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                    <HiddenValue hidden={ocultarValores}>{fmtPct(ativo.retorno12m)}</HiddenValue>
+                  <p className={`text-[11px] font-semibold ${retornoDesdeAquisicao(ativo) >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                    <HiddenValue hidden={ocultarValores}>{fmtPct(retornoDesdeAquisicao(ativo))}</HiddenValue>
                   </p>
                 </div>
               </button>

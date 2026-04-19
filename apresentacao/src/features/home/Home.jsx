@@ -55,6 +55,9 @@ const fmt = (v) =>
 const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
 
+const retornoDesdeAquisicao = (obj) =>
+  obj?.retornoDesdeAquisicao ?? obj?.retorno_desde_aquisicao ?? obj?.retorno12m ?? 0;
+
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const formatMes = (anoMes) => {
   const [, mes] = (anoMes || '').split('-');
@@ -146,6 +149,7 @@ export default function HomeLobby() {
         if (!showSuccessImport) {
           const dadosCache = cache.get(HOME_CACHE_KEY);
           if (ativo && dadosCache?.resumo) {
+            // Renderizar imediatamente com cache existente
             setResumo(dadosCache.resumo);
             setInsights(dadosCache.insights ?? null);
             setPerfilDados(dadosCache.perfilDados ?? null);
@@ -156,21 +160,23 @@ export default function HomeLobby() {
             setPerfilIncompleto(Boolean(dadosCache.perfilIncompleto));
             setCompletudePerfil(Number(dadosCache.completudePerfil ?? 0));
             setLoading(false);
-            // Só recarrega em background se o cache já tiver mais de 60s
+            // Recarregar em background se cache tiver mais de 60s (não bloqueia a UI)
             const cacheEstaFresco = Boolean(cache.get(HOME_CACHE_KEY, HOME_CACHE_FRESCA_TTL));
-            if (!cacheEstaFresco) void recarregarHomeSemPiscada();
+            if (!cacheEstaFresco) {
+              setTimeout(() => { if (ativo) void recarregarHomeSemPiscada(); }, 0);
+            }
             return;
           }
         }
         setLoading(true);
         const [dadosCarteira, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
           await Promise.all([
-            carteiraApi.obterResumoCarteira(),
+            carteiraApi.obterResumoCarteiraComFallback(),
             perfilApi.obterPerfil().catch(() => null),
             carteiraApi.listarAtivosCarteira().catch(() => []),
-            carteiraApi.obterDashboardPatrimonio().catch(() => null),
+            carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null),
             historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-            carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+            carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
           ]);
         if (!ativo) return;
         const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
@@ -193,11 +199,20 @@ export default function HomeLobby() {
           setPerfilIncompleto(perc < 100);
         }
         setLoading(false);
+        // Salvar cache parcial de carteira imediatamente (antes de insights)
+        salvarCache({
+          resumo: dadosCarteira, insights: null,
+          perfilDados: dadosPerfil ?? null,
+          ativos: dadosAtivos, dashboard: dadosDashboard,
+          historicoMensal: pontos, benchmark: dadosBenchmark,
+          perfilIncompleto: perc < 100, completudePerfil: perc,
+        });
         try {
-          const dadosInsights = await insightsApi.obterResumo();
+          const dadosInsights = await insightsApi.obterResumoComFallback();
           cache.set('insights_resumo', dadosInsights);
           if (ativo) {
             setInsights(dadosInsights);
+            // Atualizar cache com insights completo
             salvarCache({
               resumo: dadosCarteira, insights: dadosInsights,
               perfilDados: dadosPerfil ?? null,
@@ -226,13 +241,13 @@ export default function HomeLobby() {
       const bC = cache.get('benchmark_24m', TTL);
       const [dadosCarteira, dadosInsights, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
         await Promise.all([
-          rC ? Promise.resolve(rC) : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
-          iC ? Promise.resolve(iC) : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
+          rC ? Promise.resolve(rC) : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
+          iC ? Promise.resolve(iC) : insightsApi.obterResumoComFallback().then(r => { cache.set('insights_resumo', r); return r; }),
           perfilApi.obterPerfil().catch(() => null),
           carteiraApi.listarAtivosCarteira().catch(() => []),
-          dC ? Promise.resolve(dC) : carteiraApi.obterDashboardPatrimonio().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
+          dC ? Promise.resolve(dC) : carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
           hC ? Promise.resolve(hC) : historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })).then(r => { cache.set('historico_mensal_24', r); return r; }),
-          bC ? Promise.resolve(bC) : carteiraApi.obterBenchmarkCarteira(24).catch(() => null).then(r => { if (r) cache.set('benchmark_24m', r); return r; }),
+          bC ? Promise.resolve(bC) : carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null).then(r => { if (r) cache.set('benchmark_24m', r); return r; }),
         ]);
       const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setResumo(dadosCarteira);
@@ -480,12 +495,15 @@ export default function HomeLobby() {
           <p className="font-['Sora'] text-2xl font-bold leading-tight">
             {ocultarValores ? '••••••••' : fmt(patrimonioTotal)}
           </p>
-          {resumo?.retornoDisponivel ? (
-            <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-              {ocultarValores ? '••••' : fmtPct(resumo.retorno12m)}{' '}
-              <span className="text-[var(--text-muted)] font-normal">ao ano</span>
-            </p>
-          ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+          {resumo?.retornoDisponivel ? (() => {
+            const r = retornoDesdeAquisicao(resumo);
+            return (
+              <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                {ocultarValores ? '••••' : fmtPct(r)}{' '}
+                <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
+              </p>
+            );
+          })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
           {composicaoFrase && (
             <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-snug">
               {composicaoFrase}
@@ -499,12 +517,15 @@ export default function HomeLobby() {
           <p className="font-['Sora'] text-2xl font-bold leading-tight">
             {ocultarValores ? '••••••••' : fmt(patrimonioInvest)}
           </p>
-          {resumo?.retornoDisponivel ? (
-            <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-              {ocultarValores ? '••••' : fmtPct(resumo.retorno12m)}{' '}
-              <span className="text-[var(--text-muted)] font-normal">a.a.</span>
-            </p>
-          ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+          {resumo?.retornoDisponivel ? (() => {
+            const r = retornoDesdeAquisicao(resumo);
+            return (
+              <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                {ocultarValores ? '••••' : fmtPct(r)}{' '}
+                <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
+              </p>
+            );
+          })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
         </div>
 
         {/* Score */}
@@ -646,9 +667,14 @@ export default function HomeLobby() {
                         <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
                           {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
                         </p>
-                        <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${ativo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                          {ocultarValores ? '••••' : fmtPct(ativo.retorno12m)}
-                        </p>
+                        {(() => {
+                          const r = retornoDesdeAquisicao(ativo);
+                          return (
+                            <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                              {ocultarValores ? '••••' : fmtPct(r)}
+                            </p>
+                          );
+                        })()}
                         <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
                           {ocultarValores ? '••%' : `${pct}%`}
                         </p>
