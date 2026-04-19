@@ -126,12 +126,21 @@ export default {
 
     try {
       let sessao: SessaoUsuarioSaida | null = null;
-      if (!isPublicRoute(pathname)) {
-        const token = extrairToken(request);
-        if (!token) {
+      // Service token para rotas CVM admin: se o Bearer OU x-admin-token bater
+      // com env.ADMIN_TOKEN, deixa passar sem parse de JWT. A verificação final
+      // de autorização fica em handleAdminRoutes.
+      const ehRotaServiceCvm = pathname.startsWith("/api/admin/cvm/") || pathname.startsWith("/api/admin/fundos/cvm/");
+      const bearerToken = extrairToken(request);
+      const serviceTokenBypass =
+        ehRotaServiceCvm && !!env.ADMIN_TOKEN && (
+          request.headers.get("x-admin-token") === env.ADMIN_TOKEN ||
+          bearerToken === env.ADMIN_TOKEN
+        );
+      if (!isPublicRoute(pathname) && !serviceTokenBypass) {
+        if (!bearerToken) {
           return json({ ok: false, erro: { codigo: "NAO_AUTORIZADO", mensagem: "Token ausente" } }, 401);
         }
-        sessao = await buildAuthService(env).obterSessao(token);
+        sessao = await buildAuthService(env).obterSessao(bearerToken);
       }
 
       const resultado = await dispatch(pathname, request, env, sessao, ctx);
