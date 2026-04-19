@@ -19,9 +19,11 @@ export interface RepositorioHistoricoMensal {
     anoMes: string,
     dataFechamento: string,
     totalInvestido: number,
+    valorInvestimentos: number,
     totalAtual: number,
-    retornoMes: number,
-    retornoAcum: number,
+    rentabilidadeMesPct: number,
+    rentabilidadeAcumPct: number,
+    confiavel: boolean,
     payload: PayloadHistoricoMensal,
     origem: OrigemHistoricoMensal,
   ): Promise<PontoHistoricoMensal>;
@@ -30,28 +32,41 @@ export interface RepositorioHistoricoMensal {
 const arredondarPercentual = (valor: number): number => Number(valor.toFixed(4));
 
 /**
- * Calcula retorno do mês (vs mês anterior) e retorno acumulado (vs primeiro mês).
- * Valores inválidos ou bases zeradas retornam 0 — não lança exceção para permitir
- * reconstrução contínua mesmo em meses-buraco.
+ * Rentabilidade mensal e acumulada calculadas EXCLUSIVAMENTE sobre o escopo de
+ * investimentos (famílias A, B, C). Bens e poupança NÃO entram — senão uma
+ * valorização imobiliária aparece como "rendimento" da carteira.
+ *
+ * Quando `aportesMes` é informado, aplica-se aproximação TWR (Time-Weighted
+ * Return) de um período: o numerador desconta aportes líquidos do mês, isolando
+ * ganho de mercado de dinheiro novo que entrou. Sem aportes, reduz à variação
+ * simples mês-a-mês.
+ *
+ * Bases zeradas ou inválidas retornam 0 (não lança) para manter reconstrução
+ * contínua em meses-buraco.
  */
 export function calcularRetornosMensais(
-  totalAtual: number,
-  totalAtualMesAnterior: number | null,
-  totalAtualPrimeiroMes: number | null,
-): { retornoMes: number; retornoAcum: number } {
-  const retornoMes =
-    totalAtualMesAnterior && totalAtualMesAnterior > 0
-      ? ((totalAtual - totalAtualMesAnterior) / totalAtualMesAnterior) * 100
+  valorInvestimentosAtual: number,
+  valorInvestimentosMesAnterior: number | null,
+  valorInvestimentosPrimeiroMes: number | null,
+  aportesMes: number = 0,
+): { rentabilidadeMesPct: number; rentabilidadeAcumPct: number } {
+  const rentabilidadeMesPct =
+    valorInvestimentosMesAnterior && valorInvestimentosMesAnterior > 0
+      ? ((valorInvestimentosAtual - valorInvestimentosMesAnterior - aportesMes) /
+          valorInvestimentosMesAnterior) *
+        100
       : 0;
 
-  const retornoAcum =
-    totalAtualPrimeiroMes && totalAtualPrimeiroMes > 0
-      ? ((totalAtual - totalAtualPrimeiroMes) / totalAtualPrimeiroMes) * 100
+  const rentabilidadeAcumPct =
+    valorInvestimentosPrimeiroMes && valorInvestimentosPrimeiroMes > 0
+      ? ((valorInvestimentosAtual - valorInvestimentosPrimeiroMes) /
+          valorInvestimentosPrimeiroMes) *
+        100
       : 0;
 
   return {
-    retornoMes: arredondarPercentual(retornoMes),
-    retornoAcum: arredondarPercentual(retornoAcum),
+    rentabilidadeMesPct: arredondarPercentual(rentabilidadeMesPct),
+    rentabilidadeAcumPct: arredondarPercentual(rentabilidadeAcumPct),
   };
 }
 
@@ -61,9 +76,10 @@ const pontoValido = (p: PontoHistoricoMensal | null | undefined): p is PontoHist
   if (!p) return false;
   if (typeof p.anoMes !== "string" || !ANO_MES_REGEX.test(p.anoMes)) return false;
   const investido = Number(p.totalInvestido);
-  const atual = Number(p.totalAtual);
-  if (!Number.isFinite(investido) || !Number.isFinite(atual)) return false;
+  const valorInv = Number(p.valorInvestimentos);
+  if (!Number.isFinite(investido) || !Number.isFinite(valorInv)) return false;
   if (investido <= 0) return false;
+  if (valorInv <= 0) return false;
   return true;
 };
 
@@ -72,10 +88,13 @@ const pontoValido = (p: PontoHistoricoMensal | null | undefined): p is PontoHist
  * rentabilidade e, em caso positivo, devolve a série ordenada cronologicamente
  * com base 100 ancorada no primeiro ponto.
  *
+ * A base 100 é ancorada em `valorInvestimentos / totalInvestido` (razão
+ * rentabilidade do primeiro ponto) — bens e poupança NÃO contaminam a curva.
+ *
  * Regras de suficiência:
  *  - pelo menos {@link MIN_PONTOS_RENTABILIDADE_MENSAL} pontos válidos
  *  - cada ponto precisa ter anoMes no formato YYYY-MM
- *  - totalInvestido > 0 e totalAtual finito (sem NaN)
+ *  - totalInvestido > 0 e valorInvestimentos > 0
  *  - duplicatas por mês são deduplicadas (mantém o mais recente por dataFechamento)
  *
  * Se não atender, retorna `{ available: false, points: [] }` — o frontend
@@ -102,21 +121,22 @@ export function avaliarRentabilidadeMensal(
   }
 
   const primeiro = ordenados[0];
-  const razaoBase = primeiro.totalAtual / primeiro.totalInvestido;
+  const razaoBase = primeiro.valorInvestimentos / primeiro.totalInvestido;
   if (!Number.isFinite(razaoBase) || razaoBase <= 0) {
     return { available: false, points: [] };
   }
 
   const points: PontoRentabilidadeMensal[] = ordenados.map((p) => {
-    const razao = p.totalAtual / p.totalInvestido;
+    const razao = p.valorInvestimentos / p.totalInvestido;
     const base100 = (razao / razaoBase) * 100;
     const returnPercent = base100 - 100;
     return {
       month: p.anoMes,
+      valorInvestimentos: Number(p.valorInvestimentos.toFixed(2)),
       totalInvestido: Number(p.totalInvestido.toFixed(2)),
-      totalAtual: Number(p.totalAtual.toFixed(2)),
       base100: Number(base100.toFixed(4)),
       returnPercent: Number(returnPercent.toFixed(4)),
+      confiavel: p.confiavel !== false,
     };
   });
 
@@ -145,10 +165,10 @@ export class ServicoHistoricoMensalPadrao implements ServicoHistoricoMensal {
       this.repositorio.obterMesMaisAntigo(usuarioId),
     ]);
 
-    const { retornoMes, retornoAcum } = calcularRetornosMensais(
-      payload.patrimonioTotal,
-      mesAnterior?.totalAtual ?? null,
-      primeiroMes?.totalAtual ?? null,
+    const { rentabilidadeMesPct, rentabilidadeAcumPct } = calcularRetornosMensais(
+      payload.valorInvestimentos,
+      mesAnterior?.valorInvestimentos ?? null,
+      primeiroMes?.valorInvestimentos ?? null,
     );
 
     const totalInvestido = payload.ativos.reduce(
@@ -163,9 +183,11 @@ export class ServicoHistoricoMensalPadrao implements ServicoHistoricoMensal {
       anoMes,
       dataFechamento,
       Number(totalInvestido.toFixed(2)),
+      Number(payload.valorInvestimentos.toFixed(2)),
       Number(payload.patrimonioTotal.toFixed(2)),
-      retornoMes,
-      retornoAcum,
+      rentabilidadeMesPct,
+      rentabilidadeAcumPct,
+      payload.confiavel !== false,
       payload,
       origem,
     );

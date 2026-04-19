@@ -25,13 +25,14 @@ export async function reprocessUserPortfolio(userId: string, env: Env): Promise<
   const carteiraService = construirServicoCarteira(env);
   const perfilService = new ServicoPerfilPadrao(new RepositorioPerfilD1(env.DB));
 
-  const [ativosRaw, contexto] = await Promise.all([
+  const [ativosRaw, contexto, dividasTotais] = await Promise.all([
     carteiraService.listarAtivos(userId),
     perfilService.obterContextoFinanceiro(userId),
+    somarDividasUsuario(userId, env),
   ]);
 
   const ativos = ativosRaw as AtivoParaSnapshot[];
-  const snapshot = calcularSnapshotConsolidado(ativos, contexto);
+  const snapshot = calcularSnapshotConsolidado(ativos, contexto, dividasTotais);
 
   const agora = new Date().toISOString();
   const snapshotId = `snap_${userId}`;
@@ -61,6 +62,20 @@ export async function reprocessUserPortfolio(userId: string, env: Env): Promise<
     .run();
 
   await tentarGravarAnalytics(userId, env, agora);
+}
+
+async function somarDividasUsuario(userId: string, env: Env): Promise<number> {
+  try {
+    const row = await env.DB
+      .prepare(
+        "SELECT COALESCE(SUM(valor_atual), 0) AS total FROM posicoes_financeiras WHERE usuario_id = ? AND tipo = 'divida' AND ativo = 1",
+      )
+      .bind(userId)
+      .first<{ total: number }>();
+    return Number(row?.total ?? 0);
+  } catch {
+    return 0;
+  }
 }
 
 async function tentarGravarAnalytics(userId: string, env: Env, agora: string): Promise<void> {

@@ -63,10 +63,10 @@ async function applyQuoteUpdates(
       const quantidade = Number(asset.quantidade ?? 0);
       const precoMedio = Number(asset.preco_medio ?? 0);
       const valorAtual = quantidade > 0 ? quantidade * price : price;
-      const retorno12m = precoMedio > 0 ? ((price - precoMedio) / precoMedio) * 100 : 0;
+      const rentabilidade = precoMedio > 0 ? ((price - precoMedio) / precoMedio) * 100 : 0;
       return db
-        .prepare("UPDATE ativos SET valor_atual = ?, retorno_12m = ? WHERE id = ?")
-        .bind(Number(valorAtual.toFixed(4)), Number(retorno12m.toFixed(4)), asset.id);
+        .prepare("UPDATE ativos SET valor_atual = ?, rentabilidade_desde_aquisicao_pct = ? WHERE id = ?")
+        .bind(Number(valorAtual.toFixed(4)), Number(rentabilidade.toFixed(4)), asset.id);
     })
     .filter((stmt): stmt is D1PreparedStatement => stmt !== null);
 

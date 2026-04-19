@@ -7,11 +7,12 @@ export type OrigemHistoricoMensal = "fechamento_mensal" | "reconstrucao";
 export const MIN_PONTOS_RENTABILIDADE_MENSAL = 2;
 
 export type PontoRentabilidadeMensal = {
-  month: string;           // "YYYY-MM"
-  totalInvestido: number;
-  totalAtual: number;
-  base100: number;         // índice base 100 no primeiro ponto
-  returnPercent: number;   // retorno acumulado desde o primeiro ponto (%)
+  month: string;                       // "YYYY-MM"
+  valorInvestimentos: number;          // escopo correto: apenas investimentos (A, B, C)
+  totalInvestido: number;              // custo acumulado (Σ qtd × preço) dos ativos no mês
+  base100: number;                     // índice base 100 no primeiro ponto (sobre valorInvestimentos)
+  returnPercent: number;               // retorno acumulado desde o primeiro ponto (%)
+  confiavel: boolean;                  // false se algum ativo do mês caiu em fallback
 };
 
 export type RentabilidadeMensal = {
@@ -24,15 +25,30 @@ export type RespostaHistoricoMensal = {
   monthlyPerformance: RentabilidadeMensal;
 };
 
+/**
+ * Um ponto mensal persistido.
+ *
+ * Escopos separados por construção:
+ *   valorInvestimentos — soma marcada a mercado dos ativos (famílias A, B, C).
+ *                        É este valor que entra na base de rentabilidade.
+ *   totalAtual         — patrimônio líquido consolidado (inv + bens + poupança − dívidas).
+ *                        NÃO é base de rentabilidade; serve para composição patrimonial.
+ *   totalInvestido     — custo acumulado Σ(qtd × preço) dos ativos.
+ *
+ * rentabilidadeMesPct e rentabilidadeAcumPct são calculados SOBRE valorInvestimentos,
+ * ajustados por aportes do mês (TWR) quando disponíveis.
+ */
 export type PontoHistoricoMensal = {
   id: string;
   usuarioId: string;
-  anoMes: string;               // "YYYY-MM"
-  dataFechamento: string;       // ISO 8601
+  anoMes: string;                      // "YYYY-MM"
+  dataFechamento: string;              // ISO 8601
   totalInvestido: number;
-  totalAtual: number;
-  retornoMes: number;           // percentual vs mês anterior
-  retornoAcum: number;          // percentual desde o primeiro mês
+  valorInvestimentos: number;
+  totalAtual: number;                  // patrimônio líquido consolidado
+  rentabilidadeMesPct: number;         // % vs mês anterior (TWR)
+  rentabilidadeAcumPct: number;        // % desde o primeiro mês registrado
+  confiavel: boolean;
   origem: OrigemHistoricoMensal;
 };
 
@@ -52,15 +68,22 @@ export type AtivoResumoMensal = {
   totalInvestido: number;
   retornoAcumulado: number;
   participacao: number;
+  confiavel: boolean;
 };
 
 export type PayloadHistoricoMensal = {
   ativos: AtivoResumoMensal[];
-  patrimonioInvestimentos: number;
+  /** Soma marcada a mercado dos ativos — base de rentabilidade. */
+  valorInvestimentos: number;
+  patrimonioInvestimentos: number;     // alias de valorInvestimentos, preservado p/ telas que consomem
   patrimonioBens: number;
   patrimonioPoupanca: number;
+  patrimonioDividas: number;
+  /** Patrimônio líquido: investimentos + bens + poupança − dívidas. */
   patrimonioTotal: number;
   distribuicaoPatrimonio: DistribuicaoMensal[];
+  /** Snapshot confiável se TODOS os ativos do mês tiveram valor auditável. */
+  confiavel: boolean;
 };
 
 export type HistoricoMensalCompleto = PontoHistoricoMensal & {

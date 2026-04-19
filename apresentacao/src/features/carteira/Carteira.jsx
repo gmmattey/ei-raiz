@@ -130,8 +130,16 @@ const calcGanhoPerda = (asset) => {
   return null;
 };
 
-const retornoDesdeAquisicao = (asset) =>
-  asset.retornoDesdeAquisicao ?? asset.retorno_desde_aquisicao ?? asset.retorno12m ?? null;
+/**
+ * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
+ * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
+ */
+const rentabilidadeDesdeAquisicao = (asset) => {
+  if (!asset) return null;
+  if (asset.rentabilidadeConfiavel === false || asset.rentabilidade_confiavel === false) return null;
+  const v = asset.rentabilidadeDesdeAquisicaoPct ?? asset.rentabilidade_desde_aquisicao_pct;
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+};
 
 const statusPrecoMedioDe = (asset) =>
   asset?.statusPrecoMedio ?? asset?.status_preco_medio ?? null;
@@ -152,7 +160,7 @@ const StatusPrecoMedioBadge = ({ status }) => {
 };
 
 const calcGanhoPerdaPerc = (asset) => {
-  const retorno = retornoDesdeAquisicao(asset);
+  const retorno = rentabilidadeDesdeAquisicao(asset);
   if (retorno != null) return Number(retorno);
   const ganho = calcGanhoPerda(asset);
   const qtd = Number(asset.quantidade ?? 0);
@@ -332,7 +340,9 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
   const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
   const valorAtual = asset.valorAtual ?? asset.valor ?? 0;
   const quantidade = asset.quantidade ?? 0;
-  const rentabilidade = retornoDesdeAquisicao(asset) ?? 0;
+  const rentabilidadeValor = rentabilidadeDesdeAquisicao(asset);
+  const rentabilidadeIndisponivel = rentabilidadeValor === null;
+  const rentabilidade = rentabilidadeValor ?? 0;
 
   const valorAplicado = quantidade * precoMedio;
   const ganhoAbsoluto = valorAtual - valorAplicado;
@@ -343,7 +353,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm font-semibold">{asset.ticker}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">
           {ocultarValores ? "••••••••" : moeda(precoMedio)}
           <StatusPrecoMedioBadge status={statusPrecoMedioDe(asset)} />
@@ -365,7 +375,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4">
@@ -384,7 +394,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(ganhoAbsoluto)}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
         <td className="py-4 px-4">
           <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
@@ -623,7 +633,7 @@ export default function Carteira({ embedded = false }) {
 
     lista = [...lista].sort((a, b) => {
       if (ordenacao === "participacao_desc") return Number(b.participacao ?? 0) - Number(a.participacao ?? 0);
-      if (ordenacao === "retorno_desc") return Number(retornoDesdeAquisicao(b) ?? 0) - Number(retornoDesdeAquisicao(a) ?? 0);
+      if (ordenacao === "retorno_desc") return Number(rentabilidadeDesdeAquisicao(b) ?? 0) - Number(rentabilidadeDesdeAquisicao(a) ?? 0);
       return Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0);
     });
 
@@ -657,7 +667,7 @@ export default function Carteira({ embedded = false }) {
         nome: f.nome || f.ticker || "Fundo",
         posicao: valorLiquido,
         alocacao: Number(f.participacao ?? 0),
-        rentabilidade: Number(retornoDesdeAquisicao(f) ?? 0),
+        rentabilidade: rentabilidadeDesdeAquisicao(f),
         valorAplicado,
         valorLiquido,
       };
@@ -790,7 +800,7 @@ export default function Carteira({ embedded = false }) {
                             <td className="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{row.nome}</td>
                             <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.posicao)}</td>
                             <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : `${row.alocacao.toFixed(2)}%`}</td>
-                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : `${row.rentabilidade.toFixed(2)}%`}</td>
+                            <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : (row.rentabilidade === null ? "—" : `${row.rentabilidade.toFixed(2)}%`)}</td>
                             <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.valorAplicado)}</td>
                             <td className="px-3 py-2 text-xs text-[var(--text-primary)]">{ocultarValores ? "••••••••" : moeda(row.valorLiquido)}</td>
                           </tr>
@@ -849,15 +859,16 @@ export default function Carteira({ embedded = false }) {
               <p className="font-['Sora'] text-2xl font-bold leading-tight">
                 {ocultarValores ? '••••••••' : moeda(patrimonioInvest)}
               </p>
-              {resumo?.retornoDisponivel ? (() => {
-                const retorno = resumo.retornoDesdeAquisicao ?? resumo.retorno_desde_aquisicao ?? resumo.retorno12m ?? 0;
+              {(() => {
+                const retorno = rentabilidadeDesdeAquisicao(resumo);
+                if (retorno === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
                 return (
                   <p className={`text-xs font-semibold mt-1.5 ${retorno >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                     {ocultarValores ? '••••' : `${retorno.toFixed(2)}%`}{' '}
                     <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
                   </p>
                 );
-              })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+              })()}
             </div>
 
             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">

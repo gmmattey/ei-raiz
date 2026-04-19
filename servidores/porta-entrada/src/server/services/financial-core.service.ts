@@ -20,8 +20,9 @@ type AtivoBruto = {
   participacao: number;
   ganhoPerda?: number;
   ganhoPerdaPercentual?: number;
-  retornoDesdeAquisicao?: number;
-  retorno12m?: number;
+  rentabilidadeDesdeAquisicaoPct: number | null;
+  rentabilidadeConfiavel: boolean;
+  motivoRentabilidadeIndisponivel?: string;
   statusPrecoMedio?: "confiavel" | "ajustado_heuristica" | "inconsistente";
   statusAtualizacao?: StatusAtualizacaoMercado;
   fontePreco?: FonteMercado;
@@ -149,14 +150,17 @@ export class FinancialCoreService {
     ]);
 
     const patrimonioTotal = Number(resumo.patrimonioTotal ?? 0);
-    const patrimonioInvestimentos = Number(resumo.patrimonioInvestimentos ?? 0);
+    const patrimonioInvestimentos = Number(
+      resumo.valorInvestimentos ?? resumo.patrimonioInvestimentos ?? 0,
+    );
     const patrimonioBens = Number(resumo.patrimonioBens ?? 0);
     const patrimonioPoupanca = Number(resumo.patrimonioPoupanca ?? 0);
     const retornoRaw =
-      (resumo.retornoDesdeAquisicao as number | undefined) ??
-      (resumo.retorno12m as number | undefined) ??
-      null;
-    const retornoDisponivel = resumo.retornoDisponivel !== false && retornoRaw !== null;
+      typeof resumo.rentabilidadeDesdeAquisicaoPct === "number"
+        ? (resumo.rentabilidadeDesdeAquisicaoPct as number)
+        : null;
+    const rentabilidadeConfiavel = resumo.rentabilidadeConfiavel !== false;
+    const retornoDisponivel = rentabilidadeConfiavel && retornoRaw !== null;
 
     const marketData = this.summarizeMarketData(ativos);
     const qualityFlags = this.deriveQualityFlags(ativos, marketData, retornoDisponivel);
@@ -379,8 +383,15 @@ export class FinancialCoreService {
   }
 
   private toPublicAsset(a: AtivoBruto): FinancialCoreAsset {
-    const retorno = a.retornoDesdeAquisicao ?? a.retorno12m ?? null;
+    const retorno = a.rentabilidadeConfiavel ? a.rentabilidadeDesdeAquisicaoPct : null;
     const qualityFlags: QualityFlag[] = [];
+    if (a.rentabilidadeConfiavel === false && a.motivoRentabilidadeIndisponivel) {
+      qualityFlags.push({
+        code: "RETURN_UNAVAILABLE_ASSET",
+        severity: "info",
+        message: a.motivoRentabilidadeIndisponivel,
+      });
+    }
     if (a.statusPrecoMedio === "ajustado_heuristica") {
       qualityFlags.push({
         code: "PRICE_AVERAGE_HEURISTIC_ADJUSTMENT",

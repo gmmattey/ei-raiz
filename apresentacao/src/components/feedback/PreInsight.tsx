@@ -28,7 +28,7 @@ const PreInsight: React.FC = () => {
 
         setData({
           userName: user?.nome?.split(' ')[0] || 'Investidor',
-          patrimonio: moeda(resumo.patrimonioTotal),
+          patrimonio: moeda(resumo.patrimonioLiquido ?? 0),
           percentualJornada: resumo.quantidadeAtivos > 0 ? 'em evolução' : '0%',
           acaoRecomendada:
             insights.diagnosticoFinal?.oQueFazerAgora ||

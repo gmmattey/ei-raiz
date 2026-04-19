@@ -7,7 +7,15 @@ import type {
   ResumoCarteira,
   ServicoCarteira,
 } from "@ei/contratos";
+import { familiaDeCategoria } from "@ei/contratos";
 import type { AtivoPersistido, FonteMercado, RepositorioCarteira } from "./repositorio";
+import {
+  calcularPorFamilia,
+  type ContextoCalculo,
+  type EntradaAtivo,
+  type MetaMercado,
+  type ResultadoCalculo,
+} from "./familias";
 
 const BOLSA_TTL_MIN = 10;
 const FUNDOS_TTL_HOURS = 18;
@@ -19,9 +27,8 @@ type AtualizacaoMercado = {
   variacaoPercentual: number | null;
   atualizadoEm: string | null;
   /**
-   * Para fundos CVM: cota na data de aquisição do ativo. Quando presente,
-   * indica que `precoAtual` é uma cota unitária e o retorno deve ser calculado
-   * pela variação (cotaAtual / cotaAquisicao − 1), não pelo par precoAtual × qtd.
+   * Para fundos CVM: cota na data de aquisição do ativo. Presença habilita a
+   * fórmula correta (variação de cota); ausência força `rentabilidadeConfiavel=false`.
    */
   cotaAquisicao?: number | null;
 };
@@ -31,12 +38,6 @@ type DependenciasServicoCarteira = {
   fetchFn?: typeof fetch;
   brapiToken?: string;
   brapiBaseUrl?: string;
-  /**
-   * Provedor de cotações de fundos vindas da CVM (cache em D1). Quando presente,
-   * é a primeira fonte consultada para ativos com `cnpjFundo`. Se não encontrar
-   * cota em cache, a classe cai no streaming direto ao CSV da CVM (fallback
-   * frágil preservado por retrocompatibilidade — v2 deve remover).
-   */
   provedorCotacaoFundos?: ProvedorCotacaoFundosCvm;
 };
 
@@ -45,75 +46,61 @@ const toIsoOffset = (mins: number): string => new Date(Date.now() + mins * 60_00
 const toIsoOffsetHours = (hours: number): string => new Date(Date.now() + hours * 3_600_000).toISOString();
 const normalizarCnpj = (value: string): string => value.replace(/\D/g, "");
 const dataIsoAnterior = (dataRef: string): string | null => {
-  // dataRef esperado no formato "YYYY-MM-DD". Retorna o dia anterior no mesmo
-  // formato ou null se a string não parseável.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataRef)) return null;
   const d = new Date(`${dataRef}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return null;
   d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 };
-const pareceTickerListado = (ticker: string): boolean => /^[A-Z]{4}\d{1,2}$/.test(ticker) || /^[A-Z]{5}\d{1,2}$/.test(ticker) || /^\^[A-Z0-9.]+$/.test(ticker);
-type StatusPrecoMedio = "confiavel" | "ajustado_heuristica" | "inconsistente";
-type PrecoMedioNormalizado = {
-  valor: number;
-  status: StatusPrecoMedio;
-  motivo?: string;
-};
+const pareceTickerListado = (ticker: string): boolean =>
+  /^[A-Z]{4}\d{1,2}$/.test(ticker) || /^[A-Z]{5}\d{1,2}$/.test(ticker) || /^\^[A-Z0-9.]+$/.test(ticker);
 
-/**
- * Reconciliação auditável do preço médio importado.
- *
- * Ao invés de devolver um número "mágico" silenciosamente, devolve também o
- * status e o motivo da decisão, para que o cálculo consuma com cautela o valor
- * quando a confiança é baixa. Qualquer fallback heurístico fica rastreável.
- */
-const normalizarPrecoMedioUnitario = (
-  precoMedio: number,
-  quantidade: number,
-  valorAtual: number,
-): PrecoMedioNormalizado => {
-  if (!Number.isFinite(precoMedio) || precoMedio <= 0) {
-    return { valor: 0, status: "inconsistente", motivo: "preco_medio_ausente_ou_invalido" };
-  }
-  if (!Number.isFinite(quantidade) || quantidade <= 0) {
-    return { valor: precoMedio, status: "confiavel", motivo: "sem_quantidade_para_reconciliar" };
-  }
-  const totalEstimadoComUnitario = precoMedio * quantidade;
-  const valorReferencia = Number.isFinite(valorAtual) && valorAtual > 0 ? valorAtual : totalEstimadoComUnitario;
-  const referenciaUnitaria = valorReferencia / quantidade;
-  const erroRelativoUnitario = Math.abs(totalEstimadoComUnitario - valorReferencia) / Math.max(1, valorReferencia);
-  const erroRelativoTotal = Math.abs(precoMedio - valorReferencia) / Math.max(1, valorReferencia);
-  if (erroRelativoUnitario <= 0.05) {
-    return { valor: precoMedio, status: "confiavel" };
-  }
-  if (erroRelativoTotal <= 0.05) {
-    return { valor: precoMedio / quantidade, status: "ajustado_heuristica", motivo: "preco_medio_recebido_como_total_investido" };
-  }
-  if (Number.isFinite(referenciaUnitaria) && referenciaUnitaria > 0) {
-    const candidatos = [precoMedio, precoMedio / 10, precoMedio / 100, precoMedio / 1000, precoMedio / 10000];
-    let melhor = precoMedio;
-    let menorErro = Number.POSITIVE_INFINITY;
-    for (const candidato of candidatos) {
-      if (!Number.isFinite(candidato) || candidato <= 0) continue;
-      const erro = Math.abs(candidato - referenciaUnitaria) / Math.max(1, referenciaUnitaria);
-      if (erro < menorErro) {
-        menorErro = erro;
-        melhor = candidato;
-      }
-    }
-    if (menorErro <= 0.35) {
-      return {
-        valor: melhor,
-        status: melhor === precoMedio ? "inconsistente" : "ajustado_heuristica",
-        motivo: melhor === precoMedio
-          ? "reconciliacao_falhou_mantido_valor_original"
-          : "preco_medio_ajustado_por_ordem_de_grandeza",
-      };
-    }
-  }
-  return { valor: precoMedio, status: "inconsistente", motivo: "nao_reconciliavel_com_valor_atual" };
-};
+const toEntradaAtivo = (ativo: AtivoPersistido): EntradaAtivo => ({
+  id: ativo.id,
+  categoria: ativo.categoria,
+  familia: familiaDeCategoria(ativo.categoria),
+  quantidade: ativo.quantidade,
+  precoMedio: ativo.precoMedio,
+  valorAtualPersistido: ativo.valorAtual,
+  dataAquisicao: ativo.dataAquisicao,
+  indexador: ativo.indexador,
+  taxa: ativo.taxa,
+  dataInicio: ativo.dataInicio,
+  vencimento: ativo.vencimento,
+});
+
+const resultadoParaAtivoResumo = (
+  ativo: AtivoPersistido,
+  resultado: ResultadoCalculo,
+): AtivoResumo => ({
+  id: ativo.id,
+  ticker: ativo.ticker,
+  nome: ativo.nome,
+  categoria: ativo.categoria,
+  familia: familiaDeCategoria(ativo.categoria),
+  plataforma: ativo.plataforma ?? "",
+  quantidade: ativo.quantidade,
+  precoMedio: Number(resultado.precoMedioUnitario.toFixed(8)),
+  precoAtual: resultado.precoAtual ?? undefined,
+  variacaoPercentual: resultado.variacaoPercentual ?? undefined,
+  ganhoPerda: resultado.ganhoPerda,
+  ganhoPerdaPercentual: resultado.ganhoPerdaPercentual ?? undefined,
+  ultimaAtualizacao: resultado.atualizadoEm ?? undefined,
+  fontePreco: resultado.fontePreco,
+  statusAtualizacao: resultado.statusAtualizacao,
+  dataCadastro: ativo.dataCadastro ?? undefined,
+  dataAquisicao: (ativo.dataAquisicao ?? ativo.dataCadastro) ?? undefined,
+  valorAtual: resultado.valorAtual,
+  participacao: ativo.participacao ?? 0,
+  rentabilidadeDesdeAquisicaoPct: resultado.rentabilidadeDesdeAquisicaoPct,
+  rentabilidadeConfiavel: resultado.rentabilidadeConfiavel,
+  motivoRentabilidadeIndisponivel: resultado.motivoRentabilidadeIndisponivel,
+  statusPrecoMedio: resultado.statusPrecoMedio,
+  indexador: ativo.indexador,
+  taxa: ativo.taxa,
+  dataInicio: ativo.dataInicio,
+  vencimento: ativo.vencimento,
+});
 
 export class ServicoCarteiraPadrao implements ServicoCarteira {
   private readonly fetchFn: typeof fetch;
@@ -132,9 +119,27 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
 
     for (const ativo of ativos) {
       const meta = await this.obterAtualizacaoMercado(ativo);
-      const resumo = this.mapComAtualizacao(ativo, meta);
-      if (meta.precoAtual !== null) {
-        await this.deps.repositorio.atualizarValorAtivo(ativo.id, resumo.valorAtual, resumo.ganhoPerdaPercentual ?? 0);
+      const entrada = toEntradaAtivo(ativo);
+      const metaFam: MetaMercado = {
+        fonte: meta.fonte === "nenhuma" ? "nenhuma" : meta.fonte,
+        status: meta.status,
+        precoAtual: meta.precoAtual,
+        variacaoPercentual: meta.variacaoPercentual,
+        atualizadoEm: meta.atualizadoEm,
+        cotaAquisicao: meta.cotaAquisicao ?? null,
+      };
+      const contexto: ContextoCalculo = {
+        rendaFixa: { fatorCorrecaoAcumulado: null }, // iteração 1: apenas PRE local
+      };
+      const resultado = calcularPorFamilia(entrada, metaFam, contexto);
+      const resumo = resultadoParaAtivoResumo(ativo, resultado);
+
+      if (meta.precoAtual !== null && resultado.rentabilidadeDesdeAquisicaoPct !== null) {
+        await this.deps.repositorio.atualizarValorAtivo(
+          ativo.id,
+          resumo.valorAtual,
+          resultado.rentabilidadeDesdeAquisicaoPct,
+        );
       }
       atualizados.push(resumo);
     }
@@ -150,63 +155,53 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
 
   async obterResumo(usuarioId: string): Promise<ResumoCarteira> {
     const ativos = await this.deps.repositorio.listarAtivos(usuarioId);
-    let patrimonioTotal = 0;
+    let valorInvestimentos = 0;
     let custoTotalAcumulado = 0;
-    let todosComBaseCusto = true;
+    let algumAtivoNaoConfiavel = false;
+    let motivoPrimeiroNaoConfiavel: string | undefined;
 
-    let houveInconsistencia = false;
     for (const ativo of ativos) {
       const meta = await this.obterAtualizacaoMercado(ativo);
-      const normalizado = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
-      if (normalizado.status === "inconsistente") houveInconsistencia = true;
-      const precoMedioUnitario = normalizado.valor;
-      const custoAquisicao = precoMedioUnitario * ativo.quantidade;
+      const metaFam: MetaMercado = {
+        fonte: meta.fonte === "nenhuma" ? "nenhuma" : meta.fonte,
+        status: meta.status,
+        precoAtual: meta.precoAtual,
+        variacaoPercentual: meta.variacaoPercentual,
+        atualizadoEm: meta.atualizadoEm,
+        cotaAquisicao: meta.cotaAquisicao ?? null,
+      };
+      const resultado = calcularPorFamilia(toEntradaAtivo(ativo), metaFam, {
+        rendaFixa: { fatorCorrecaoAcumulado: null },
+      });
 
-      // Para fundos CVM: variação da cota sobre o custo (mesma lógica de mapComAtualizacao)
-      let valorMercadoAtual: number;
-      const usarVariacaoCota =
-        meta.fonte === "cvm" &&
-        meta.precoAtual !== null &&
-        meta.cotaAquisicao != null &&
-        meta.cotaAquisicao > 0;
+      valorInvestimentos += resultado.valorAtual;
+      custoTotalAcumulado += resultado.precoMedioUnitario * ativo.quantidade;
 
-      if (usarVariacaoCota) {
-        const retornoCota = (meta.precoAtual! - meta.cotaAquisicao!) / meta.cotaAquisicao!;
-        valorMercadoAtual = custoAquisicao * (1 + retornoCota);
-      } else {
-        const precoAtual = meta.precoAtual ?? (ativo.quantidade > 0 ? ativo.valorAtual / ativo.quantidade : 0);
-        valorMercadoAtual = precoAtual * ativo.quantidade;
+      if (!resultado.rentabilidadeConfiavel) {
+        algumAtivoNaoConfiavel = true;
+        if (!motivoPrimeiroNaoConfiavel) {
+          motivoPrimeiroNaoConfiavel = resultado.motivoRentabilidadeIndisponivel;
+        }
       }
-
-      if (!(Number.isFinite(ativo.precoMedio) && ativo.precoMedio > 0)) {
-        todosComBaseCusto = false;
-      }
-
-      patrimonioTotal += valorMercadoAtual;
-      custoTotalAcumulado += custoAquisicao;
     }
 
-    const retornoDisponivel = ativos.length > 0 && todosComBaseCusto && !houveInconsistencia;
-    const retornoTotal = retornoDisponivel && custoTotalAcumulado > 0
-      ? ((patrimonioTotal - custoTotalAcumulado) / custoTotalAcumulado) * 100
-      : 0;
-    const retornoArredondado = Number(retornoTotal.toFixed(2));
-    const motivoIndisponivel = !retornoDisponivel
-      ? houveInconsistencia
-        ? "Preço médio de pelo menos um ativo é inconsistente — revise seus dados importados"
-        : "Retorno indisponível — importe seu histórico para calcular"
-      : undefined;
+    const confiavel = ativos.length > 0 && !algumAtivoNaoConfiavel && custoTotalAcumulado > 0;
+    const rentabilidadePct = confiavel
+      ? Number((((valorInvestimentos - custoTotalAcumulado) / custoTotalAcumulado) * 100).toFixed(4))
+      : null;
 
     return {
-      patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
-      retornoDesdeAquisicao: retornoArredondado,
-      retorno_desde_aquisicao: retornoArredondado,
-      // Campo legado — mesmo valor de `retornoDesdeAquisicao`. Remover após migração do frontend.
-      retorno12m: retornoArredondado,
-      retornoDisponivel,
-      motivoRetornoIndisponivel: motivoIndisponivel,
-      // Score legado/deprecated — mantido por compat; consumidores devem usar scoreUnificado.
-      score: patrimonioTotal > 0 ? Math.max(0, Math.min(100, Math.round(70 + (retornoTotal / 2)))) : 0,
+      valorInvestimentos: Number(valorInvestimentos.toFixed(2)),
+      custoTotalAcumulado: Number(custoTotalAcumulado.toFixed(2)),
+      rentabilidadeDesdeAquisicaoPct: rentabilidadePct,
+      rentabilidadeConfiavel: confiavel,
+      motivoRentabilidadeIndisponivel: confiavel
+        ? undefined
+        : ativos.length === 0
+          ? "sem_ativos_cadastrados"
+          : custoTotalAcumulado <= 0
+            ? "custo_total_indisponivel"
+            : motivoPrimeiroNaoConfiavel ?? "ativo_com_dados_incompletos",
       quantidadeAtivos: ativos.length,
     };
   }
@@ -286,8 +281,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     }
     if (ativo.categoria === "fundo" && ativo.cnpjFundo) {
       const meta = await this.obterCotacaoComCache("cvm", normalizarCnpj(ativo.cnpjFundo));
-      // Busca cota na data de aquisição para calcular retorno por variação de cota.
-      // Sem isso, o cálculo precoAtual × quantidade dá errado (cota ≠ preço total).
       if (meta.precoAtual !== null && this.deps.provedorCotacaoFundos) {
         const dataAq = ativo.dataAquisicao ?? ativo.dataCadastro;
         if (dataAq) {
@@ -310,72 +303,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       precoAtual: null,
       variacaoPercentual: null,
       atualizadoEm: null,
-    };
-  }
-
-  private mapComAtualizacao(ativo: AtivoPersistido, meta: AtualizacaoMercado): AtivoResumo {
-    const normalizado = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
-    const precoMedioUnitario = normalizado.valor;
-    const statusPrecoMedio = normalizado.status;
-    const precoAtual = meta.precoAtual;
-    const custoTotal = precoMedioUnitario * ativo.quantidade;
-
-    // ── Cálculo de valor_atual e retorno ──────────────────────────────────────
-    // Para fundos CVM o "precoAtual" é a cota unitária (ex: R$ 16,87), enquanto
-    // "precoMedio" é o total investido (ex: R$ 29.500). Multiplicar cota × qtd
-    // dá errado. Quando temos a cota na data de aquisição, usamos a variação
-    // percentual da cota para derivar valorAtual e retorno sobre o total investido.
-    let valorAtual: number;
-    let ganhoPerdaPercentual: number;
-
-    const usarVariacaoCota =
-      meta.fonte === "cvm" &&
-      precoAtual !== null &&
-      meta.cotaAquisicao != null &&
-      meta.cotaAquisicao > 0;
-
-    if (usarVariacaoCota) {
-      const retornoCota = (precoAtual - meta.cotaAquisicao!) / meta.cotaAquisicao!;
-      valorAtual = custoTotal * (1 + retornoCota);
-      ganhoPerdaPercentual = retornoCota * 100;
-    } else if (precoAtual !== null && meta.fonte !== "cvm") {
-      // Ações / FIIs / BDRs — lógica original: precoAtual × quantidade
-      valorAtual = precoAtual * ativo.quantidade;
-      ganhoPerdaPercentual = custoTotal > 0 ? ((valorAtual - custoTotal) / custoTotal) * 100 : 0;
-    } else {
-      // Sem cotação disponível: mantém valor do DB
-      valorAtual = ativo.valorAtual;
-      ganhoPerdaPercentual = custoTotal > 0 ? ((valorAtual - custoTotal) / custoTotal) * 100 : 0;
-    }
-
-    const ganhoPerda = valorAtual - custoTotal;
-
-    return {
-      id: ativo.id,
-      ticker: ativo.ticker,
-      nome: ativo.nome,
-      categoria: ativo.categoria,
-      plataforma: ativo.plataforma ?? "",
-      quantidade: ativo.quantidade,
-      precoMedio: Number(precoMedioUnitario.toFixed(8)),
-      preco_medio: Number(precoMedioUnitario.toFixed(8)),
-      precoAtual: precoAtual ?? undefined,
-      variacaoPercentual: meta.variacaoPercentual ?? undefined,
-      ganhoPerda,
-      ganhoPerdaPercentual: Number(ganhoPerdaPercentual.toFixed(2)),
-      ultimaAtualizacao: meta.atualizadoEm ?? undefined,
-      fontePreco: meta.fonte,
-      statusAtualizacao: meta.status,
-      dataCadastro: ativo.dataCadastro ?? undefined,
-      dataAquisicao: (ativo.dataAquisicao ?? ativo.dataCadastro) ?? undefined,
-      valorAtual: Number(valorAtual.toFixed(2)),
-      participacao: ativo.participacao ?? 0,
-      retornoDesdeAquisicao: Number(ganhoPerdaPercentual.toFixed(2)),
-      retorno_desde_aquisicao: Number(ganhoPerdaPercentual.toFixed(2)),
-      // Campo legado — mesmo valor. Ver contrato para detalhes.
-      retorno12m: Number(ganhoPerdaPercentual.toFixed(2)),
-      statusPrecoMedio,
-      status_preco_medio: statusPrecoMedio,
     };
   }
 
@@ -469,23 +396,11 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     };
   }
 
-  /**
-   * Busca a cota diária de um fundo via CVM.
-   *
-   * Estratégia em cascata:
-   *  1) Provider D1 (cache populado pelo script offline de ingestão) — rápido,
-   *     preferencial. Calcula variação pegando a cota do dia anterior disponível.
-   *  2) Streaming direto ao CSV da CVM — fallback preservado para casos em que
-   *     o provider não foi injetado ou o cache ainda não tem aquele CNPJ.
-   *     Tênue por limites de CPU do Worker; será descontinuado em v2.
-   */
   private async buscarCvm(cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown }> {
-    // 1) D1 cache (preferencial)
     if (this.deps.provedorCotacaoFundos) {
       try {
         const atual = await this.deps.provedorCotacaoFundos.obterCotaMaisRecente(cnpj);
         if (atual) {
-          // Tenta recuperar a cota do dia anterior para calcular variação.
           const ateAnterior = dataIsoAnterior(atual.dataRef);
           const anterior = ateAnterior
             ? await this.deps.provedorCotacaoFundos.obterCotaMaisRecente(cnpj, ateAnterior)
@@ -505,7 +420,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       }
     }
 
-    // 2) Streaming direto (fallback)
     const resultado = await this.buscarCotaCvmDiaria(cnpj);
     if (resultado !== null) return resultado;
     throw new Error("CVM_COTA_NAO_ENCONTRADA");
@@ -524,7 +438,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     return null;
   }
 
-  /** Gera as URLs do arquivo CVM para o mês atual e o anterior. */
   private gerarUrlsCvmDiaria(): string[] {
     const agora = new Date();
     const urls: string[] = [];
@@ -537,10 +450,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     return urls;
   }
 
-  /**
-   * Lê o CSV CVM via streaming em chunks de texto, procurando o CNPJ sem
-   * carregar o arquivo inteiro na memória. Retorna a cota mais recente ou null.
-   */
   private async lerCotaCvmStream(url: string, cnpj: string): Promise<{ precoAtual: number | null; variacaoPercentual: number | null; payload: unknown } | null> {
     const response = await this.fetchFn(url, { method: "GET", headers: { accept: "text/plain" } });
     if (!response.ok) throw new Error(`CVM_DIARIO_HTTP_${response.status}`);
@@ -581,7 +490,6 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       }
     };
 
-    // Limite de segurança: até 30 MB de dados lidos para evitar travamento em Workers
     const MAX_BYTES = 30 * 1024 * 1024;
     let totalBytes = 0;
 

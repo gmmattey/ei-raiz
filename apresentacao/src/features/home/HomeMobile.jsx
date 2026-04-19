@@ -22,8 +22,15 @@ const fmt = (v) =>
 const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
 
-const retornoDesdeAquisicao = (obj) =>
-  obj?.retornoDesdeAquisicao ?? obj?.retorno_desde_aquisicao ?? obj?.retorno12m ?? 0;
+/**
+ * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
+ * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
+ */
+const rentabilidadeDesdeAquisicao = (obj) => {
+  if (!obj || obj.rentabilidadeConfiavel === false) return null;
+  const v = obj.rentabilidadeDesdeAquisicaoPct;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+};
 
 const getSaudacao = () => {
   const h = new Date().getHours();
@@ -215,9 +222,17 @@ export default function HomeMobile() {
         <div className="mt-3 flex items-center gap-5 flex-wrap">
           <div>
             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Desde aquisição</p>
-            <p className={`text-[14px] font-bold mt-0.5 ${retornoDesdeAquisicao(resumo) >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-              <HiddenValue hidden={ocultarValores}>{fmtPct(retornoDesdeAquisicao(resumo))}</HiddenValue>
-            </p>
+            {(() => {
+              const r = rentabilidadeDesdeAquisicao(resumo);
+              if (r === null) {
+                return <p className="text-[14px] font-bold mt-0.5 text-[var(--text-muted)]">—</p>;
+              }
+              return (
+                <p className={`text-[14px] font-bold mt-0.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                  <HiddenValue hidden={ocultarValores}>{fmtPct(r)}</HiddenValue>
+                </p>
+              );
+            })()}
           </div>
           <div>
             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Score</p>
@@ -338,9 +353,17 @@ export default function HomeMobile() {
                   <p className="text-[13px] font-bold text-[var(--text-primary)]">
                     <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtual)}</HiddenValue>
                   </p>
-                  <p className={`text-[11px] font-semibold ${retornoDesdeAquisicao(ativo) >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                    <HiddenValue hidden={ocultarValores}>{fmtPct(retornoDesdeAquisicao(ativo))}</HiddenValue>
-                  </p>
+                  {(() => {
+                    const r = rentabilidadeDesdeAquisicao(ativo);
+                    if (r === null) {
+                      return <p className="text-[11px] font-semibold text-[var(--text-muted)]">—</p>;
+                    }
+                    return (
+                      <p className={`text-[11px] font-semibold ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                        <HiddenValue hidden={ocultarValores}>{fmtPct(r)}</HiddenValue>
+                      </p>
+                    );
+                  })()}
                 </div>
               </button>
             ))}

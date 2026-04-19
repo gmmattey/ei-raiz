@@ -12,9 +12,11 @@ type LinhaHistoricoMensal = {
   ano_mes: string;
   data_fechamento: string;
   total_investido: number;
+  valor_investimentos: number;
   total_atual: number;
-  retorno_mes: number;
-  retorno_acum: number;
+  rentabilidade_mes_pct: number;
+  rentabilidade_acum_pct: number;
+  confiavel: number;
   origem: string;
   payload_json?: string;
 };
@@ -25,11 +27,29 @@ const linhaParaPonto = (row: LinhaHistoricoMensal): PontoHistoricoMensal => ({
   anoMes: row.ano_mes,
   dataFechamento: row.data_fechamento,
   totalInvestido: row.total_investido ?? 0,
+  valorInvestimentos: row.valor_investimentos ?? row.total_atual ?? 0,
   totalAtual: row.total_atual ?? 0,
-  retornoMes: row.retorno_mes ?? 0,
-  retornoAcum: row.retorno_acum ?? 0,
+  rentabilidadeMesPct: row.rentabilidade_mes_pct ?? 0,
+  rentabilidadeAcumPct: row.rentabilidade_acum_pct ?? 0,
+  confiavel: Number(row.confiavel ?? 1) === 1,
   origem: (row.origem as OrigemHistoricoMensal) ?? "fechamento_mensal",
 });
+
+const COLUNAS_PONTO =
+  "id, usuario_id, ano_mes, data_fechamento, total_investido, valor_investimentos, total_atual," +
+  " rentabilidade_mes_pct, rentabilidade_acum_pct, confiavel, origem";
+
+const PAYLOAD_VAZIO: PayloadHistoricoMensal = {
+  ativos: [],
+  valorInvestimentos: 0,
+  patrimonioInvestimentos: 0,
+  patrimonioBens: 0,
+  patrimonioPoupanca: 0,
+  patrimonioDividas: 0,
+  patrimonioTotal: 0,
+  distribuicaoPatrimonio: [],
+  confiavel: false,
+};
 
 export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal {
   constructor(private readonly db: D1Database) {}
@@ -38,8 +58,7 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     const result = await this.db
       .prepare(
         [
-          "SELECT id, usuario_id, ano_mes, data_fechamento, total_investido, total_atual,",
-          "retorno_mes, retorno_acum, origem",
+          `SELECT ${COLUNAS_PONTO}`,
           "FROM historico_carteira_mensal",
           "WHERE usuario_id = ?",
           "ORDER BY ano_mes DESC",
@@ -59,8 +78,7 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     const row = await this.db
       .prepare(
         [
-          "SELECT id, usuario_id, ano_mes, data_fechamento, total_investido, total_atual,",
-          "retorno_mes, retorno_acum, origem, payload_json",
+          `SELECT ${COLUNAS_PONTO}, payload_json`,
           "FROM historico_carteira_mensal",
           "WHERE usuario_id = ? AND ano_mes = ?",
         ].join(" "),
@@ -73,14 +91,7 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     const ponto = linhaParaPonto(row);
     const payload = row.payload_json
       ? (JSON.parse(row.payload_json) as PayloadHistoricoMensal)
-      : {
-          ativos: [],
-          patrimonioInvestimentos: 0,
-          patrimonioBens: 0,
-          patrimonioPoupanca: 0,
-          patrimonioTotal: 0,
-          distribuicaoPatrimonio: [],
-        };
+      : PAYLOAD_VAZIO;
 
     return { ...ponto, payload };
   }
@@ -92,8 +103,7 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     const row = await this.db
       .prepare(
         [
-          "SELECT id, usuario_id, ano_mes, data_fechamento, total_investido, total_atual,",
-          "retorno_mes, retorno_acum, origem",
+          `SELECT ${COLUNAS_PONTO}`,
           "FROM historico_carteira_mensal",
           "WHERE usuario_id = ? AND ano_mes < ?",
           "ORDER BY ano_mes DESC LIMIT 1",
@@ -109,8 +119,7 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     const row = await this.db
       .prepare(
         [
-          "SELECT id, usuario_id, ano_mes, data_fechamento, total_investido, total_atual,",
-          "retorno_mes, retorno_acum, origem",
+          `SELECT ${COLUNAS_PONTO}`,
           "FROM historico_carteira_mensal",
           "WHERE usuario_id = ?",
           "ORDER BY ano_mes ASC LIMIT 1",
@@ -127,28 +136,34 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
     anoMes: string,
     dataFechamento: string,
     totalInvestido: number,
+    valorInvestimentos: number,
     totalAtual: number,
-    retornoMes: number,
-    retornoAcum: number,
+    rentabilidadeMesPct: number,
+    rentabilidadeAcumPct: number,
+    confiavel: boolean,
     payload: PayloadHistoricoMensal,
     origem: OrigemHistoricoMensal,
   ): Promise<PontoHistoricoMensal> {
     const id = `hist_${usuarioId}_${anoMes}`;
     const agora = new Date().toISOString();
+    const confiavelInt = confiavel ? 1 : 0;
 
     await this.db
       .prepare(
         [
           "INSERT INTO historico_carteira_mensal",
-          "(id, usuario_id, ano_mes, data_fechamento, total_investido, total_atual,",
-          " retorno_mes, retorno_acum, payload_json, origem, criado_em, atualizado_em)",
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(id, usuario_id, ano_mes, data_fechamento, total_investido, valor_investimentos,",
+          " total_atual, rentabilidade_mes_pct, rentabilidade_acum_pct, confiavel,",
+          " payload_json, origem, criado_em, atualizado_em)",
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           "ON CONFLICT(usuario_id, ano_mes) DO UPDATE SET",
           "data_fechamento = excluded.data_fechamento,",
           "total_investido = excluded.total_investido,",
+          "valor_investimentos = excluded.valor_investimentos,",
           "total_atual = excluded.total_atual,",
-          "retorno_mes = excluded.retorno_mes,",
-          "retorno_acum = excluded.retorno_acum,",
+          "rentabilidade_mes_pct = excluded.rentabilidade_mes_pct,",
+          "rentabilidade_acum_pct = excluded.rentabilidade_acum_pct,",
+          "confiavel = excluded.confiavel,",
           "payload_json = excluded.payload_json,",
           "origem = excluded.origem,",
           "atualizado_em = excluded.atualizado_em",
@@ -160,9 +175,11 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
         anoMes,
         dataFechamento,
         totalInvestido,
+        valorInvestimentos,
         totalAtual,
-        retornoMes,
-        retornoAcum,
+        rentabilidadeMesPct,
+        rentabilidadeAcumPct,
+        confiavelInt,
         JSON.stringify(payload),
         origem,
         agora,
@@ -176,9 +193,11 @@ export class RepositorioHistoricoMensalD1 implements RepositorioHistoricoMensal 
       anoMes,
       dataFechamento,
       totalInvestido,
+      valorInvestimentos,
       totalAtual,
-      retornoMes,
-      retornoAcum,
+      rentabilidadeMesPct,
+      rentabilidadeAcumPct,
+      confiavel,
       origem,
     };
   }

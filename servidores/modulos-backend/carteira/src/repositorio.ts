@@ -1,4 +1,4 @@
-import type { CategoriaAtivo } from "@ei/contratos";
+import type { CategoriaAtivo, IndexadorRendaFixa } from "@ei/contratos";
 
 export type FonteMercado = "brapi" | "cvm";
 
@@ -12,11 +12,17 @@ export type AtivoPersistido = {
   precoMedio: number;
   valorAtual: number;
   participacao: number;
-  retorno12m: number;
+  /** Rentabilidade desde aquisição (persistida). Lê da coluna renomeada. */
+  rentabilidadeDesdeAquisicaoPct: number;
   dataCadastro: string | null;
   dataAquisicao: string | null;
   tickerCanonico: string | null;
   cnpjFundo: string | null;
+  // Campos de renda fixa contratada / previdência (nullable nas outras famílias)
+  indexador: IndexadorRendaFixa | null;
+  taxa: number | null;
+  dataInicio: string | null;
+  vencimento: string | null;
 };
 
 export type CacheCotacaoPersistido = {
@@ -30,7 +36,9 @@ export type CacheCotacaoPersistido = {
 export interface RepositorioCarteira {
   listarAtivos(usuarioId: string): Promise<AtivoPersistido[]>;
   listarSnapshotsPatrimonio(usuarioId: string, limite: number): Promise<Array<{ data: string; valorTotal: number }>>;
-  atualizarValorAtivo(ativoId: string, valorAtual: number, retorno12m: number): Promise<void>;
+  atualizarValorAtivo(ativoId: string, valorAtual: number, rentabilidadeDesdeAquisicaoPct: number): Promise<void>;
+  /** Soma dos saldos devedores de todas as posições tipo='divida' do usuário. */
+  somarDividas(usuarioId: string): Promise<number>;
   lerCacheValido(fonte: FonteMercado, chaveAtivo: string, referenciaIso: string): Promise<CacheCotacaoPersistido | null>;
   lerUltimoCache(fonte: FonteMercado, chaveAtivo: string): Promise<CacheCotacaoPersistido | null>;
   salvarCache(
@@ -44,6 +52,14 @@ export interface RepositorioCarteira {
     erro: string | null,
   ): Promise<void>;
 }
+
+const INDEXADORES_VALIDOS = new Set<IndexadorRendaFixa>(["CDI", "IPCA", "PRE", "SELIC", "IGPM"]);
+
+const coerceIndexador = (raw: string | null): IndexadorRendaFixa | null => {
+  if (!raw) return null;
+  const normalizado = raw.toUpperCase().replace(/[^A-Z]/g, "") as IndexadorRendaFixa;
+  return INDEXADORES_VALIDOS.has(normalizado) ? normalizado : null;
+};
 
 export class RepositorioCarteiraD1 implements RepositorioCarteira {
   constructor(private readonly db: D1Database) {}
@@ -72,10 +88,12 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
     const result = await this.db
       .prepare(
         [
-          "SELECT id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m, ticker_canonico, cnpj_fundo",
-          ", data_cadastro, data_aquisicao",
-          "FROM ativos",
-          "WHERE usuario_id = ?",
+          "SELECT id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual,",
+          "       participacao, rentabilidade_desde_aquisicao_pct, ticker_canonico, cnpj_fundo,",
+          "       data_cadastro, data_aquisicao,",
+          "       indexador, taxa, data_inicio, vencimento",
+          "  FROM ativos",
+          " WHERE usuario_id = ?",
         ].join(" "),
       )
       .bind(usuarioId)
@@ -89,11 +107,15 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
         preco_medio: number | null;
         valor_atual: number | null;
         participacao: number | null;
-        retorno_12m: number | null;
+        rentabilidade_desde_aquisicao_pct: number | null;
         data_cadastro: string | null;
         data_aquisicao: string | null;
         ticker_canonico: string | null;
         cnpj_fundo: string | null;
+        indexador: string | null;
+        taxa: number | null;
+        data_inicio: string | null;
+        vencimento: string | null;
       }>();
 
     return (result.results ?? []).map((row) => ({
@@ -106,11 +128,15 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
       precoMedio: row.preco_medio ?? 0,
       valorAtual: row.valor_atual ?? 0,
       participacao: row.participacao ?? 0,
-      retorno12m: row.retorno_12m ?? 0,
+      rentabilidadeDesdeAquisicaoPct: row.rentabilidade_desde_aquisicao_pct ?? 0,
       dataCadastro: row.data_cadastro ?? null,
       dataAquisicao: row.data_aquisicao ?? null,
       tickerCanonico: row.ticker_canonico ?? null,
       cnpjFundo: row.cnpj_fundo ?? null,
+      indexador: coerceIndexador(row.indexador),
+      taxa: row.taxa ?? null,
+      dataInicio: row.data_inicio ?? null,
+      vencimento: row.vencimento ?? null,
     }));
   }
 
@@ -122,11 +148,31 @@ export class RepositorioCarteiraD1 implements RepositorioCarteira {
     return (result.results ?? []).map((row) => ({ data: row.data, valorTotal: row.valor_total ?? 0 }));
   }
 
-  async atualizarValorAtivo(ativoId: string, valorAtual: number, retorno12m: number): Promise<void> {
+  async atualizarValorAtivo(
+    ativoId: string,
+    valorAtual: number,
+    rentabilidadeDesdeAquisicaoPct: number,
+  ): Promise<void> {
     await this.db
-      .prepare("UPDATE ativos SET valor_atual = ?, retorno_12m = ? WHERE id = ?")
-      .bind(valorAtual, retorno12m, ativoId)
+      .prepare(
+        "UPDATE ativos SET valor_atual = ?, rentabilidade_desde_aquisicao_pct = ? WHERE id = ?",
+      )
+      .bind(valorAtual, rentabilidadeDesdeAquisicaoPct, ativoId)
       .run();
+  }
+
+  async somarDividas(usuarioId: string): Promise<number> {
+    const row = await this.db
+      .prepare(
+        [
+          "SELECT COALESCE(SUM(valor_atual), 0) AS total",
+          "  FROM posicoes_financeiras",
+          " WHERE usuario_id = ? AND tipo = 'divida' AND ativo = 1",
+        ].join(" "),
+      )
+      .bind(usuarioId)
+      .first<{ total: number }>();
+    return Number(row?.total ?? 0);
   }
 
   async lerCacheValido(fonte: FonteMercado, chaveAtivo: string, referenciaIso: string): Promise<CacheCotacaoPersistido | null> {

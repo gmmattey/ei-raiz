@@ -1,4 +1,5 @@
 import type {
+  AtivoResumoMensal,
   EstadoReconstrucaoCarteira,
   MapaPrecosHistoricos,
   PayloadHistoricoMensal,
@@ -8,6 +9,7 @@ import type {
   StatusReconstrucao,
 } from "@ei/contratos";
 import {
+  calcularRetornosMensais,
   calcularUltimoDiaDoMes,
   extrairAnoMes,
   proximoAnoMes,
@@ -41,10 +43,17 @@ export type AtivoParaReconstrucao = {
  */
 export type MapaFechamentosFundos = Map<string, Map<string, number>>;
 
+/**
+ * Contexto patrimonial não-investimento aplicado em cada mês da reconstrução.
+ * Como não há histórico para bens/poupança/dívidas, usam-se os valores atuais
+ * como aproximação — a curva de rentabilidade NÃO depende desses valores,
+ * então esse achatamento não contamina o gráfico de retornos.
+ */
 export type ContextoReconstrucao = {
   imoveis: Array<{ valorEstimado: number; saldoFinanciamento: number }>;
   veiculos: Array<{ valorEstimado: number }>;
   poupanca: number;
+  dividas: number;
 };
 
 export interface RepositorioFilaReconstrucao {
@@ -86,6 +95,18 @@ type Dependencias = {
 const TAMANHO_LOTE_PADRAO = 6; // 6 meses por execução (margem para timeout do Worker)
 
 /**
+ * Resultado da avaliação de valor de um ativo em um mês específico.
+ *  - `confiavel=true` ⇒ usamos preço de mercado real (cota CVM ou close BRAPI).
+ *  - `confiavel=false` ⇒ caímos no fallback quantidade × precoMedio; o ativo
+ *    aparece com valor contábil constante, então o ponto do mês não representa
+ *    rentabilidade de mercado real.
+ */
+type ValorAtivoNoMes = {
+  valor: number;
+  confiavel: boolean;
+};
+
+/**
  * Calcula o valor de mercado de um ativo num determinado mês.
  *
  * Ordem de prioridade:
@@ -95,32 +116,30 @@ const TAMANHO_LOTE_PADRAO = 6; // 6 meses por execução (margem para timeout do
  *        valor = custoTotal × (cotaMes / cotaAquisicao)
  *      Onde cotaAquisicao é a primeira cota disponível no mapa (mês de aquisição).
  *   2. Ativo com ticker mapeado → close BRAPI do mês (ações/ETFs/FIIs/BDRs)
- *   3. Fallback → quantidade × precoMedio (valor constante desde a aquisição)
+ *   3. Fallback → quantidade × precoMedio (valor constante desde a aquisição,
+ *      marcado como não-confiável).
  */
 function valorAtivoNoMes(
   ativo: AtivoParaReconstrucao,
   anoMes: string,
   precosHistoricos?: MapaPrecosHistoricos,
   fechamentosFundos?: MapaFechamentosFundos,
-): number {
+): ValorAtivoNoMes {
   if (fechamentosFundos && ativo.cnpj) {
     const porMes = fechamentosFundos.get(ativo.cnpj);
     const cotaMes = porMes?.get(anoMes);
     if (typeof cotaMes === "number" && Number.isFinite(cotaMes) && cotaMes > 0) {
-      // Encontra a cota de referência: mês de aquisição do ativo (ou a mais antiga disponível)
       const anoMesAquisicao = extrairAnoMes(ativo.dataAquisicao);
       const cotaRef = porMes?.get(anoMesAquisicao);
       if (typeof cotaRef === "number" && Number.isFinite(cotaRef) && cotaRef > 0) {
-        // Variação da cota sobre o custo total
         const custoTotal = ativo.quantidade * ativo.precoMedio;
-        return custoTotal * (cotaMes / cotaRef);
+        return { valor: custoTotal * (cotaMes / cotaRef), confiavel: true };
       }
-      // Se não temos cota no mês de aquisição, usa cota mais antiga do mapa como proxy
       const mesesOrdenados = Array.from(porMes!.keys()).sort();
       const cotaMaisAntiga = mesesOrdenados.length > 0 ? porMes!.get(mesesOrdenados[0]) : null;
       if (typeof cotaMaisAntiga === "number" && cotaMaisAntiga > 0) {
         const custoTotal = ativo.quantidade * ativo.precoMedio;
-        return custoTotal * (cotaMes / cotaMaisAntiga);
+        return { valor: custoTotal * (cotaMes / cotaMaisAntiga), confiavel: true };
       }
     }
   }
@@ -128,19 +147,25 @@ function valorAtivoNoMes(
     const porMes = precosHistoricos.get(ativo.ticker.toUpperCase());
     const close = porMes?.get(anoMes);
     if (typeof close === "number" && Number.isFinite(close) && close > 0) {
-      return ativo.quantidade * close;
+      return { valor: ativo.quantidade * close, confiavel: true };
     }
   }
-  return ativo.quantidade * ativo.precoMedio;
+  return { valor: ativo.quantidade * ativo.precoMedio, confiavel: false };
 }
 
 /**
  * Monta o payload mensal a partir dos ativos que já existiam no mês de referência.
  *
- * Quando `precosHistoricos` é fornecido, usa close real por (ticker, ano-mês).
- * Quando ausente, cai no fallback v1 de quantidade × precoMedio constante.
- * Para bens/poupança usa os valores atuais do contexto — não temos histórico
- * desses campos.
+ * Escopos separados:
+ *  - `valorInvestimentos`   = soma marcada a mercado (base de rentabilidade)
+ *  - `patrimonioBens`       = valor contábil de imóveis/veículos (não entra em rent.)
+ *  - `patrimonioPoupanca`   = saldo de poupança (não entra em rent.)
+ *  - `patrimonioDividas`    = dívidas (subtrai do patrimônio líquido)
+ *  - `patrimonioTotal`      = patrimônio líquido = inv + bens + poup − dívidas
+ *
+ * `confiavel` do payload é `true` somente se TODOS os ativos do mês tiveram
+ * preço de mercado real. Um único fallback marca o ponto inteiro como não-
+ * auditável — o frontend deve sinalizar isso na curva de rentabilidade.
  */
 export function montarPayloadMesHistorico(
   ativos: AtivoParaReconstrucao[],
@@ -151,10 +176,12 @@ export function montarPayloadMesHistorico(
 ): PayloadHistoricoMensal {
   const ativosNoMes = ativos.filter((a) => extrairAnoMes(a.dataAquisicao) <= anoMes);
 
-  const patrimonioInvestimentos = ativosNoMes.reduce(
-    (acc, a) => acc + valorAtivoNoMes(a, anoMes, precosHistoricos, fechamentosFundos),
-    0,
-  );
+  const avaliacoes = ativosNoMes.map((a) => ({
+    ativo: a,
+    ...valorAtivoNoMes(a, anoMes, precosHistoricos, fechamentosFundos),
+  }));
+
+  const valorInvestimentos = avaliacoes.reduce((acc, x) => acc + x.valor, 0);
 
   const patrimonioImoveis = contexto.imoveis.reduce(
     (acc, i) =>
@@ -167,11 +194,14 @@ export function montarPayloadMesHistorico(
   );
   const patrimonioBens = patrimonioImoveis + patrimonioVeiculos;
   const patrimonioPoupanca = Number(contexto.poupanca ?? 0);
+  const patrimonioDividas = Math.max(0, Number(contexto.dividas ?? 0));
 
-  const patrimonioTotal = patrimonioInvestimentos + patrimonioBens + patrimonioPoupanca;
+  const patrimonioTotal =
+    valorInvestimentos + patrimonioBens + patrimonioPoupanca - patrimonioDividas;
 
+  const baseDistribuicao = valorInvestimentos + patrimonioBens + patrimonioPoupanca;
   const distribuicaoBase = [
-    { id: "investimentos", label: "Investimentos", valor: patrimonioInvestimentos },
+    { id: "investimentos", label: "Investimentos", valor: valorInvestimentos },
     { id: "bens", label: "Bens", valor: patrimonioBens },
     { id: "poupanca", label: "Poupança", valor: patrimonioPoupanca },
   ].filter((item) => item.valor > 0);
@@ -179,38 +209,45 @@ export function montarPayloadMesHistorico(
   const distribuicaoPatrimonio = distribuicaoBase.map((item) => ({
     ...item,
     percentual:
-      patrimonioTotal > 0
-        ? Number(((item.valor / patrimonioTotal) * 100).toFixed(4))
+      baseDistribuicao > 0
+        ? Number(((item.valor / baseDistribuicao) * 100).toFixed(4))
         : 0,
   }));
 
+  const todosConfiaveis = avaliacoes.every((x) => x.confiavel);
+
+  const ativosPayload: AtivoResumoMensal[] = avaliacoes.map(({ ativo: a, valor, confiavel }) => {
+    const totalInvestido = a.quantidade * a.precoMedio;
+    const retornoAcumulado =
+      totalInvestido > 0
+        ? Number((((valor - totalInvestido) / totalInvestido) * 100).toFixed(4))
+        : 0;
+    return {
+      id: a.id,
+      ticker: a.ticker ?? null,
+      nome: a.nome,
+      categoria: a.categoria,
+      valorAtual: Number(valor.toFixed(2)),
+      totalInvestido: Number(totalInvestido.toFixed(2)),
+      retornoAcumulado,
+      participacao:
+        valorInvestimentos > 0
+          ? Number(((valor / valorInvestimentos) * 100).toFixed(4))
+          : 0,
+      confiavel,
+    };
+  });
+
   return {
-    ativos: ativosNoMes.map((a) => {
-      const valorAtivo = valorAtivoNoMes(a, anoMes, precosHistoricos, fechamentosFundos);
-      const totalInvestido = a.quantidade * a.precoMedio;
-      const retornoAcumulado =
-        totalInvestido > 0
-          ? Number((((valorAtivo - totalInvestido) / totalInvestido) * 100).toFixed(4))
-          : 0;
-      return {
-        id: a.id,
-        ticker: a.ticker ?? null,
-        nome: a.nome,
-        categoria: a.categoria,
-        valorAtual: Number(valorAtivo.toFixed(2)),
-        totalInvestido: Number(totalInvestido.toFixed(2)),
-        retornoAcumulado,
-        participacao:
-          patrimonioTotal > 0
-            ? Number(((valorAtivo / patrimonioTotal) * 100).toFixed(4))
-            : 0,
-      };
-    }),
-    patrimonioInvestimentos: Number(patrimonioInvestimentos.toFixed(2)),
+    ativos: ativosPayload,
+    valorInvestimentos: Number(valorInvestimentos.toFixed(2)),
+    patrimonioInvestimentos: Number(valorInvestimentos.toFixed(2)),
     patrimonioBens: Number(patrimonioBens.toFixed(2)),
     patrimonioPoupanca: Number(patrimonioPoupanca.toFixed(2)),
+    patrimonioDividas: Number(patrimonioDividas.toFixed(2)),
     patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
     distribuicaoPatrimonio,
+    confiavel: ativosPayload.length === 0 ? false : todosConfiaveis,
   };
 }
 
@@ -330,10 +367,6 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
         });
       }
 
-      // Pré-busca cotações históricas uma única vez por execução de lote.
-      // Falhas no provedor não abortam a reconstrução — caímos no fallback.
-      // Janela CVM: usa o cursor atual como início (seguro se anoMesInicial
-      // estiver ausente — o lote atual só vai gravar a partir daqui mesmo).
       const [precosHistoricos, fechamentosFundos] = await Promise.all([
         this.carregarPrecosHistoricos(ativos),
         this.carregarFechamentosFundos(
@@ -368,28 +401,22 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
           this.deps.historicoMensal.obterMesMaisAntigo(usuarioId),
         ]);
 
-        const retornoMes =
-          mesAnterior && mesAnterior.totalAtual > 0
-            ? ((payload.patrimonioTotal - mesAnterior.totalAtual) /
-                mesAnterior.totalAtual) *
-              100
-            : 0;
-
-        const retornoAcum =
-          primeiroMes && primeiroMes.totalAtual > 0
-            ? ((payload.patrimonioTotal - primeiroMes.totalAtual) /
-                primeiroMes.totalAtual) *
-              100
-            : 0;
+        const { rentabilidadeMesPct, rentabilidadeAcumPct } = calcularRetornosMensais(
+          payload.valorInvestimentos,
+          mesAnterior?.valorInvestimentos ?? null,
+          primeiroMes?.valorInvestimentos ?? null,
+        );
 
         await this.deps.historicoMensal.gravar(
           usuarioId,
           cursorParaGravar,
           calcularUltimoDiaDoMes(cursorParaGravar),
           Number(totalInvestido.toFixed(2)),
+          Number(payload.valorInvestimentos.toFixed(2)),
           Number(payload.patrimonioTotal.toFixed(2)),
-          Number(retornoMes.toFixed(4)),
-          Number(retornoAcum.toFixed(4)),
+          rentabilidadeMesPct,
+          rentabilidadeAcumPct,
+          payload.confiavel !== false,
           payload,
           "reconstrucao",
         );

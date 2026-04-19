@@ -309,7 +309,10 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
   const valorAtual = asset.valorAtual ?? 0;
   const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
   const statusPrecoMedio = asset.statusPrecoMedio ?? asset.status_preco_medio ?? null;
-  const rentabilidade = asset.retornoDesdeAquisicao ?? asset.retorno_desde_aquisicao ?? asset.retorno12m ?? 0;
+  const rentabilidadeConfiavel = asset.rentabilidadeConfiavel !== false && asset.rentabilidade_confiavel !== false;
+  const rentabilidadeBruta = asset.rentabilidadeDesdeAquisicaoPct ?? asset.rentabilidade_desde_aquisicao_pct;
+  const rentabilidadeIndisponivel = !rentabilidadeConfiavel || typeof rentabilidadeBruta !== "number" || !Number.isFinite(rentabilidadeBruta);
+  const rentabilidade = rentabilidadeIndisponivel ? 0 : Number(rentabilidadeBruta);
   const ganho = asset.ganhoPerda ?? (valorAtual - (asset.quantidade ?? 0) * precoMedio);
   const valorAplicado = (asset.quantidade ?? 0) * precoMedio;
 
@@ -336,8 +339,8 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
         </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
         <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAtual)}</td>
-        <td className={`py-5 px-6 text-sm font-bold ${getRentColor(rentabilidade)}`}>
-           {ocultarValores ? "••••" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`}
+        <td className={`py-5 px-6 text-sm font-bold ${rentabilidadeIndisponivel ? "text-[#0B1218]/40" : getRentColor(rentabilidade)}`}>
+           {ocultarValores ? "••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}
         </td>
         <td className="py-5 px-6 text-sm font-semibold">
            <span className={getRentColor(ganho)}>
@@ -372,8 +375,8 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
         </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAplicado)}</td>
         <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAtual)}</td>
-        <td className={`py-5 px-6 text-sm font-bold ${getRentColor(rentabilidade)}`}>
-           {ocultarValores ? "••••" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`}
+        <td className={`py-5 px-6 text-sm font-bold ${rentabilidadeIndisponivel ? "text-[#0B1218]/40" : getRentColor(rentabilidade)}`}>
+           {ocultarValores ? "••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}
         </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
         <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">
@@ -409,8 +412,8 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{asset.taxa || asset.indexador || "100% CDI"}</td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAplicado)}</td>
         <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAtual)}</td>
-        <td className={`py-5 px-6 text-sm font-bold ${getRentColor(rentabilidade)}`}>
-           {ocultarValores ? "••••" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`}
+        <td className={`py-5 px-6 text-sm font-bold ${rentabilidadeIndisponivel ? "text-[#0B1218]/40" : getRentColor(rentabilidade)}`}>
+           {ocultarValores ? "••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}
         </td>
         <td className="py-5 px-6 text-right">
           <button 

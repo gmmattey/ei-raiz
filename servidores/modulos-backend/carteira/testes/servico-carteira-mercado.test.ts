@@ -7,14 +7,22 @@ class RepoFake implements RepositorioCarteira {
   public ativos: AtivoPersistido[] = [];
   public cacheValido: CacheCotacaoPersistido | null = null;
   public ultimoCache: CacheCotacaoPersistido | null = null;
-  public atualizacoes: Array<{ id: string; valorAtual: number; retorno12m: number }> = [];
+  public atualizacoes: Array<{ id: string; valorAtual: number; rentabilidade: number }> = [];
 
   async listarAtivos(): Promise<AtivoPersistido[]> {
     return this.ativos;
   }
 
-  async atualizarValorAtivo(ativoId: string, valorAtual: number, retorno12m: number): Promise<void> {
-    this.atualizacoes.push({ id: ativoId, valorAtual, retorno12m });
+  async listarSnapshotsPatrimonio(): Promise<Array<{ data: string; valorTotal: number }>> {
+    return [];
+  }
+
+  async atualizarValorAtivo(ativoId: string, valorAtual: number, rentabilidadeDesdeAquisicaoPct: number): Promise<void> {
+    this.atualizacoes.push({ id: ativoId, valorAtual, rentabilidade: rentabilidadeDesdeAquisicaoPct });
+  }
+
+  async somarDividas(): Promise<number> {
+    return 0;
   }
 
   async lerCacheValido(_fonte: FonteMercado, _chaveAtivo: string): Promise<CacheCotacaoPersistido | null> {
@@ -40,9 +48,15 @@ const ativoBase = (): AtivoPersistido => ({
   precoMedio: 20,
   valorAtual: 200,
   participacao: 100,
-  retorno12m: 0,
+  rentabilidadeDesdeAquisicaoPct: 0,
+  dataCadastro: null,
+  dataAquisicao: null,
   tickerCanonico: "PETR4",
   cnpjFundo: null,
+  indexador: null,
+  taxa: null,
+  dataInicio: null,
+  vencimento: null,
 });
 
 test("mercado: deve usar cotacao em tempo real quando fonte responde", async () => {
@@ -51,6 +65,7 @@ test("mercado: deve usar cotacao em tempo real quando fonte responde", async () 
 
   const servico = new ServicoCarteiraPadrao({
     repositorio: repo,
+    brapiToken: "t",
     fetchFn: async () =>
       new Response(
         JSON.stringify({
@@ -61,10 +76,10 @@ test("mercado: deve usar cotacao em tempo real quando fonte responde", async () 
   });
 
   const ativos = await servico.listarAtivos("user_1");
-  assert.equal(ativos[0].statusAtualizacao, "atualizado");
-  assert.equal(ativos[0].fontePreco, "brapi");
-  assert.equal(ativos[0].precoAtual, 30);
-  assert.equal(ativos[0].valorAtual, 300);
+  assert.equal(ativos[0]!.statusAtualizacao, "atualizado");
+  assert.equal(ativos[0]!.fontePreco, "brapi");
+  assert.equal(ativos[0]!.precoAtual, 30);
+  assert.equal(ativos[0]!.valorAtual, 300);
   assert.ok(repo.atualizacoes.length > 0);
 });
 
@@ -81,16 +96,17 @@ test("mercado: deve cair para cache atrasado quando fonte falha", async () => {
 
   const servico = new ServicoCarteiraPadrao({
     repositorio: repo,
+    brapiToken: "t",
     fetchFn: async () => {
       throw new Error("network down");
     },
   });
 
   const ativos = await servico.listarAtivos("user_1");
-  assert.equal(ativos[0].statusAtualizacao, "atrasado");
-  assert.equal(ativos[0].fontePreco, "brapi");
-  assert.equal(ativos[0].precoAtual, 27);
-  assert.equal(ativos[0].valorAtual, 270);
+  assert.equal(ativos[0]!.statusAtualizacao, "atrasado");
+  assert.equal(ativos[0]!.fontePreco, "brapi");
+  assert.equal(ativos[0]!.precoAtual, 27);
+  assert.equal(ativos[0]!.valorAtual, 270);
 });
 
 test("mercado: deve sinalizar indisponivel quando fonte falha e nao ha cache", async () => {
@@ -99,15 +115,15 @@ test("mercado: deve sinalizar indisponivel quando fonte falha e nao ha cache", a
 
   const servico = new ServicoCarteiraPadrao({
     repositorio: repo,
+    brapiToken: "t",
     fetchFn: async () => {
       throw new Error("network down");
     },
   });
 
   const ativos = await servico.listarAtivos("user_1");
-  assert.equal(ativos[0].statusAtualizacao, "indisponivel");
-  assert.equal(ativos[0].fontePreco, "brapi");
-  assert.equal(ativos[0].precoAtual, undefined);
-  assert.equal(ativos[0].valorAtual, 200);
+  assert.equal(ativos[0]!.statusAtualizacao, "indisponivel");
+  assert.equal(ativos[0]!.fontePreco, "brapi");
+  assert.equal(ativos[0]!.precoAtual, undefined);
+  assert.equal(ativos[0]!.valorAtual, 200);
 });
-

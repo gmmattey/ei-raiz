@@ -14,9 +14,16 @@ export function obterResumoCarteira(): Promise<ResumoCarteira> {
 export async function obterResumoCarteiraComFallback(): Promise<ResumoCarteira> {
   try {
     const summary = await obterFinancialCoreSummary();
+    const retornoDisponivel = summary.portfolio.returnAvailable;
+    const retornoPct = summary.portfolio.returnSinceInception;
     return {
-      patrimonioTotal: summary.portfolio.totalValue,
-      patrimonioInvestimentos: summary.portfolio.investedValue,
+      valorInvestimentos: summary.portfolio.investedValue,
+      custoTotalAcumulado: 0,
+      rentabilidadeDesdeAquisicaoPct: retornoDisponivel ? retornoPct : null,
+      rentabilidadeConfiavel: retornoDisponivel,
+      motivoRentabilidadeIndisponivel: retornoDisponivel ? undefined : "dados_insuficientes",
+      quantidadeAtivos: summary.portfolio.assetCount,
+      patrimonioLiquido: summary.portfolio.totalValue,
       patrimonioBens: summary.portfolio.otherAssetsValue,
       patrimonioPoupanca: summary.portfolio.cashValue,
       distribuicaoPatrimonio: summary.allocation.byClass.map((c) => ({
@@ -25,13 +32,6 @@ export async function obterResumoCarteiraComFallback(): Promise<ResumoCarteira> 
         valor: c.value,
         percentual: c.percent,
       })),
-      retornoDesdeAquisicao: summary.portfolio.returnSinceInception ?? undefined,
-      retorno_desde_aquisicao: summary.portfolio.returnSinceInception ?? undefined,
-      retorno12m: summary.portfolio.returnSinceInception ?? 0,
-      retornoDisponivel: summary.portfolio.returnAvailable,
-      motivoRetornoIndisponivel: summary.portfolio.returnAvailable ? undefined : "dados_insuficientes",
-      score: summary.score?.official ?? 0,
-      quantidadeAtivos: summary.portfolio.assetCount,
     };
   } catch {
     return obterResumoCarteira();

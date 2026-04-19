@@ -85,12 +85,12 @@ export async function resetMassaTesteEiRaiz(env: Env): Promise<{ resetado: boole
   for (const ativo of ativos) {
     const valorAtual = ativo.quantidade * ativo.valorAtual;
     const participacao = (valorAtual / (valorAtual + 462.5 + 5000)) * 100;
-    const retorno12m = ((ativo.valorAtual - ativo.precoMedio) / ativo.precoMedio) * 100;
+    const rentabilidadeDesdeAquisicao = ((ativo.valorAtual - ativo.precoMedio) / ativo.precoMedio) * 100;
     await env.DB
       .prepare(
-        "INSERT INTO ativos (id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m, data_cadastro, data_aquisicao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO ativos (id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, rentabilidade_desde_aquisicao_pct, data_cadastro, data_aquisicao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       )
-      .bind(ativo.id, usuarioId, ativo.ticker, ativo.nome, ativo.categoria, ativo.plataforma, ativo.quantidade, ativo.precoMedio, ativo.valorAtual, participacao, retorno12m, umAnoAtras, umAnoAtras)
+      .bind(ativo.id, usuarioId, ativo.ticker, ativo.nome, ativo.categoria, ativo.plataforma, ativo.quantidade, ativo.precoMedio, ativo.valorAtual, participacao, rentabilidadeDesdeAquisicao, umAnoAtras, umAnoAtras)
       .run();
   }
 

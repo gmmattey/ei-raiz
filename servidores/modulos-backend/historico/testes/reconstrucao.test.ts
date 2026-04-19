@@ -34,7 +34,7 @@ const ativo = (
   dataAquisicao,
 });
 
-const contextoVazio: ContextoReconstrucao = { imoveis: [], veiculos: [], poupanca: 0 };
+const contextoVazio: ContextoReconstrucao = { imoveis: [], veiculos: [], poupanca: 0, dividas: 0 };
 
 test("montarPayloadMesHistorico: filtra ativos por data de aquisição", () => {
   const ativos = [
@@ -60,6 +60,7 @@ test("montarPayloadMesHistorico: distribuição calculada com bens", () => {
     imoveis: [{ valorEstimado: 500_000, saldoFinanciamento: 0 }],
     veiculos: [],
     poupanca: 0,
+    dividas: 0,
   };
   const payload = montarPayloadMesHistorico([ativo("a1", "2026-01-01T00:00:00Z", 1, 1000)], ctx, "2026-04");
   assert.equal(payload.patrimonioInvestimentos, 1000);
@@ -128,9 +129,11 @@ class HistoricoFake implements RepositorioHistoricoMensal {
     anoMes: string,
     dataFechamento: string,
     totalInvestido: number,
+    valorInvestimentos: number,
     totalAtual: number,
-    retornoMes: number,
-    retornoAcum: number,
+    rentabilidadeMesPct: number,
+    rentabilidadeAcumPct: number,
+    confiavel: boolean,
     payload: PayloadHistoricoMensal,
     origem: OrigemHistoricoMensal,
   ): Promise<PontoHistoricoMensal> {
@@ -140,9 +143,11 @@ class HistoricoFake implements RepositorioHistoricoMensal {
       anoMes,
       dataFechamento,
       totalInvestido,
+      valorInvestimentos,
       totalAtual,
-      retornoMes,
-      retornoAcum,
+      rentabilidadeMesPct,
+      rentabilidadeAcumPct,
+      confiavel,
       origem,
     };
     this.pontos.push({ ...ponto, payload });

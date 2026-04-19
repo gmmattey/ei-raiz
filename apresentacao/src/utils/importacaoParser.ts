@@ -1,11 +1,14 @@
 import type { WorkSheet } from "xlsx";
 import type {
   AbaImportacao,
+  IndexadorRendaFixa,
   ItemAcaoBruto,
   ItemFundoBruto,
   ItemImovelBruto,
   ItemPatrimonioBruto,
   ItemPoupancaBruto,
+  ItemPrevidenciaBruto,
+  ItemRendaFixaBruto,
   ItemVeiculoBruto,
 } from "@ei/contratos";
 
@@ -74,6 +77,13 @@ const ABA_MAP: Record<string, AbaImportacao> = {
   "fundos": "fundos",
   "fundo": "fundos",
   "🏦 fundos": "fundos",
+  "renda fixa": "renda_fixa",
+  "renda_fixa": "renda_fixa",
+  "rendafixa": "renda_fixa",
+  "📄 renda fixa": "renda_fixa",
+  "previdência": "previdencia",
+  "previdencia": "previdencia",
+  "🏛️ previdência": "previdencia",
   "imóveis": "imoveis",
   "imoveis": "imoveis",
   "imóvel": "imoveis",
@@ -146,6 +156,56 @@ function parseFundos(rows: Record<string, unknown>[], abaNome: string): ItemFund
       };
     })
     .filter((item) => item.nome);
+}
+
+function normalizarIndexador(v: unknown): IndexadorRendaFixa | null {
+  const s = toStr(v).toUpperCase().replace(/[^A-Z]/g, "");
+  if (!s) return null;
+  if (s.startsWith("CDI")) return "CDI";
+  if (s.startsWith("IPCA")) return "IPCA";
+  if (s.startsWith("SELIC")) return "SELIC";
+  if (s.startsWith("IGPM")) return "IGPM";
+  if (s.includes("PRE") || s.includes("PREFIX")) return "PRE";
+  return null;
+}
+
+function parseRendaFixaOuPrevidencia<T extends "renda_fixa" | "previdencia">(
+  rows: Record<string, unknown>[],
+  aba: T,
+): (T extends "renda_fixa" ? ItemRendaFixaBruto : ItemPrevidenciaBruto)[] {
+  return rows
+    .filter((row) => toStr(row["Nome *"] || row["Nome do Título *"] || row["Nome"] || row["nome"]))
+    .map((row, i) => {
+      const nome = toStr(row["Nome *"] || row["Nome do Título *"] || row["Nome"] || row["nome"]);
+      const instituicao = toStr(
+        row["Instituição *"] || row["Instituição / Emissor *"] || row["instituicao"] || "",
+      );
+      const tipo = toStr(row["Tipo"] || row["Tipo / Classe"] || row["tipo"] || "");
+      const valorAplicado = toNum(
+        row["Valor Aplicado (R$) *"] || row["Valor Aplicado"] || row["valor_aplicado"] || row["valor"] || 0,
+      );
+      const indexadorRaw = row["Indexador *"] || row["Indexador"] || row["indexador"];
+      const indexador = normalizarIndexador(indexadorRaw);
+      const taxa = toNum(row["Taxa (%)"] || row["Taxa *"] || row["Taxa"] || row["taxa"] || 0);
+      const dataInicio = toDate(
+        row["Data Início *"] || row["Data de Início"] || row["data_inicio"] || row["data_aplicacao"],
+      );
+      const vencimento = toDate(row["Vencimento"] || row["vencimento"] || row["data_vencimento"]);
+
+      return {
+        aba,
+        linha: i + 1,
+        nome,
+        instituicao,
+        tipo: tipo || undefined,
+        valorAplicado,
+        indexador: (indexador ?? "") as IndexadorRendaFixa,
+        taxa,
+        dataInicio: dataInicio ?? "",
+        vencimento: vencimento || undefined,
+      } as unknown as T extends "renda_fixa" ? ItemRendaFixaBruto : ItemPrevidenciaBruto;
+    })
+    .filter((item) => Boolean(item.nome));
 }
 
 function parseImoveis(rows: Record<string, unknown>[]): ItemImovelBruto[] {
@@ -284,6 +344,12 @@ export async function parseXlsx(arquivo: File): Promise<ResultadoParseXlsx> {
             case "fundos":
               parsed = parseFundos(rowsFiltered, nomeAba);
               break;
+            case "renda_fixa":
+              parsed = parseRendaFixaOuPrevidencia(rowsFiltered, "renda_fixa");
+              break;
+            case "previdencia":
+              parsed = parseRendaFixaOuPrevidencia(rowsFiltered, "previdencia");
+              break;
             case "imoveis":
               parsed = parseImoveis(rowsFiltered);
               break;
@@ -329,6 +395,8 @@ function encontrarLinhaHeader(ws: WorkSheet): number {
         val.includes("ticker") ||
         val.includes("nome do fundo") ||
         val.includes("nome do ativo") ||
+        val.includes("nome do título") ||
+        val.includes("indexador") ||
         val.includes("descrição") ||
         val.includes("montadora") ||
         val.includes("instituição")

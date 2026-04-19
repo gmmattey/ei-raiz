@@ -74,15 +74,18 @@ export class FonteDadosReconstrucaoD1 implements FonteDadosReconstrucao {
   }
 
   async obterContexto(usuarioId: string): Promise<ContextoReconstrucao> {
-    const row = await this.db
-      .prepare(
-        "SELECT contexto_json FROM perfil_contexto_financeiro WHERE usuario_id = ?",
-      )
-      .bind(usuarioId)
-      .first<LinhaContexto>();
+    const [row, dividas] = await Promise.all([
+      this.db
+        .prepare(
+          "SELECT contexto_json FROM perfil_contexto_financeiro WHERE usuario_id = ?",
+        )
+        .bind(usuarioId)
+        .first<LinhaContexto>(),
+      this.somarDividas(usuarioId),
+    ]);
 
     if (!row?.contexto_json) {
-      return { imoveis: [], veiculos: [], poupanca: 0 };
+      return { imoveis: [], veiculos: [], poupanca: 0, dividas };
     }
 
     try {
@@ -97,9 +100,28 @@ export class FonteDadosReconstrucaoD1 implements FonteDadosReconstrucao {
           valorEstimado: Number(v.valorEstimado ?? 0),
         })),
         poupanca: Number(externo.poupanca ?? externo.caixaDisponivel ?? 0),
+        dividas,
       };
     } catch {
-      return { imoveis: [], veiculos: [], poupanca: 0 };
+      return { imoveis: [], veiculos: [], poupanca: 0, dividas };
+    }
+  }
+
+  private async somarDividas(usuarioId: string): Promise<number> {
+    try {
+      const row = await this.db
+        .prepare(
+          [
+            "SELECT COALESCE(SUM(valor_atual), 0) AS total",
+            "  FROM posicoes_financeiras",
+            " WHERE usuario_id = ? AND tipo = 'divida' AND ativo = 1",
+          ].join(" "),
+        )
+        .bind(usuarioId)
+        .first<{ total: number }>();
+      return Number(row?.total ?? 0);
+    } catch {
+      return 0;
     }
   }
 }

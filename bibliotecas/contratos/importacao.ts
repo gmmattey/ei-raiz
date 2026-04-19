@@ -1,4 +1,4 @@
-import type { CategoriaAtivo } from "./carteira";
+import type { CategoriaAtivo, IndexadorRendaFixa } from "./carteira";
 
 // Tipos de patrimônio real (não financeiro listado)
 export type TipoPatrimonio = "imovel" | "veiculo" | "poupanca";
@@ -7,7 +7,14 @@ export type TipoPatrimonio = "imovel" | "veiculo" | "poupanca";
 export type CategoriaImportacao = CategoriaAtivo | TipoPatrimonio;
 
 // Aba de origem no XLSX
-export type AbaImportacao = "acoes" | "fundos" | "imoveis" | "veiculos" | "poupanca";
+export type AbaImportacao =
+  | "acoes"
+  | "fundos"
+  | "renda_fixa"
+  | "previdencia"
+  | "imoveis"
+  | "veiculos"
+  | "poupanca";
 
 // ------- Itens brutos por tipo (vindos do XLSX parseado no frontend) -------
 
@@ -32,6 +39,42 @@ export type ItemFundoBruto = {
   instituicao: string;
   valorAplicado: number;
   dataAplicacao?: string;
+};
+
+/**
+ * Ativo de renda fixa contratada (CDB, LCI/LCA, Tesouro, Debêntures).
+ * Campos obrigatórios para marcar a mercado:
+ *   valorAplicado + indexador + taxa + dataInicio.
+ * Sem eles o item entra como status="erro" na validação.
+ */
+export type ItemRendaFixaBruto = {
+  aba: "renda_fixa";
+  linha: number;
+  nome: string;
+  instituicao: string;
+  tipo?: string;                       // "CDB" | "LCI" | "LCA" | "Tesouro" | "Debênture" | ...
+  valorAplicado: number;
+  indexador: IndexadorRendaFixa;
+  taxa: number;                        // ver carteira.ts para escala
+  dataInicio: string;                  // ISO 8601
+  vencimento?: string;                 // ISO 8601 (nulo = sem prazo)
+};
+
+/**
+ * Previdência privada (PGBL/VGBL). Matematicamente parente de renda fixa
+ * contratada, mas categoria separada por razão fiscal/legal.
+ */
+export type ItemPrevidenciaBruto = {
+  aba: "previdencia";
+  linha: number;
+  nome: string;
+  instituicao: string;
+  tipo?: string;                       // "PGBL" | "VGBL"
+  valorAplicado: number;
+  indexador: IndexadorRendaFixa;
+  taxa: number;
+  dataInicio: string;
+  vencimento?: string;
 };
 
 export type ItemImovelBruto = {
@@ -67,6 +110,8 @@ export type ItemPoupancaBruto = {
 export type ItemPatrimonioBruto =
   | ItemAcaoBruto
   | ItemFundoBruto
+  | ItemRendaFixaBruto
+  | ItemPrevidenciaBruto
   | ItemImovelBruto
   | ItemVeiculoBruto
   | ItemPoupancaBruto;
@@ -109,7 +154,7 @@ export type ItemImportacao = {
   cnpjFundo?: string;
   isin?: string;
   aliases?: string[];
-  // Metadados específicos por tipo (patrimônio)
+  // Metadados específicos por tipo (patrimônio / RF / previdência)
   metadados?: Record<string, unknown>;
   // Status de validação
   status: "ok" | "conflito" | "erro";

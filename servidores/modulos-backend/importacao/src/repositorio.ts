@@ -222,15 +222,28 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
       const valorTotal = Number(item.valor || 0);
       const precoMedioUnitario = quantidade > 0 ? valorTotal / quantidade : valorTotal;
       const ativoId = crypto.randomUUID();
+      const meta = (item.metadados ?? {}) as Record<string, unknown>;
+      const isContratado = item.categoria === "renda_fixa" || item.categoria === "previdencia";
+      const indexador = isContratado && typeof meta.indexador === "string" ? meta.indexador : null;
+      const taxa = isContratado && Number.isFinite(Number(meta.taxa)) ? Number(meta.taxa) : null;
+      const dataInicio =
+        isContratado && typeof meta.dataInicio === "string" && meta.dataInicio.length > 0
+          ? meta.dataInicio
+          : null;
+      const vencimento =
+        isContratado && typeof meta.vencimento === "string" && meta.vencimento.length > 0
+          ? meta.vencimento
+          : null;
       statements.push(
         this.db
           .prepare(
             [
               "INSERT INTO ativos",
               "(",
-              "id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m,",
-              "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json, data_cadastro, data_aquisicao",
-              ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, rentabilidade_desde_aquisicao_pct,",
+              "ticker_canonico, nome_canonico, identificador_canonico, cnpj_fundo, isin, aliases_json, data_cadastro, data_aquisicao,",
+              "indexador, taxa, data_inicio, vencimento",
+              ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             ].join(" "),
           )
           .bind(
@@ -253,6 +266,10 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
             item.aliases ? JSON.stringify(item.aliases) : null,
             new Date().toISOString(),
             item.dataOperacao || new Date().toISOString().slice(0, 10),
+            indexador,
+            taxa,
+            dataInicio,
+            vencimento,
           ),
       );
 

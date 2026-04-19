@@ -3,11 +3,14 @@ import type {
   CategoriaAtivo,
   CategoriaImportacao,
   ConfirmacaoImportacao,
+  IndexadorRendaFixa,
   ItemAcaoBruto,
   ItemFundoBruto,
   ItemImportacao,
   ItemImovelBruto,
   ItemPoupancaBruto,
+  ItemPrevidenciaBruto,
+  ItemRendaFixaBruto,
   ItemVeiculoBruto,
   PreviewImportacao,
   ServicoImportacao,
@@ -76,6 +79,10 @@ export class ServicoImportacaoPadrao implements ServicoImportacao {
             return this.validarAcao(upload.usuarioId, item as ItemAcaoBruto, linha);
           case "fundos":
             return this.validarFundo(upload.usuarioId, item as ItemFundoBruto, linha);
+          case "renda_fixa":
+            return this.validarRendaFixa(upload.usuarioId, item as ItemRendaFixaBruto, linha);
+          case "previdencia":
+            return this.validarPrevidencia(upload.usuarioId, item as ItemPrevidenciaBruto, linha);
           case "imoveis":
             return this.validarImovel(upload.usuarioId, item as ItemImovelBruto, linha);
           case "veiculos":
@@ -189,6 +196,95 @@ export class ServicoImportacaoPadrao implements ServicoImportacao {
     }
     if (!Number.isFinite(valor) || valor <= 0) {
       return { ...base, status: "erro", observacao: "valor aplicado inválido (deve ser positivo)" };
+    }
+
+    return this.validarItemAtivo(usuarioId, base);
+  }
+
+  private validarIndexadorEtaxa(
+    indexador: unknown,
+    taxa: unknown,
+  ): { ok: true; indexador: IndexadorRendaFixa; taxa: number } | { ok: false; motivo: string } {
+    const indexadoresValidos: IndexadorRendaFixa[] = ["CDI", "IPCA", "PRE", "SELIC", "IGPM"];
+    if (typeof indexador !== "string" || !indexadoresValidos.includes(indexador as IndexadorRendaFixa)) {
+      return { ok: false, motivo: "indexador inválido (use CDI, IPCA, PRE, SELIC ou IGPM)" };
+    }
+    const taxaNum = Number(taxa);
+    if (!Number.isFinite(taxaNum) || taxaNum <= 0) {
+      return { ok: false, motivo: "taxa inválida (deve ser positiva, ex.: 110 para 110% CDI)" };
+    }
+    return { ok: true, indexador: indexador as IndexadorRendaFixa, taxa: taxaNum };
+  }
+
+  private async validarRendaFixa(
+    usuarioId: string,
+    item: ItemRendaFixaBruto,
+    linha: number,
+  ): Promise<ItemImportacao> {
+    return this.validarAtivoContratado(usuarioId, item, linha, "renda_fixa", "Importação");
+  }
+
+  private async validarPrevidencia(
+    usuarioId: string,
+    item: ItemPrevidenciaBruto,
+    linha: number,
+  ): Promise<ItemImportacao> {
+    return this.validarAtivoContratado(usuarioId, item, linha, "previdencia", "Importação");
+  }
+
+  /**
+   * Famílias C (renda_fixa) e Previdência compartilham shape: valor contratado
+   * + indexador + taxa + dataInicio. `quantidade=1` e `precoMedio=valorAplicado`
+   * são convenção — a marcação a mercado vem do motor de renda fixa no carregamento.
+   */
+  private async validarAtivoContratado(
+    usuarioId: string,
+    item: ItemRendaFixaBruto | ItemPrevidenciaBruto,
+    linha: number,
+    categoria: "renda_fixa" | "previdencia",
+    plataformaFallback: string,
+  ): Promise<ItemImportacao> {
+    const valor = Number(item.valorAplicado ?? 0);
+    const ticker = (item.nome ?? "").toUpperCase().replace(/\s+/g, "").slice(0, 12);
+
+    const base: ItemImportacao = {
+      linha,
+      abaOrigem: categoria,
+      categoria,
+      ticker,
+      nome: item.nome ?? "",
+      plataforma: item.instituicao ?? plataformaFallback,
+      quantidade: 1,
+      valor,
+      dataOperacao: item.dataInicio,
+      metadados: {
+        tipo: item.tipo,
+        indexador: item.indexador,
+        taxa: item.taxa,
+        dataInicio: item.dataInicio,
+        vencimento: item.vencimento,
+      },
+      status: "ok",
+    };
+
+    if (!item.nome?.trim()) {
+      return { ...base, status: "erro", observacao: "nome do ativo obrigatório" };
+    }
+    if (!item.instituicao?.trim()) {
+      return { ...base, status: "erro", observacao: "instituição obrigatória" };
+    }
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return { ...base, status: "erro", observacao: "valor aplicado inválido (deve ser positivo)" };
+    }
+    if (!item.dataInicio || Number.isNaN(Date.parse(item.dataInicio))) {
+      return { ...base, status: "erro", observacao: "dataInicio obrigatória e válida (AAAA-MM-DD)" };
+    }
+    if (item.vencimento && Number.isNaN(Date.parse(item.vencimento))) {
+      return { ...base, status: "erro", observacao: "vencimento inválido (use AAAA-MM-DD)" };
+    }
+    const indexResult = this.validarIndexadorEtaxa(item.indexador, item.taxa);
+    if (!indexResult.ok) {
+      return { ...base, status: "erro", observacao: indexResult.motivo };
     }
 
     return this.validarItemAtivo(usuarioId, base);
@@ -454,6 +550,8 @@ export class ServicoImportacaoPadrao implements ServicoImportacao {
 function mapCategoriaToAba(categoria: CategoriaAtivo): AbaImportacao {
   if (categoria === "acao") return "acoes";
   if (categoria === "fundo") return "fundos";
+  if (categoria === "renda_fixa") return "renda_fixa";
+  if (categoria === "previdencia") return "previdencia";
   return "fundos";
 }
 

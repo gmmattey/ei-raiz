@@ -55,8 +55,9 @@ type AtivoComMercado = {
   dataAquisicao?: string;
   valorAtual: number;
   participacao: number;
-  retorno12m: number;
-  retornoDesdeAquisicao?: number;
+  rentabilidadeDesdeAquisicaoPct: number | null;
+  rentabilidadeConfiavel: boolean;
+  motivoRentabilidadeIndisponivel?: string;
   statusPrecoMedio?: "confiavel" | "ajustado_heuristica" | "inconsistente";
 };
 
@@ -67,7 +68,9 @@ const serializarAtivoMercado = (ativo: AtivoComMercado) => ({
   ultima_atualizacao: ativo.ultimaAtualizacao,
   data_cadastro: ativo.dataCadastro,
   data_aquisicao: ativo.dataAquisicao || ativo.dataCadastro,
-  retorno_desde_aquisicao: ativo.retornoDesdeAquisicao ?? ativo.retorno12m,
+  rentabilidade_desde_aquisicao_pct: ativo.rentabilidadeDesdeAquisicaoPct,
+  rentabilidade_confiavel: ativo.rentabilidadeConfiavel,
+  motivo_rentabilidade_indisponivel: ativo.motivoRentabilidadeIndisponivel,
   status_preco_medio: ativo.statusPrecoMedio,
 });
 
@@ -256,7 +259,9 @@ export async function handleCarteiraRoutes(
             categoria: "poupanca",
             valorAtual: valorTotal,
             participacao: totalPatrimonio > 0 ? (valorTotal / totalPatrimonio) * 100 : 100,
-            retorno12m: 0,
+            rentabilidadeDesdeAquisicaoPct: null,
+            rentabilidadeConfiavel: false,
+            motivoRentabilidadeIndisponivel: "Poupança não tem rentabilidade calculada pela carteira",
             plataforma: "Reserva em Caixa",
           } as AtivoComMercado);
         }
@@ -264,11 +269,17 @@ export async function handleCarteiraRoutes(
         ativos = [
           ...(contexto?.patrimonioExterno?.imoveis ?? []).map((i) => ({
             id: i.id, ticker: "IMOVEL", nome: i.tipo, categoria: "bens" as CategoriaAtivo,
-            valorAtual: i.valorEstimado, participacao: totalPatrimonio > 0 ? (i.valorEstimado / totalPatrimonio) * 100 : 0, retorno12m: 0, plataforma: "Imóvel",
+            valorAtual: i.valorEstimado, participacao: totalPatrimonio > 0 ? (i.valorEstimado / totalPatrimonio) * 100 : 0,
+            rentabilidadeDesdeAquisicaoPct: null, rentabilidadeConfiavel: false,
+            motivoRentabilidadeIndisponivel: "Bens não têm rentabilidade calculada pela carteira",
+            plataforma: "Imóvel",
           } as AtivoComMercado)),
           ...(contexto?.patrimonioExterno?.veiculos ?? []).map((v) => ({
             id: v.id, ticker: "VEICULO", nome: v.tipo, categoria: "bens" as CategoriaAtivo,
-            valorAtual: v.valorEstimado, participacao: totalPatrimonio > 0 ? (v.valorEstimado / totalPatrimonio) * 100 : 0, retorno12m: 0, plataforma: "Veículo",
+            valorAtual: v.valorEstimado, participacao: totalPatrimonio > 0 ? (v.valorEstimado / totalPatrimonio) * 100 : 0,
+            rentabilidadeDesdeAquisicaoPct: null, rentabilidadeConfiavel: false,
+            motivoRentabilidadeIndisponivel: "Bens não têm rentabilidade calculada pela carteira",
+            plataforma: "Veículo",
           } as AtivoComMercado)),
         ];
         valorTotal = patrimonioBens;
@@ -419,9 +430,9 @@ export async function handleCarteiraRoutes(
     const id = crypto.randomUUID();
     const agora = new Date().toISOString();
     await env.DB.batch([
-      env.DB.prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, retorno_12m = ? WHERE id = ? AND usuario_id = ?")
+      env.DB.prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, rentabilidade_desde_aquisicao_pct = ? WHERE id = ? AND usuario_id = ?")
         .bind(novaQO, novoPO, novaQO * pO, novoCO > 0 ? ((novaQO * pO - novoCO) / novoCO) * 100 : 0, origem.id, userId),
-      env.DB.prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, retorno_12m = ? WHERE id = ? AND usuario_id = ?")
+      env.DB.prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, rentabilidade_desde_aquisicao_pct = ? WHERE id = ? AND usuario_id = ?")
         .bind(novaQD, novoPD, novaQD * pD, novoCD > 0 ? ((novaQD * pD - novoCD) / novoCD) * 100 : 0, destino.id, userId),
       env.DB.prepare("INSERT INTO ativos_movimentacoes (id, usuario_id, ativo_origem_id, ativo_destino_id, valor, data_movimentacao, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(id, userId, body.ativoOrigemId, body.ativoDestinoId, body.valor, body.dataMovimentacao, body.observacao ?? "", agora),
@@ -464,7 +475,7 @@ export async function handleCarteiraRoutes(
     const novoRetorno = novoCusto > 0 ? ((novoValor - novoCusto) / novoCusto) * 100 : 0;
 
     await env.DB
-      .prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, retorno_12m = ? WHERE id = ? AND usuario_id = ?")
+      .prepare("UPDATE ativos SET quantidade = ?, preco_medio = ?, valor_atual = ?, rentabilidade_desde_aquisicao_pct = ? WHERE id = ? AND usuario_id = ?")
       .bind(novaQ, novoPMedio, novoValor, novoRetorno, ativoId, userId)
       .run();
 

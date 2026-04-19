@@ -252,7 +252,7 @@ function criarAbaFundos(wb: WorkBook): void {
   const ws: WorkSheet = {};
 
   ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(
-    "🏦 FUNDOS — Fundos de investimento, previdência e renda fixa",
+    "🏦 FUNDOS — Fundos de investimento (use abas dedicadas para RF e Previdência)",
     estiloDestaque(COR_LARANJA),
   );
   ws[XLSX.utils.encode_cell({ r: 1, c: 0 })] = cel(
@@ -308,6 +308,115 @@ function criarAbaFundos(wb: WorkBook): void {
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, "🏦 Fundos");
+}
+
+// ─── Aba Renda Fixa ──────────────────────────────────────────────────────────
+
+function criarAbaAtivoContratado(
+  wb: WorkBook,
+  tituloAba: string,
+  titulo: string,
+  subtitulo: string,
+  tipoExemplos: Array<[string, string, string, number, string, number, string, string]>,
+): void {
+  const ws: WorkSheet = {};
+
+  ws[XLSX.utils.encode_cell({ r: 0, c: 0 })] = cel(titulo, estiloDestaque(COR_LARANJA));
+  ws[XLSX.utils.encode_cell({ r: 1, c: 0 })] = cel(subtitulo, estiloTexto());
+  ws[XLSX.utils.encode_cell({ r: 2, c: 0 })] = celVazia();
+
+  const cabecalhos = [
+    { label: "Nome do Título *", obrigatorio: true },
+    { label: "Instituição *", obrigatorio: true },
+    { label: "Tipo", obrigatorio: false },
+    { label: "Valor Aplicado (R$) *", obrigatorio: true },
+    { label: "Indexador *", obrigatorio: true },
+    { label: "Taxa (%) *", obrigatorio: true },
+    { label: "Data Início *", obrigatorio: true },
+    { label: "Vencimento", obrigatorio: false },
+  ];
+
+  for (let c = 0; c < cabecalhos.length; c++) {
+    const { label, obrigatorio } = cabecalhos[c];
+    ws[XLSX.utils.encode_cell({ r: 3, c })] = cel(label, estiloCabecalho(obrigatorio ? COR_LARANJA : COR_ESCURO));
+  }
+
+  const legendas = [
+    "Nome que identifica o título",
+    "Banco / corretora emissora",
+    "CDB, LCI, LCA, Tesouro, Debênture, PGBL, VGBL…",
+    "R$ total aplicado",
+    "CDI, IPCA, PRE, SELIC, IGPM",
+    "Ex.: 110 para 110% CDI ou 6.5 para IPCA+6.5%",
+    "AAAA-MM-DD",
+    "AAAA-MM-DD (deixe em branco se sem prazo)",
+  ];
+  for (let c = 0; c < legendas.length; c++) {
+    ws[XLSX.utils.encode_cell({ r: 4, c })] = cel(legendas[c], estiloOpcional());
+  }
+
+  for (let i = 0; i < tipoExemplos.length; i++) {
+    for (let c = 0; c < tipoExemplos[i].length; c++) {
+      ws[XLSX.utils.encode_cell({ r: 5 + i, c })] = cel(tipoExemplos[i][c] ?? "", estiloExemplo());
+    }
+  }
+
+  const primeiraLinhaVazia = 5 + tipoExemplos.length;
+  for (let r = primeiraLinhaVazia; r < primeiraLinhaVazia + 40; r++) {
+    for (let c = 0; c < cabecalhos.length; c++) {
+      ws[XLSX.utils.encode_cell({ r, c })] = celVazia(
+        [0, 1, 3, 4, 5, 6].includes(c) ? estiloObrigatorio() : estiloOpcional(),
+      );
+    }
+  }
+
+  const ultimaLinha = primeiraLinhaVazia + 40 - 1;
+  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: ultimaLinha, c: cabecalhos.length - 1 } });
+  ws["!cols"] = [
+    { wch: 32 },
+    { wch: 22 },
+    { wch: 14 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+  ];
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: cabecalhos.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: cabecalhos.length - 1 } },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, tituloAba);
+}
+
+function criarAbaRendaFixa(wb: WorkBook): void {
+  criarAbaAtivoContratado(
+    wb,
+    "📄 Renda Fixa",
+    "📄 RENDA FIXA — CDB, LCI, LCA, Tesouro, Debêntures",
+    "Indexador + taxa + data de início são obrigatórios para marcar a mercado. Sem eles o motor trata como custo contábil.",
+    [
+      ["CDB Banco Inter", "Banco Inter", "CDB", 10000.0, "CDI", 110, "2025-03-10", "2027-03-10"],
+      ["Tesouro IPCA+ 2035", "Tesouro Direto", "Tesouro", 25000.0, "IPCA", 6.5, "2024-07-01", "2035-05-15"],
+      ["LCI Bradesco", "Bradesco", "LCI", 15000.0, "CDI", 95, "2025-01-05", "2027-01-05"],
+    ],
+  );
+}
+
+// ─── Aba Previdência ─────────────────────────────────────────────────────────
+
+function criarAbaPrevidencia(wb: WorkBook): void {
+  criarAbaAtivoContratado(
+    wb,
+    "🏛️ Previdência",
+    "🏛️ PREVIDÊNCIA — PGBL e VGBL",
+    "Matematicamente parente de renda fixa, separada por razão fiscal. Indexador + taxa + data de início obrigatórios.",
+    [
+      ["Itaú Flexprev PGBL", "Itaú", "PGBL", 45000.0, "CDI", 100, "2024-03-01", ""],
+      ["XP Seguros VGBL", "XP", "VGBL", 30000.0, "IPCA", 5.5, "2023-06-15", ""],
+    ],
+  );
 }
 
 // ─── Aba Imóveis ──────────────────────────────────────────────────────────────
@@ -502,6 +611,8 @@ export async function gerarTemplateXlsx(): Promise<ArrayBuffer> {
   criarAbaGuia(wb);
   criarAbaAcoes(wb);
   criarAbaFundos(wb);
+  criarAbaRendaFixa(wb);
+  criarAbaPrevidencia(wb);
   criarAbaImoveis(wb);
   criarAbaVeiculos(wb);
   criarAbaPoupanca(wb);

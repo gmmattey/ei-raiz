@@ -30,7 +30,7 @@ INSERT INTO plataformas_vinculadas (id, usuario_id, nome, ultimo_import, status)
   ('plat_nubank', 'usr_luiz_mendonca', 'NuInvest', '2026-03-25', 'ativo'),
   ('plat_inter', 'usr_luiz_mendonca', 'Inter Invest', '2026-03-18', 'ativo');
 
-INSERT INTO ativos (id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, retorno_12m) VALUES
+INSERT INTO ativos (id, usuario_id, ticker, nome, categoria, plataforma, quantidade, preco_medio, valor_atual, participacao, rentabilidade_desde_aquisicao_pct) VALUES
   ('ativo_1', 'usr_luiz_mendonca', 'ITSA4', 'Itausa PN', 'acao', 'XP Investimentos', 320.00, 9.12, 3264.00, 5.8, 13.1),
   ('ativo_2', 'usr_luiz_mendonca', 'BOVA11', 'iShares Ibovespa', 'fundo', 'XP Investimentos', 90.00, 106.42, 10143.00, 18.0, 11.5),
   ('ativo_3', 'usr_luiz_mendonca', 'MXRF11', 'Maxi Renda FII', 'fundo', 'NuInvest', 680.00, 10.07, 7208.00, 12.8, 9.7),

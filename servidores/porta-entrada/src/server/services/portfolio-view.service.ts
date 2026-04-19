@@ -142,7 +142,8 @@ export class PortfolioViewService {
       valorAtual: number;
       quantidade: number | null;
       precoMedio: number | null;
-      retorno12m: number;
+      rentabilidadeDesdeAquisicaoPct: number | null;
+      rentabilidadeConfiavel: boolean;
       participacao: number;
       [key: string]: unknown;
     }> | undefined;
@@ -163,38 +164,42 @@ export class PortfolioViewService {
 
     if (quoteMap.size === 0) return payload;
 
-    let totalAtualAtualizado = 0;
+    let valorInvestimentosAtualizado = 0;
     const ativosAtualizados = ativos.map((ativo) => {
       const ticker = ativo.ticker?.toUpperCase();
       const freshPrice = ticker ? quoteMap.get(ticker) : undefined;
       if (freshPrice === undefined) {
-        totalAtualAtualizado += Number(ativo.valorAtual ?? 0);
+        valorInvestimentosAtualizado += Number(ativo.valorAtual ?? 0);
         return ativo;
       }
       const quantidade = Number(ativo.quantidade ?? 0);
       const precoMedio = Number(ativo.precoMedio ?? 0);
       const novoValor = quantidade > 0 ? quantidade * freshPrice : freshPrice;
-      const novoRetorno = precoMedio > 0 ? ((freshPrice - precoMedio) / precoMedio) * 100 : 0;
-      totalAtualAtualizado += novoValor;
-      const retornoFormatado = Number(novoRetorno.toFixed(4));
+      valorInvestimentosAtualizado += novoValor;
+      const rentabilidadeRaw =
+        precoMedio > 0 ? ((freshPrice - precoMedio) / precoMedio) * 100 : null;
+      const rentabilidadeFormatada =
+        rentabilidadeRaw !== null ? Number(rentabilidadeRaw.toFixed(4)) : null;
       return {
         ...ativo,
         valorAtual: Number(novoValor.toFixed(4)),
-        retornoDesdeAquisicao: retornoFormatado,
-        retorno_desde_aquisicao: retornoFormatado,
-        // legado, mantido por compat
-        retorno12m: retornoFormatado,
+        rentabilidadeDesdeAquisicaoPct: rentabilidadeFormatada,
+        rentabilidadeConfiavel: rentabilidadeFormatada !== null,
       };
     });
 
     const patrimonioTotal = Number(payload.patrimonioTotal as number ?? 0);
-    const deltaInvestimentos = totalAtualAtualizado - Number(payload.patrimonioInvestimentos ?? 0);
-    const novoPatrimonioTotal = patrimonioTotal + deltaInvestimentos;
+    const valorInvestimentosAnterior = Number(
+      payload.valorInvestimentos ?? payload.patrimonioInvestimentos ?? 0,
+    );
+    const delta = valorInvestimentosAtualizado - valorInvestimentosAnterior;
+    const novoPatrimonioTotal = patrimonioTotal + delta;
 
     return {
       ...payload,
       ativos: ativosAtualizados,
-      patrimonioInvestimentos: Number(totalAtualAtualizado.toFixed(2)),
+      valorInvestimentos: Number(valorInvestimentosAtualizado.toFixed(2)),
+      patrimonioInvestimentos: Number(valorInvestimentosAtualizado.toFixed(2)),
       patrimonioTotal: Number(novoPatrimonioTotal.toFixed(2)),
     };
   }
@@ -204,32 +209,36 @@ export class PortfolioViewService {
    * NÃO chama BRAPI — usa valores de ativos.valor_atual já no banco.
    */
   private async computeResumoFallback(userId: string): Promise<Record<string, unknown>> {
-    const [resumo, ativos, contexto] = await Promise.all([
+    const [resumo, ativos, contexto, dividas] = await Promise.all([
       this.carteiraService.obterResumo(userId),
       this.carteiraService.listarAtivos(userId),
       this.perfilService.obterContextoFinanceiro(userId),
+      this.somarDividasUsuario(userId),
     ]);
 
     const ativosTyped = ativos as Array<{ valorAtual: number; [key: string]: unknown }>;
 
-    const patrimonioInvestimentos = ativosTyped.reduce((acc, a) => acc + Number(a.valorAtual ?? 0), 0);
+    const valorInvestimentos = ativosTyped.reduce((acc, a) => acc + Number(a.valorAtual ?? 0), 0);
     const imoveis = contexto?.patrimonioExterno?.imoveis ?? [];
     const veiculos = contexto?.patrimonioExterno?.veiculos ?? [];
     const patrimonioBens =
       imoveis.reduce((acc, i) => acc + Math.max(0, Number(i.valorEstimado ?? 0) - Number(i.saldoFinanciamento ?? 0)), 0) +
       veiculos.reduce((acc, v) => acc + Math.max(0, Number(v.valorEstimado ?? 0)), 0);
     const patrimonioPoupanca = Number(contexto?.patrimonioExterno?.poupanca ?? contexto?.patrimonioExterno?.caixaDisponivel ?? 0);
-    const patrimonioTotal = patrimonioInvestimentos + patrimonioBens + patrimonioPoupanca;
+    const patrimonioDividas = Math.max(0, Number(dividas ?? 0));
+    const patrimonioTotal =
+      valorInvestimentos + patrimonioBens + patrimonioPoupanca - patrimonioDividas;
 
+    const baseDistribuicao = valorInvestimentos + patrimonioBens + patrimonioPoupanca;
     const distribuicaoBase = [
-      { id: "investimentos", label: "Investimentos", valor: patrimonioInvestimentos },
+      { id: "investimentos", label: "Investimentos", valor: valorInvestimentos },
       { id: "bens", label: "Bens", valor: patrimonioBens },
       { id: "poupanca", label: "Poupança", valor: patrimonioPoupanca },
     ].filter((item) => item.valor > 0);
 
     const distribuicaoPatrimonio = distribuicaoBase.map((item) => ({
       ...item,
-      percentual: patrimonioTotal > 0 ? Number(((item.valor / patrimonioTotal) * 100).toFixed(4)) : 0,
+      percentual: baseDistribuicao > 0 ? Number(((item.valor / baseDistribuicao) * 100).toFixed(4)) : 0,
     }));
 
     let score: unknown = null;
@@ -242,13 +251,29 @@ export class PortfolioViewService {
 
     return {
       ...(resumo as Record<string, unknown>),
+      valorInvestimentos: Number(valorInvestimentos.toFixed(2)),
+      patrimonioInvestimentos: Number(valorInvestimentos.toFixed(2)),
       patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
-      patrimonioInvestimentos: Number(patrimonioInvestimentos.toFixed(2)),
       patrimonioBens: Number(patrimonioBens.toFixed(2)),
       patrimonioPoupanca: Number(patrimonioPoupanca.toFixed(2)),
+      patrimonioDividas: Number(patrimonioDividas.toFixed(2)),
       distribuicaoPatrimonio,
       score,
       _fonte: "live",
     };
+  }
+
+  private async somarDividasUsuario(userId: string): Promise<number> {
+    try {
+      const row = await this.env.DB
+        .prepare(
+          "SELECT COALESCE(SUM(valor_atual), 0) AS total FROM posicoes_financeiras WHERE usuario_id = ? AND tipo = 'divida' AND ativo = 1",
+        )
+        .bind(userId)
+        .first<{ total: number }>();
+      return Number(row?.total ?? 0);
+    } catch {
+      return 0;
+    }
   }
 }

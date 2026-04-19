@@ -55,8 +55,15 @@ const fmt = (v) =>
 const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
 
-const retornoDesdeAquisicao = (obj) =>
-  obj?.retornoDesdeAquisicao ?? obj?.retorno_desde_aquisicao ?? obj?.retorno12m ?? 0;
+/**
+ * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
+ * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
+ */
+const rentabilidadeDesdeAquisicao = (obj) => {
+  if (!obj || obj.rentabilidadeConfiavel === false) return null;
+  const v = obj.rentabilidadeDesdeAquisicaoPct;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+};
 
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const formatMes = (anoMes) => {
@@ -495,15 +502,16 @@ export default function HomeLobby() {
           <p className="font-['Sora'] text-2xl font-bold leading-tight">
             {ocultarValores ? '••••••••' : fmt(patrimonioTotal)}
           </p>
-          {resumo?.retornoDisponivel ? (() => {
-            const r = retornoDesdeAquisicao(resumo);
+          {(() => {
+            const r = rentabilidadeDesdeAquisicao(resumo);
+            if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
               <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                 {ocultarValores ? '••••' : fmtPct(r)}{' '}
                 <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
               </p>
             );
-          })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+          })()}
           {composicaoFrase && (
             <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-snug">
               {composicaoFrase}
@@ -517,15 +525,16 @@ export default function HomeLobby() {
           <p className="font-['Sora'] text-2xl font-bold leading-tight">
             {ocultarValores ? '••••••••' : fmt(patrimonioInvest)}
           </p>
-          {resumo?.retornoDisponivel ? (() => {
-            const r = retornoDesdeAquisicao(resumo);
+          {(() => {
+            const r = rentabilidadeDesdeAquisicao(resumo);
+            if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
               <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                 {ocultarValores ? '••••' : fmtPct(r)}{' '}
                 <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
               </p>
             );
-          })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+          })()}
         </div>
 
         {/* Score */}
@@ -668,7 +677,14 @@ export default function HomeLobby() {
                           {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
                         </p>
                         {(() => {
-                          const r = retornoDesdeAquisicao(ativo);
+                          const r = rentabilidadeDesdeAquisicao(ativo);
+                          if (r === null) {
+                            return (
+                              <p className="text-sm font-semibold text-right self-center whitespace-nowrap text-[var(--text-muted)]">
+                                {ocultarValores ? '••••' : '—'}
+                              </p>
+                            );
+                          }
                           return (
                             <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                               {ocultarValores ? '••••' : fmtPct(r)}
