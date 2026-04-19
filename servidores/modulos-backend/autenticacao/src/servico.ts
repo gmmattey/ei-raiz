@@ -200,6 +200,18 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
     const input = redefinirSenhaEntradaSchema.parse(entrada);
     const tokenHash = await gerarHashToken(input.token.trim());
     const token = await this.deps.repositorio.buscarTokenRecuperacao(tokenHash);
+    return this.aplicarRedefinicao(token, input.novaSenha);
+  }
+
+  async redefinirSenhaPorPin(pin: string, novaSenha: string): Promise<RedefinirSenhaSaida> {
+    const token = await this.deps.repositorio.buscarTokenRecuperacaoPorPin(pin.trim());
+    return this.aplicarRedefinicao(token, novaSenha);
+  }
+
+  private async aplicarRedefinicao(
+    token: { id: string; usuarioId: string; expiraEm: string; usadoEm: string | null } | null,
+    novaSenha: string,
+  ): Promise<RedefinirSenhaSaida> {
     if (!token) {
       throw new ErroAutenticacao("TOKEN_RECUPERACAO_INVALIDO", 400, "Token de recuperação inválido");
     }
@@ -209,7 +221,7 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
     if (new Date(token.expiraEm).getTime() < Date.now()) {
       throw new ErroAutenticacao("TOKEN_RECUPERACAO_EXPIRADO", 400, "Token de recuperação expirado");
     }
-    const novaSenhaHash = await gerarHashSenha(input.novaSenha);
+    const novaSenhaHash = await gerarHashSenha(novaSenha);
     await this.deps.repositorio.atualizarSenha(token.usuarioId, novaSenhaHash);
     await this.deps.repositorio.marcarTokenRecuperacaoComoUsado(token.id);
     return { redefinido: true };

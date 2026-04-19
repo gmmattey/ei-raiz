@@ -151,30 +151,18 @@ export async function handleAuthRoutes(
   if (pathname === "/api/auth/redefinir-senha" && request.method === "POST") {
     const body = await parseJsonBody(request) as { pin?: string; token?: string; novaSenha?: string };
 
-    // Se veio PIN de 6 dígitos, procurar o token correspondente na tabela de recuperações
-    if (body.pin && body.pin.length === 6 && !body.token) {
-      console.log(`[redefinirSenha] PIN de 6 dígitos recebido: ${body.pin}`);
+    // PIN pode vir no campo `pin` ou no campo `token` (frontend envia como `token`).
+    // Um PIN é sempre 6 dígitos numéricos.
+    const candidatoPin = body.pin || body.token || "";
+    const ehPin = /^\d{6}$/.test(candidatoPin.trim());
 
-      // Procurar na tabela recuperacoes_acesso pelo PIN
-      const recuperacao = await env.DB
-        .prepare(
-          "SELECT id, usuario_id, token_hash, destino_email, expira_em, usado_em FROM recuperacoes_acesso WHERE pin = ? LIMIT 1"
-        )
-        .bind(body.pin)
-        .first<{ id: string; usuario_id: string; token_hash: string; destino_email: string; expira_em: string; usado_em: string | null }>();
-
-      if (!recuperacao) {
-        console.error(`[redefinirSenha] PIN não encontrado na base de dados: ${body.pin}`);
-        throw new Error("PIN_INVALIDO");
+    if (ehPin) {
+      if (!body.novaSenha) {
+        throw new Error("NOVA_SENHA_OBRIGATORIA");
       }
-
-      console.log(`[redefinirSenha] PIN validado, usando token_hash correspondente`);
-      // Substituir PIN pelo token_hash para o authService
-      const bodyComToken = { ...body, token: recuperacao.token_hash, pin: undefined };
-      return sucesso(await authService.redefinirSenha(bodyComToken as never));
+      return sucesso(await authService.redefinirSenhaPorPin(candidatoPin.trim(), body.novaSenha));
     }
 
-    // Fallback: se veio token direto ou sem PIN, usar como antes (compatibilidade)
     return sucesso(await authService.redefinirSenha(body as never));
   }
 
