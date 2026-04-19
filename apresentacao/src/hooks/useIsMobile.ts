@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 const MOBILE_BREAKPOINT = 900;
 const TOUCH_TABLET_BREAKPOINT = 1200;
 
-function detectMobile() {
+export function detectMobile() {
   if (typeof window === 'undefined') return false;
 
   const width = window.innerWidth || 0;

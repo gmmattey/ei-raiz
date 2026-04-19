@@ -159,7 +159,7 @@ const mapMaturidade = (answer) => {
   return 3;
 };
 
-export default function Onboarding({ embedded = false, onClose, mode = 'signup', initialStep = 1 }) {
+export default function Onboarding({ embedded = false, inline = false, onePerStep = false, onDark = false, onClose, mode = 'signup', initialStep = 1 }) {
   const navigate = useNavigate();
   const { setThemeMode } = useTheme();
   const { setOcultarValores } = useModoVisualizacao();
@@ -174,6 +174,7 @@ export default function Onboarding({ embedded = false, onClose, mode = 'signup',
   const [formData, setFormData] = useState({ name: '', cpf: '', date: '', email: '', phone: '', renda: '', gastoMensal: '', aporteMensal: '', patrimonioAtual: '', bancos: [], password: '', confirmPassword: '' });
   const [profileAnswers, setProfileAnswers] = useState({ q1: '', q2: '', q3: '', q4: '', q5: '' });
   const [stepAttempted, setStepAttempted] = useState(false);
+  const [fieldIndex, setFieldIndex] = useState(0);
   const [dadosPessoais, setDadosPessoais] = useState({
     estadoCivil: '',
     escolaridade: '',
@@ -356,16 +357,267 @@ export default function Onboarding({ embedded = false, onClose, mode = 'signup',
     );
   }
 
-  const signupCompact = embedded && mode === 'signup';
+  const signupCompact = (embedded || inline) && mode === 'signup';
+
+  const signupFields = [
+    { key: 'name', label: 'Como é seu nome completo?', placeholder: 'Ex: Ana Carolina Silva', maskType: 'name' },
+    { key: 'cpf', label: 'Qual é o seu CPF?', placeholder: '000.000.000-00', maskType: 'cpf', inputMode: 'numeric' },
+    { key: 'date', label: 'Data de nascimento', placeholder: 'DD/MM/AAAA', maskType: 'date', inputMode: 'numeric' },
+    { key: 'email', label: 'Qual o seu melhor e-mail?', placeholder: 'seu@email.com', type: 'email', inputMode: 'email' },
+    { key: 'phone', label: 'E seu celular?', placeholder: '(00) 00000-0000', maskType: 'phone', inputMode: 'tel' },
+    { key: 'password', label: 'Crie uma senha forte', placeholder: 'crie sua senha', type: 'password' },
+    { key: 'confirmPassword', label: 'Confirme sua senha', placeholder: 'confirme sua senha', type: 'password' },
+  ];
+
+  const validateField = (key, value) => {
+    if (!value) return false;
+    if (key === 'name') return value.trim().split(/\s+/).length >= 2;
+    if (key === 'cpf') return isValidCPF(value);
+    if (key === 'date') return isValidDate(value);
+    if (key === 'email') return value.includes('@') && value.includes('.');
+    if (key === 'phone') return value.replace(/\D/g, '').length === 11;
+    if (key === 'password') return senhaForteRegex.test(value);
+    if (key === 'confirmPassword') return value === formData.password && value.length > 0;
+    return false;
+  };
+
+  const applyMask = (key, raw) => {
+    if (key === 'cpf') return raw.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
+    if (key === 'date') return raw.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').replace(/(\d{2})(\d)/, '$1/$2').replace(/(\/\d{4})\d+?$/, '$1');
+    if (key === 'phone') return raw.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').replace(/(-\d{4})\d+?$/, '$1');
+    if (key === 'name') return raw;
+    return raw;
+  };
+
+  const handleFieldNext = async () => {
+    const field = signupFields[fieldIndex];
+    const value = formData[field.key];
+    if (!validateField(field.key, value)) { setStepAttempted(true); return; }
+    setStepAttempted(false);
+    setSubmitError('');
+    setShowForgotPasswordLink(false);
+
+    if (field.key === 'phone') {
+      setIsCheckingCadastro(true);
+      try {
+        const cpf = formData.cpf.replace(/\D/g, '');
+        const email = formData.email.trim().toLowerCase();
+        const verificacao = await authApi.verificarCadastro(cpf, email);
+        if (!verificacao.cpfDisponivel) {
+          setSubmitError('Usuário já cadastrado. Se não lembrar a senha, recupere o acesso.');
+          setShowForgotPasswordLink(true);
+          setIsCheckingCadastro(false);
+          return;
+        }
+        if (!verificacao.emailDisponivel) {
+          setSubmitError('E-mail já cadastrado. Se não lembrar a senha, recupere o acesso.');
+          setShowForgotPasswordLink(true);
+          setIsCheckingCadastro(false);
+          return;
+        }
+      } catch (error) {
+        setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente.');
+        setIsCheckingCadastro(false);
+        return;
+      }
+      setIsCheckingCadastro(false);
+    }
+
+    if (fieldIndex === signupFields.length - 1) {
+      await handleFinish();
+      return;
+    }
+    setFieldIndex((i) => i + 1);
+  };
+
+  const handleFieldPrev = () => {
+    setSubmitError('');
+    setShowForgotPasswordLink(false);
+    setStepAttempted(false);
+    if (fieldIndex === 0) {
+      if (onClose) onClose();
+      return;
+    }
+    setFieldIndex((i) => i - 1);
+  };
+
+  if (inline && onePerStep && mode === 'signup') {
+    const field = signupFields[fieldIndex];
+    const value = formData[field.key] || '';
+    const fieldValid = validateField(field.key, value);
+    const isLast = fieldIndex === signupFields.length - 1;
+    const isPassword = field.key === 'password';
+    const isConfirm = field.key === 'confirmPassword';
+    const pwdVisible = isPassword ? showPassword : showConfirmPassword;
+    const setPwdVisible = isPassword ? setShowPassword : setShowConfirmPassword;
+
+    const headingColor = onDark ? 'text-white' : 'text-[#0B1218]';
+    const progressBg = onDark ? 'bg-white/10' : 'bg-[#0B1218]/5';
+    const helperColor = onDark ? 'text-white/60' : 'text-[#0B1218]/60';
+    const backBtnColor = onDark
+      ? 'text-white/60 hover:text-white disabled:opacity-40'
+      : 'text-[#0B1218]/50 hover:text-[#0B1218] disabled:opacity-40';
+    const inputBase = onDark
+      ? 'border-white/20 text-white placeholder:text-white/30 focus:border-[#F56A2A]'
+      : 'border-[#EFE7DC] text-[#0B1218] placeholder:text-[#0B1218]/30 focus:border-[#F56A2A]';
+    const eyeColor = onDark ? 'text-white/50 hover:text-white' : 'text-[#0B1218]/50 hover:text-[#0B1218]';
+
+    return (
+      <div className={`relative w-full font-['Inter'] ${headingColor}`}>
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-['Inter'] text-[11px] font-bold tracking-widest text-[#F56A2A] uppercase">
+              Passo {fieldIndex + 1} de {signupFields.length}
+            </span>
+          </div>
+          <div className={`h-1 w-full ${progressBg} rounded-full overflow-hidden`}>
+            <div
+              className="h-full bg-[#F56A2A] transition-all duration-500 ease-out"
+              style={{ width: `${((fieldIndex + 1) / signupFields.length) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div key={fieldIndex} className="animate-in slide-in-from-right-8 fade-in duration-300">
+          <h2 className={`font-['Sora'] text-2xl font-bold ${headingColor} mb-6`}>{field.label}</h2>
+
+          {isPassword || isConfirm ? (
+            <div>
+              <div className="relative flex items-center">
+                <input
+                  type={pwdVisible ? 'text' : 'password'}
+                  autoFocus
+                  placeholder={field.placeholder}
+                  value={value}
+                  onChange={(e) => {
+                    setFormData((p) => ({ ...p, [field.key]: e.target.value }));
+                    if (submitError) setSubmitError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleFieldNext(); }
+                  }}
+                  className={`w-full border-b border-l-0 border-r-0 border-t-0 bg-transparent px-2 py-3 pr-10 text-lg transition-all focus:outline-none focus:ring-0 ${stepAttempted && !fieldValid ? 'border-[#E85C5C] text-[#E85C5C] placeholder:text-[#E85C5C]/50 focus:border-[#E85C5C]' : inputBase}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwdVisible((v) => !v)}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 ${eyeColor}`}
+                >
+                  {pwdVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {isPassword && (
+                <p className={`mt-3 text-xs ${helperColor}`}>
+                  Use 8+ caracteres com maiúscula, minúscula, número e símbolo.
+                </p>
+              )}
+              {stepAttempted && !fieldValid && (
+                <p className="mt-2 text-xs text-[#E85C5C] font-semibold">
+                  {isPassword
+                    ? 'Senha fora do padrão de segurança exigido.'
+                    : 'As senhas não conferem.'}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div className="relative flex items-center">
+                <input
+                  type={field.type || 'text'}
+                  autoFocus
+                  inputMode={field.inputMode}
+                  placeholder={field.placeholder}
+                  value={value}
+                  onChange={(e) => {
+                    const masked = applyMask(field.key, e.target.value);
+                    setFormData((p) => ({ ...p, [field.key]: masked }));
+                    if (submitError) setSubmitError('');
+                  }}
+                  onBlur={(e) => {
+                    if (field.key === 'name' && e.target.value) {
+                      const formatted = e.target.value.toLowerCase().replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
+                      setFormData((p) => ({ ...p, name: formatted }));
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleFieldNext(); }
+                  }}
+                  className={`w-full border-b border-l-0 border-r-0 border-t-0 bg-transparent px-2 py-3 pr-10 text-lg transition-all focus:outline-none focus:ring-0 ${stepAttempted && !fieldValid ? 'border-[#E85C5C] text-[#E85C5C] placeholder:text-[#E85C5C]/50 focus:border-[#E85C5C]' : inputBase}`}
+                />
+                <div className="absolute right-2 transition-all duration-300">
+                  {fieldValid ? <Check size={18} className="text-[#6FCF97]" /> : (stepAttempted && value ? <X size={18} className="text-[#E85C5C]" /> : null)}
+                </div>
+              </div>
+              {stepAttempted && !fieldValid && (
+                <p className="mt-2 text-xs text-[#E85C5C] font-semibold">
+                  {!value
+                    ? 'Campo obrigatório.'
+                    : field.key === 'date'
+                      ? 'Data inválida (mínimo 16 anos).'
+                      : field.key === 'name'
+                        ? 'Digite o nome completo.'
+                        : 'Formato inválido.'}
+                </p>
+              )}
+            </div>
+          )}
+
+          {submitError && (
+            <p className="mt-4 text-xs text-[#E85C5C] font-semibold">{submitError}</p>
+          )}
+          {showForgotPasswordLink && (
+            <button
+              type="button"
+              onClick={() => navigate(`/?abrir=login&step=forgotPassword&email=${encodeURIComponent(formData.email.trim().toLowerCase())}`)}
+              className="mt-2 text-xs text-[#F56A2A] hover:text-[#d95a20] font-semibold"
+            >
+              Esqueci minha senha
+            </button>
+          )}
+        </div>
+
+        <div className="mt-10 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={handleFieldPrev}
+            disabled={isSubmitting || isCheckingCadastro}
+            className={`flex items-center gap-1 text-sm font-semibold ${backBtnColor}`}
+          >
+            <ChevronLeft size={18} /> Voltar
+          </button>
+          <button
+            type="button"
+            onClick={handleFieldNext}
+            disabled={!fieldValid || isSubmitting || isCheckingCadastro}
+            className="flex-1 max-w-[220px] bg-[#F56A2A] text-white font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {isCheckingCadastro || isSubmitting
+              ? 'Aguarde...'
+              : isLast
+                ? 'Criar conta'
+                : 'Próximo'}
+            {!isCheckingCadastro && !isSubmitting && !isLast && <ChevronRight size={18} />}
+            {!isCheckingCadastro && !isSubmitting && isLast && <Check size={18} />}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const rootClass = inline
+    ? `relative w-full font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white`
+    : embedded
+      ? `relative w-full max-w-[896px] max-h-[92dvh] overflow-y-auto bg-white rounded-xl shadow-2xl font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white ${signupCompact ? 'p-4 sm:p-5 lg:p-6' : 'p-4 sm:p-6 lg:p-8'}`
+      : "relative min-h-screen bg-white font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white pb-20 overflow-y-visible";
 
   return (
-    <div className={`${embedded ? `relative w-full max-w-[896px] max-h-[92dvh] overflow-y-auto bg-white rounded-xl shadow-2xl font-['Inter'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white ${signupCompact ? 'p-4 sm:p-5 lg:p-6' : 'p-4 sm:p-6 lg:p-8'}` : 'relative min-h-screen bg-white font-[\'Inter\'] text-[#0B1218] selection:bg-[#F56A2A] selection:text-white pb-20 overflow-y-visible'}`}>
-      {embedded && (
+    <div className={rootClass}>
+      {embedded && !inline && (
         <button onClick={onClose} className="absolute right-4 top-4 z-20 text-[#0B1218]/40 hover:text-[#0B1218]">
           <X size={18} />
         </button>
       )}
-      <div className={`relative z-10 mx-auto flex w-full max-w-[896px] flex-col fade-in-up ${embedded ? '' : 'px-4 sm:px-6 lg:px-8'}`}>
+      <div className={`relative z-10 mx-auto flex w-full max-w-[896px] flex-col fade-in-up ${embedded || inline ? '' : 'px-4 sm:px-6 lg:px-8'}`}>
         {/* TÍTULO PRINCIPAL COMPACTO */}
         <div className={`${signupCompact ? 'mb-4' : 'mb-8'} text-center sm:text-left animate-in fade-in slide-in-from-bottom-4 duration-500 fade-in-up`}>
           <h1 className="mb-2 font-['Sora'] text-3xl font-bold text-[#0B1218] sm:text-4xl tracking-tight">

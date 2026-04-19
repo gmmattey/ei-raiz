@@ -32,7 +32,8 @@
       "Bash(rm -f node_modules/@ei/servico-decisoes)",
       "Bash(rm -f node_modules/@ei/servico-historico)",
       "Bash(rm -f node_modules/@ei/servico-importacao)",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

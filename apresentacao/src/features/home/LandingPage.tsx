@@ -2,99 +2,134 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { ApiError, authApi, consumirMotivoSaidaSessao, telemetriaApi } from '../../cliente-api';
-import { useConteudoApp } from '../../hooks/useConteudoApp';
 import { useTheme } from '../../context/ThemeContext';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import Onboarding from '../onboarding/onboarding';
-import { 
-  Menu, X, ChevronRight, ArrowRight, Lock, 
-  Eye, BarChart2, Shield, Info, FileText, AlertTriangle, CheckCircle2
-} from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import LogoEsquiloWallet from '../../components/brand/LogoEsquiloWallet';
 
-// --- SISTEMA DE ÍCONES ---
-const Icon = ({ name, className = '', size = 24 }) => {
-  const icons = {
-    menu: <Menu size={size} className={className} strokeWidth={1.5} />,
-    close: <X size={size} className={className} strokeWidth={1.5} />,
-    chevronRight: <ChevronRight size={size} className={className} strokeWidth={1.5} />,
-    arrowRight: <ArrowRight size={size} className={className} strokeWidth={1.5} />,
-    lock: <Lock size={size} className={className} strokeWidth={1.5} />,
-    eye: <Eye size={size} className={className} strokeWidth={1.5} />,
-    chart: <BarChart2 size={size} className={className} strokeWidth={1.5} />,
-    shield: <Shield size={size} className={className} strokeWidth={1.5} />,
-    info: <Info size={size} className={className} strokeWidth={1.5} />,
-    file: <FileText size={size} className={className} strokeWidth={1.5} />,
-    alert: <AlertTriangle size={size} className={className} strokeWidth={1.5} />,
-    check: <CheckCircle2 size={size} className={className} strokeWidth={1.5} />
-  };
-  return icons[name] || <Info size={size} className={className} strokeWidth={1.5} />;
-};
+type LoginStep = 'login' | 'forgotEmail' | 'forgotPassword';
+type ForgotStage = 'email' | 'reset';
 
-// --- COMPONENTES BASE ---
-const Button = ({ children, variant = 'primary', className = '', disabled = false, ...props }) => {
-  const baseStyle = "font-['Inter'] font-semibold rounded-xl px-6 py-3 transition-all duration-200 flex items-center justify-center gap-2";
-  
-  const variants = {
-    primary: "bg-[#F56A2A] text-white hover:bg-[#d95a20] disabled:bg-[#F56A2A]/50 disabled:cursor-not-allowed",
-    secondary: "bg-transparent border border-[#0B1218] text-[#0B1218] hover:bg-[#0B1218] hover:text-white disabled:opacity-50",
-    ghost: "bg-transparent text-white hover:text-[#F56A2A] disabled:opacity-50",
-    dark: "bg-[#0B1218] text-white hover:bg-gray-800 disabled:bg-[#0B1218]/50" 
-  };
+const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
 
-  return (
-    <button disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
+function mapApiAuthError(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'Não foi possível concluir a ação agora.';
+  if (error.status === 401) return 'Credenciais inválidas. Confira e tente novamente.';
+  if (error.code === 'TOKEN_INVALIDO') return 'Código incorreto. Verifique o código copiado do email.';
+  if (error.code === 'TOKEN_EXPIRADO') return 'Código expirado. Solicite uma nova recuperação.';
+  return 'Não foi possível concluir a ação agora.';
+}
 
-// --- MODAL DE LOGIN (ESTILO BANCO) ---
-const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'default', initialEmail = '', initialToken = '' }) => {
+const PainelPropostaValor: React.FC = () => (
+  <aside
+    className="hidden lg:flex lg:w-[52%] xl:w-1/2 text-white flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
+    style={{ backgroundColor: '#0B1218' }}
+  >
+    <div className="flex items-center gap-3">
+      <LogoEsquiloWallet variant="dark" className="h-9 w-auto" />
+    </div>
+
+    <div className="w-full max-w-xl">
+      <h1 className="font-['Sora'] text-4xl xl:text-5xl font-bold leading-[1.15] tracking-tight">
+        <span className="text-[#F56A2A]">Analise</span> sua carteira.<br />
+        Sem viés, sem empurrar produto.
+      </h1>
+
+      <ul className="mt-24 grid grid-cols-3 gap-8 font-['Inter'] max-w-md">
+        <li className="flex flex-col items-start">
+          <div className="h-14 w-14 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-4">
+            <img src={assetPath('/assets/icons/laranja/importar.svg')} alt="" className="h-6 w-6" />
+          </div>
+          <span className="font-['Sora'] text-lg font-bold text-white">Consolide</span>
+        </li>
+        <li className="flex flex-col items-start">
+          <div className="h-14 w-14 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-4">
+            <img src={assetPath('/assets/icons/laranja/radar.svg')} alt="" className="h-6 w-6" />
+          </div>
+          <span className="font-['Sora'] text-lg font-bold text-white">Entenda</span>
+        </li>
+        <li className="flex flex-col items-start">
+          <div className="h-14 w-14 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-4">
+            <img src={assetPath('/assets/icons/laranja/sucesso.svg')} alt="" className="h-6 w-6" />
+          </div>
+          <span className="font-['Sora'] text-lg font-bold text-white">Faça</span>
+        </li>
+      </ul>
+    </div>
+
+    <div className="font-['Inter'] text-xs text-white/40">
+      © {new Date().getFullYear()} IA Group. SA · Kaidu - Beta Test · LGPD
+    </div>
+  </aside>
+);
+
+interface FormularioLoginProps {
+  alertaInicial?: string;
+  initialStep?: LoginStep;
+  initialEmail?: string;
+  compact?: boolean;
+  onDark?: boolean;
+}
+
+const FormularioLogin: React.FC<FormularioLoginProps> = ({
+  alertaInicial = '',
+  initialStep = 'login',
+  initialEmail = '',
+  compact = false,
+  onDark = false,
+}) => {
   const navigate = useNavigate();
-  const { isDarkMode, setThemeMode } = useTheme();
+  const { setThemeMode } = useTheme();
   const { setOcultarValores } = useModoVisualizacao();
-  const [loginStep, setLoginStep] = useState('default');
+
+  const [loginStep, setLoginStep] = useState<LoginStep>(initialStep);
+  const [emailInput, setEmailInput] = useState(initialEmail);
   const [passwordInput, setPasswordInput] = useState('');
-  const [emailInput, setEmailInput] = useState('');
   const [cpfInput, setCpfInput] = useState('');
   const [tokenInput, setTokenInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [forgotStage, setForgotStage] = useState<ForgotStage>(initialEmail ? 'reset' : 'email');
+  const [authError, setAuthError] = useState(alertaInicial);
   const [recoveryInfo, setRecoveryInfo] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [forgotPasswordStage, setForgotPasswordStage] = useState<'email' | 'reset'>('email');
-  const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
-  const mapApiAuthError = (error) => {
-    if (!(error instanceof ApiError)) return 'Não foi possível concluir a ação agora.';
-    if (error.status === 401) return 'Credenciais inválidas. Confira e tente novamente.';
-    if (error.code === 'TOKEN_INVALIDO') return 'Código incorreto. Verifique o código copiado do email.';
-    if (error.code === 'TOKEN_EXPIRADO') return 'Código expirado. Solicite uma nova recuperação.';
-    return 'Não foi possível concluir a ação agora.';
-  };
 
   useEffect(() => {
-    if (isOpen) {
-      setLoginStep(initialStep === 'forgotPassword' ? 'forgotPassword' : 'default');
-      setPasswordInput('');
-      setEmailInput(initialEmail || '');
-      setCpfInput('');
-      setTokenInput('');
-      setNewPasswordInput('');
-      setRecoveryInfo('');
-      setSuccessMessage('');
-      setAuthError(alertaInicial);
-      // Se tem email vindo da URL, vai direto para reset (PIN + nova senha)
-      // Senão, começa no estágio 'email' para solicitar recuperação
-      setForgotPasswordStage(initialEmail ? 'reset' : 'email');
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => { document.body.style.overflow = 'auto'; };
-  }, [alertaInicial, initialEmail, initialStep, isOpen]);
+    setAuthError(alertaInicial);
+  }, [alertaInicial]);
+
+  useEffect(() => {
+    setLoginStep(initialStep);
+    setEmailInput(initialEmail);
+    setForgotStage(initialEmail ? 'reset' : 'email');
+  }, [initialStep, initialEmail]);
+
+  const headingColor = onDark ? 'text-white' : 'text-[#0B1218]';
+  const labelColor = onDark ? 'text-white/90' : 'text-[#0B1218]';
+  const subtextColor = onDark ? 'text-white/60' : 'text-[#0B1218]/60';
+  const mutedBtnColor = onDark ? 'text-white/60 hover:text-[#F56A2A]' : 'text-[#0B1218]/60 hover:text-[#F56A2A]';
+  const bodyText = onDark ? 'text-white/70' : 'text-[#0B1218]/70';
+  const inputClass = onDark
+    ? 'w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#F56A2A] transition-colors'
+    : 'w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors';
+  const inputWithEyeClass = onDark
+    ? 'w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-3 pr-12 text-white placeholder:text-white/30 focus:outline-none focus:border-[#F56A2A] transition-colors'
+    : 'w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors';
+  const pinInputClass = onDark
+    ? 'w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-center text-2xl tracking-widest focus:outline-none focus:border-[#F56A2A] transition-colors'
+    : 'w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] font-mono text-center text-2xl tracking-widest focus:outline-none focus:border-[#F56A2A] transition-colors';
+  const eyeBtn = onDark ? 'text-white/50 hover:text-white' : 'text-[#0B1218]/50 hover:text-[#0B1218]';
+  const darkSecondaryBtn = onDark
+    ? 'w-full bg-white text-[#0B1218] font-[\'Inter\'] font-semibold rounded-xl py-3.5 hover:bg-white/90 transition-colors disabled:opacity-50'
+    : 'w-full bg-[#0B1218] text-white font-[\'Inter\'] font-semibold rounded-xl py-3.5 hover:bg-gray-800 transition-colors disabled:opacity-50';
+  const pinHintBox = onDark
+    ? 'bg-[#F56A2A]/10 border border-[#F56A2A]/30 rounded-lg p-4'
+    : 'bg-[#FFF5F0] border border-[#F56A2A]/20 rounded-lg p-4';
+  const pinHintText = onDark ? 'font-[\'Inter\'] text-sm text-white/90' : 'font-[\'Inter\'] text-sm text-[#0B1218]';
 
   const handleLoginSubmit = async () => {
     const email = emailInput.trim().toLowerCase();
@@ -106,14 +141,13 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
     setAuthError('');
     try {
       await authApi.entrar(email, passwordInput);
-      await telemetriaApi.registrarEventoTelemetria('login_success', { origem: 'landing_modal' });
+      await telemetriaApi.registrarEventoTelemetria('login_success', { origem: 'landing_inline' });
       setThemeMode('dark');
       setOcultarValores(true);
-      onClose();
       navigate('/home');
     } catch (error) {
       if (error instanceof ApiError && error.code === 'CADASTRO_INCOMPLETO') {
-        setAuthError('Cadastro interrompido. Use "Esqueci minha senha" para concluir o acesso.');
+        setAuthError('Cadastro interrompido. Use "Esqueci a senha" para concluir o acesso.');
       } else if (error instanceof ApiError && error.status === 401) {
         setAuthError('E-mail ou senha incorretos');
       } else {
@@ -135,7 +169,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
     try {
       const resposta = await authApi.solicitarRecuperacaoPorEmail(email);
       setRecoveryInfo(`Solicitação enviada para ${resposta.destinoMascara}.`);
-      setForgotPasswordStage('reset');
+      setForgotStage('reset');
     } catch (error) {
       setAuthError(mapApiAuthError(error));
     } finally {
@@ -153,7 +187,9 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
     setAuthError('');
     try {
       const resposta = await authApi.solicitarRecuperacaoPorCpf(cpf);
-      setRecoveryInfo(`Conta localizada: ${resposta.destinoMascara}. Enviamos o token para recuperação e você já pode redefinir a senha no próximo passo.`);
+      setRecoveryInfo(`Conta localizada: ${resposta.destinoMascara}. Enviamos o PIN por e-mail.`);
+      setForgotStage('reset');
+      setLoginStep('forgotPassword');
     } catch (error) {
       setAuthError(mapApiAuthError(error));
     } finally {
@@ -163,10 +199,6 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
 
   const handleRedefinirSenha = async () => {
     const pinLimpo = tokenInput.trim().replace(/\D/g, '');
-    if (!pinLimpo) {
-      setAuthError('Informe o PIN enviado no email.');
-      return;
-    }
     if (pinLimpo.length !== 6) {
       setAuthError('PIN deve ter exatamente 6 dígitos.');
       return;
@@ -181,9 +213,8 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
     try {
       await authApi.redefinirSenha(pinLimpo, newPasswordInput);
       setSuccessMessage('✓ Senha redefinida com sucesso!');
-      // Aguarda um momento para o usuário ver a mensagem
       setTimeout(() => {
-        setLoginStep('default');
+        setLoginStep('login');
         setPasswordInput('');
         setTokenInput('');
         setNewPasswordInput('');
@@ -197,37 +228,47 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative animate-in zoom-in-95 duration-200">
-        
-        <div className="flex justify-between items-center p-6 border-b border-[#EFE7DC]">
-          <h3 className="font-['Sora'] font-bold text-xl text-[#0B1218]">
-            {loginStep === 'default' && "Acessar Carteira"}
-            {loginStep === 'forgotEmail' && "Recuperar Acesso"}
-            {loginStep === 'forgotPassword' && "Recuperar Senha"}
-          </h3>
-          <button onClick={onClose} className="text-[#0B1218]/50 hover:text-[#0B1218] transition-colors">
-            <Icon name="close" />
-          </button>
-        </div>
+    <div className="w-full max-w-sm">
+      {loginStep === 'login' && (
+        <>
+          <h2 className={`font-['Sora'] text-2xl font-bold ${headingColor} text-left ${compact ? 'mb-6' : 'mb-8'}`}>
+            Faça seu login
+          </h2>
 
-        <div className="p-6">
-          {loginStep === 'default' && (
-            <div className="space-y-6">
-              <div className="flex justify-center">
-                <img src={assetPath('/assets/logo/simbolo-padrao.svg')} alt="Esquilo Invest" className="h-10 w-10 object-contain" />
-              </div>
-              <div>
-                <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
-                <input 
-                  type="email" 
-                  placeholder="seu@email.com"
-                  value={emailInput}
+          <div className="space-y-5">
+            <div>
+              <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                E-mail
+              </label>
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={emailInput}
+                onChange={(e) => {
+                  setEmailInput(e.target.value);
+                  if (authError) setAuthError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLoginSubmit();
+                  }
+                }}
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordInput}
                   onChange={(e) => {
-                    setEmailInput(e.target.value);
+                    setPasswordInput(e.target.value);
                     if (authError) setAuthError('');
                   }}
                   onKeyDown={(e) => {
@@ -236,552 +277,389 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                       handleLoginSubmit();
                     }
                   }}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                  placeholder="Digite sua senha"
+                  className={inputWithEyeClass}
                 />
-                <button 
-                  onClick={() => setLoginStep('forgotEmail')}
-                  className="text-xs text-[#0B1218]/60 hover:text-[#F56A2A] mt-2 font-medium"
-                >
-                  Não sei meu e-mail
-                </button>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218]">Senha Eletrônica</label>
-                  <button 
-                    onClick={() => {
-                      setForgotPasswordStage('email');
-                      setRecoveryInfo('');
-                      setLoginStep('forgotPassword');
-                    }}
-                    className="text-xs text-[#F56A2A] hover:text-[#d95a20] font-medium"
-                  >
-                    Esqueci minha senha
-                  </button>
-                </div>
-                
-                <div className="relative mb-3">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={passwordInput}
-                    onChange={(e) => {
-                      setPasswordInput(e.target.value);
-                      if (authError) setAuthError('');
-                    }}
-                    placeholder="Digite sua senha"
-                    className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]"
-                  >
-                    {showPassword ? <Eye size={18} /> : <Icon name="eye" size={18} />}
-                  </button>
-                </div>
                 <button
                   type="button"
-                  onClick={handleLoginSubmit}
-                  disabled={passwordInput.length < 5 || isSubmitting}
-                  className="w-full mt-2 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${eyeBtn}`}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
-                  {isSubmitting ? 'Entrando...' : 'Entrar'}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
-                {authError && <p className="mt-2 text-xs text-[#E85C5C]">{authError}</p>}
-                {recoveryInfo && <p className="mt-2 text-xs text-[#6FCF97]">{recoveryInfo}</p>}
+              </div>
+              <div className="flex justify-end mt-2">
                 <button
+                  type="button"
                   onClick={() => {
-                    onClose();
-                    navigate('/onboarding');
+                    setForgotStage('email');
+                    setRecoveryInfo('');
+                    setAuthError('');
+                    setLoginStep('forgotPassword');
                   }}
-                  className="mt-3 text-xs text-[#0B1218]/70 hover:text-[#F56A2A] font-medium"
+                  className="text-xs text-[#F56A2A] hover:text-[#d95a20] font-medium"
                 >
-                  Criar conta
+                  Esqueci a senha
                 </button>
               </div>
             </div>
-          )}
 
-          {loginStep === 'forgotEmail' && (
-            <div className="space-y-6">
-              <p className="font-['Inter'] text-sm text-[#0B1218]/70">Informe seu CPF para localizar sua conta e enviar recuperação ao e-mail cadastrado.</p>
+            <button
+              type="button"
+              onClick={handleLoginSubmit}
+              disabled={passwordInput.length < 5 || isSubmitting}
+              className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
+            >
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
+            </button>
+
+            {authError && (
+              <p className="text-xs text-[#E85C5C] text-center">{authError}</p>
+            )}
+            {recoveryInfo && (
+              <p className="text-xs text-[#6FCF97] text-center">{recoveryInfo}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setLoginStep('forgotEmail')}
+              className={`block w-full text-center text-xs ${mutedBtnColor} font-medium`}
+            >
+              Não sei meu e-mail
+            </button>
+
+            <p className={`text-center text-sm ${bodyText} pt-2`}>
+              Não tem conta?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/onboarding')}
+                className="text-[#F56A2A] hover:text-[#d95a20] font-semibold"
+              >
+                Cadastre-se grátis
+              </button>
+            </p>
+          </div>
+        </>
+      )}
+
+      {loginStep === 'forgotEmail' && (
+        <>
+          <h2 className={`font-['Sora'] text-2xl font-bold ${headingColor} text-center`}>
+            Recuperar acesso
+          </h2>
+          <p className={`font-['Inter'] text-sm ${subtextColor} text-center mt-2 mb-8`}>
+            Informe seu CPF para localizar sua conta.
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                CPF
+              </label>
+              <input
+                type="text"
+                placeholder="000.000.000-00"
+                value={cpfInput}
+                onChange={(e) => setCpfInput(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSolicitarRecuperacaoPorCpf}
+              disabled={isSubmitting}
+              className={darkSecondaryBtn}
+            >
+              {isSubmitting ? 'Localizando...' : 'Localizar e enviar recuperação'}
+            </button>
+
+            {authError && <p className="text-xs text-[#E85C5C] text-center">{authError}</p>}
+            {recoveryInfo && <p className="text-xs text-[#6FCF97] text-center">{recoveryInfo}</p>}
+
+            <button
+              type="button"
+              onClick={() => setLoginStep('login')}
+              className={`w-full text-center text-sm font-semibold ${mutedBtnColor}`}
+            >
+              Voltar para login
+            </button>
+          </div>
+        </>
+      )}
+
+      {loginStep === 'forgotPassword' && (
+        <>
+          <h2 className={`font-['Sora'] text-2xl font-bold ${headingColor} text-center`}>
+            Recuperar senha
+          </h2>
+          <p className={`font-['Inter'] text-sm ${subtextColor} text-center mt-2 mb-8`}>
+            {forgotStage === 'email'
+              ? 'Enviaremos um código de recuperação para o seu e-mail.'
+              : 'Digite o PIN recebido por e-mail e escolha uma nova senha.'}
+          </p>
+
+          {forgotStage === 'email' && (
+            <div className="space-y-5">
               <div>
-                <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">CPF</label>
-                <input 
-                  type="text" 
-                  placeholder="000.000.000-00"
-                  value={cpfInput}
-                  onChange={(e) => setCpfInput(e.target.value)}
-                  className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={emailInput}
+                  onChange={(e) => {
+                    setEmailInput(e.target.value);
+                    if (authError) setAuthError('');
+                  }}
+                  className={inputClass}
                 />
               </div>
               <button
                 type="button"
-                onClick={handleSolicitarRecuperacaoPorCpf}
-                disabled={isSubmitting}
-                className="w-full mt-4 bg-[#0B1218] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                onClick={handleSolicitarRecuperacaoPorEmail}
+                disabled={isSubmitting || !emailInput.includes('@')}
+                className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
               >
-                {isSubmitting ? 'Localizando...' : 'Localizar e enviar recuperação'}
-              </button>
-              {authError && <p className="text-xs text-[#E85C5C] font-medium">{authError}</p>}
-              {recoveryInfo && <p className="text-xs text-[#6FCF97] font-medium">{recoveryInfo}</p>}
-
-              <button onClick={() => setLoginStep('default')} className="w-full text-center text-sm font-semibold text-[#0B1218]/60 hover:text-[#0B1218] mt-4">
-                Voltar para Login
+                {isSubmitting ? 'Enviando...' : 'Enviar código de recuperação'}
               </button>
             </div>
           )}
 
-          {loginStep === 'forgotPassword' && (
-            <div className="space-y-6">
-              {forgotPasswordStage === 'email' && (
-                <>
-                  <p className="font-['Inter'] text-sm text-[#0B1218]/70 mb-6">
-                    Informe seu e-mail. Vamos enviar um código de recuperação para você redefinir sua senha.
-                  </p>
-                  <div>
-                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
-                    <input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={emailInput}
-                      onChange={(e) => {
-                        setEmailInput(e.target.value);
-                        if (authError) setAuthError('');
-                      }}
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                    />
-                  </div>
+          {forgotStage === 'reset' && (
+            <div className="space-y-5">
+              <div className={pinHintBox}>
+                <p className={pinHintText}>
+                  <strong>Abra o e-mail</strong> que você recebeu. Você vai encontrar um código de 6 dígitos.
+                </p>
+              </div>
+
+              <div>
+                <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                  PIN do e-mail
+                </label>
+                <input
+                  type="text"
+                  placeholder="000000"
+                  value={tokenInput}
+                  onChange={(e) => {
+                    setTokenInput(e.target.value);
+                    if (authError) setAuthError('');
+                  }}
+                  inputMode="numeric"
+                  maxLength={6}
+                  className={pinInputClass}
+                />
+              </div>
+
+              <div>
+                <label className={`block font-['Inter'] text-sm font-semibold ${labelColor} mb-2`}>
+                  Nova senha
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="Digite sua nova senha"
+                    value={newPasswordInput}
+                    onChange={(e) => {
+                      setNewPasswordInput(e.target.value);
+                      if (authError) setAuthError('');
+                    }}
+                    className={inputWithEyeClass}
+                  />
                   <button
                     type="button"
-                    onClick={handleSolicitarRecuperacaoPorEmail}
-                    className="w-full mt-6 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
-                    disabled={isSubmitting || !emailInput.includes('@')}
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${eyeBtn}`}
+                    aria-label={showNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
                   >
-                    {isSubmitting ? 'Enviando...' : 'Enviar codigo de recuperacao'}
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </>
-              )}
-              {forgotPasswordStage === 'reset' && (
-                <>
-                  <div className="bg-[#FFF5F0] border border-[#F56A2A]/20 rounded-lg p-4 mb-6">
-                    <p className="font-['Inter'] text-sm text-[#0B1218] margin: 0;">
-                      <strong>Abra o email</strong> que você recebeu. Você vai encontrar um código de recuperação em uma caixa destacada.
-                    </p>
-                  </div>
+                </div>
+                <p className={`mt-2 text-xs ${subtextColor}`}>
+                  8+ caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 símbolo.
+                </p>
+              </div>
 
-                  <div>
-                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">
-                      Digite o PIN do email
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="000000"
-                      value={tokenInput}
-                      onChange={(e) => {
-                        setTokenInput(e.target.value);
-                        if (authError) setAuthError('');
-                      }}
-                      inputMode="numeric"
-                      maxLength={6}
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] font-mono text-center text-2xl tracking-widest focus:outline-none focus:border-[#F56A2A] transition-colors"
-                    />
-                    <p className="mt-2 text-xs text-[#0B1218]/60">6 dígitos numéricos da caixa destacada no email.</p>
-                  </div>
-
-                  <div className="mt-6">
-                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Nova senha</label>
-                    <div className="relative mb-2">
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        placeholder="Digite sua nova senha"
-                        value={newPasswordInput}
-                        onChange={(e) => {
-                          setNewPasswordInput(e.target.value);
-                          if (authError) setAuthError('');
-                        }}
-                        className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0B1218]/50 hover:text-[#0B1218]"
-                      >
-                        {showNewPassword ? <Eye size={18} /> : <Icon name="eye" size={18} />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-[#0B1218]/60">
-                      Requisitos: 8+ caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 símbolo
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleRedefinirSenha}
-                    className="w-full mt-6 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
-                    disabled={isSubmitting || !tokenInput.trim() || !newPasswordInput}
-                  >
-                    {isSubmitting ? 'Redefinindo senha...' : 'Redefinir senha'}
-                  </button>
-                </>
-              )}
-              {authError && <p className="mt-4 text-xs text-[#E85C5C] font-medium bg-[#FFE8E8] rounded-lg p-3">{authError}</p>}
-              {recoveryInfo && <p className="mt-4 text-xs text-[#6FCF97] font-medium bg-[#E8F5F0] rounded-lg p-3">{recoveryInfo}</p>}
-              {successMessage && <p className="mt-4 text-sm text-[#6FCF97] font-semibold bg-[#E8F5F0] rounded-lg p-3">{successMessage}</p>}
-
-              {!successMessage && (
-                <button onClick={() => setLoginStep('default')} className="w-full text-center text-sm font-semibold text-[#0B1218]/60 hover:text-[#0B1218] mt-6">
-                  Lembrei minha senha, voltar
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleRedefinirSenha}
+                disabled={isSubmitting || !tokenInput.trim() || !newPasswordInput}
+                className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? 'Redefinindo senha...' : 'Redefinir senha'}
+              </button>
             </div>
           )}
-        </div>
-      </div>
+
+          {authError && (
+            <p className="mt-4 text-xs text-[#E85C5C] text-center font-medium bg-[#FFE8E8] rounded-lg p-3">
+              {authError}
+            </p>
+          )}
+          {recoveryInfo && (
+            <p className="mt-4 text-xs text-[#6FCF97] text-center font-medium bg-[#E8F5F0] rounded-lg p-3">
+              {recoveryInfo}
+            </p>
+          )}
+          {successMessage && (
+            <p className="mt-4 text-sm text-[#6FCF97] text-center font-semibold bg-[#E8F5F0] rounded-lg p-3">
+              {successMessage}
+            </p>
+          )}
+
+          {!successMessage && (
+            <button
+              type="button"
+              onClick={() => setLoginStep('login')}
+              className={`mt-6 w-full text-center text-sm font-semibold ${mutedBtnColor}`}
+            >
+              Voltar para login
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 };
 
-// --- BLOCOS DE CONTEÚDO ---
-
-const SectionComoFunciona = ({ id, titulo }) => (
-  <section id={id} className="min-h-screen flex flex-col justify-center py-24 bg-white text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
-    <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 text-center">
-      <h2 className="font-['Sora'] text-3xl md:text-5xl font-bold text-[#0B1218] mb-20">{titulo}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-        <div className="hidden md:block absolute top-6 left-[15%] right-[15%] h-px bg-[#EFE7DC]"></div>
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">1</div>
-          <h3 className="font-['Sora'] font-bold text-xl mb-3">Você traz tudo pro mesmo lugar</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
-            Você importa seu CSV no padrão da plataforma e nós consolidamos seus ativos em uma única leitura.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">2</div>
-          <h3 className="font-['Sora'] font-bold text-xl mb-3">A gente traduz tudo</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
-            Cruza tudo que você tem, calcula onde tá concentrado, o que é mais seguro, o que é mais arriscado.
-          </p>
-        </div>
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-[#F56A2A] text-white font-bold rounded-xl flex items-center justify-center mb-6 border-4 border-white shadow-sm">3</div>
-          <h3 className="font-['Sora'] font-bold text-xl mb-3">Você fica sabendo o que fazer</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed max-w-xs text-center">
-            Você ganha um mapa real da carteira. Sem jargão, sem venda de fundo. Só o que importa mesmo.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-const SectionProposta = ({ id, titulo }) => (
-  <section id={id} className="min-h-screen flex flex-col justify-center bg-[#F5F0EB] py-24 text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
-    <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-        <div className="lg:col-span-5">
-          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6 leading-tight">{titulo}</h2>
-          <p className="font-['Inter'] text-lg text-[#0B1218]/70 leading-relaxed mb-10">
-            A Esquilo Invest não possui ferramentas técnicas para movimentar dinheiro. Nós não vendemos CDBs, não executamos ordens e não ganhamos comissão sobre seus ativos. Nosso único produto é a sua lucidez financeira.
-          </p>
-          <div className="space-y-5 font-['Inter']">
-            <div className="flex items-center gap-3">
-              <img src={assetPath('/assets/icons/laranja/confirmar.svg')} className="w-6 h-6" alt="Check" />
-              <span className="text-base font-semibold text-[#0B1218]">Importação de carteira via CSV</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <img src={assetPath('/assets/icons/laranja/confirmar.svg')} className="w-6 h-6" alt="Check" />
-              <span className="text-base font-semibold text-[#0B1218]">100% adequado à LGPD</span>
-            </div>
-            <div className="flex items-center gap-3 opacity-50">
-              <img src={assetPath('/assets/icons/preto/fechar.svg')} className="w-6 h-6" alt="X" />
-              <span className="text-base font-semibold line-through">Transferências, PIX ou Vendas</span>
-            </div>
-          </div>
-          </div>
-
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <img src={assetPath('/assets/icons/laranja/olho.svg')} className="w-8 h-8 mb-5" alt="Visão Neutra" />
-            <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Visão Neutra</h4>
-            <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
-              Lemos os dados sem viés comercial para vender o próximo fundo da corretora.
-            </p>
-          </div>
-
-          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <img src={assetPath('/assets/icons/laranja/grafico.svg')} className="w-8 h-8 mb-5" alt="Tradução de Risco" />
-            <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Tradução de Risco</h4>
-            <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
-              Calculamos a sua exposição real cruzando todos os seus bancos em um único relatório.
-            </p>
-          </div>
-
-          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <img src={assetPath('/assets/icons/laranja/aporte.svg')} className="w-8 h-8 mb-5" alt="Consolidação Real" />
-            <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Consolidação em uma visão única</h4>
-            <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
-              Organize ativos de diferentes instituições com um único padrão de importação e leitura.
-            </p>
-          </div>
-
-          <div className="bg-white p-10 rounded-2xl shadow-sm border border-[#EFE7DC]/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <img src={assetPath('/assets/icons/laranja/sucesso.svg')} className="w-8 h-8 mb-5" alt="Próximos Passos" />
-            <h4 className="font-['Sora'] font-bold text-[#0B1218] text-lg mb-3">Próximos Passos</h4>
-            <p className="font-['Inter'] text-sm text-[#0B1218]/70 leading-relaxed">
-              Baseado em dados lógicos, apontamos exatamente onde a carteira precisa de ajustes estruturais.
-            </p>
-          </div>
-          </div>
-      </div>
-    </div>
-  </section>
-);
-
-const SectionFaq = ({ id, titulo, subtitulo }) => (
-  <section id={id} className="min-h-screen flex flex-col justify-center py-24 bg-white text-[#0B1218] animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-30">
-    <div className="mx-auto w-full max-w-[896px] px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-16">
-        <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold text-[#0B1218] mb-4">{titulo}</h2>
-        <p className="font-['Inter'] text-[#0B1218]/70 text-xl">{subtitulo}</p>
-      </div>
-      <div className="grid grid-cols-1 gap-6">
-        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
-          <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como é calculado o Score da Carteira?</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
-            O Score é uma métrica proprietária de 0 a 100 que avalia quatro pilares: liquidez, diversificação de emissores, exposição a risco e eficiência de taxas. Ele não prevê rentabilidade, prevê a robustez estrutural.
-          </p>
-        </div>
-        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
-          <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">O que acontece após importar o primeiro extrato?</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
-            A plataforma padroniza nomes e ativos em minutos. Em seguida, o dashboard é liberado revelando seu patrimônio consolidado e apontamentos iniciais de risco.
-          </p>
-        </div>
-        <div className="p-8 border border-[#EFE7DC] rounded-2xl hover:border-[#F56A2A]/40 transition-all duration-300 bg-white shadow-sm hover:shadow-md">
-          <h3 className="font-['Sora'] font-bold text-[#0B1218] text-xl mb-3">Como a Esquilo ganha dinheiro?</h3>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-base leading-relaxed">
-            O produto está em evolução contínua. O foco atual é consolidar carteira, traduzir risco e orientar próximos passos com base em dados reais.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
 export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isDarkMode, setThemeMode } = useTheme();
-  const { texto, booleano } = useConteudoApp();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const { setThemeMode, isDarkMode } = useTheme();
+  const isMobile = useIsMobile();
+  const mobileDark = isMobile && isDarkMode;
+
+  const [isOnboarding, setIsOnboarding] = useState(false);
   const [onboardingInitialStep, setOnboardingInitialStep] = useState(1);
-  const [loginInitialStep, setLoginInitialStep] = useState('default');
+  const [loginInitialStep, setLoginInitialStep] = useState<LoginStep>('login');
   const [loginInitialEmail, setLoginInitialEmail] = useState('');
-  const [loginInitialToken, setLoginInitialToken] = useState('');
   const [alertaLogin, setAlertaLogin] = useState('');
-  const [scrolled, setScrolled] = useState(false);
-  const [currentHeroImage, setCurrentHeroImage] = useState(0);
-
-  const heroImages = [
-    "https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&q=80&w=2000",
-    "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=2000",
-    "https://images.unsplash.com/photo-1623869260195-2cc02d09dfb3?auto=format&fit=crop&q=80&w=2000"
-  ];
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentHeroImage((prev) => (prev + 1) % heroImages.length);
-    }, 6000); 
-    return () => clearInterval(interval);
-  }, [heroImages.length]);
-
-  useEffect(() => {
-    setThemeMode('light');
-  }, [setThemeMode]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const abrirLogin = params.get('abrir') === 'login';
-    const stepLogin = params.get('step') || 'default';
+    const stepLogin = params.get('step') || 'login';
     const emailLogin = params.get('email') || '';
-    const tokenLogin = params.get('token') || '';
+
     if (location.pathname === '/onboarding') {
       const passo = Number(params.get('passo') || 1);
       setOnboardingInitialStep(Number.isFinite(passo) && passo > 0 ? passo : 1);
-      setIsOnboardingModalOpen(true);
+      setIsOnboarding(true);
     } else {
-      setIsOnboardingModalOpen(false);
+      setIsOnboarding(false);
     }
+
     if (abrirLogin) {
-      setLoginInitialStep(stepLogin);
+      setLoginInitialStep(stepLogin === 'forgotPassword' ? 'forgotPassword' : 'login');
       setLoginInitialEmail(emailLogin);
-      setLoginInitialToken(tokenLogin);
-      setIsLoginModalOpen(true);
+      setAlertaLogin('');
       return;
     }
+
     const sessaoExpiradaPorQuery = params.get('sessao') === 'expirada';
     const sessaoExpiradaPorStorage = consumirMotivoSaidaSessao() === 'expirada';
     if (sessaoExpiradaPorQuery || sessaoExpiradaPorStorage) {
-      setLoginInitialStep('default');
+      setLoginInitialStep('login');
       setLoginInitialEmail('');
-      setLoginInitialToken('');
       setAlertaLogin('Sua sessão expirou por segurança. Entre novamente para continuar.');
-      setIsLoginModalOpen(true);
       return;
     }
+
     setAlertaLogin('');
   }, [location.pathname, location.search]);
 
-  const handleNavClick = (e, sectionId) => {
-    e.preventDefault();
-    setIsMobileMenuOpen(false);
-    const element = document.getElementById(sectionId);
-    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleCloseOnboarding = () => {
+    setIsOnboarding(false);
+    navigate('/');
   };
 
-  const handleLoginClick = () => {
-    setIsMobileMenuOpen(false);
-    setIsLoginModalOpen(true);
-  };
+  useEffect(() => {
+    if (isMobile) return;
+    const html = document.documentElement;
+    const hadDark = html.classList.contains('dark');
+    if (hadDark) html.classList.remove('dark');
+    return () => {
+      if (hadDark) html.classList.add('dark');
+    };
+  }, [isMobile]);
 
   return (
-    <div className="min-h-screen bg-[#0B1218] font-['Inter'] text-[#F5F0EB] selection:bg-[#F56A2A] selection:text-white">
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        alertaInicial={alertaLogin}
-        initialStep={loginInitialStep}
-        initialEmail={loginInitialEmail}
-        initialToken={loginInitialToken}
-      />
-      {isOnboardingModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-start md:items-center justify-center overflow-y-auto p-4 bg-[#0B1218]/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <Onboarding
-            embedded
-            mode="signup"
-            initialStep={onboardingInitialStep}
-            onClose={() => { setIsOnboardingModalOpen(false); navigate('/'); }}
-          />
-        </div>
-      )}
-      <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#0B1218]/95 backdrop-blur-md border-b border-white/10 shadow-lg py-4' : 'bg-gradient-to-b from-[#0B1218]/80 to-transparent border-transparent py-6'}`}>
-        <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-               <img src={assetPath('/assets/logo/logo-horizontal-fundo-escuro-invest-laranja.svg')} alt="Logo Esquilo Invest" className="h-[54px] md:h-[65px] object-contain" />
-            </div>
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#como-funciona" onClick={(e) => handleNavClick(e, 'como-funciona')} className="text-sm font-semibold text-white hover:text-[#F56A2A] transition-colors">Como funciona</a>
-              <a href="#proposta" onClick={(e) => handleNavClick(e, 'proposta')} className="text-sm font-semibold text-white hover:text-[#F56A2A] transition-colors">A Proposta</a>
-              <a href="#faq" onClick={(e) => handleNavClick(e, 'faq')} className="text-sm font-semibold text-white hover:text-[#F56A2A] transition-colors">Dúvidas</a>
-            </nav>
-            <div className="hidden md:flex items-center gap-4">
-              <button onClick={handleLoginClick} className="font-['Inter'] font-semibold px-4 py-2 text-sm text-white hover:text-[#F56A2A] transition-colors">Entrar</button>
-              <Button variant="primary" className="px-5 py-2 text-sm" onClick={() => navigate('/onboarding')}>Criar conta</Button>
-            </div>
-            <button className="md:hidden p-2 text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-              <Icon name={isMobileMenuOpen ? "close" : "menu"} />
-            </button>
-          </div>
-        </div>
-        {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-[#0B1218] border-t border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4">
-            <a href="#como-funciona" onClick={(e) => handleNavClick(e, 'como-funciona')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">Como funciona</a>
-            <a href="#proposta" onClick={(e) => handleNavClick(e, 'proposta')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">A Proposta</a>
-            <a href="#faq" onClick={(e) => handleNavClick(e, 'faq')} className="block py-2 font-semibold text-white hover:text-[#F56A2A]">Dúvidas</a>
-            <div className="h-px bg-white/10 my-2"></div>
-            <button onClick={handleLoginClick} className="font-['Inter'] font-semibold w-full py-3 text-white hover:bg-white/10 rounded-xl transition-colors">Entrar</button>
-            <Button variant="primary" className="w-full justify-center" onClick={() => navigate('/onboarding')}>Criar conta</Button>
-          </div>
-        )}
-      </header>
+    <div
+      className="min-h-screen font-['Inter'] flex"
+      style={{
+        backgroundColor: mobileDark ? '#0B1218' : '#FFFFFF',
+        color: mobileDark ? '#FFFFFF' : '#0B1218',
+      }}
+    >
+      {!isMobile && <PainelPropostaValor />}
 
-      <section className="relative w-full h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-[#0B1218]">
-          {heroImages.map((imgSrc, index) => (
-            <img key={index} src={imgSrc} alt="Background" className={`absolute inset-0 w-full h-full object-cover object-center filter grayscale-[30%] transition-opacity duration-1000 ease-in-out ${index === currentHeroImage ? 'opacity-100' : 'opacity-0'}`} />
-          ))}
-          <div className="absolute inset-0 bg-[#0B1218]/40 mix-blend-multiply z-10"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0B1218] via-[#0B1218]/80 to-transparent z-10"></div>
-        </div>
-        <div className="relative z-20 mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mt-16 fade-in-up">
-            <h1 className="font-['Sora'] text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] mb-12 text-white tracking-tight">
-              Sua carteira merece<br/>
-              <span className="text-[#F56A2A]">consolidação e clareza.</span>
-            </h1>
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto fade-in-up" style={{ animationDelay: '0.3s' }}>
-              <Button variant="primary" className="w-full sm:w-auto text-base px-8 py-3.5 shadow-lg shadow-[#F56A2A]/20" onClick={(e) => handleNavClick(e, 'como-funciona')}>
-                {texto("landing.hero.cta_primario", "Ver como funciona")} <Icon name="arrowRight" size={18} />
-              </Button>
-              <button className="font-['Inter'] font-semibold rounded-xl px-8 py-3.5 bg-transparent border border-white text-white hover:bg-white hover:text-[#0B1218] transition-all w-full sm:w-auto flex items-center justify-center gap-2" onClick={(e) => handleNavClick(e, 'proposta')}>
-                {texto("landing.hero.cta_secundario", "Saber mais sobre a gente")}
-              </button>
+      <main className="flex-1 min-h-screen flex flex-col items-center p-6 sm:p-10">
+        {isMobile ? (
+          <>
+            <div className="w-full flex justify-start pt-2">
+              <LogoEsquiloWallet variant={mobileDark ? 'dark' : 'light'} className="h-8 w-auto" />
             </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="relative z-30 bg-white">
-        <SectionComoFunciona id="como-funciona" titulo={texto("landing.como_funciona.titulo", "Entenda como a gente te ajuda")} />
-        <SectionProposta id="proposta" titulo={texto("landing.proposta.titulo", "Acesso apenas leitura. Zero execução.")} />
-        {booleano("landing.secao.faq.visivel", true) && (
-          <SectionFaq
-            id="faq"
-            titulo={texto("landing.faq.titulo", "Entenda a ferramenta")}
-            subtitulo={texto("landing.faq.subtitulo", "Como o sistema opera e lê os seus dados.")}
-          />
-        )}
-      </div>
-
-      <footer className="bg-[#EFE7DC] pt-16 pb-8 text-[#0B1218] relative z-30">
-        <div className="mx-auto mb-32 w-full max-w-[896px] px-4 text-center">
-          <h2 className="font-['Sora'] text-4xl md:text-5xl font-bold mb-6">{texto("landing.footer.cta_titulo", "O diagnóstico leva menos de 5 minutos.")}</h2>
-          <p className="font-['Inter'] text-[#0B1218]/70 text-xl mb-10">{texto("landing.footer.cta_descricao", "Crie sua conta, importe seu CSV e tenha uma leitura clara da sua carteira em minutos.")}</p>
-          <Button variant="primary" className="mx-auto text-lg px-12 py-5 shadow-sm text-white" onClick={() => navigate('/onboarding')}>
-            {texto("landing.footer.cta_botao", "Acessar plataforma")}
-          </Button>
-        </div>
-        <div className="mx-auto w-full max-w-[1280px] border-t border-[#0B1218]/10 px-4 pt-16 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-3 mb-6">
-                 <img src={assetPath('/assets/logo/logo-horizontal-invest-laranja.svg')} alt="Logo" className="h-8 md:h-10 object-contain" />
+            <div className={`flex-1 w-full flex ${isOnboarding ? 'items-start pt-8' : 'items-center'} justify-center`}>
+              {isOnboarding ? (
+                <div className="w-full">
+                  <Onboarding
+                    inline
+                    onePerStep
+                    onDark={mobileDark}
+                    mode="signup"
+                    initialStep={onboardingInitialStep}
+                    onClose={handleCloseOnboarding}
+                  />
+                </div>
+              ) : (
+                <FormularioLogin
+                  alertaInicial={alertaLogin}
+                  initialStep={loginInitialStep}
+                  initialEmail={loginInitialEmail}
+                  compact
+                  onDark={mobileDark}
+                />
+              )}
+            </div>
+            <div className={`w-full text-center font-['Inter'] text-xs ${mobileDark ? 'text-white/40' : 'text-[#0B1218]/40'} pb-4`}>
+              © {new Date().getFullYear()} IA Group. SA · Kaidu - Beta Test · LGPD
+            </div>
+          </>
+        ) : (
+          <div className={`flex-1 w-full flex ${isOnboarding ? 'items-start pt-8' : 'items-center'} justify-center`}>
+            {isOnboarding ? (
+              <div className="w-full max-w-[640px]">
+                <Onboarding
+                  inline
+                  mode="signup"
+                  initialStep={onboardingInitialStep}
+                  onClose={handleCloseOnboarding}
+                />
+                <div className="px-1 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseOnboarding}
+                    className="text-xs text-[#0B1218]/60 hover:text-[#F56A2A] font-semibold"
+                  >
+                    ← Voltar para login
+                  </button>
+                </div>
               </div>
-              <p className="font-['Inter'] text-[#0B1218]/60 text-sm leading-relaxed max-w-sm">Plataforma de consolidação e diagnóstico de investimentos para investidores brasileiros.</p>
-            </div>
-            <div>
-              <h4 className="font-['Inter'] font-bold mb-4 text-sm uppercase tracking-wide">Produto</h4>
-              <ul className="space-y-3">
-                <li><a href="/placeholder?title=Planos" className="text-sm text-[#0B1218]/60 hover:text-[#0B1218]">Planos</a></li>
-                <li><a href="/placeholder?title=Metodologia" className="text-sm text-[#0B1218]/60 hover:text-[#0B1218]">Metodologia</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-['Inter'] font-bold mb-4 text-sm uppercase tracking-wide">Legal</h4>
-              <ul className="space-y-3">
-                <li><a href="/placeholder?title=Termos%20de%20Uso" className="text-sm text-[#0B1218]/60 hover:text-[#0B1218]">Termos de Uso</a></li>
-                <li><a href="/placeholder?title=Privacidade" className="text-sm text-[#0B1218]/60 hover:text-[#0B1218]">Privacidade</a></li>
-              </ul>
-            </div>
+            ) : (
+              <div className="w-full max-w-sm">
+                <FormularioLogin
+                  alertaInicial={alertaLogin}
+                  initialStep={loginInitialStep}
+                  initialEmail={loginInitialEmail}
+                />
+              </div>
+            )}
           </div>
-          <div className="pt-8 border-t border-[#0B1218]/10 text-center md:text-left">
-            <p className="font-['Inter'] text-xs text-[#0B1218]/50">© {new Date().getFullYear()} Esquilo Invest. Todos os direitos reservados. CNPJ: XX.XXX.XXX/0001-XX</p>
-          </div>
-        </div>
-      </footer>
+        )}
+      </main>
     </div>
   );
 }
