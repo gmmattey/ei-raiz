@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, carteiraApi, perfilApi } from "../../cliente-api";
+import { invalidarCacheUsuario } from "../../utils/cache";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
 const parseCurrencyInput = (value) => {
@@ -59,6 +60,7 @@ export default function Aportes() {
         objetivo: perfilAtual?.objetivo ?? "independencia_financeira",
         maturidade: Math.max(1, Math.min(5, perfilAtual?.maturidade ?? 3)),
       });
+      invalidarCacheUsuario();
       setFeedback("Meta de aporte salva com sucesso.");
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

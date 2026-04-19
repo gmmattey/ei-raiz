@@ -55,7 +55,21 @@ export type CalcularSimulacaoEntrada = {
   premissas: Record<string, unknown>;
 };
 
+export type PremissaMercado = {
+  chave: string;
+  label: string;
+  valor: number;
+  valorFormatado: string;
+  fonte: string;
+};
+
+export type PremissasMercadoSimulador = {
+  tipo: TipoSimulacao;
+  premissas: PremissaMercado[];
+};
+
 export interface ServicoDecisoes {
+  obterPremissasMercado(tipo: TipoSimulacao): Promise<PremissasMercadoSimulador>;
   calcular(usuarioId: string, entrada: CalcularSimulacaoEntrada): Promise<ResultadoSimulacao>;
   salvar(usuarioId: string, entrada: CalcularSimulacaoEntrada): Promise<Simulacao>;
   listar(usuarioId: string): Promise<Simulacao[]>;

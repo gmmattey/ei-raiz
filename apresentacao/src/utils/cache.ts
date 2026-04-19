@@ -1,12 +1,13 @@
 /**
- * Utilitário de cache para a sessão do usuário.
- * Utiliza sessionStorage para persistência durante a aba aberta.
+ * Utilitário de cache persistente do usuário.
+ * Utiliza localStorage para sobreviver ao fechamento da aba/navegador.
+ * TTL padrão: 24 horas. Invalidado explicitamente após mutações de dados.
  */
 
 const PREFIX = 'ei_cache_';
 
-// Expiração padrão: 15 minutos
-const DEFAULT_EXPIRATION_MS = 15 * 60 * 1000;
+// Expiração padrão: 24 horas
+const DEFAULT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 export interface CacheEntry<T> {
   data: T;
@@ -23,7 +24,7 @@ export const cache = {
         data,
         timestamp: Date.now(),
       };
-      sessionStorage.setItem(`${PREFIX}${key}`, JSON.stringify(entry));
+      localStorage.setItem(`${PREFIX}${key}`, JSON.stringify(entry));
     } catch (e) {
       console.warn(`[Cache] Falha ao salvar no cache: ${key}`, e);
     }
@@ -35,14 +36,14 @@ export const cache = {
    */
   get: <T>(key: string, maxAgeMs: number = DEFAULT_EXPIRATION_MS): T | null => {
     try {
-      const raw = sessionStorage.getItem(`${PREFIX}${key}`);
+      const raw = localStorage.getItem(`${PREFIX}${key}`);
       if (!raw) return null;
 
       const entry: CacheEntry<T> = JSON.parse(raw);
       const age = Date.now() - entry.timestamp;
 
       if (age > maxAgeMs) {
-        sessionStorage.removeItem(`${PREFIX}${key}`);
+        localStorage.removeItem(`${PREFIX}${key}`);
         return null;
       }
 
@@ -57,17 +58,23 @@ export const cache = {
    * Remove um item específico do cache.
    */
   remove: (key: string): void => {
-    sessionStorage.removeItem(`${PREFIX}${key}`);
+    localStorage.removeItem(`${PREFIX}${key}`);
   },
 
   /**
    * Limpa todo o cache relacionado ao Esquilo Invest.
    */
   clearAll: (): void => {
-    Object.keys(sessionStorage).forEach(key => {
+    Object.keys(localStorage).forEach(key => {
       if (key.startsWith(PREFIX)) {
-        sessionStorage.removeItem(key);
+        localStorage.removeItem(key);
       }
     });
   }
 };
+
+/**
+ * Invalida todo o cache de dados do usuário.
+ * Deve ser chamado após qualquer mutação: importação, aporte, edição ou exclusão de ativo, atualização de perfil.
+ */
+export const invalidarCacheUsuario = (): void => cache.clearAll();

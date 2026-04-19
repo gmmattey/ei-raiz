@@ -1,5 +1,9 @@
-import type { CalcularSimulacaoEntrada, HistoricoSimulacao, ResultadoSimulacao, Simulacao } from "@ei/contratos";
+import type { CalcularSimulacaoEntrada, HistoricoSimulacao, PremissasMercadoSimulador, ResultadoSimulacao, Simulacao, TipoSimulacao } from "@ei/contratos";
 import { apiRequest } from "./http";
+
+export function obterPremissasMercado(tipo: TipoSimulacao): Promise<PremissasMercadoSimulador> {
+  return apiRequest<PremissasMercadoSimulador>(`/api/decisoes/premissas/${tipo}`, { method: "GET" });
+}
 
 export function calcularSimulacao(payload: CalcularSimulacaoEntrada): Promise<ResultadoSimulacao> {
   return apiRequest<ResultadoSimulacao>("/api/decisoes/simulacoes/calcular", {

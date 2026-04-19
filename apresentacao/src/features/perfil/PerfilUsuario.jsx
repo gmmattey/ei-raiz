@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Save, ShieldCheck } from "lucide-react";
 import { ApiError, fipeApi, perfilApi, telemetriaApi } from "../../cliente-api";
+import { invalidarCacheUsuario } from "../../utils/cache";
 import { useNavigate } from "react-router-dom";
 import MaskedInput from "../../components/forms/MaskedInput";
 
@@ -179,6 +180,7 @@ export default function PerfilUsuario({ embedded = false }) {
         })),
       });
       await telemetriaApi.registrarEventoTelemetria("profile_completed", { origem: "perfil_usuario" });
+      invalidarCacheUsuario();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         navigate("/", { replace: true });

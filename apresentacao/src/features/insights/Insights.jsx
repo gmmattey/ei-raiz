@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  BarChart2, Zap,
-  ArrowRight, CheckCircle2, AlertTriangle,
-  Info, X, Target
+  ArrowRight, AlertTriangle, Info, X
 } from 'lucide-react';
 import EstadoVazio from '../../components/feedback/EstadoVazio';
 import { formatarData } from '../../utils/formatarData';
-import { ApiError, insightsApi, telemetriaApi, avaliarComVera } from '../../cliente-api';
+import { ApiError, insightsApi, telemetriaApi } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useNavigate } from 'react-router-dom';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
-import { VeraCard } from '../vera/VeraCard';
+import { useVeraEvaluation } from './hooks/useVeraEvaluation';
+import { ScoreSemiCircle } from './components/ScoreSemiCircle';
 
 const moeda = (v) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -138,15 +137,15 @@ const resolverUrlAcao = (codigo) => {
 };
 
 const INSIGHTS_CACHE_KEY = 'insights_resumo';
-const INSIGHTS_CACHE_TTL = 300 * 1000; // 5 min
+const INSIGHTS_CACHE_TTL = 15 * 60 * 1000; // 15 min - reduz reprocessamento desnecessário
 
 export default function Insights() {
   const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
+  const { veraPayload, avaliar: avaliarComVera } = useVeraEvaluation();
   const [loading, setLoading] = useState(() => !cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL));
   const [error, setError] = useState('');
   const [resumo, setResumo] = useState(() => cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL) ?? null);
-  const [veraPayload, setVeraPayload] = useState(null);
 
   useEffect(() => {
     let ativo = true;
@@ -176,44 +175,9 @@ export default function Insights() {
         setResumo(dados);
         await telemetriaApi.registrarEventoTelemetria('insight_opened', { score: dados?.score?.score ?? 0 });
 
-        // Call Vera for financial evaluation
-        try {
-          const veraRequest = {
-            profile: {
-              monthly_income: dados?.contextoFinanceiro?.rendaMensal
-                ? { value: dados.contextoFinanceiro.rendaMensal, state: 'HAS_VALUE' }
-                : undefined,
-              monthly_expenses: dados?.contextoFinanceiro?.gastoMensal
-                ? { value: dados.contextoFinanceiro.gastoMensal, state: 'HAS_VALUE' }
-                : undefined,
-              current_reserve: dados?.patrimonioConsolidado
-                ? { value: dados.patrimonioConsolidado, state: 'HAS_VALUE' }
-                : undefined,
-              debt_total: dados?.contextoFinanceiro?.dividas
-                ? { value: dados.contextoFinanceiro.dividas.reduce((sum, d) => sum + (d.saldoDevedor || 0), 0), state: 'HAS_VALUE' }
-                : undefined,
-              age: dados?.contextoFinanceiro?.faixaEtaria
-                ? { value: parseInt(dados.contextoFinanceiro.faixaEtaria) || 30, state: 'HAS_VALUE' }
-                : undefined,
-              investor_profile_declared: dados?.contextoFinanceiro?.perfilRiscoDeclarado
-                ? { value: dados.contextoFinanceiro.perfilRiscoDeclarado, state: 'HAS_VALUE' }
-                : undefined,
-            },
-            history: {
-              recommendations_completed: 0,
-              recommendations_ignored: 0,
-              recommendations_postponed: 0,
-              promised_vs_actual_contribution_ratio: 0.5,
-            },
-          };
-
-          const veraResponse = await avaliarComVera(veraRequest);
-          if (ativo && veraResponse?.frontend_payload) {
-            setVeraPayload(veraResponse.frontend_payload);
-          }
-        } catch (veraErr) {
-          // Vera failure doesn't block the UI
-          console.warn('[Vera] Failed to load evaluation:', veraErr);
+        // Trigger Vera evaluation in background
+        if (ativo) {
+          void avaliarComVera(dados);
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -292,7 +256,6 @@ export default function Insights() {
   const confiancaDiagnostico = resumo?.confiancaDiagnostico || resumo?.confianca_diagnostico || 'alta';
   const atualizacaoMercado = resumo?.atualizacaoMercado || resumo?.atualizacao_mercado;
   const dadosMercadoSessao = resumo?.dadosMercadoSessao || resumo?.dados_mercado_sessao;
-  const patrimonio = resumo?.patrimonioConsolidado || resumo?.patrimonio_consolidado;
   const scoreUnificado = resumo?.scoreUnificado || resumo?.score_unificado;
   // Score sempre no sistema unificado (0-1000). Nunca usar o legado (0-100).
   const scoreValor = scoreUnificado?.score ?? 0;
@@ -316,15 +279,9 @@ export default function Insights() {
     <div className="w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)]">
       <div className="w-full">
 
-        {/* 4.1 — Header */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 text-[#F56A2A] mb-4">
-            <BarChart2 size={24} />
-          </div>
-          <h1 className="font-['Sora'] text-4xl font-bold tracking-tight mb-4">O que encontramos na sua carteira</h1>
-          <p className="text-[#0B1218]/40 text-sm font-medium max-w-xl">
-            Análise baseada nos seus dados e no seu perfil de investidor.
-          </p>
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="font-['Sora'] text-4xl font-bold tracking-tight">Insights</h1>
         </div>
 
         {loading && <p className="text-sm text-[#0B1218]/50 mb-6">Carregando sua análise...</p>}
@@ -342,158 +299,110 @@ export default function Insights() {
         )}
 
         {!loading && !error && resumo && !semBaseInsights && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-16">
-            {/* Coluna principal — cards */}
-            <div className="space-y-6">
-              {/* Vera evaluation card */}
-              {veraPayload && (
-                <VeraCard
-                  payload={veraPayload}
-                  onAction={(action, payload) => {
-                    void telemetriaApi.registrarEventoTelemetria('vera_cta_clicked', { action, payload });
-                    navigate(action === 'OPEN_RESERVE_FLOW' ? '/decisoes' : action === 'OPEN_GOAL_REVIEW' ? '/decisoes' : '/decisoes');
-                  }}
-                />
-              )}
-
-              {confiancaDiagnostico !== 'alta' && (
-                <div className="p-5 border border-[#F2C94C]/30 bg-[#F2C94C]/8 rounded-xl">
-                  <p className="text-[11px] font-semibold text-[#0B1218]/80">
-                    Leitura com confiança limitada: dados de mercado {atualizacaoMercado?.statusGeral || atualizacaoMercado?.status_geral || 'indisponíveis'}.
-                  </p>
-                </div>
-              )}
-              {cards.map((card) => (
-                <InsightCard
-                  key={card.title}
-                  {...card}
-                  onAction={() => {
-                    void telemetriaApi.registrarEventoTelemetria('recommendation_clicked', { titulo: card.title, acao: card.action });
-                    navigate(card.actionUrl ?? '/decisoes');
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* 4.3 — Sidebar Score */}
-            <aside className="space-y-8">
-              <div className="bg-[#0B1218] p-8 text-white rounded-xl">
-                <div className="flex items-center gap-2 mb-6">
-                  <Target size={18} className="text-[#F56A2A]" />
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Score de Saúde</h4>
-                </div>
-
-                {/* Número + badge */}
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-['Sora'] text-5xl font-bold">{ocultarValores ? '••••••••' : scoreValor}</span>
-                  {badgeScore && (
-                    <span
-                      className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-xl"
-                      style={{ background: badgeScore.bg, color: badgeScore.color }}
-                    >
-                      {badgeScore.label}
-                    </span>
-                  )}
-                </div>
-
-                {/* Barra */}
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-[#F56A2A]" style={{ width: `${Math.max(0, Math.min(100, (scoreValor / scoreMaximo) * 100))}%` }} />
-                </div>
-                <p className="text-[10px] text-white/40 mb-1">
-                  {ocultarValores ? '••••••••' : `${Math.round((scoreValor / scoreMaximo) * 100)}% do máximo possível`}
-                </p>
-
-                {scoreStatus !== 'complete' && (
-                  <p className="text-[10px] uppercase tracking-widest text-white/45 mb-4">
-                    {scoreStatus === 'empty' ? 'Dados insuficientes: score zerado' : 'Dados parciais: leitura conservadora'}
-                  </p>
-                )}
-
-                {/* Pilares do score unificado */}
-                {scoreUnificado?.pillars?.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-white/10">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-4">O que compõe seu score</p>
-                    <ul className="space-y-4">
-                      {scoreUnificado.pillars.map((pilar) => (
-                        <li key={pilar.id}>
-                          <div className="flex justify-between text-xs font-medium text-white/60 mb-1.5">
-                            <span>{pilar.name}</span>
-                            <span className="font-bold text-white/80">
-                              {ocultarValores ? '••••••••' : <>{pilar.score}<span className="text-white/30"> /1000</span></>}
-                            </span>
-                          </div>
-                          <div className="h-1 w-full bg-white/10 overflow-hidden rounded-full">
-                            <div className="h-full bg-[#F56A2A] transition-all" style={{ width: `${Math.round((pilar.score / 1000) * 100)}%` }} />
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+          <div className="space-y-12">
+            {/* Row 1: Score + 3 Action Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Score Card com meia lua */}
+              <div className="bg-[#0B1218] rounded-xl p-6 text-white flex flex-col items-center justify-center">
+                <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">Score</p>
+                <ScoreSemiCircle score={scoreValor} maxScore={1000} ocultarValores={ocultarValores} />
+                {badgeScore && (
+                  <div className="mt-4 px-3 py-1 text-xs font-bold rounded-full" style={{ background: badgeScore.bg, color: badgeScore.color }}>
+                    {badgeScore.label}
                   </div>
-                )}
-
-                {/* Timestamp */}
-                {timestampScore && (
-                  <p className="text-[10px] text-white/30 mt-6">
-                    Atualizado {isHoje(timestampScore) ? 'hoje' : formatarData(timestampScore)} às {formatarHoraSimples(timestampScore)}
-                  </p>
                 )}
               </div>
 
-              {/* 4.4 — O que está pesando no score */}
-              {resumo.diagnostico?.riscos?.length > 0 && (
-                <div className="border border-[#EFE7DC] p-8 rounded-xl">
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-5">O que está pesando no seu score</h4>
-                  <ul className="space-y-4">
-                    {resumo.diagnostico.riscos.map((risco) => {
-                      const cor = COR_SEVERIDADE[risco.severidade] ?? '#0B1218';
-                      return (
-                        <li key={risco.codigo} className="flex gap-3">
-                          <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: cor }} />
-                          <div>
-                            <p className="text-[13px] font-bold text-[#0B1218]">{risco.titulo}</p>
-                            <p className="text-xs text-[#0B1218]/55 mt-0.5 leading-relaxed">{risco.descricao}</p>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+              {/* Card 1: Problema */}
+              {resumo.riscoPrincipal && (
+                <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.riscoPrincipal.titulo}</h3>
+                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">{resumo.riscoPrincipal.descricao}</p>
+                  <button
+                    onClick={() => {
+                      void telemetriaApi.registrarEventoTelemetria('problema_action', { titulo: resumo.riscoPrincipal.titulo });
+                      navigate(resolverUrlAcao(resumo.riscoPrincipal.codigo));
+                    }}
+                    className="text-[#E85C5C] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
+                  >
+                    Ver mais <ArrowRight size={12} />
+                  </button>
                 </div>
               )}
 
-              {/* 4.5 — Patrimônio Consolidado */}
-              {patrimonio && (
-                <div className="border border-[#EFE7DC] p-8 rounded-xl">
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-5">Patrimônio Consolidado</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#0B1218]/60">Patrimônio bruto</span>
-                      <span className="font-medium text-[#0B1218]">{ocultarValores ? '••••••••' : moeda(patrimonio.patrimonioBruto)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#0B1218]/40">(−) Dívidas e passivos</span>
-                      <span className="text-[#0B1218]/50">{ocultarValores ? '••••••••' : moeda(patrimonio.passivoTotal)}</span>
-                    </div>
-                    <div className="border-t border-[#EFE7DC] pt-2 flex justify-between text-sm">
-                      <span className="font-bold text-[#0B1218]">Patrimônio líquido</span>
-                      <span className="font-['Sora'] font-bold text-[#0B1218]">{ocultarValores ? '••••••••' : moeda(patrimonio.patrimonioLiquido)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Impacto de decisões recentes */}
-              {resumo.impactoDecisoesRecentes?.quantidade > 0 && (
-                <div className="border border-[#EFE7DC] p-8 rounded-xl bg-[#FDFCFB]">
-                  <h4 className="font-['Sora'] text-xs font-bold uppercase tracking-widest text-[#0B1218] mb-3">Impacto das decisões recentes</h4>
-                  <p className="text-xs text-[#0B1218]/65 leading-relaxed">
-                    {ocultarValores
-                      ? 'Efeito recente: ••••••••'
-                      : `${resumo.impactoDecisoesRecentes.deltaTotal >= 0 ? 'Efeito positivo' : 'Efeito negativo'} de ${resumo.impactoDecisoesRecentes.deltaTotal.toFixed(1)} pontos no score em ${resumo.impactoDecisoesRecentes.quantidade} simulações salvas.`}
+              {/* Card 2: Porque (if available) */}
+              {resumo.diagnostico && (
+                <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Porque</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">
+                    {resumo.diagnostico.titulo || resumo.diagnosticoFinal?.titulo || 'Análise de risco'}
+                  </h3>
+                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">
+                    {resumo.diagnostico.resumo || resumo.diagnosticoFinal?.resumo || resumo.diagnostico.descricao}
                   </p>
+                  <button
+                    onClick={() => navigate('/carteira')}
+                    className="text-[#B8880A] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
+                  >
+                    Entender <ArrowRight size={12} />
+                  </button>
                 </div>
               )}
-            </aside>
+
+              {/* Card 3: O que fazer */}
+              {resumo.acaoPrioritaria && (
+                <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.acaoPrioritaria.titulo}</h3>
+                  <p className="text-xs text-[#0B1218]/70 mb-4 flex-grow">{resumo.acaoPrioritaria.descricao}</p>
+                  <button
+                    onClick={() => {
+                      void telemetriaApi.registrarEventoTelemetria('acao_prioritaria_clicked', { titulo: resumo.acaoPrioritaria.titulo });
+                      navigate(resolverUrlAcao(resumo.acaoPrioritaria.codigo));
+                    }}
+                    className="text-[#1A7A45] text-xs font-bold hover:gap-1 inline-flex items-center gap-1 transition-all"
+                  >
+                    Executar <ArrowRight size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Row 2: Detailed Explanation */}
+            {resumo.diagnosticoFinal?.mensagem && (
+              <div className="bg-white rounded-xl p-8 border border-[var(--border-color)]">
+                <h2 className="font-['Sora'] text-xl font-bold text-[#0B1218] mb-4">O que você precisa saber</h2>
+                <p className="text-sm text-[#0B1218]/70 leading-relaxed mb-6">
+                  {resumo.diagnosticoFinal.mensagem}
+                </p>
+
+                {resumo.acaoPrioritaria?.impactoEsperado && (
+                  <div className="border-t border-[var(--border-color)] pt-6">
+                    <h3 className="font-semibold text-sm text-[#0B1218] mb-2">Próximos passos</h3>
+                    <p className="text-sm text-[#0B1218]/70">
+                      {resumo.acaoPrioritaria.impactoEsperado}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Row 3: Source Attribution */}
+            {veraPayload && (
+              <div className="text-xs text-[#0B1218]/50 text-center pt-4 border-t border-[var(--border-color)]">
+                <span>
+                  Análise por{' '}
+                  <span className="font-semibold text-[#0B1218]/70">
+                    {veraPayload.source === 'cloudflare' ? 'Vera Cloudflare LLM' :
+                     veraPayload.source === 'openai' ? 'Vera OpenAI' :
+                     veraPayload.source === 'gemini' ? 'Vera Gemini' :
+                     veraPayload.source === 'anthropic' ? 'Vera Claude' :
+                     'Vera IA'}
+                  </span>
+                </span>
+              </div>
+            )}
           </div>
         )}
 

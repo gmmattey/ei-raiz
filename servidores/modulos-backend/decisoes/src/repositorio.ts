@@ -24,6 +24,7 @@ export type RegistroSimulacao = {
 export interface RepositorioDecisoes {
   obterContextoScore(usuarioId: string): Promise<{ scoreAtual: number; pilares: Record<string, number> }>;
   obterParametrosAtivos(): Promise<Record<string, Record<string, unknown>>>;
+  obterParametrosPorChaves(chaves: string[]): Promise<Record<string, Record<string, unknown>>>;
   salvar(simulacao: RegistroSimulacao): Promise<void>;
   atualizar(simulacao: RegistroSimulacao): Promise<void>;
   listar(usuarioId: string): Promise<Simulacao[]>;
@@ -64,6 +65,20 @@ export class RepositorioDecisoesD1 implements RepositorioDecisoes {
     const pilares = parseNumericJson(row?.blocos_json ?? null);
     const scoreAtual = typeof row?.score === "number" ? row.score : 65;
     return { scoreAtual, pilares };
+  }
+
+  async obterParametrosPorChaves(chaves: string[]): Promise<Record<string, Record<string, unknown>>> {
+    if (!chaves.length) return {};
+    const placeholders = chaves.map(() => "?").join(", ");
+    const rows = await this.db
+      .prepare(`SELECT chave, valor_json FROM simulacoes_parametros WHERE ativo = 1 AND chave IN (${placeholders}) ORDER BY chave ASC`)
+      .bind(...chaves)
+      .all<{ chave: string; valor_json: string | null }>();
+    const out: Record<string, Record<string, unknown>> = {};
+    for (const row of rows.results ?? []) {
+      out[row.chave] = parseJson(row.valor_json ?? null);
+    }
+    return out;
   }
 
   async obterParametrosAtivos(): Promise<Record<string, Record<string, unknown>>> {

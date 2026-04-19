@@ -45,14 +45,18 @@ const ImportarMobile = React.lazy(() => import('./features/importacao/ImportarMo
 const DecisionHub = React.lazy(() => import('./features/decisoes/DecisionHub'));
 const DecisionHubMobile = React.lazy(() => import('./features/decisoes/DecisionHubMobile'));
 const PropertySimulator = React.lazy(() => import('./features/decisoes/PropertySimulator'));
+const PropertySimulatorMobile = React.lazy(() => import('./features/decisoes/PropertySimulatorMobile'));
 const CarSimulator = React.lazy(() => import('./features/decisoes/CarSimulator'));
+const CarSimulatorMobile = React.lazy(() => import('./features/decisoes/CarSimulatorMobile'));
 const ReserveOrFinanceSimulator = React.lazy(() => import('./features/decisoes/ReserveOrFinanceSimulator'));
+const ReserveOrFinanceSimulatorMobile = React.lazy(() => import('./features/decisoes/ReserveOrFinanceSimulatorMobile'));
 const SpendOrInvestSimulator = React.lazy(() => import('./features/decisoes/SpendOrInvestSimulator'));
+const SpendOrInvestSimulatorMobile = React.lazy(() => import('./features/decisoes/SpendOrInvestSimulatorMobile'));
 const FreeSimulationSimulator = React.lazy(() => import('./features/decisoes/FreeSimulationSimulator'));
+const FreeSimulationSimulatorMobile = React.lazy(() => import('./features/decisoes/FreeSimulationSimulatorMobile'));
 const SimulationHistory = React.lazy(() => import('./features/decisoes/SimulationHistory'));
 const SimulationDetail = React.lazy(() => import('./features/decisoes/SimulationDetail'));
 const SimulationResultMobile = React.lazy(() => import('./features/decisoes/SimulationResultMobile'));
-const DecisionScenarioMobile = React.lazy(() => import('./features/decisoes/DecisionScenarioMobile'));
 
 // Perfil e configurações
 const PerfilRisco = React.lazy(() => import('./features/perfil/PerfilRisco'));
@@ -180,9 +184,9 @@ const ResponsiveConfiguracoes: React.FC = () => {
   return isMobile ? <ConfiguracoesMobile /> : <Configuracoes />;
 };
 
-const ResponsiveSimulator: React.FC<{ title: string; desktop: React.ReactElement }> = ({ title, desktop }) => {
+const ResponsiveSimulator: React.FC<{ mobile: React.ReactElement; desktop: React.ReactElement }> = ({ mobile, desktop }) => {
   const isMobile = useIsMobile();
-  return isMobile ? <DecisionScenarioMobile title={title} /> : desktop;
+  return isMobile ? mobile : desktop;
 };
 
 const DesktopOnlyGate: React.FC<{ title: string; description: string; desktop: React.ReactElement }> = ({
@@ -291,11 +295,11 @@ const AnimatedRoutes: React.FC = () => {
 
           {/* Simuladores de decisão */}
           <Route path="/decisoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveDecisoes /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/imovel" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Simular imovel" desktop={<PropertySimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/carro" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Simular carro" desktop={<CarSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/reserva-ou-financiar" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Reserva ou financiar" desktop={<ReserveOrFinanceSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/gastar-ou-investir" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Gastar ou investir" desktop={<SpendOrInvestSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/livre" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator title="Simulador livre" desktop={<FreeSimulationSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/decisoes/imovel" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<PropertySimulatorMobile />} desktop={<PropertySimulator />} /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/decisoes/carro" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<CarSimulatorMobile />} desktop={<CarSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/decisoes/reserva-ou-financiar" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<ReserveOrFinanceSimulatorMobile />} desktop={<ReserveOrFinanceSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/decisoes/gastar-ou-investir" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<SpendOrInvestSimulatorMobile />} desktop={<SpendOrInvestSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/decisoes/livre" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<FreeSimulationSimulatorMobile />} desktop={<FreeSimulationSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
           <Route
             path="/decisoes/historico"
             element={

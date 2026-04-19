@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { insightsApi } from '../../cliente-api';
+import { insightsApi, telemetriaApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
-import { assetPath } from '../../utils/assetPath';
+import { useVeraEvaluation } from './hooks/useVeraEvaluation';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { ScoreSemiCircle } from './components/ScoreSemiCircle';
 
 export default function InsightsMobile() {
+  const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
+  const { veraPayload, avaliar: avaliarComVera } = useVeraEvaluation();
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [resumo, setResumo] = useState(null);
@@ -17,6 +22,10 @@ export default function InsightsMobile() {
         if (!ativo) return;
         setResumo(dados);
         setErro('');
+        await telemetriaApi.registrarEventoTelemetria('insight_opened_mobile', { score: dados?.score?.score ?? 0 });
+
+        // Trigger Vera evaluation in background
+        void avaliarComVera(dados);
       } catch {
         if (ativo) setErro('Falha ao carregar os insights.');
       } finally {
@@ -26,57 +35,144 @@ export default function InsightsMobile() {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [avaliarComVera]);
 
-  const score = resumo?.scoreUnificado?.score ?? resumo?.score_unificado?.score ?? 0;
-  const risco = resumo?.riscoPrincipal?.titulo || 'Sem risco critico detectado';
-  const acao = resumo?.acaoPrioritaria?.descricao || 'Continue acompanhando sua carteira e aportes.';
-  const diagnostico = resumo?.diagnosticoFinal?.mensagem || resumo?.diagnostico?.resumo || 'Diagnostico indisponivel.';
+  // Parse Vera body into sections: problem | why | how
+  const parseVeraBody = (body) => {
+    if (!body) return { problem: '', why: '', how: '' };
+    const sections = body.split(/\n\n+/);
+    return {
+      problem: sections[0] || '',
+      why: sections[1] || '',
+      how: sections[2] || '',
+    };
+  };
+
+  const handleVeraCta = async () => {
+    if (!veraPayload?.cta?.action) {
+      navigate('/decisoes');
+      return;
+    }
+
+    const action = veraPayload.cta.action;
+    void telemetriaApi.registrarEventoTelemetria('vera_cta_clicked_mobile', {
+      action,
+      decision_type: veraPayload.decision_type
+    });
+
+    switch (action) {
+      case 'OPEN_RESERVE_FLOW':
+        navigate('/decisoes');
+        break;
+      case 'OPEN_DEBT_FLOW':
+        navigate('/decisoes');
+        break;
+      case 'OPEN_GOAL_REVIEW':
+        navigate('/decisoes');
+        break;
+      default:
+        navigate('/decisoes');
+    }
+  };
+
+  const scoreUnificado = resumo?.scoreUnificado || resumo?.score_unificado;
+  const score = scoreUnificado?.score ?? 0;
+  const bandaScore = scoreUnificado?.band;
+
+  const BADGE_SCORE = {
+    critical: { bg: 'rgba(232,92,92,0.12)', color: '#E85C5C', label: 'Crítico' },
+    fragile: { bg: 'rgba(242,201,76,0.15)', color: '#B8880A', label: 'Frágil' },
+    stable: { bg: '#EFE7DC', color: '#0B1218', label: 'Estável' },
+    good: { bg: 'rgba(111,207,151,0.15)', color: '#1A7A45', label: 'Bom' },
+    strong: { bg: 'rgba(111,207,151,0.25)', color: '#1A7A45', label: 'Sólido' },
+  };
+  const badgeScore = bandaScore ? BADGE_SCORE[bandaScore] : null;
+
+  const veraSections = veraPayload ? parseVeraBody(veraPayload.body) : { problem: '', why: '', how: '' };
 
   return (
-    <section className="space-y-4 pb-4">
-      <header className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Insights</p>
-        <h1 className="font-['Sora'] text-[22px] font-bold text-[var(--text-primary)]">Traducao da carteira</h1>
+    <section className="space-y-6 pb-6">
+      {/* Header */}
+      <header>
+        <h1 className="font-['Sora'] text-2xl font-bold text-[var(--text-primary)]">Insights</h1>
       </header>
 
-      <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={assetPath('/assets/icons/laranja/score-premium.svg')} alt="" className="h-5 w-5" />
-            <p className="text-[12px] text-[var(--text-secondary)]">Score unificado</p>
+      {loading && <p className="text-xs text-[var(--text-secondary)]">Carregando...</p>}
+      {erro && <p className="text-xs text-[#E85C5C]">{erro}</p>}
+
+      {!loading && !erro && resumo && (
+        <>
+          {/* Score Card */}
+          <div className="rounded-xl bg-[#0B1218] p-6 text-white">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">Score</p>
+            <ScoreSemiCircle score={score} maxScore={1000} ocultarValores={ocultarValores} />
+            {badgeScore && (
+              <div className="mt-4 mx-auto w-fit px-3 py-1 text-xs font-bold rounded-full" style={{ background: badgeScore.bg, color: badgeScore.color }}>
+                {badgeScore.label}
+              </div>
+            )}
           </div>
-          <p className="text-[20px] font-bold text-[#F56A2A]">{ocultarValores ? '•••' : Math.round(score)}</p>
-        </div>
-      </article>
 
-      <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-        <div className="flex items-start gap-2">
-          <img src={assetPath('/assets/icons/laranja/alerta-premium.svg')} alt="" className="mt-1 h-4 w-4" />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Risco principal</p>
-            <p className="mt-1 text-[14px] font-semibold text-[var(--text-primary)]">{risco}</p>
-          </div>
-        </div>
-      </article>
+          {/* Three-Card Layout: Problem / Why / How */}
+          {veraPayload && (
+            <div className="space-y-4">
+              {/* Problem Card */}
+              {veraSections.problem && (
+                <div className="rounded-xl border border-[#E85C5C]/30 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
+                  <p className="text-xs text-[#0B1218]">{veraSections.problem}</p>
+                </div>
+              )}
 
-      <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-        <div className="flex items-start gap-2">
-          <img src={assetPath('/assets/icons/laranja/tendencia-premium.svg')} alt="" className="mt-1 h-4 w-4" />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Acao prioritaria</p>
-            <p className="mt-1 text-[14px] text-[var(--text-primary)]">{acao}</p>
-          </div>
-        </div>
-      </article>
+              {/* Why Card */}
+              {veraSections.why && (
+                <div className="rounded-xl border border-[#B8880A]/30 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
+                  <p className="text-xs text-[#0B1218]">{veraSections.why}</p>
+                </div>
+              )}
 
-      <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Diagnostico final</p>
-        <p className="mt-2 text-[14px] leading-5 text-[var(--text-primary)]">{diagnostico}</p>
-      </article>
+              {/* How Card */}
+              {veraSections.how && (
+                <div className="rounded-xl border border-[#1A7A45]/30 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
+                  <p className="text-xs text-[#0B1218] mb-3">{veraSections.how}</p>
+                  <button
+                    onClick={handleVeraCta}
+                    className="text-[#1A7A45] text-xs font-bold inline-flex items-center gap-1 hover:gap-2 transition-all"
+                  >
+                    {veraPayload.cta?.label || 'Executar'} <ArrowRight size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-      {loading && <p className="text-[12px] text-[var(--text-secondary)]">Carregando insights...</p>}
-      {erro && <p className="text-[12px] text-[#E85C5C]">{erro}</p>}
+          {/* Full Explanation Section */}
+          {veraPayload?.title && (
+            <div className="rounded-xl bg-white p-4 border border-[var(--border-color)]">
+              <h2 className="text-sm font-bold text-[#0B1218] mb-2">{veraPayload.title}</h2>
+              <p className="text-xs text-[#0B1218]/80 leading-relaxed">{veraPayload.body}</p>
+            </div>
+          )}
+
+          {/* Source Attribution */}
+          {veraPayload && (
+            <div className="text-xs text-[#0B1218]/50 text-center pt-4 border-t border-[var(--border-color)]">
+              <span>
+                Por{' '}
+                <span className="font-semibold text-[#0B1218]/70">
+                  {veraPayload.source === 'cloudflare' ? 'Vera Cloudflare LLM' :
+                   veraPayload.source === 'openai' ? 'Vera OpenAI' :
+                   veraPayload.source === 'gemini' ? 'Vera Gemini' :
+                   veraPayload.source === 'anthropic' ? 'Vera Claude' :
+                   'Vera IA'}
+                </span>
+              </span>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

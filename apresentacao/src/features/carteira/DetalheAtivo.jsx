@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowDownRight, ArrowRightLeft, ArrowRight, ArrowUpRight
 import { formatarData } from "../../utils/formatarData";
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiError, carteiraApi, marketApi, portfolioApi } from "../../cliente-api";
+import { invalidarCacheUsuario } from "../../utils/cache";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
 
@@ -202,6 +203,7 @@ export default function DetalheAtivo() {
     setSucesso("");
     try {
       const resposta = await carteiraApi.atualizarDataAquisicaoAtivo(ativo.id, dataAquisicao);
+      invalidarCacheUsuario();
       setSucesso(resposta.mensagem || "Data de aquisição atualizada e comparativos recalculados.");
       await carregar();
     } catch {
@@ -228,6 +230,7 @@ export default function DetalheAtivo() {
         dataMovimentacao: movimentacao.dataMovimentacao,
         observacao: movimentacao.observacao?.trim() || undefined,
       });
+      invalidarCacheUsuario();
       setSucesso(resposta.mensagem || "Movimentação vinculada com sucesso.");
       setMovimentacao((anterior) => ({ ...anterior, valor: "", observacao: "" }));
       await carregar();
@@ -255,6 +258,7 @@ export default function DetalheAtivo() {
         dataOperacao: aporte.dataOperacao || undefined,
         observacao: aporte.observacao?.trim() || undefined,
       });
+      invalidarCacheUsuario();
       setSucesso(resposta.mensagem || "Compra registrada com sucesso.");
       setAporte((anterior) => ({ ...anterior, valorAporte: "", quantidade: "", precoUnitario: "", observacao: "" }));
       await carregar();
@@ -278,6 +282,7 @@ export default function DetalheAtivo() {
     setSucesso("");
     try {
       const resposta = await carteiraApi.excluirAtivo(ativo.id, motivo);
+      invalidarCacheUsuario();
       setSucesso(resposta.mensagem || "Ativo removido com sucesso.");
       setModalExclusaoAberto(false);
       setMotivoExclusao("");

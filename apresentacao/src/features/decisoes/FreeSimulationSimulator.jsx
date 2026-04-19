@@ -25,7 +25,7 @@ const FreeSimulationSimulator = () => {
   const onChange = (key) => (e) => setForm((p) => ({ ...p, [key]: key === 'nome' ? e.target.value : Number(e.target.value || 0) }));
 
   return (
-    <DecisionSimulatorLayout title="Simulação Livre" subtitle="Defina cenários próprios e compare resultados em estrutura padrão do Esquilo.">
+    <DecisionSimulatorLayout title="Simulação Livre">
       <div className="space-y-8">
         <DecisionFormSection title="Configuração Geral" description="Parâmetros da simulação" icon={Settings}>
           <MaskedInput label="Nome" value={form.nome} onChange={onChange('nome')} />

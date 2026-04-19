@@ -22,6 +22,11 @@ export async function handleDecisoesRoutes(
   const userId = sessao.usuario.id;
   const decisoesService = new ServicoDecisoesPadrao(new RepositorioDecisoesD1(env.DB));
 
+  if (pathname.startsWith("/api/decisoes/premissas/") && request.method === "GET") {
+    const tipo = pathname.replace("/api/decisoes/premissas/", "") as Parameters<typeof decisoesService.obterPremissasMercado>[0];
+    return sucesso(await decisoesService.obterPremissasMercado(tipo));
+  }
+
   if (pathname === "/api/decisoes/simulacoes/calcular" && request.method === "POST") {
     const body = simulacaoCalculoSchema.parse(await parseJsonBody(request)) as CalcularSimulacaoEntrada;
     return sucesso(await decisoesService.calcular(userId, body));

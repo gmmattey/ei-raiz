@@ -78,14 +78,11 @@ const DecisionHub = () => {
   return (
     <div className="w-full font-['Inter'] text-[#0B1218]">
       <section className="mb-12 fade-in-up">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0B1218]/40">
-          Inteligência Estratégica
-        </p>
         <h1 className="mb-4 font-['Sora'] text-3xl font-bold tracking-tight text-[#0B1218] md:text-4xl">
           Decisões Financeiras.
         </h1>
         <p className="text-sm text-[#0B1218]/60 max-w-2xl leading-relaxed">
-          O Esquilo ajuda você a simular cenários complexos com base no seu patrimônio real, 
+          O Esquilo ajuda você a simular cenários complexos com base no seu patrimônio real,
           perfil de risco e objetivos de vida. Escolha um simulador abaixo para começar.
         </p>
       </section>

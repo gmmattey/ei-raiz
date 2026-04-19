@@ -402,7 +402,7 @@ const GrupoCategoria = React.memo(({ categoria, ativos: grupoAtivos, ocultarValo
   const colunas = colunasPorTipo[categoria] || [];
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl mb-6 overflow-hidden shadow-md shadow-black/5 fade-in-up">
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-md shadow-black/5 fade-in-up">
       {/* Header do grupo */}
       <button
         onClick={() => onToggle(categoria)}
@@ -859,85 +859,87 @@ export default function Carteira({ embedded = false }) {
           </div>
         )}
 
-        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg shadow-black/8 fade-in-up" style={{ animationDelay: '0.1s' }}>
-          {tickerDestacado && tiposSelecionados.includes("acao") && (
-            <div className="px-6 py-3 border-b border-[#EFE7DC] bg-[#FAFAFA] flex items-center justify-between gap-3">
-              <p className="text-[11px] text-[#0B1218]/75">
-                Você veio de outra tela para gerenciar <strong>{tickerDestacado.toUpperCase()}</strong> em ações.
-              </p>
-              <button
-                onClick={() => navigate(`/ativo/${encodeURIComponent(tickerDestacado)}`)}
-                className="px-3 py-1.5 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest"
-              >
-                Abrir detalhamento
-              </button>
-            </div>
-          )}
-          <div className="p-6 border-b border-[var(--border-color)] flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2">
-              {tiposDisponiveis.map(tipo => {
-                const isSelected = tiposSelecionados.includes(tipo);
-                return (
-                  <button 
-                    key={tipo}
-                    onClick={() => {
-                      setTiposSelecionados(prev => {
-                        if (prev.includes(tipo)) {
-                          const next = prev.filter(t => t !== tipo);
-                          return next.length ? next : prev;
-                        }
-                        return [...prev, tipo];
-                      });
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider border transition-all ${
-                      isSelected 
-                        ? 'bg-[#F56A2A] border-[#F56A2A] text-white shadow-sm' 
-                        : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#F56A2A] hover:text-[#F56A2A]'
-                    }`}
-                  >
-                    {LABEL_CATEGORIA[tipo] || tipo}
-                  </button>
-                );
-              })}
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <select value={periodoMeses} onChange={(e) => setPeriodoMeses(Number(e.target.value))} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
-                  {periodosDisponiveis.map((p) => <option key={p} value={p}>{p}M</option>)}
-                </select>
-              </div>
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
-                <input
-                  type="text"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar ativos..."
-                  className="pl-9 pr-4 h-[32px] w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]"
-                />
-              </div>
-              <select value={plataformaFiltro} onChange={(e) => setPlataformaFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
-                {plataformas.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
-                <option value="todos">Todos os status</option>
-                <option value="atualizado">Com cotação</option>
-                <option value="indisponivel">Sem cotação</option>
-              </select>
-              <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
-                <option value="valor_desc">Valor ↓</option>
-                <option value="participacao_desc">Alocação ↓</option>
-                <option value="retorno_desc">Retorno ↓</option>
-              </select>
-            </div>
+        {tickerDestacado && tiposSelecionados.includes("acao") && (
+          <div className="mb-4 rounded-xl border border-[#EFE7DC] bg-[#FAFAFA] px-6 py-3 flex items-center justify-between gap-3 fade-in-up">
+            <p className="text-[11px] text-[#0B1218]/75">
+              Você veio de outra tela para gerenciar <strong>{tickerDestacado.toUpperCase()}</strong> em ações.
+            </p>
+            <button
+              onClick={() => navigate(`/ativo/${encodeURIComponent(tickerDestacado)}`)}
+              className="px-3 py-1.5 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest rounded-xl"
+            >
+              Abrir detalhamento
+            </button>
+          </div>
+        )}
+
+        {/* Barra de filtros — card independente, sem linha inferior */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-6 mb-6 flex flex-col gap-4 shadow-sm fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="flex flex-wrap gap-2">
+            {tiposDisponiveis.map(tipo => {
+              const isSelected = tiposSelecionados.includes(tipo);
+              return (
+                <button
+                  key={tipo}
+                  onClick={() => {
+                    setTiposSelecionados(prev => {
+                      if (prev.includes(tipo)) {
+                        const next = prev.filter(t => t !== tipo);
+                        return next.length ? next : prev;
+                      }
+                      return [...prev, tipo];
+                    });
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider border transition-all ${
+                    isSelected
+                      ? 'bg-[#F56A2A] border-[#F56A2A] text-white shadow-sm'
+                      : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[#F56A2A] hover:text-[#F56A2A]'
+                  }`}
+                >
+                  {LABEL_CATEGORIA[tipo] || tipo}
+                </button>
+              );
+            })}
           </div>
 
-          {loading && <div className="p-6 text-sm text-[#0B1218]/50">Carregando seus ativos...</div>}
-          {error && <div className="p-6 text-sm text-[#E85C5C]">Não conseguimos carregar seus dados. Tente novamente.</div>}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <select value={periodoMeses} onChange={(e) => setPeriodoMeses(Number(e.target.value))} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+                {periodosDisponiveis.map((p) => <option key={p} value={p}>{p}M</option>)}
+              </select>
+            </div>
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
+              <input
+                type="text"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar ativos..."
+                className="pl-9 pr-4 h-[32px] w-full bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]"
+              />
+            </div>
+            <select value={plataformaFiltro} onChange={(e) => setPlataformaFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+              {plataformas.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+              <option value="todos">Todos os status</option>
+              <option value="atualizado">Com cotação</option>
+              <option value="indisponivel">Sem cotação</option>
+            </select>
+            <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)} className="h-[32px] px-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest rounded-xl focus:outline-none focus:border-[#F56A2A]">
+              <option value="valor_desc">Valor ↓</option>
+              <option value="participacao_desc">Alocação ↓</option>
+              <option value="retorno_desc">Retorno ↓</option>
+            </select>
+          </div>
+        </div>
 
-          {!loading && !error && Object.keys(ativosPorCategoria).length > 0 && (
-            <div className="space-y-6">
+        {/* Lista de grupos — cada GrupoCategoria já tem seu próprio card */}
+        {loading && <div className="py-6 text-sm text-[#0B1218]/50">Carregando seus ativos...</div>}
+        {error && <div className="py-4 text-sm text-[#E85C5C]">Não conseguimos carregar seus dados. Tente novamente.</div>}
+
+        {!loading && !error && Object.keys(ativosPorCategoria).length > 0 && (
+          <div className="space-y-4">
             {ORDEM_CATEGORIAS.map(cat => {
               if (!ativosPorCategoria[cat]) return null;
               return (
@@ -954,21 +956,20 @@ export default function Carteira({ embedded = false }) {
               );
             })}
           </div>
-          )}
-          {!loading && !error && Object.keys(ativosPorCategoria).length === 0 && (
-            <div className="p-8 text-center">
-              <p className="text-sm text-[#0B1218]/60">Nenhum ativo encontrado para esse filtro.</p>
-            </div>
-          )}
-          {semAtivos && (
-            <EstadoVazio 
-              titulo="Sua carteira está vazia"
-              descricao="Sua carteira ainda não possui ativos vinculados. Importe seu extrato para destravar as funcionalidades."
-              acaoTexto="Importar Extrato"
-              onAcao={() => navigate('/home', { state: { openQuickModal: 'quick_importar' } })}
-            />
-          )}
-        </div>
+        )}
+        {!loading && !error && Object.keys(ativosPorCategoria).length === 0 && !semAtivos && (
+          <div className="py-8 text-center">
+            <p className="text-sm text-[#0B1218]/60">Nenhum ativo encontrado para esse filtro.</p>
+          </div>
+        )}
+        {semAtivos && (
+          <EstadoVazio
+            titulo="Sua carteira está vazia"
+            descricao="Sua carteira ainda não possui ativos vinculados. Importe seu extrato para destravar as funcionalidades."
+            acaoTexto="Importar Extrato"
+            onAcao={() => navigate('/home', { state: { openQuickModal: 'quick_importar' } })}
+          />
+        )}
 
       </div>
     </div>

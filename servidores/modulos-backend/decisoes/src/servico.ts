@@ -1,4 +1,4 @@
-import type { CalcularSimulacaoEntrada, HistoricoSimulacao, ResultadoSimulacao, ServicoDecisoes, Simulacao, TipoSimulacao } from "@ei/contratos";
+import type { CalcularSimulacaoEntrada, HistoricoSimulacao, PremissaMercado, PremissasMercadoSimulador, ResultadoSimulacao, ServicoDecisoes, Simulacao, TipoSimulacao } from "@ei/contratos";
 import type { RepositorioDecisoes } from "./repositorio";
 
 type ContextoScore = { scoreAtual: number; pilares: Record<string, number> };
@@ -230,6 +230,37 @@ export class ServicoDecisoesPadrao implements ServicoDecisoes {
     const simulacao = await this.repositorio.obter(usuarioId, simulacaoId);
     if (!simulacao) return [];
     return this.repositorio.listarHistorico(simulacaoId);
+  }
+
+  async obterPremissasMercado(tipo: TipoSimulacao): Promise<PremissasMercadoSimulador> {
+    const chavesPorTipo: Record<TipoSimulacao, string[]> = {
+      imovel: ["imovel_juros_padrao", "imovel_itbi_padrao", "imovel_manutencao_padrao", "imovel_valorizacao_padrao", "reajuste_aluguel_padrao", "retorno_investimento_padrao"],
+      carro: ["carro_juros_padrao", "carro_seguro_pct_padrao", "carro_manutencao_pct_padrao", "carro_combustivel_km_padrao", "carro_consumo_padrao", "carro_combustivel_preco_padrao", "carro_depreciacao_padrao"],
+      reserva_ou_financiar: ["credito_juros_padrao", "retorno_investimento_padrao"],
+      gastar_ou_investir: ["retorno_investimento_padrao"],
+      livre: [],
+    };
+
+    const chaves = chavesPorTipo[tipo] ?? [];
+    if (!chaves.length) return { tipo, premissas: [] };
+
+    const params = await this.repositorio.obterParametrosPorChaves(chaves);
+
+    const premissas: PremissaMercado[] = chaves
+      .filter((c) => params[c])
+      .map((chave) => {
+        const p = params[chave];
+        const valor = asNum(p.valor);
+        return {
+          chave,
+          label: typeof p.label === "string" ? p.label : String(valor),
+          valor,
+          valorFormatado: typeof p.label === "string" ? p.label : String(valor),
+          fonte: typeof p.fonte === "string" ? p.fonte : "",
+        };
+      });
+
+    return { tipo, premissas };
   }
 
   private calcularPorTipo(tipo: TipoSimulacao, premissas: Record<string, unknown>, parametros: ParametrosSimulacao): Omit<ResultadoSimulacao, "impactoScore"> {

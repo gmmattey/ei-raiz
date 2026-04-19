@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, importacaoApi, telemetriaApi } from '../../cliente-api';
+import { invalidarCacheUsuario } from '../../utils/cache';
 import { baixarTemplateXlsx } from '../../utils/importacaoTemplate';
 import { parseXlsx } from '../../utils/importacaoParser';
 import {
@@ -260,6 +261,7 @@ export default function Importar({ embedded = false }) {
         importacaoId: preview.importacaoId,
         itensValidos: linhasValidas.length,
       });
+      invalidarCacheUsuario();
       localStorage.setItem('hasSeenPreInsight', 'true');
       navigate('/home', { 
         replace: true, 

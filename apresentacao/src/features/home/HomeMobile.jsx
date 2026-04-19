@@ -4,11 +4,9 @@ import {
   AreaChart, Area, Line, ResponsiveContainer,
   XAxis, Tooltip,
 } from 'recharts';
-import { Moon, Sun } from 'lucide-react';
 import { carteiraApi, insightsApi, historicoApi, getStoredUser } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
-import { useTheme } from '../../context/ThemeContext';
 import { assetPath } from '../../utils/assetPath';
 
 const HOME_MOBILE_CACHE_KEY = 'home_mobile_v1';
@@ -43,8 +41,7 @@ function HiddenValue({ hidden, children }) {
 
 export default function HomeMobile() {
   const navigate = useNavigate();
-  const { ocultarValores, toggleOcultarValores } = useModoVisualizacao();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { ocultarValores } = useModoVisualizacao();
 
   const [loading, setLoading]     = useState(() => !cache.get(HOME_MOBILE_CACHE_KEY)?.resumo);
   const [erro, setErro]           = useState('');
@@ -186,51 +183,6 @@ export default function HomeMobile() {
 
   return (
     <section className="space-y-4 pb-4">
-
-      {/* Cabeçalho */}
-      <header className="flex items-center justify-between pt-[max(8px,env(safe-area-inset-top))]">
-        {/* SVG inline para garantir fontes corretas em iOS */}
-        <svg viewBox="0 0 721 109" className="h-6" aria-label="Esquilo wallet">
-          <text x="0" y="86" fontSize="112" fontWeight="700"
-            fontFamily="Sora, Inter, system-ui, sans-serif"
-            fill={isDarkMode ? '#ffffff' : '#0b1218'}>Esquilo</text>
-          <text x="429" y="88" fontSize="112" fontWeight="300"
-            fontFamily="Inter, Sora, system-ui, sans-serif"
-            fill="#F56A2A">wallet</text>
-        </svg>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            className="rounded-full border border-[var(--border-color)] bg-[var(--bg-card)] p-2 text-[var(--text-muted)]"
-            aria-label="Alternar tema"
-          >
-            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <button
-            onClick={toggleOcultarValores}
-            className="rounded-full border border-[var(--border-color)] bg-[var(--bg-card)] p-2"
-          >
-            <img
-              src={assetPath(ocultarValores
-                ? '/assets/icons/laranja/ocultar-premium.svg'
-                : '/assets/icons/laranja/olho-premium.svg')}
-              alt="Alternar visibilidade"
-              className="h-4 w-4"
-            />
-          </button>
-          <button
-            onClick={() => navigate('/insights')}
-            className="relative rounded-full border border-[var(--border-color)] bg-[var(--bg-card)] p-2"
-          >
-            <img src={assetPath('/assets/icons/laranja/alerta-premium.svg')} alt="Notificações" className="h-4 w-4" />
-            {alertasCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-[#E85C5C] flex items-center justify-center text-[8px] font-bold text-white">
-                {alertasCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
 
       {/* Saudação */}
       <div className="px-0.5">

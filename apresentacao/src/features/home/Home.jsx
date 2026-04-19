@@ -24,6 +24,7 @@ import Importar from '../importacao/Importar';
 import Configuracoes from '../perfil/Configuracoes';
 
 const HOME_CACHE_KEY = 'home_v1';
+const HOME_CACHE_FRESCA_TTL = 60 * 1000;
 
 const ALOCACAO_CONFIG = [
   { key: 'acao',        label: 'Ações',       cor: '#F56A2A' },
@@ -155,7 +156,9 @@ export default function HomeLobby() {
             setPerfilIncompleto(Boolean(dadosCache.perfilIncompleto));
             setCompletudePerfil(Number(dadosCache.completudePerfil ?? 0));
             setLoading(false);
-            void recarregarHomeSemPiscada();
+            // Só recarrega em background se o cache já tiver mais de 60s
+            const cacheEstaFresco = Boolean(cache.get(HOME_CACHE_KEY, HOME_CACHE_FRESCA_TTL));
+            if (!cacheEstaFresco) void recarregarHomeSemPiscada();
             return;
           }
         }
@@ -218,15 +221,18 @@ export default function HomeLobby() {
       const TTL = 60 * 1000;
       const rC = cache.get('carteira_resumo', TTL);
       const iC = cache.get('insights_resumo', TTL);
+      const dC = cache.get('carteira_dashboard', TTL);
+      const hC = cache.get('historico_mensal_24', TTL);
+      const bC = cache.get('benchmark_24m', TTL);
       const [dadosCarteira, dadosInsights, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
         await Promise.all([
           rC ? Promise.resolve(rC) : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
           iC ? Promise.resolve(iC) : insightsApi.obterResumo().then(r => { cache.set('insights_resumo', r); return r; }),
           perfilApi.obterPerfil().catch(() => null),
           carteiraApi.listarAtivosCarteira().catch(() => []),
-          carteiraApi.obterDashboardPatrimonio().catch(() => null),
-          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-          carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+          dC ? Promise.resolve(dC) : carteiraApi.obterDashboardPatrimonio().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
+          hC ? Promise.resolve(hC) : historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })).then(r => { cache.set('historico_mensal_24', r); return r; }),
+          bC ? Promise.resolve(bC) : carteiraApi.obterBenchmarkCarteira(24).catch(() => null).then(r => { if (r) cache.set('benchmark_24m', r); return r; }),
         ]);
       const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setResumo(dadosCarteira);
