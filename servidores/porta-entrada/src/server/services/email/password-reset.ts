@@ -1,4 +1,5 @@
 import type { Env } from "../../types/gateway";
+import { gerarPinSeisDígitos } from "./pin-generator";
 
 type PasswordResetPayload = {
   email: string;
@@ -6,74 +7,46 @@ type PasswordResetPayload = {
   expiraEm: string;
 };
 
-function buildResetUrl(env: Env, payload: PasswordResetPayload): string {
-  const base = (env.WEB_BASE_URL?.trim() || "http://localhost:3000").replace(/\/+$/, "");
-  const url = new URL("/", base);
-  url.searchParams.set("abrir", "login");
-  url.searchParams.set("step", "forgotPassword");
-  url.searchParams.set("email", payload.email);
-  url.searchParams.set("token", payload.token);
-  return url.toString();
-}
-
-async function enviarViaResend(env: Env, payload: PasswordResetPayload): Promise<void> {
-  const apiKey = env.RESEND_API_KEY?.trim();
-  if (!apiKey) return;
-
-  const from = env.EMAIL_FROM?.trim();
-  if (!from) {
-    throw new Error("EMAIL_FROM_NAO_CONFIGURADO");
-  }
-
-  const resetUrl = buildResetUrl(env, payload);
-  const expiraEmIso = payload.expiraEm;
-
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: payload.email,
-      subject: "Esquilo Invest — Recuperacao de senha",
-      html: [
-        `<p>Recebemos uma solicitacao para redefinir sua senha no Esquilo Invest.</p>`,
-        `<p><a href="${resetUrl}">Clique aqui para redefinir sua senha</a></p>`,
-        `<p>Ou use este codigo no app: <b>${payload.token}</b></p>`,
-        `<p>Expira em: ${expiraEmIso}</p>`,
-        `<p>Se voce nao solicitou, ignore este e-mail.</p>`,
-      ].join(""),
-    }),
-  });
-}
-
-async function enviarViaWebhook(env: Env, payload: PasswordResetPayload): Promise<void> {
-  const webhook = env.PASSWORD_RESET_WEBHOOK_URL?.trim();
-  if (!webhook) return;
-  await fetch(webhook, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ type: "password_reset", ...payload }),
-  });
-}
-
 export async function notificarRecuperacaoSenha(env: Env, payload: PasswordResetPayload): Promise<void> {
-  if (env.RESEND_API_KEY?.trim()) {
-    await enviarViaResend(env, payload);
-    return;
-  }
-  if (env.PASSWORD_RESET_WEBHOOK_URL?.trim()) {
-    await enviarViaWebhook(env, payload);
-    return;
+  console.log(`[notificacaoSenha] Iniciando para ${payload.email}`);
+
+  // Gerar PIN de 6 dígitos do token
+  const pin = gerarPinSeisDígitos(payload.token);
+  console.log(`[notificacaoSenha] PIN: ${pin}`);
+
+  // Google Apps Script — enviar o formato antigo que ele já conhece
+  // Agora o "token" é o PIN de 6 dígitos em vez do token completo
+  const webhookUrl = env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL?.trim();
+  if (webhookUrl) {
+    try {
+      console.log(`[GoogleAppsScript] Enviando para ${webhookUrl}`);
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: payload.email,
+          token: pin,  // PIN de 6 dígitos (não o token completo)
+          resetUrl: `${(env.WEB_BASE_URL || "http://localhost:3000").replace(/\/+$/, "")}/?abrir=login&step=forgotPassword&email=${encodeURIComponent(payload.email)}`,
+          expiraEm: payload.expiraEm,
+        }),
+      });
+
+      console.log(`[GoogleAppsScript] Status: ${response.status}`);
+      const text = await response.text();
+      console.log(`[GoogleAppsScript] Resposta: ${text}`);
+
+      if (!response.ok) {
+        throw new Error(`GoogleAppsScript error: ${response.status} - ${text}`);
+      }
+
+      console.log(`[GoogleAppsScript] ✓ Enviado com sucesso para ${payload.email}`);
+      return;
+    } catch (erro) {
+      const msg = erro instanceof Error ? erro.message : String(erro);
+      console.error(`[GoogleAppsScript] ✗ Erro: ${msg}`);
+      throw erro;
+    }
   }
 
-  const resetUrl = buildResetUrl(env, payload);
-  console.log("----------------------------------------------------------");
-  console.log(`[DEV] Recuperacao de senha solicitada para: ${payload.email}`);
-  console.log(`[DEV] Link: ${resetUrl}`);
-  console.log(`[DEV] Token: ${payload.token}`);
-  console.log(`[DEV] Expira em: ${payload.expiraEm}`);
-  console.log("----------------------------------------------------------");
+  console.log("[notificacaoSenha] Webhook não configurado!");
 }

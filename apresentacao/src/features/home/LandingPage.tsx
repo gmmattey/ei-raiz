@@ -62,6 +62,7 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [recoveryInfo, setRecoveryInfo] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotPasswordStage, setForgotPasswordStage] = useState<'email' | 'reset'>('email');
@@ -69,7 +70,8 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
   const mapApiAuthError = (error) => {
     if (!(error instanceof ApiError)) return 'Não foi possível concluir a ação agora.';
     if (error.status === 401) return 'Credenciais inválidas. Confira e tente novamente.';
-    if (error.code === 'TOKEN_INVALIDO' || error.code === 'TOKEN_EXPIRADO') return 'Token inválido ou expirado.';
+    if (error.code === 'TOKEN_INVALIDO') return 'Código incorreto. Verifique o código copiado do email.';
+    if (error.code === 'TOKEN_EXPIRADO') return 'Código expirado. Solicite uma nova recuperação.';
     return 'Não foi possível concluir a ação agora.';
   };
 
@@ -79,17 +81,20 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
       setPasswordInput('');
       setEmailInput(initialEmail || '');
       setCpfInput('');
-      setTokenInput(initialToken || '');
+      setTokenInput('');
       setNewPasswordInput('');
       setRecoveryInfo('');
+      setSuccessMessage('');
       setAuthError(alertaInicial);
-      setForgotPasswordStage(initialStep === 'forgotPassword' && initialToken ? 'reset' : 'email');
+      // Se tem email vindo da URL, vai direto para reset (PIN + nova senha)
+      // Senão, começa no estágio 'email' para solicitar recuperação
+      setForgotPasswordStage(initialEmail ? 'reset' : 'email');
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
     return () => { document.body.style.overflow = 'auto'; };
-  }, [alertaInicial, initialEmail, initialStep, initialToken, isOpen]);
+  }, [alertaInicial, initialEmail, initialStep, isOpen]);
 
   const handleLoginSubmit = async () => {
     const email = emailInput.trim().toLowerCase();
@@ -157,23 +162,34 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
   };
 
   const handleRedefinirSenha = async () => {
-    if (!tokenInput.trim()) {
-      setAuthError('Informe o token/código de recuperação.');
+    const pinLimpo = tokenInput.trim().replace(/\D/g, '');
+    if (!pinLimpo) {
+      setAuthError('Informe o PIN enviado no email.');
+      return;
+    }
+    if (pinLimpo.length !== 6) {
+      setAuthError('PIN deve ter exatamente 6 dígitos.');
       return;
     }
     if (!senhaForteRegex.test(newPasswordInput)) {
-      setAuthError('Nova senha fora do padrão de segurança.');
+      setAuthError('Senha deve ter 8+ caracteres com maiúscula, minúscula, número e símbolo.');
       return;
     }
     setIsSubmitting(true);
     setAuthError('');
+    setSuccessMessage('');
     try {
-      await authApi.redefinirSenha(tokenInput.trim(), newPasswordInput);
-      setRecoveryInfo('Senha redefinida com sucesso. Faça login agora com a nova senha.');
-      setLoginStep('default');
-      setPasswordInput('');
-      setTokenInput('');
-      setNewPasswordInput('');
+      await authApi.redefinirSenha(pinLimpo, newPasswordInput);
+      setSuccessMessage('✓ Senha redefinida com sucesso!');
+      // Aguarda um momento para o usuário ver a mensagem
+      setTimeout(() => {
+        setLoginStep('default');
+        setPasswordInput('');
+        setTokenInput('');
+        setNewPasswordInput('');
+        setAuthError('');
+        setSuccessMessage('');
+      }, 2000);
     } catch (error) {
       setAuthError(mapApiAuthError(error));
     } finally {
@@ -321,43 +337,70 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
             <div className="space-y-6">
               {forgotPasswordStage === 'email' && (
                 <>
-                  <p className="font-['Inter'] text-sm text-[#0B1218]/70">Informe seu e-mail para envio de recuperação.</p>
+                  <p className="font-['Inter'] text-sm text-[#0B1218]/70 mb-6">
+                    Informe seu e-mail. Vamos enviar um código de recuperação para você redefinir sua senha.
+                  </p>
                   <div>
                     <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">E-mail</label>
-                    <input 
+                    <input
                       type="email"
                       placeholder="seu@email.com"
                       value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
+                      onChange={(e) => {
+                        setEmailInput(e.target.value);
+                        if (authError) setAuthError('');
+                      }}
                       className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                     />
                   </div>
-                  <button type="button" onClick={handleSolicitarRecuperacaoPorEmail} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
-                    {isSubmitting ? 'Enviando...' : 'Enviar recuperação'}
+                  <button
+                    type="button"
+                    onClick={handleSolicitarRecuperacaoPorEmail}
+                    className="w-full mt-6 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
+                    disabled={isSubmitting || !emailInput.includes('@')}
+                  >
+                    {isSubmitting ? 'Enviando...' : 'Enviar codigo de recuperacao'}
                   </button>
                 </>
               )}
               {forgotPasswordStage === 'reset' && (
                 <>
-                  <p className="font-['Inter'] text-sm text-[#0B1218]/70">Token enviado. Informe o código e defina sua nova senha.</p>
+                  <div className="bg-[#FFF5F0] border border-[#F56A2A]/20 rounded-lg p-4 mb-6">
+                    <p className="font-['Inter'] text-sm text-[#0B1218] margin: 0;">
+                      <strong>Abra o email</strong> que você recebeu. Você vai encontrar um código de recuperação em uma caixa destacada.
+                    </p>
+                  </div>
+
                   <div>
-                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Token/Código</label>
+                    <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">
+                      Digite o PIN do email
+                    </label>
                     <input
                       type="text"
-                      placeholder="Cole o token recebido"
+                      placeholder="000000"
                       value={tokenInput}
-                      onChange={(e) => setTokenInput(e.target.value)}
-                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
+                      onChange={(e) => {
+                        setTokenInput(e.target.value);
+                        if (authError) setAuthError('');
+                      }}
+                      inputMode="numeric"
+                      maxLength={6}
+                      className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 text-[#0B1218] font-mono text-center text-2xl tracking-widest focus:outline-none focus:border-[#F56A2A] transition-colors"
                     />
+                    <p className="mt-2 text-xs text-[#0B1218]/60">6 dígitos numéricos da caixa destacada no email.</p>
                   </div>
-                  <div>
+
+                  <div className="mt-6">
                     <label className="block font-['Inter'] text-sm font-semibold text-[#0B1218] mb-2">Nova senha</label>
-                    <div className="relative">
+                    <div className="relative mb-2">
                       <input
                         type={showNewPassword ? 'text' : 'password'}
-                        placeholder="Nova senha forte"
+                        placeholder="Digite sua nova senha"
                         value={newPasswordInput}
-                        onChange={(e) => setNewPasswordInput(e.target.value)}
+                        onChange={(e) => {
+                          setNewPasswordInput(e.target.value);
+                          if (authError) setAuthError('');
+                        }}
                         className="w-full bg-[#FAFAFA] border border-[#EFE7DC] rounded-xl px-4 py-3 pr-12 text-[#0B1218] focus:outline-none focus:border-[#F56A2A] transition-colors"
                       />
                       <button
@@ -368,19 +411,30 @@ const LoginModal = ({ isOpen, onClose, alertaInicial = '', initialStep = 'defaul
                         {showNewPassword ? <Eye size={18} /> : <Icon name="eye" size={18} />}
                       </button>
                     </div>
-                    <p className="mt-2 text-xs text-[#0B1218]/60">8+ caracteres com maiúscula, minúscula, número e especial.</p>
+                    <p className="text-xs text-[#0B1218]/60">
+                      Requisitos: 8+ caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 símbolo
+                    </p>
                   </div>
-                  <button type="button" onClick={handleRedefinirSenha} className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50" disabled={isSubmitting}>
-                    {isSubmitting ? 'Redefinindo...' : 'Redefinir senha'}
+
+                  <button
+                    type="button"
+                    onClick={handleRedefinirSenha}
+                    className="w-full mt-6 bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-4 hover:bg-[#d95a20] transition-colors disabled:opacity-50"
+                    disabled={isSubmitting || !tokenInput.trim() || !newPasswordInput}
+                  >
+                    {isSubmitting ? 'Redefinindo senha...' : 'Redefinir senha'}
                   </button>
                 </>
               )}
-              {authError && <p className="text-xs text-[#E85C5C] font-medium">{authError}</p>}
-              {recoveryInfo && <p className="text-xs text-[#6FCF97] font-medium">{recoveryInfo}</p>}
+              {authError && <p className="mt-4 text-xs text-[#E85C5C] font-medium bg-[#FFE8E8] rounded-lg p-3">{authError}</p>}
+              {recoveryInfo && <p className="mt-4 text-xs text-[#6FCF97] font-medium bg-[#E8F5F0] rounded-lg p-3">{recoveryInfo}</p>}
+              {successMessage && <p className="mt-4 text-sm text-[#6FCF97] font-semibold bg-[#E8F5F0] rounded-lg p-3">{successMessage}</p>}
 
-              <button onClick={() => setLoginStep('default')} className="w-full text-center text-sm font-semibold text-[#0B1218]/60 hover:text-[#0B1218] mt-4">
-                Lembrei minha senha, voltar
-              </button>
+              {!successMessage && (
+                <button onClick={() => setLoginStep('default')} className="w-full text-center text-sm font-semibold text-[#0B1218]/60 hover:text-[#0B1218] mt-6">
+                  Lembrei minha senha, voltar
+                </button>
+              )}
             </div>
           )}
         </div>

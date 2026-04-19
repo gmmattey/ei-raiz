@@ -219,6 +219,7 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
     if (!usuario) return;
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const tokenHash = await gerarHashToken(token);
+    const pin = gerarPinSeisDígitos(token);
     const expiraEm = new Date(Date.now() + 1000 * 60 * 30).toISOString();
     await this.deps.repositorio.criarTokenRecuperacao({
       id: crypto.randomUUID(),
@@ -226,6 +227,7 @@ export class ServicoAutenticacaoPadrao implements ServicoAutenticacao {
       tokenHash,
       destinoEmail: usuario.email,
       expiraEm,
+      pin,
     });
     if (this.notificarRecuperacaoSenha) {
       try {
@@ -261,6 +263,20 @@ async function gerarHashToken(token: string): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function gerarPinSeisDígitos(token: string): string {
+  let pin = '';
+  const primeiros6 = (token || '').substring(0, 6);
+  for (let i = 0; i < 6; i++) {
+    const char = primeiros6[i] || '0';
+    if (/\d/.test(char)) {
+      pin += char;
+    } else {
+      pin += (char.charCodeAt(0) % 10);
+    }
+  }
+  return pin;
 }
 
 function mascararEmail(email: string): string {

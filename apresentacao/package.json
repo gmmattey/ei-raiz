@@ -10,6 +10,9 @@
     "deploy": "wrangler pages deploy dist --project-name ei-raiz-web --commit-dirty=true"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "@ei/contratos": "*",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",

@@ -21,6 +21,7 @@ export type CriarTokenRecuperacaoInput = {
   tokenHash: string;
   destinoEmail: string;
   expiraEm: string;
+  pin: string;
 };
 
 export type TokenRecuperacaoPersistido = {
@@ -29,6 +30,7 @@ export type TokenRecuperacaoPersistido = {
   tokenHash: string;
   destinoEmail: string;
   expiraEm: string;
+  pin: string;
   usadoEm: string | null;
 };
 
@@ -39,6 +41,7 @@ export interface RepositorioAutenticacao {
   criarUsuario(input: CriarUsuarioInput): Promise<UsuarioPersistido>;
   criarTokenRecuperacao(input: CriarTokenRecuperacaoInput): Promise<void>;
   buscarTokenRecuperacao(tokenHash: string): Promise<TokenRecuperacaoPersistido | null>;
+  buscarTokenRecuperacaoPorPin(pin: string): Promise<TokenRecuperacaoPersistido | null>;
   marcarTokenRecuperacaoComoUsado(id: string): Promise<void>;
   atualizarSenha(usuarioId: string, senhaHash: string): Promise<void>;
   atualizarCadastroInterrompido(input: { usuarioId: string; nome: string; email: string; senhaHash: string }): Promise<void>;
@@ -135,16 +138,16 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
   async criarTokenRecuperacao(input: CriarTokenRecuperacaoInput): Promise<void> {
     await this.db
       .prepare(
-        "INSERT INTO recuperacoes_acesso (id, usuario_id, token_hash, destino_email, expira_em) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO recuperacoes_acesso (id, usuario_id, token_hash, destino_email, expira_em, pin) VALUES (?, ?, ?, ?, ?, ?)",
       )
-      .bind(input.id, input.usuarioId, input.tokenHash, input.destinoEmail, input.expiraEm)
+      .bind(input.id, input.usuarioId, input.tokenHash, input.destinoEmail, input.expiraEm, input.pin)
       .run();
   }
 
   async buscarTokenRecuperacao(tokenHash: string): Promise<TokenRecuperacaoPersistido | null> {
     const row = await this.db
       .prepare(
-        "SELECT id, usuario_id, token_hash, destino_email, expira_em, usado_em FROM recuperacoes_acesso WHERE token_hash = ? LIMIT 1",
+        "SELECT id, usuario_id, token_hash, destino_email, expira_em, pin, usado_em FROM recuperacoes_acesso WHERE token_hash = ? LIMIT 1",
       )
       .bind(tokenHash)
       .first<{
@@ -153,6 +156,7 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
         token_hash: string;
         destino_email: string;
         expira_em: string;
+        pin: string;
         usado_em: string | null;
       }>();
     if (!row) return null;
@@ -162,6 +166,34 @@ export class RepositorioAutenticacaoD1 implements RepositorioAutenticacao {
       tokenHash: row.token_hash,
       destinoEmail: row.destino_email,
       expiraEm: row.expira_em,
+      pin: row.pin,
+      usadoEm: row.usado_em,
+    };
+  }
+
+  async buscarTokenRecuperacaoPorPin(pin: string): Promise<TokenRecuperacaoPersistido | null> {
+    const row = await this.db
+      .prepare(
+        "SELECT id, usuario_id, token_hash, destino_email, expira_em, pin, usado_em FROM recuperacoes_acesso WHERE pin = ? LIMIT 1",
+      )
+      .bind(pin)
+      .first<{
+        id: string;
+        usuario_id: string;
+        token_hash: string;
+        destino_email: string;
+        expira_em: string;
+        pin: string;
+        usado_em: string | null;
+      }>();
+    if (!row) return null;
+    return {
+      id: row.id,
+      usuarioId: row.usuario_id,
+      tokenHash: row.token_hash,
+      destinoEmail: row.destino_email,
+      expiraEm: row.expira_em,
+      pin: row.pin,
       usadoEm: row.usado_em,
     };
   }
