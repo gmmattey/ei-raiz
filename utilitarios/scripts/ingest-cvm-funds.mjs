@@ -38,6 +38,8 @@ import { createWriteStream, createReadStream, existsSync, mkdirSync, unlinkSync 
 import { pipeline } from "node:stream/promises";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
+import { execFileSync } from "node:child_process";
+import { dirname } from "node:path";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -184,6 +186,25 @@ async function baixarArquivo(url, nomeLocal) {
   return destino;
 }
 
+/**
+ * Baixa o .zip da CVM e extrai o CSV esperado. A CVM distribui os informes
+ * diários em ZIP desde 2026 — cada arquivo contém um único CSV com o mesmo
+ * nome-base. Requer `unzip` no PATH (disponível por padrão em Linux/Mac e em
+ * Git Bash no Windows).
+ */
+async function baixarEExtrairCsv(urlZip, csvEsperado) {
+  if (!existsSync(TMP_DIR)) mkdirSync(TMP_DIR, { recursive: true });
+  const nomeZip = csvEsperado.replace(/\.csv$/, ".zip");
+  const zipLocal = await baixarArquivo(urlZip, nomeZip);
+  execFileSync("unzip", ["-o", zipLocal, "-d", TMP_DIR], { stdio: "pipe" });
+  const csvLocal = `${TMP_DIR}/${csvEsperado}`;
+  if (!existsSync(csvLocal)) {
+    throw new Error(`csv_nao_encontrado_no_zip: ${csvEsperado}`);
+  }
+  try { unlinkSync(zipLocal); } catch { /* ok */ }
+  return csvLocal;
+}
+
 async function* lerCsvLatin1(caminho, separador = ";") {
   const rl = createInterface({
     input: createReadStream(caminho, { encoding: "latin1" }),
@@ -210,8 +231,8 @@ async function* lerCsvLatin1(caminho, separador = ";") {
 
 async function ingerirMes(anoMes) {
   const sufixo = anoMesSemTraco(anoMes);
-  const url = `https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_${sufixo}.csv`;
-  const nomeLocal = `inf_diario_fi_${sufixo}.csv`;
+  const url = `https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_${sufixo}.zip`;
+  const csvEsperado = `inf_diario_fi_${sufixo}.csv`;
 
   console.log(`\n▶ Ingestão CVM ${anoMes} (origem=${origemExecucao})`);
 
@@ -220,7 +241,7 @@ async function ingerirMes(anoMes) {
 
   let caminhoLocal;
   try {
-    caminhoLocal = await baixarArquivo(url, nomeLocal);
+    caminhoLocal = await baixarEExtrairCsv(url, csvEsperado);
   } catch (err) {
     console.error(`  Falha no download: ${err.message}`);
     await atualizarRun(runId, {

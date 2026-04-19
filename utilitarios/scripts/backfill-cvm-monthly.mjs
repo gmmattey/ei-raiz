@@ -35,6 +35,7 @@ import { createWriteStream, createReadStream, existsSync, mkdirSync, unlinkSync 
 import { pipeline } from "node:stream/promises";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
+import { execFileSync } from "node:child_process";
 
 import { normalizarCnpj, normalizarDataRef, parseLinhaCvm } from "./ingest-cvm-funds.mjs";
 
@@ -97,6 +98,23 @@ async function baixarArquivo(url, nomeLocal) {
   return destino;
 }
 
+/**
+ * Baixa o .zip da CVM e extrai o CSV esperado. Vide nota em
+ * ingest-cvm-funds.mjs sobre a mudança de formato de 2026.
+ */
+async function baixarEExtrairCsv(urlZip, csvEsperado) {
+  if (!existsSync(TMP_DIR)) mkdirSync(TMP_DIR, { recursive: true });
+  const nomeZip = csvEsperado.replace(/\.csv$/, ".zip");
+  const zipLocal = await baixarArquivo(urlZip, nomeZip);
+  execFileSync("unzip", ["-o", zipLocal, "-d", TMP_DIR], { stdio: "pipe" });
+  const csvLocal = `${TMP_DIR}/${csvEsperado}`;
+  if (!existsSync(csvLocal)) {
+    throw new Error(`csv_nao_encontrado_no_zip: ${csvEsperado}`);
+  }
+  try { unlinkSync(zipLocal); } catch { /* ok */ }
+  return csvLocal;
+}
+
 async function* lerCsvLatin1(caminho) {
   const rl = createInterface({
     input: createReadStream(caminho, { encoding: "latin1" }),
@@ -123,12 +141,12 @@ async function* lerCsvLatin1(caminho) {
  */
 async function processarMes(anoMes, cnpjsAlvo) {
   const sufixo = anoMesSemTraco(anoMes);
-  const url = `https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_${sufixo}.csv`;
-  const nomeLocal = `backfill_${sufixo}.csv`;
+  const url = `https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_${sufixo}.zip`;
+  const csvEsperado = `inf_diario_fi_${sufixo}.csv`;
 
   let caminho;
   try {
-    caminho = await baixarArquivo(url, nomeLocal);
+    caminho = await baixarEExtrairCsv(url, csvEsperado);
   } catch (err) {
     return { ok: false, motivo: `download: ${err.message}`, lidos: 0, fechamentos: [] };
   }
