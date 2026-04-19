@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { RefreshCw, ArrowUpRight, ArrowDownRight, Search, Pencil, Filter, Download } from "lucide-react";
+import { RefreshCw, ArrowUpRight, ArrowDownRight, Search, Pencil, Filter, Download, AlertTriangle, Info } from "lucide-react";
 import { ApiError, carteiraApi, marketApi } from "../../cliente-api";
 import { cache } from "../../utils/cache";
 import PageHeader from "../../components/design-system/PageHeader";
@@ -290,10 +290,26 @@ export default function AssetCategoryView({ manualCategoriaId = undefined }) {
   );
 }
 
+function StatusPrecoMedioBadge({ status }) {
+  if (!status || status === "confiavel") return null;
+  const isAjustado = status === "ajustado_heuristica";
+  const title = isAjustado
+    ? "Preço médio ajustado automaticamente (heurística de reconciliação)"
+    : "Preço médio inconsistente — revise na tela do ativo";
+  const color = isAjustado ? "text-[#F2C94C]" : "text-[#E85C5C]";
+  const Icon = isAjustado ? Info : AlertTriangle;
+  return (
+    <span title={title} className={`inline-flex items-center ml-1 align-middle ${color}`}>
+      <Icon size={12} />
+    </span>
+  );
+}
+
 function AssetRow({ asset, categoria, ocultarValores, navigate }) {
   const valorAtual = asset.valorAtual ?? 0;
   const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
-  const rentabilidade = asset.retorno12m ?? 0; 
+  const statusPrecoMedio = asset.statusPrecoMedio ?? asset.status_preco_medio ?? null;
+  const rentabilidade = asset.retornoDesdeAquisicao ?? asset.retorno_desde_aquisicao ?? asset.retorno12m ?? 0;
   const ganho = asset.ganhoPerda ?? (valorAtual - (asset.quantidade ?? 0) * precoMedio);
   const valorAplicado = (asset.quantidade ?? 0) * precoMedio;
 
@@ -314,7 +330,10 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
           </div>
         </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{asset.quantidade?.toFixed(0)}</td>
-        <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : moeda(precoMedio)}</td>
+        <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">
+          {ocultarValores ? "••••" : moeda(precoMedio)}
+          <StatusPrecoMedioBadge status={statusPrecoMedio} />
+        </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
         <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">{ocultarValores ? "••••" : moeda(valorAtual)}</td>
         <td className={`py-5 px-6 text-sm font-bold ${getRentColor(rentabilidade)}`}>

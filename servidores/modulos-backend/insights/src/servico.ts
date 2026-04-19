@@ -369,12 +369,19 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (objetivo.includes("renda") && rf < 20) {
       add("objetivoRendaSemBase", "Objetivo de renda com base fraca em ativos geradores de renda.", "adequacaoMomentoVida");
     }
+    const fonteAporte = metricas.fonteMesesComAporte ?? "indireto";
     if (objetivo.includes("aposentadoria") && metricas.mesesComAporteUltimos6m >= 3 && metricas.mesesComAporteUltimos6m < 4) {
-      add("objetivoAposentadoriaSemConsistencia", "Objetivo de longo prazo sem consistência de aportes recentes.", "comportamentoFinanceiro");
+      const label = fonteAporte === "real"
+        ? "Objetivo de longo prazo com aportes recentes inconsistentes."
+        : "Objetivo de longo prazo com evolução patrimonial recente instável.";
+      add("objetivoAposentadoriaSemConsistencia", label, "comportamentoFinanceiro");
     }
 
     if (metricas.mesesComAporteUltimos6m < 3) {
-      add("aportesInconsistentes", "Baixa consistência de aportes nos últimos 6 meses.", "comportamentoFinanceiro");
+      const label = fonteAporte === "real"
+        ? "Poucos aportes registrados nos últimos 6 meses."
+        : "Poucos meses com crescimento patrimonial nos últimos 6 meses (sinal indireto de ritmo financeiro).";
+      add("aportesInconsistentes", label, "comportamentoFinanceiro");
     }
     if (metricas.evolucaoPatrimonio12m < 0) {
       add("evolucaoNegativa", "Patrimônio em evolução negativa no horizonte de 12 meses.", "comportamentoFinanceiro");
@@ -463,7 +470,12 @@ export class ServicoInsightsPadrao implements ServicoInsights {
     if (metricas.quantidadeCategorias >= 3) positivos.push({ label: "Boa diversificação entre classes de ativos.", impacto: 3 });
     if (metricas.maiorParticipacao <= 25 && metricas.top3Participacao <= 60) positivos.push({ label: "Concentração controlada no topo da carteira.", impacto: 3 });
     if (metricas.percentualInternacional > 5) positivos.push({ label: "Exposição internacional presente.", impacto: 2 });
-    if (metricas.mesesComAporteUltimos6m >= 5) positivos.push({ label: "Consistência recente de aportes.", impacto: 4 });
+    if (metricas.mesesComAporteUltimos6m >= 5) {
+      const label = metricas.fonteMesesComAporte === "real"
+        ? "Disciplina de aportes consistente nos últimos meses."
+        : "Evolução patrimonial consistente nos últimos meses.";
+      positivos.push({ label, impacto: 3 });
+    }
     if (metricas.evolucaoPatrimonio12m > 0) positivos.push({ label: "Evolução patrimonial positiva em 12 meses.", impacto: 4 });
     if ((perfil?.objetivo ?? "").toLowerCase().includes("crescimento") && metricas.percentualRendaVariavel >= 30) {
       positivos.push({ label: "Alocação compatível com objetivo de crescimento.", impacto: 2 });
@@ -536,8 +548,10 @@ export class ServicoInsightsPadrao implements ServicoInsights {
       case "evolucaoNegativa":
         return {
           titulo: "Ritmo financeiro inconsistente",
-          descricao: "A frequência de aportes e a evolução patrimonial estão abaixo do esperado.",
-          acao: "Regularizar rotina de aportes e revisar estratégia de execução.",
+          // Detectado via variação do patrimônio mês a mês — sinal indireto.
+          // Confirme se há aportes regulares antes de agir.
+          descricao: "A evolução patrimonial observada está abaixo do esperado. Pode indicar aportes irregulares ou pressão de mercado.",
+          acao: "Revisar rotina de aportes e estratégia de execução.",
         };
       case "liquidezBaixa":
       case "dinheiroParadoAlto":
@@ -665,7 +679,7 @@ export class ServicoInsightsPadrao implements ServicoInsights {
 
   private descricaoRisco(codigo: string): string {
     if (codigo === "concentracao_renda_variavel") return "A carteira está concentrada e mais vulnerável a eventos isolados.";
-    if (codigo === "inconsistencia_aportes") return "A regularidade de aportes e evolução patrimonial está abaixo do esperado.";
+    if (codigo === "inconsistencia_aportes") return "A evolução patrimonial observada sugere baixa regularidade — verifique seus aportes reais.";
     if (codigo === "risco_incompativel_perfil") return "A exposição de risco não está alinhada com seu perfil e contexto atual.";
     if (codigo === "estrutura_patrimonial_fragil") return "O patrimônio está pouco líquido e com pressão de endividamento ou caixa ineficiente.";
     if (codigo === "sem_risco_estrutural") return "Não foi identificada fragilidade dominante com peso crítico.";

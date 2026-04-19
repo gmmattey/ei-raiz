@@ -157,7 +157,7 @@ export default function Insights() {
           // atualiza em background sem mostrar loading
           void (async () => {
             try {
-              const dados = await insightsApi.obterResumo();
+              const dados = await insightsApi.obterResumoComFallback();
               if (ativo) {
                 cache.set(INSIGHTS_CACHE_KEY, dados);
                 setResumo(dados);
@@ -168,7 +168,7 @@ export default function Insights() {
         }
         setLoading(true);
         setError('');
-        const dados = await insightsApi.obterResumo();
+        const dados = await insightsApi.obterResumoComFallback();
         if (ativo) cache.set(INSIGHTS_CACHE_KEY, dados);
         if (!ativo) return;
         setResumo(dados);

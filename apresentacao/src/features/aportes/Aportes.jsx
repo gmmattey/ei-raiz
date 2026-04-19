@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiError, carteiraApi, perfilApi } from "../../cliente-api";
+import { ApiError, aportesApi, carteiraApi, perfilApi } from "../../cliente-api";
 import { invalidarCacheUsuario } from "../../utils/cache";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
@@ -18,6 +18,26 @@ export default function Aportes() {
   const [resumo, setResumo] = useState(null);
   const [aporteMensal, setAporteMensal] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [aportesReais, setAportesReais] = useState([]);
+  const [resumoAportes, setResumoAportes] = useState(null);
+  const [novoValor, setNovoValor] = useState(0);
+  const [novaData, setNovaData] = useState(() => new Date().toISOString().slice(0, 10));
+  const [novaObservacao, setNovaObservacao] = useState("");
+  const [registrandoAporte, setRegistrandoAporte] = useState(false);
+  const [feedbackAporte, setFeedbackAporte] = useState("");
+
+  const recarregarAportes = React.useCallback(async () => {
+    try {
+      const [lista, resumo] = await Promise.all([
+        aportesApi.listarAportes(50),
+        aportesApi.obterResumoAportes(),
+      ]);
+      setAportesReais(lista ?? []);
+      setResumoAportes(resumo ?? null);
+    } catch {
+      // silencia — lista vazia é aceitável
+    }
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -32,6 +52,7 @@ export default function Aportes() {
         if (!ativo) return;
         setResumo(dados);
         setAporteMensal(perfil?.aporteMensal ?? 0);
+        await recarregarAportes();
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate("/", { replace: true });
@@ -45,7 +66,50 @@ export default function Aportes() {
     return () => {
       ativo = false;
     };
-  }, [navigate]);
+  }, [navigate, recarregarAportes]);
+
+  const registrarAporte = async () => {
+    const valorNumerico = Math.max(0, Number(novoValor) || 0);
+    if (valorNumerico <= 0) {
+      setFeedbackAporte("Informe um valor maior que zero.");
+      return;
+    }
+    if (!novaData) {
+      setFeedbackAporte("Informe a data do aporte.");
+      return;
+    }
+    try {
+      setRegistrandoAporte(true);
+      setFeedbackAporte("");
+      await aportesApi.criarAporte({
+        valor: valorNumerico,
+        dataAporte: novaData,
+        observacao: novaObservacao.trim() || undefined,
+        origem: "manual",
+      });
+      setNovoValor(0);
+      setNovaObservacao("");
+      setFeedbackAporte("Aporte registrado.");
+      await recarregarAportes();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        navigate("/", { replace: true });
+        return;
+      }
+      setFeedbackAporte("Falha ao registrar o aporte.");
+    } finally {
+      setRegistrandoAporte(false);
+    }
+  };
+
+  const excluirAporte = async (id) => {
+    try {
+      await aportesApi.removerAporte(id);
+      await recarregarAportes();
+    } catch {
+      // mantém lista; UI mostra estado atual na próxima recarga
+    }
+  };
 
   const salvarAporteMensal = async () => {
     try {
@@ -131,6 +195,96 @@ export default function Aportes() {
             >
               Ver diagnóstico da carteira
             </button>
+          </div>
+        )}
+
+        {!loading && !error && !semBase && (
+          <div className="mt-8 p-8 border border-[#EFE7DC] rounded-xl space-y-6">
+            <div className="flex items-baseline justify-between flex-wrap gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40">Aportes registrados</p>
+              {resumoAportes && (
+                <p className="text-xs text-[#0B1218]/60">
+                  {resumoAportes.mesesDistintos6m} mes(es) com aporte nos últimos 6 meses · {moeda(resumoAportes.valorTotal6m)} aportados
+                </p>
+              )}
+            </div>
+
+            <div className="border border-[#EFE7DC] rounded-xl p-5 bg-[#FAFAFA] space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40">Novo aporte</p>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3">
+                <div>
+                  <label className="block text-xs text-[#0B1218]/60 mb-1">Valor</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatCurrencyInput(novoValor)}
+                    onChange={(e) => setNovoValor(parseCurrencyInput(e.target.value))}
+                    className="w-full bg-white border border-[#EFE7DC] px-4 py-3 text-sm focus:outline-none focus:border-[#F56A2A] rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#0B1218]/60 mb-1">Data</label>
+                  <input
+                    type="date"
+                    value={novaData}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setNovaData(e.target.value)}
+                    className="w-full bg-white border border-[#EFE7DC] px-4 py-3 text-sm focus:outline-none focus:border-[#F56A2A] rounded-xl"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={registrarAporte}
+                    disabled={registrandoAporte}
+                    className="w-full md:w-auto px-5 py-3 bg-[#0B1218] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50 rounded-xl"
+                  >
+                    {registrandoAporte ? "Registrando..." : "Registrar"}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-[#0B1218]/60 mb-1">Observação (opcional)</label>
+                <input
+                  type="text"
+                  value={novaObservacao}
+                  onChange={(e) => setNovaObservacao(e.target.value)}
+                  placeholder="ex.: aporte mensal em tesouro"
+                  maxLength={200}
+                  className="w-full bg-white border border-[#EFE7DC] px-4 py-3 text-sm focus:outline-none focus:border-[#F56A2A] rounded-xl"
+                />
+              </div>
+              {feedbackAporte && (
+                <p className={`text-xs font-semibold ${feedbackAporte === "Aporte registrado." ? "text-[#6FCF97]" : "text-[#E85C5C]"}`}>
+                  {feedbackAporte}
+                </p>
+              )}
+            </div>
+
+            {aportesReais.length === 0 ? (
+              <p className="text-sm text-[#0B1218]/50">
+                Nenhum aporte registrado ainda. Registros reais substituem o sinal indireto de crescimento patrimonial no diagnóstico.
+              </p>
+            ) : (
+              <div className="divide-y divide-[#EFE7DC]">
+                {aportesReais.map((a) => (
+                  <div key={a.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#0B1218]">{moeda(a.valor)}</p>
+                      <p className="text-xs text-[#0B1218]/50 truncate">
+                        {new Date(a.dataAporte).toLocaleDateString("pt-BR")} · {a.origem}
+                        {a.observacao ? ` · ${a.observacao}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => excluirAporte(a.id)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-[#E85C5C] hover:text-[#c04a4a] transition-colors"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

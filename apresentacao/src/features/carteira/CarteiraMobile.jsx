@@ -125,9 +125,9 @@ export default function CarteiraMobile() {
         carteiraApi.listarAtivosCarteira().catch(() => []),
         insightsCached
           ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumo().catch(() => null),
+          : insightsApi.obterResumoComFallback().catch(() => null),
         historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-        carteiraApi.obterBenchmarkCarteira(24).catch(() => null),
+        carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
       ]);
 
       const consolidados = Array.isArray(dadosAtivos) ? consolidarAtivos(dadosAtivos) : [];

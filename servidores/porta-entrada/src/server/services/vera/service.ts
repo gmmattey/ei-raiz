@@ -1,4 +1,5 @@
 import { EsquiloEngine } from "./esquilo-engine";
+import type { VeraModelParams } from "./core";
 import { EsquiloBehavioralEngine } from "./behavioral";
 import { VeraAdapter } from "./adapter";
 import {
@@ -16,9 +17,13 @@ import {
  * Esquilo or Vera Studio should decide how to present the final message.
  */
 export class VeraService {
-  private esquilo = new EsquiloEngine();
+  private esquilo: EsquiloEngine;
   private adapter = new VeraAdapter();
   private behavioral = new EsquiloBehavioralEngine();
+
+  constructor(veraParams: Partial<VeraModelParams> = {}) {
+    this.esquilo = new EsquiloEngine(veraParams);
+  }
 
   public evaluate(profile: UserFinancialProfile, history: BehavioralHistory): VeraIntegrationOutput {
     const decision = this.esquilo.evaluate(profile, history);

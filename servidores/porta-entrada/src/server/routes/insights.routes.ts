@@ -1,6 +1,7 @@
 import { RepositorioInsightsD1, ServicoInsightsPadrao } from "@ei/servico-insights";
 import { UnifiedScoreService } from "../services/unified-score.service";
 import { PortfolioViewService } from "../services/portfolio-view.service";
+import { FinancialCoreService } from "../services/financial-core.service";
 import { construirServicoCarteira } from "../services/construir-servico-carteira";
 import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 import type { RiscoPrincipal, AcaoPrioritaria, SessaoUsuarioSaida } from "@ei/contratos";
@@ -59,6 +60,96 @@ export async function handleInsightsRoutes(
   const insightsService = new ServicoInsightsPadrao(new RepositorioInsightsD1(env.DB));
   const portfolioView = new PortfolioViewService(env);
 
+  // Contrato canônico consolidado. Substitui /score + /diagnostico + /resumo.
+  // Não recalcula carteira — consome o Financial Core como fonte da verdade.
+  if (pathname === "/api/insights/summary" && request.method === "GET") {
+    try {
+      const core = new FinancialCoreService(env);
+      const [summary, resumo] = await Promise.all([
+        core.getSummary(userId),
+        insightsService.gerarResumo(userId).catch(() => null),
+      ]);
+
+      const risco = resumo?.riscoPrincipal ?? null;
+      const acao = resumo?.acaoPrioritaria ?? null;
+
+      const mainRisk = risco
+        ? {
+            code: risco.codigo,
+            title: risco.titulo,
+            description: risco.descricao,
+            severity: risco.severidade,
+          }
+        : null;
+      const mainOpportunity = acao
+        ? {
+            code: acao.codigo,
+            title: acao.titulo,
+            description: acao.descricao,
+            impact: acao.impactoEsperado,
+          }
+        : null;
+
+      const actions: Array<{ code: string; title: string; priority: number; expectedImpact: string }> = [];
+      if (acao) {
+        actions.push({ code: acao.codigo, title: acao.titulo, priority: 1, expectedImpact: acao.impactoEsperado });
+      }
+      const penalidades = (resumo?.penalidadesAplicadas ?? []) as Array<{ tipo: string; descricao: string; peso: number }>;
+      penalidades.slice(0, 3).forEach((pen, idx) => {
+        actions.push({
+          code: pen.tipo,
+          title: pen.descricao,
+          priority: idx + 2,
+          expectedImpact: pen.peso >= 10 ? "high" : pen.peso >= 5 ? "medium" : "low",
+        });
+      });
+
+      // Confiança deriva da cobertura de mercado + completude dos insights.
+      const confidenceReasons: string[] = [];
+      if (summary.marketData.coveragePercent < 80) confidenceReasons.push("market_data_partial");
+      if (summary.marketData.status === "indisponivel") confidenceReasons.push("market_data_unavailable");
+      if (!resumo) confidenceReasons.push("insights_engine_unavailable");
+      if (summary.qualityFlags.some((f: { severity: string }) => f.severity === "critical")) confidenceReasons.push("critical_quality_flags");
+      const confidenceLevel =
+        confidenceReasons.length === 0 ? "high" : confidenceReasons.length <= 1 ? "medium" : "low";
+
+      return sucesso({
+        officialScore: summary.score
+          ? { value: summary.score.official, band: summary.score.band, version: summary.score.version }
+          : null,
+        diagnosis: {
+          mainRisk,
+          mainOpportunity,
+          summary: resumo?.diagnostico?.mensagem ?? null,
+        },
+        actions,
+        narrative: {
+          enabled: false,
+          provider: null,
+          text: null,
+        },
+        confidence: {
+          level: confidenceLevel,
+          reasons: confidenceReasons,
+        },
+        qualityFlags: summary.qualityFlags,
+      });
+    } catch (error) {
+      return {
+        ok: false,
+        status: 500,
+        codigo: "ERRO_INSIGHTS_SUMMARY",
+        mensagem: "Falha ao gerar summary de insights",
+        detalhes: { message: error instanceof Error ? error.message : String(error) },
+      };
+    }
+  }
+
+  /**
+   * @deprecated Use `/api/insights/summary` — contrato canônico consolidado.
+   * Este endpoint retorna apenas o score de insights proprietário (0-100, sem
+   * pilares do modelo oficial unificado 0-1000).
+   */
   if (pathname === "/api/insights/score" && request.method === "GET") {
     try {
       const score = await insightsService.calcularScore(userId);
@@ -74,6 +165,9 @@ export async function handleInsightsRoutes(
     }
   }
 
+  /**
+   * @deprecated Use `/api/insights/summary` — retorna `diagnosis` consolidado.
+   */
   if (pathname === "/api/insights/diagnostico" && request.method === "GET") {
     try {
       const diagnostico = await insightsService.gerarDiagnostico(userId);
@@ -89,6 +183,11 @@ export async function handleInsightsRoutes(
     }
   }
 
+  /**
+   * @deprecated Use `/api/insights/summary` — contrato canônico com
+   * `officialScore`, `diagnosis`, `actions`, `narrative`, `confidence`.
+   * Este endpoint permanece vivo por retrocompatibilidade do frontend legado.
+   */
   if (pathname === "/api/insights/resumo" && request.method === "GET") {
     try {
       // Tenta servir analytics do snapshot — sem refresh de mercado
@@ -104,12 +203,24 @@ export async function handleInsightsRoutes(
         }>;
         const atualizacaoMercado = resumirAtualizacaoMercado(ativosMercado);
         const confiancaDiagnostico = atualizacaoMercado.statusGeral === "atualizado" ? "alta" : "limitada";
+        const dadosMercadoSessao = {
+          status: atualizacaoMercado.statusGeral,
+          timestamp: atualizacaoMercado.ultimaAtualizacao,
+          ativosAtualizados: atualizacaoMercado.coberturaPorStatus.atualizado,
+        };
 
+        const unifiedService = new UnifiedScoreService(env.DB);
         let scoreUnificado = null;
+        let scoreHistorico: Array<{ score: number; band: string; createdAt: string }> = [];
         try {
-          scoreUnificado = await new UnifiedScoreService(env.DB).calculateForUser(userId);
+          scoreUnificado = await unifiedService.calculateForUser(userId);
         } catch {
           // score unificado indisponível não bloqueia resposta
+        }
+        try {
+          scoreHistorico = (await unifiedService.getHistory(userId)).slice(0, 12).reverse();
+        } catch {
+          scoreHistorico = [];
         }
 
         const diagnosticoFinal = analyticsData.diagnosticoFinal as Record<string, unknown> | null;
@@ -123,24 +234,34 @@ export async function handleInsightsRoutes(
           diagnosticoFinal: diagnosticoFinal ? { ...diagnosticoFinal, mensagem: mensagemConfianca } : null,
           scoreUnificado,
           score_unificado: scoreUnificado,
-          scoreHistorico: [320, 350, 380, 400, 420, 450, 480, 510, 540, 570, 600, 620],
+          scoreOficial: scoreUnificado,
+          score_oficial: scoreUnificado,
+          scoreHistorico,
+          score_historico: scoreHistorico,
           confiancaDiagnostico,
           confianca_diagnostico: confiancaDiagnostico,
           atualizacaoMercado,
           atualizacao_mercado: atualizacaoMercado,
-          dadosMercadoSessao: { status: "cache", timestamp: null, ativosAtualizados: 0 },
-          dados_mercado_sessao: { status: "cache", timestamp: null, ativosAtualizados: 0 },
+          dadosMercadoSessao,
+          dados_mercado_sessao: dadosMercadoSessao,
         });
       }
 
       // Fallback: calcula ao vivo (sem refresh de mercado externo)
       const resumo = await insightsService.gerarResumo(userId);
 
+      const unifiedService = new UnifiedScoreService(env.DB);
       let scoreUnificado: Awaited<ReturnType<UnifiedScoreService["calculateForUser"]>> | null = null;
       try {
-        scoreUnificado = await new UnifiedScoreService(env.DB).calculateForUser(userId);
+        scoreUnificado = await unifiedService.calculateForUser(userId);
       } catch {
         scoreUnificado = null;
+      }
+      let scoreHistoricoReal: Array<{ score: number; band: string; createdAt: string }> = [];
+      try {
+        scoreHistoricoReal = (await unifiedService.getHistory(userId)).slice(0, 12).reverse();
+      } catch {
+        scoreHistoricoReal = [];
       }
 
       const carteiraService = construirServicoCarteira(env);
@@ -151,6 +272,11 @@ export async function handleInsightsRoutes(
       }>;
       const atualizacaoMercado = resumirAtualizacaoMercado(ativosMercado);
       const confiancaDiagnostico = atualizacaoMercado.statusGeral === "atualizado" ? "alta" : "limitada";
+      const dadosMercadoSessaoLive = {
+        status: atualizacaoMercado.statusGeral,
+        timestamp: atualizacaoMercado.ultimaAtualizacao,
+        ativosAtualizados: atualizacaoMercado.coberturaPorStatus.atualizado,
+      };
       const mensagemConfianca =
         confiancaDiagnostico === "alta"
           ? resumo.diagnostico.mensagem
@@ -178,13 +304,16 @@ export async function handleInsightsRoutes(
         pesos_score_proprietario: resumo.pesosProprietarios,
         scoreUnificado,
         score_unificado: scoreUnificado,
-        scoreHistorico: [320, 350, 380, 400, 420, 450, 480, 510, 540, 570, 600, 620],
+        scoreOficial: scoreUnificado,
+        score_oficial: scoreUnificado,
+        scoreHistorico: scoreHistoricoReal,
+        score_historico: scoreHistoricoReal,
         confiancaDiagnostico,
         confianca_diagnostico: confiancaDiagnostico,
         atualizacaoMercado,
         atualizacao_mercado: atualizacaoMercado,
-        dadosMercadoSessao: { status: "cache_ou_indisponivel", timestamp: null, ativosAtualizados: 0 },
-        dados_mercado_sessao: { status: "cache_ou_indisponivel", timestamp: null, ativosAtualizados: 0 },
+        dadosMercadoSessao: dadosMercadoSessaoLive,
+        dados_mercado_sessao: dadosMercadoSessaoLive,
       });
     } catch (error) {
       return {

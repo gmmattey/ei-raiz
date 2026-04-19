@@ -8,11 +8,15 @@ import {
   AuthorizedCapability,
   AuditTrace
 } from "./types";
-import { VeraCoreEngine } from "./core";
+import { VeraCoreEngine, type VeraModelParams } from "./core";
 
 export class EsquiloEngine {
-  private vera = new VeraCoreEngine();
+  private vera: VeraCoreEngine;
   private policyVersion = "2024.Q2.v1.4";
+
+  constructor(veraParams: Partial<VeraModelParams> = {}) {
+    this.vera = new VeraCoreEngine(veraParams);
+  }
 
   public evaluate(profile: UserFinancialProfile, history: BehavioralHistory): DecisionOutput {
     const traceId = crypto.randomUUID();

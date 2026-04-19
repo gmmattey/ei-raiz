@@ -214,10 +214,14 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
     const statements: D1PreparedStatement[] = [];
 
     // --- Ativos listados (ações, fundos, previdência, renda_fixa) → tabela ativos ---
+    // Cada item confirmado também gera um registro em `aportes` (origem = "importacao")
+    // com o valor investido e a data da operação — substitui o sinal indireto de
+    // crescimento patrimonial por evidência transacional real.
     for (const item of ativosItems) {
       const quantidade = Number(item.quantidade || 1);
       const valorTotal = Number(item.valor || 0);
       const precoMedioUnitario = quantidade > 0 ? valorTotal / quantidade : valorTotal;
+      const ativoId = crypto.randomUUID();
       statements.push(
         this.db
           .prepare(
@@ -230,7 +234,7 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
             ].join(" "),
           )
           .bind(
-            crypto.randomUUID(),
+            ativoId,
             usuarioId,
             item.ticker ?? null,
             item.nome || item.ticker || "Ativo",
@@ -251,6 +255,24 @@ export class RepositorioImportacaoD1 implements RepositorioImportacao {
             item.dataOperacao || new Date().toISOString().slice(0, 10),
           ),
       );
+
+      if (valorTotal > 0) {
+        statements.push(
+          this.db
+            .prepare(
+              "INSERT INTO aportes (id, usuario_id, ativo_id, valor, data_aporte, origem, observacao, criado_em) VALUES (?, ?, ?, ?, ?, 'importacao', ?, ?)",
+            )
+            .bind(
+              crypto.randomUUID(),
+              usuarioId,
+              ativoId,
+              Number(valorTotal.toFixed(2)),
+              item.dataOperacao || new Date().toISOString().slice(0, 10),
+              item.nome || item.ticker || null,
+              new Date().toISOString(),
+            ),
+        );
+      }
     }
 
     // --- Patrimônio (imóveis, veículos, poupança) → tabela posicoes_financeiras ---

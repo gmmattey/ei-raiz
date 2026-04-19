@@ -4,6 +4,36 @@ import type { PerfilFinanceiro, ScoreCarteira } from "@ei/contratos";
 import { type MetricasCarteira, type RepositorioInsights } from "../src/repositorio";
 import { ServicoInsightsPadrao } from "../src/servico";
 
+const metricasDefault = (patrimonioTotal: number): MetricasCarteira => ({
+  patrimonioTotal,
+  patrimonioBruto: patrimonioTotal,
+  patrimonioLiquido: patrimonioTotal,
+  ativosLiquidos: patrimonioTotal,
+  ativosIliquidos: 0,
+  passivoTotal: 0,
+  quantidadeAtivos: 0,
+  quantidadeCategorias: 0,
+  maiorParticipacao: 0,
+  top3Participacao: 0,
+  percentualRendaVariavel: 0,
+  percentualRendaFixa: 0,
+  percentualDefensivo: 0,
+  percentualInternacional: 0,
+  evolucaoPatrimonio6m: 0,
+  evolucaoPatrimonio12m: 0,
+  idadeCarteiraMeses: 0,
+  mesesComAporteUltimos6m: 0,
+  percentualLiquidezImediata: 0,
+  percentualDinheiroParado: 0,
+  percentualIliquido: 0,
+  percentualDividaSobrePatrimonio: 0,
+  percentualEmImoveis: 0,
+  percentualEmVeiculos: 0,
+  percentualEmInvestimentos: 100,
+  percentualEmCaixa: 0,
+  percentualEmOutros: 0,
+});
+
 class RepositorioFake implements RepositorioInsights {
   public ultimoSnapshot: { score: number; criadoEm: string } | null = null;
   public salvos: number = 0;
@@ -63,7 +93,7 @@ test("deve calcular score único com explicabilidade e snapshot", async () => {
       maturidade: 3,
     },
     {
-      patrimonioTotal: 100000,
+      ...metricasDefault(100000),
       quantidadeAtivos: 8,
       quantidadeCategorias: 3,
       maiorParticipacao: 20,
@@ -71,7 +101,6 @@ test("deve calcular score único com explicabilidade e snapshot", async () => {
       percentualRendaVariavel: 45,
       percentualRendaFixa: 30,
       percentualDefensivo: 35,
-      percentualInternacional: 0,
       evolucaoPatrimonio6m: 12,
       evolucaoPatrimonio12m: 22,
       idadeCarteiraMeses: 12,
@@ -107,15 +136,13 @@ test("deve calcular variação contra snapshot anterior", async () => {
       maturidade: 1,
     },
     {
-      patrimonioTotal: 20000,
+      ...metricasDefault(20000),
       quantidadeAtivos: 2,
       quantidadeCategorias: 1,
       maiorParticipacao: 65,
       top3Participacao: 100,
       percentualRendaVariavel: 70,
       percentualRendaFixa: 5,
-      percentualDefensivo: 0,
-      percentualInternacional: 0,
       evolucaoPatrimonio6m: -3,
       evolucaoPatrimonio12m: 1,
       idadeCarteiraMeses: 6,
@@ -134,4 +161,59 @@ test("deve calcular variação contra snapshot anterior", async () => {
   assert.equal(typeof score.variacao, "number");
   assert.equal(score.scoreAnterior, 70);
   assert.ok(score.score < 70);
+});
+
+test("fatores refletem fonte real de aporte quando disponível", async () => {
+  const metricasReais = {
+    ...metricasDefault(40000),
+    quantidadeAtivos: 4,
+    quantidadeCategorias: 2,
+    maiorParticipacao: 30,
+    top3Participacao: 65,
+    percentualRendaVariavel: 30,
+    percentualRendaFixa: 40,
+    percentualDefensivo: 30,
+    evolucaoPatrimonio6m: 4,
+    evolucaoPatrimonio12m: 8,
+    idadeCarteiraMeses: 10,
+    mesesComAporteUltimos6m: 1,
+    fonteMesesComAporte: "real" as const,
+    percentualLiquidezImediata: 12,
+    percentualDinheiroParado: 18,
+    percentualIliquido: 20,
+    percentualDividaSobrePatrimonio: 10,
+  };
+  const repoReal = new RepositorioFake(
+    {
+      id: "perf_r",
+      usuarioId: "usr_r",
+      rendaMensal: 5000,
+      aporteMensal: 800,
+      horizonte: "longo prazo",
+      perfilRisco: "moderado",
+      objetivo: "crescimento",
+      maturidade: 2,
+    },
+    metricasReais,
+  );
+  const resumoReal = await new ServicoInsightsPadrao(repoReal).gerarResumo("usr_r");
+  const labelsReais = resumoReal.penalidadesAplicadas.map((p) => p.descricao).join(" | ");
+  assert.ok(labelsReais.includes("Poucos aportes registrados"), `esperava linguagem transacional, veio: ${labelsReais}`);
+
+  const repoIndireto = new RepositorioFake(
+    {
+      id: "perf_i",
+      usuarioId: "usr_i",
+      rendaMensal: 5000,
+      aporteMensal: 800,
+      horizonte: "longo prazo",
+      perfilRisco: "moderado",
+      objetivo: "crescimento",
+      maturidade: 2,
+    },
+    { ...metricasReais, fonteMesesComAporte: "indireto" as const },
+  );
+  const resumoIndireto = await new ServicoInsightsPadrao(repoIndireto).gerarResumo("usr_i");
+  const labelsIndiretos = resumoIndireto.penalidadesAplicadas.map((p) => p.descricao).join(" | ");
+  assert.ok(labelsIndiretos.includes("crescimento patrimonial"), `esperava linguagem indireta, veio: ${labelsIndiretos}`);
 });

@@ -54,16 +54,42 @@ const dataIsoAnterior = (dataRef: string): string | null => {
   return d.toISOString().slice(0, 10);
 };
 const pareceTickerListado = (ticker: string): boolean => /^[A-Z]{4}\d{1,2}$/.test(ticker) || /^[A-Z]{5}\d{1,2}$/.test(ticker) || /^\^[A-Z0-9.]+$/.test(ticker);
-const normalizarPrecoMedioUnitario = (precoMedio: number, quantidade: number, valorAtual: number): number => {
-  if (!Number.isFinite(precoMedio) || precoMedio <= 0) return 0;
-  if (!Number.isFinite(quantidade) || quantidade <= 0) return precoMedio;
+type StatusPrecoMedio = "confiavel" | "ajustado_heuristica" | "inconsistente";
+type PrecoMedioNormalizado = {
+  valor: number;
+  status: StatusPrecoMedio;
+  motivo?: string;
+};
+
+/**
+ * Reconciliação auditável do preço médio importado.
+ *
+ * Ao invés de devolver um número "mágico" silenciosamente, devolve também o
+ * status e o motivo da decisão, para que o cálculo consuma com cautela o valor
+ * quando a confiança é baixa. Qualquer fallback heurístico fica rastreável.
+ */
+const normalizarPrecoMedioUnitario = (
+  precoMedio: number,
+  quantidade: number,
+  valorAtual: number,
+): PrecoMedioNormalizado => {
+  if (!Number.isFinite(precoMedio) || precoMedio <= 0) {
+    return { valor: 0, status: "inconsistente", motivo: "preco_medio_ausente_ou_invalido" };
+  }
+  if (!Number.isFinite(quantidade) || quantidade <= 0) {
+    return { valor: precoMedio, status: "confiavel", motivo: "sem_quantidade_para_reconciliar" };
+  }
   const totalEstimadoComUnitario = precoMedio * quantidade;
   const valorReferencia = Number.isFinite(valorAtual) && valorAtual > 0 ? valorAtual : totalEstimadoComUnitario;
   const referenciaUnitaria = valorReferencia / quantidade;
   const erroRelativoUnitario = Math.abs(totalEstimadoComUnitario - valorReferencia) / Math.max(1, valorReferencia);
   const erroRelativoTotal = Math.abs(precoMedio - valorReferencia) / Math.max(1, valorReferencia);
-  if (erroRelativoUnitario <= 0.05) return precoMedio;
-  if (erroRelativoTotal <= 0.05) return precoMedio / quantidade;
+  if (erroRelativoUnitario <= 0.05) {
+    return { valor: precoMedio, status: "confiavel" };
+  }
+  if (erroRelativoTotal <= 0.05) {
+    return { valor: precoMedio / quantidade, status: "ajustado_heuristica", motivo: "preco_medio_recebido_como_total_investido" };
+  }
   if (Number.isFinite(referenciaUnitaria) && referenciaUnitaria > 0) {
     const candidatos = [precoMedio, precoMedio / 10, precoMedio / 100, precoMedio / 1000, precoMedio / 10000];
     let melhor = precoMedio;
@@ -76,9 +102,17 @@ const normalizarPrecoMedioUnitario = (precoMedio: number, quantidade: number, va
         melhor = candidato;
       }
     }
-    if (menorErro <= 0.35) return melhor;
+    if (menorErro <= 0.35) {
+      return {
+        valor: melhor,
+        status: melhor === precoMedio ? "inconsistente" : "ajustado_heuristica",
+        motivo: melhor === precoMedio
+          ? "reconciliacao_falhou_mantido_valor_original"
+          : "preco_medio_ajustado_por_ordem_de_grandeza",
+      };
+    }
   }
-  return precoMedio;
+  return { valor: precoMedio, status: "inconsistente", motivo: "nao_reconciliavel_com_valor_atual" };
 };
 
 export class ServicoCarteiraPadrao implements ServicoCarteira {
@@ -120,9 +154,12 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
     let custoTotalAcumulado = 0;
     let todosComBaseCusto = true;
 
+    let houveInconsistencia = false;
     for (const ativo of ativos) {
       const meta = await this.obterAtualizacaoMercado(ativo);
-      const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
+      const normalizado = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
+      if (normalizado.status === "inconsistente") houveInconsistencia = true;
+      const precoMedioUnitario = normalizado.valor;
       const custoAquisicao = precoMedioUnitario * ativo.quantidade;
 
       // Para fundos CVM: variação da cota sobre o custo (mesma lógica de mapComAtualizacao)
@@ -149,17 +186,26 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       custoTotalAcumulado += custoAquisicao;
     }
 
-    const retornoDisponivel = ativos.length > 0 && todosComBaseCusto;
+    const retornoDisponivel = ativos.length > 0 && todosComBaseCusto && !houveInconsistencia;
     const retornoTotal = retornoDisponivel && custoTotalAcumulado > 0
-      ? ((patrimonioTotal - custoTotalAcumulado) / custoTotalAcumulado) * 100 
+      ? ((patrimonioTotal - custoTotalAcumulado) / custoTotalAcumulado) * 100
       : 0;
+    const retornoArredondado = Number(retornoTotal.toFixed(2));
+    const motivoIndisponivel = !retornoDisponivel
+      ? houveInconsistencia
+        ? "Preço médio de pelo menos um ativo é inconsistente — revise seus dados importados"
+        : "Retorno indisponível — importe seu histórico para calcular"
+      : undefined;
 
     return {
       patrimonioTotal: Number(patrimonioTotal.toFixed(2)),
-      retorno12m: Number(retornoTotal.toFixed(2)),
+      retornoDesdeAquisicao: retornoArredondado,
+      retorno_desde_aquisicao: retornoArredondado,
+      // Campo legado — mesmo valor de `retornoDesdeAquisicao`. Remover após migração do frontend.
+      retorno12m: retornoArredondado,
       retornoDisponivel,
-      motivoRetornoIndisponivel: retornoDisponivel ? undefined : "Retorno indisponível — importe seu histórico para calcular",
-      // Score agora reflete a saúde da rentabilidade real (70 base + ajuste de performance)
+      motivoRetornoIndisponivel: motivoIndisponivel,
+      // Score legado/deprecated — mantido por compat; consumidores devem usar scoreUnificado.
       score: patrimonioTotal > 0 ? Math.max(0, Math.min(100, Math.round(70 + (retornoTotal / 2)))) : 0,
       quantidadeAtivos: ativos.length,
     };
@@ -268,7 +314,9 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
   }
 
   private mapComAtualizacao(ativo: AtivoPersistido, meta: AtualizacaoMercado): AtivoResumo {
-    const precoMedioUnitario = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
+    const normalizado = normalizarPrecoMedioUnitario(ativo.precoMedio, ativo.quantidade, ativo.valorAtual);
+    const precoMedioUnitario = normalizado.valor;
+    const statusPrecoMedio = normalizado.status;
     const precoAtual = meta.precoAtual;
     const custoTotal = precoMedioUnitario * ativo.quantidade;
 
@@ -322,7 +370,12 @@ export class ServicoCarteiraPadrao implements ServicoCarteira {
       dataAquisicao: (ativo.dataAquisicao ?? ativo.dataCadastro) ?? undefined,
       valorAtual: Number(valorAtual.toFixed(2)),
       participacao: ativo.participacao ?? 0,
+      retornoDesdeAquisicao: Number(ganhoPerdaPercentual.toFixed(2)),
+      retorno_desde_aquisicao: Number(ganhoPerdaPercentual.toFixed(2)),
+      // Campo legado — mesmo valor. Ver contrato para detalhes.
       retorno12m: Number(ganhoPerdaPercentual.toFixed(2)),
+      statusPrecoMedio,
+      status_preco_medio: statusPrecoMedio,
     };
   }
 

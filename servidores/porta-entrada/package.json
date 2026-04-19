@@ -7,7 +7,8 @@
     "dev": "wrangler dev --local --port 8787",
     "build": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test testes/**/*.test.ts"
   },
   "dependencies": {
     "@ei/contratos": "*",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260401.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "wrangler": "^4.10.0"
   }

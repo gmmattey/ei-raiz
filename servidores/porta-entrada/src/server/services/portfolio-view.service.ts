@@ -176,7 +176,15 @@ export class PortfolioViewService {
       const novoValor = quantidade > 0 ? quantidade * freshPrice : freshPrice;
       const novoRetorno = precoMedio > 0 ? ((freshPrice - precoMedio) / precoMedio) * 100 : 0;
       totalAtualAtualizado += novoValor;
-      return { ...ativo, valorAtual: Number(novoValor.toFixed(4)), retorno12m: Number(novoRetorno.toFixed(4)) };
+      const retornoFormatado = Number(novoRetorno.toFixed(4));
+      return {
+        ...ativo,
+        valorAtual: Number(novoValor.toFixed(4)),
+        retornoDesdeAquisicao: retornoFormatado,
+        retorno_desde_aquisicao: retornoFormatado,
+        // legado, mantido por compat
+        retorno12m: retornoFormatado,
+      };
     });
 
     const patrimonioTotal = Number(payload.patrimonioTotal as number ?? 0);

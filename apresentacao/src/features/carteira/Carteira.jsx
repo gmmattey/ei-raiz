@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowDownRight, ArrowUpRight, Download, RefreshCw, Search, Pencil, ChevronDown, Check } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Download, RefreshCw, Search, Pencil, ChevronDown, Check, AlertTriangle, Info } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from "recharts";
 import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi, historicoApi } from "../../cliente-api";
 import { cache } from "../../utils/cache";
@@ -130,8 +130,30 @@ const calcGanhoPerda = (asset) => {
   return null;
 };
 
+const retornoDesdeAquisicao = (asset) =>
+  asset.retornoDesdeAquisicao ?? asset.retorno_desde_aquisicao ?? asset.retorno12m ?? null;
+
+const statusPrecoMedioDe = (asset) =>
+  asset?.statusPrecoMedio ?? asset?.status_preco_medio ?? null;
+
+const StatusPrecoMedioBadge = ({ status }) => {
+  if (!status || status === "confiavel") return null;
+  const isAjustado = status === "ajustado_heuristica";
+  const title = isAjustado
+    ? "Preço médio ajustado por heurística de reconciliação. Verifique na tela do ativo."
+    : "Preço médio inconsistente com quantidade × cotação. Revise na tela do ativo.";
+  const color = isAjustado ? "text-[#F2C94C]" : "text-[#E85C5C]";
+  const Icon = isAjustado ? Info : AlertTriangle;
+  return (
+    <span title={title} className={`inline-flex items-center ml-1 align-middle ${color}`}>
+      <Icon size={12} />
+    </span>
+  );
+};
+
 const calcGanhoPerdaPerc = (asset) => {
-  if (asset.retorno12m != null) return Number(asset.retorno12m);
+  const retorno = retornoDesdeAquisicao(asset);
+  if (retorno != null) return Number(retorno);
   const ganho = calcGanhoPerda(asset);
   const qtd = Number(asset.quantidade ?? 0);
   const pm = Number(asset.precoMedio ?? asset.preco_medio ?? 0);
@@ -310,7 +332,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
   const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
   const valorAtual = asset.valorAtual ?? asset.valor ?? 0;
   const quantidade = asset.quantidade ?? 0;
-  const rentabilidade = asset.retorno12m ?? 0;
+  const rentabilidade = retornoDesdeAquisicao(asset) ?? 0;
 
   const valorAplicado = quantidade * precoMedio;
   const ganhoAbsoluto = valorAtual - valorAplicado;
@@ -322,7 +344,10 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${rentabilidade.toFixed(2)}%`}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(precoMedio)}</td>
+        <td className="py-4 px-4 text-sm">
+          {ocultarValores ? "••••••••" : moeda(precoMedio)}
+          <StatusPrecoMedioBadge status={statusPrecoMedioDe(asset)} />
+        </td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(asset.precoAtual ?? precoMedio)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : quantidade.toFixed(0)}</td>
         <td className="py-4 px-4">
@@ -530,15 +555,15 @@ export default function Carteira({ embedded = false }) {
       const [resumoResp, ativosResp, insightsResp, dashboardResp, benchmarkResp, historicoResp] = await Promise.all([
         resumoCached
           ? Promise.resolve(resumoCached)
-          : carteiraApi.obterResumoCarteira().then(r => { cache.set('carteira_resumo', r); return r; }),
+          : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
         carteiraApi.listarAtivosCarteira(),
         insightsCached
           ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumo().catch(() => null).then(r => { if (r) cache.set('insights_resumo', r); return r; }),
+          : insightsApi.obterResumoComFallback().catch(() => null).then(r => { if (r) cache.set('insights_resumo', r); return r; }),
         dashboardCached
           ? Promise.resolve(dashboardCached)
-          : carteiraApi.obterDashboardPatrimonio().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
-        carteiraApi.obterBenchmarkCarteira(periodoMeses).catch(() => null),
+          : carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
+        carteiraApi.obterBenchmarkCarteiraComFallback(periodoMeses).catch(() => null),
         historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
       ]);
       setResumo(resumoResp ?? null);
@@ -596,7 +621,7 @@ export default function Carteira({ embedded = false }) {
 
     lista = [...lista].sort((a, b) => {
       if (ordenacao === "participacao_desc") return Number(b.participacao ?? 0) - Number(a.participacao ?? 0);
-      if (ordenacao === "retorno_desc") return Number(b.retorno12m ?? 0) - Number(a.retorno12m ?? 0);
+      if (ordenacao === "retorno_desc") return Number(retornoDesdeAquisicao(b) ?? 0) - Number(retornoDesdeAquisicao(a) ?? 0);
       return Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0);
     });
 
@@ -630,7 +655,7 @@ export default function Carteira({ embedded = false }) {
         nome: f.nome || f.ticker || "Fundo",
         posicao: valorLiquido,
         alocacao: Number(f.participacao ?? 0),
-        rentabilidade: Number(f.retorno12m ?? 0),
+        rentabilidade: Number(retornoDesdeAquisicao(f) ?? 0),
         valorAplicado,
         valorLiquido,
       };
@@ -822,12 +847,15 @@ export default function Carteira({ embedded = false }) {
               <p className="font-['Sora'] text-2xl font-bold leading-tight">
                 {ocultarValores ? '••••••••' : moeda(patrimonioInvest)}
               </p>
-              {resumo?.retornoDisponivel ? (
-                <p className={`text-xs font-semibold mt-1.5 ${resumo.retorno12m >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                  {ocultarValores ? '••••' : `${(resumo.retorno12m ?? 0).toFixed(2)}%`}{' '}
-                  <span className="text-[var(--text-muted)] font-normal">a.a.</span>
-                </p>
-              ) : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
+              {resumo?.retornoDisponivel ? (() => {
+                const retorno = resumo.retornoDesdeAquisicao ?? resumo.retorno_desde_aquisicao ?? resumo.retorno12m ?? 0;
+                return (
+                  <p className={`text-xs font-semibold mt-1.5 ${retorno >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                    {ocultarValores ? '••••' : `${retorno.toFixed(2)}%`}{' '}
+                    <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
+                  </p>
+                );
+              })() : <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>}
             </div>
 
             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">

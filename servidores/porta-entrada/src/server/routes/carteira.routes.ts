@@ -5,6 +5,8 @@ import { z } from "zod";
 import type { Env, ServiceResponse } from "../types/gateway";
 import { parseJsonBody, sucesso, erro } from "../types/gateway";
 import { PortfolioViewService } from "../services/portfolio-view.service";
+import { UnifiedScoreService } from "../services/unified-score.service";
+import { BenchmarkService } from "../services/benchmark.service";
 import { construirServicoCarteira } from "../services/construir-servico-carteira";
 import { orquestrarPosEscritaCarteira } from "../jobs/portfolio-orchestrator.job";
 
@@ -54,6 +56,8 @@ type AtivoComMercado = {
   valorAtual: number;
   participacao: number;
   retorno12m: number;
+  retornoDesdeAquisicao?: number;
+  statusPrecoMedio?: "confiavel" | "ajustado_heuristica" | "inconsistente";
 };
 
 const serializarAtivoMercado = (ativo: AtivoComMercado) => ({
@@ -63,6 +67,8 @@ const serializarAtivoMercado = (ativo: AtivoComMercado) => ({
   ultima_atualizacao: ativo.ultimaAtualizacao,
   data_cadastro: ativo.dataCadastro,
   data_aquisicao: ativo.dataAquisicao || ativo.dataCadastro,
+  retorno_desde_aquisicao: ativo.retornoDesdeAquisicao ?? ativo.retorno12m,
+  status_preco_medio: ativo.statusPrecoMedio,
 });
 
 const resumirAtualizacaoMercado = (ativos: AtivoComMercado[]) => {
@@ -115,26 +121,6 @@ const calcularPercentuais = (itensBase: Array<Omit<ItemPatrimonioDashboard, "per
   }));
 };
 
-async function calcularRetornoCdiDesde(dataInicioIso: string): Promise<number> {
-  const inicio = new Date(dataInicioIso);
-  if (Number.isNaN(inicio.getTime())) return 0;
-  const fim = new Date();
-  const d1 = `${String(inicio.getDate()).padStart(2, "0")}/${String(inicio.getMonth() + 1).padStart(2, "0")}/${inicio.getFullYear()}`;
-  const d2 = `${String(fim.getDate()).padStart(2, "0")}/${String(fim.getMonth() + 1).padStart(2, "0")}/${fim.getFullYear()}`;
-  const response = await fetch(
-    `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4389/dados?formato=json&dataInicial=${encodeURIComponent(d1)}&dataFinal=${encodeURIComponent(d2)}`,
-  );
-  if (!response.ok) return 0;
-  const series = (await response.json()) as Array<{ valor: string }>;
-  if (!Array.isArray(series) || series.length === 0) return 0;
-  let acumulado = 1;
-  for (const ponto of series) {
-    const taxa = Number.parseFloat(String(ponto.valor).replace(",", "."));
-    if (Number.isFinite(taxa)) acumulado *= 1 + taxa / 100;
-  }
-  return Number(((acumulado - 1) * 100).toFixed(2));
-}
-
 export async function handleCarteiraRoutes(
   pathname: string,
   request: Request,
@@ -153,11 +139,33 @@ export async function handleCarteiraRoutes(
 
   // ─── Leituras: SEM refresh de mercado (usa snapshot ou valores cached no banco) ──
 
+  /**
+   * @deprecated Use `/api/financial-core/summary` — contrato canônico camelCase
+   * com `returnSinceInception`, `officialScore`, `qualityFlags`, `benchmark`.
+   * Mantido por retrocompatibilidade do frontend legado; shape de resposta preservado.
+   */
   if (pathname === "/api/carteira/resumo" && request.method === "GET") {
     const resumoData = await portfolioView.getResumo(userId);
-    return sucesso(resumoData);
+    let scoreOficial: unknown = null;
+    try {
+      scoreOficial = await new UnifiedScoreService(env.DB).calculateForUser(userId);
+    } catch {
+      scoreOficial = null;
+    }
+    return sucesso({
+      ...(resumoData as Record<string, unknown>),
+      // Score oficial do produto (canônico). O campo `score` raiz é legado/deprecated.
+      scoreOficial,
+      score_oficial: scoreOficial,
+      scoreUnificado: scoreOficial,
+      score_unificado: scoreOficial,
+    });
   }
 
+  /**
+   * @deprecated Use `/api/financial-core/summary` — bloco `allocation.byClass`
+   * traz o breakdown por categoria com o mesmo shape canônico.
+   */
   if (pathname === "/api/carteira/dashboard" && request.method === "GET") {
     const ativos = (await carteiraService.listarAtivos(userId)) as AtivoComMercado[];
     const contexto = await perfilService.obterContextoFinanceiro(userId);
@@ -195,6 +203,10 @@ export async function handleCarteiraRoutes(
     return sucesso({ filtros, totais });
   }
 
+  /**
+   * @deprecated Use `/api/financial-core/summary` (bloco `benchmark`) e
+   * `/api/financial-core/history?range=12m` para a série completa.
+   */
   if (pathname === "/api/carteira/benchmark" && request.method === "GET") {
     const url = new URL(request.url);
     const meses = Number.parseInt(url.searchParams.get("meses") ?? "12", 10);
@@ -212,6 +224,10 @@ export async function handleCarteiraRoutes(
     return sucesso(ativos.map(serializarAtivoMercado));
   }
 
+  /**
+   * @deprecated Use `/api/financial-core/assets?class=<categoria>` —
+   * contrato canônico com `qualityFlags` por ativo.
+   */
   if (pathname.startsWith("/api/carteira/categoria/") && request.method === "GET") {
     const categoria = pathname.replace("/api/carteira/categoria/", "") as CategoriaAtivo;
     if (!categoriasPermitidas.includes(categoria)) {
@@ -281,7 +297,7 @@ export async function handleCarteiraRoutes(
     const hoje = new Date();
     const diffMeses = Math.max(1, (hoje.getFullYear() - inicio.getFullYear()) * 12 + (hoje.getMonth() - inicio.getMonth()) + 1);
     const benchmarkCarteira = await carteiraService.obterComparativoBenchmark(userId, diffMeses);
-    const cdiRetornoPeriodo = await calcularRetornoCdiDesde(baseComparacao);
+    const cdiRetornoPeriodo = await new BenchmarkService().cdiReturnSince(baseComparacao);
     const ativoRetornoPeriodo = typeof ativo.ganhoPerdaPercentual === "number" && Number.isFinite(ativo.ganhoPerdaPercentual) ? Number(ativo.ganhoPerdaPercentual.toFixed(2)) : 0;
     const benchmark = {
       ...benchmarkCarteira,

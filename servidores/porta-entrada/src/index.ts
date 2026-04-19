@@ -8,10 +8,12 @@ import { handleFinancialRoutes } from "./server/routes/financial.routes";
 import { handleAuthRoutes, buildAuthService } from "./server/routes/auth.routes";
 import { handleAppRoutes } from "./server/routes/app.routes";
 import { handleCarteiraRoutes } from "./server/routes/carteira.routes";
+import { handleFinancialCoreRoutes } from "./server/routes/financial-core.routes";
 import { handleInsightsRoutes } from "./server/routes/insights.routes";
 import { handlePerfilRoutes } from "./server/routes/perfil.routes";
 import { handleHistoricoRoutes } from "./server/routes/historico.routes";
 import { handlePosicoesRoutes } from "./server/routes/posicoes.routes";
+import { handleAportesRoutes } from "./server/routes/aportes.routes";
 import { handleDecisoesRoutes } from "./server/routes/decisoes.routes";
 import { handleImportacaoRoutes } from "./server/routes/importacao.routes";
 import { handleVeraRoutes } from "./server/routes/vera.routes";
@@ -29,6 +31,7 @@ const routePrefixes = [
   "/api/insights", "/api/historico", "/api/decisoes", "/api/vera",
   "/api/posicoes", "/api/app", "/api/admin", "/api/telemetria",
   "/api/market", "/api/funds", "/api/portfolio", "/api/fipe", "/api/score",
+  "/api/financial-core", "/api/aportes",
 ];
 
 const isPublicRoute = (pathname: string): boolean =>
@@ -85,11 +88,13 @@ async function dispatch(
     () => handleTelemetriaRoutes(pathname, request, env, sessao),
     () => handleAppRoutes(pathname, request, env, sessao),
     () => handleAdminRoutes(pathname, request, env, sessao),
+    () => handleFinancialCoreRoutes(pathname, request, env, sessao),
     () => handleCarteiraRoutes(pathname, request, env, sessao, ctx),
     () => handleInsightsRoutes(pathname, request, env, sessao, ctx),
     () => handlePerfilRoutes(pathname, request, env, sessao),
     () => handleHistoricoRoutes(pathname, request, env, sessao, ctx),
     () => handlePosicoesRoutes(pathname, request, env, sessao),
+    () => handleAportesRoutes(pathname, request, env, sessao),
     () => handleDecisoesRoutes(pathname, request, env, sessao),
     () => handleImportacaoRoutes(pathname, request, env, sessao, ctx),
     () => handleVeraRoutes(pathname, request, env, sessao),

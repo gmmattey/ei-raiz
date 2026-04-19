@@ -25,8 +25,22 @@ export type AtivoResumo = {
   data_aquisicao?: string;
   valorAtual: number;
   participacao: number;
-  /** Rendimento acumulado desde a aquisição (ganho/perda sobre preço médio). Não é retorno de 12 meses. */
+  /** Rendimento acumulado desde a aquisição (ganho/perda sobre preço médio). Nome correto do campo. */
+  retornoDesdeAquisicao?: number;
+  retorno_desde_aquisicao?: number;
+  /**
+   * @deprecated Nome legado — representa retorno desde a aquisição, não 12 meses.
+   * Use `retornoDesdeAquisicao`. Mantido temporariamente para retrocompatibilidade de consumidores.
+   */
   retorno12m: number;
+  /**
+   * Confiabilidade do preço médio exibido.
+   * - `confiavel`: dado importado bateu com valor atual
+   * - `ajustado_heuristica`: valor foi dividido/ajustado por suspeita de unidade incorreta
+   * - `inconsistente`: preço médio não pôde ser reconciliado — tratar retorno com cautela
+   */
+  statusPrecoMedio?: "confiavel" | "ajustado_heuristica" | "inconsistente";
+  status_preco_medio?: "confiavel" | "ajustado_heuristica" | "inconsistente";
 };
 
 export type ResumoCarteira = {
@@ -40,11 +54,20 @@ export type ResumoCarteira = {
     valor: number;
     percentual: number;
   }>;
-  /** Retorno acumulado desde a data de aquisição dos ativos (não é retorno de 12 meses). */
+  /** Retorno acumulado desde a data de aquisição dos ativos (nome correto). */
+  retornoDesdeAquisicao?: number;
+  retorno_desde_aquisicao?: number;
+  /**
+   * @deprecated Nome legado. Representa retorno desde a aquisição, não 12 meses.
+   * Use `retornoDesdeAquisicao`.
+   */
   retorno12m: number;
   retornoDisponivel?: boolean;
   motivoRetornoIndisponivel?: string;
-  /** @deprecated Não usar como score de saúde financeira. Use scoreUnificado da API de insights. */
+  /**
+   * @deprecated Score simplista baseado quase só em retorno. Não é score de saúde financeira.
+   * Use `scoreUnificado` da API de insights como score oficial do produto.
+   */
   score: number;
   quantidadeAtivos: number;
 };

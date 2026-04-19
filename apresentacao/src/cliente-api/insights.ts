@@ -84,3 +84,71 @@ export function obterDiagnostico(): Promise<Diagnostico> {
 export function obterResumo(): Promise<ResumoInsights> {
   return apiRequest<ResumoInsights>("/api/insights/resumo", { method: "GET" });
 }
+
+// ─── Contrato canônico consolidado (gateway v2) ──────────────────────────────
+
+export type SummaryInsights = {
+  officialScore: { value: number; band: "critical" | "fragile" | "stable" | "good" | "strong"; version: string } | null;
+  diagnosis: {
+    mainRisk: { code: string; title: string; description: string; severity: string } | null;
+    mainOpportunity: { code: string; title: string; description: string; impact: string } | null;
+    summary: string | null;
+  };
+  actions: Array<{ code: string; title: string; priority: number; expectedImpact: string }>;
+  narrative: { enabled: boolean; provider: string | null; text: string | null };
+  confidence: { level: "high" | "medium" | "low"; reasons: string[] };
+  qualityFlags: Array<{ code: string; severity: "info" | "warning" | "critical"; message: string }>;
+};
+
+export function obterSummary(): Promise<SummaryInsights> {
+  return apiRequest<SummaryInsights>("/api/insights/summary", { method: "GET" });
+}
+
+/**
+ * Busca insights pelo contrato canônico `/api/insights/summary` e mescla com o
+ * `/api/insights/resumo` (deprecado) para preencher campos que só existem no contrato
+ * antigo (pilares, scoreHistorico, patrimonioConsolidado, etc).
+ *
+ * Estratégia:
+ * - Se `/summary` responder, usa seus campos como fonte da verdade para score/diagnóstico
+ * - Campos ausentes no canônico são puxados do `/resumo` em paralelo
+ * - Se `/summary` falhar, retorna apenas `/resumo` (fallback total ao legado)
+ */
+export async function obterResumoComFallback(): Promise<ResumoInsights> {
+  const [summaryResult, resumoResult] = await Promise.allSettled([obterSummary(), obterResumo()]);
+  const resumoLegado = resumoResult.status === "fulfilled" ? resumoResult.value : null;
+
+  if (summaryResult.status !== "fulfilled") {
+    if (!resumoLegado) throw summaryResult.reason;
+    return resumoLegado;
+  }
+
+  const summary = summaryResult.value;
+  const risco = summary.diagnosis.mainRisk;
+  const oportunidade = summary.diagnosis.mainOpportunity;
+
+  const mesclado: ResumoInsights = {
+    ...(resumoLegado ?? ({} as ResumoInsights)),
+    riscoPrincipal: risco
+      ? { codigo: risco.code, titulo: risco.title, descricao: risco.description, severidade: risco.severity as never }
+      : resumoLegado?.riscoPrincipal ?? null,
+    acaoPrioritaria: oportunidade
+      ? { codigo: oportunidade.code, titulo: oportunidade.title, descricao: oportunidade.description, impactoEsperado: oportunidade.impact }
+      : resumoLegado?.acaoPrioritaria ?? null,
+    diagnostico: resumoLegado?.diagnostico ?? ({ titulo: "", resumo: summary.diagnosis.summary ?? "", descricao: summary.diagnosis.summary ?? "" } as never),
+    score: resumoLegado?.score ?? ({ score: summary.officialScore?.value ?? 0 } as never),
+    diagnosticoFinal: resumoLegado?.diagnosticoFinal ?? (summary.diagnosis.summary
+      ? { mensagem: summary.diagnosis.summary, insightPrincipal: { titulo: "", descricao: "", acao: "" } }
+      : undefined),
+    scoreUnificado: summary.officialScore
+      ? {
+          score: summary.officialScore.value,
+          band: summary.officialScore.band,
+          completenessStatus: resumoLegado?.scoreUnificado?.completenessStatus ?? "complete",
+          calculatedAt: resumoLegado?.scoreUnificado?.calculatedAt ?? new Date().toISOString(),
+        }
+      : resumoLegado?.scoreUnificado,
+  };
+
+  return mesclado;
+}

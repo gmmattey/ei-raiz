@@ -19,6 +19,9 @@ export type MetricasCarteira = {
   evolucaoPatrimonio12m: number;
   idadeCarteiraMeses: number;
   mesesComAporteUltimos6m: number;
+  // "real" quando derivado da tabela `aportes`; "indireto" quando o sinal é
+  // apenas crescimento patrimonial mês-a-mês (fallback histórico).
+  fonteMesesComAporte?: "real" | "indireto";
   percentualLiquidezImediata: number;
   percentualDinheiroParado: number;
   percentualIliquido: number;
@@ -233,11 +236,39 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
     const evolucaoPatrimonio6m = seisMeses > 0 ? ((atual - seisMeses) / seisMeses) * 100 : 0;
     const evolucaoPatrimonio12m = dozeMeses > 0 ? ((atual - dozeMeses) / dozeMeses) * 100 : 0;
     const idadeCarteiraMeses = hist.length;
-    const mesesComAporteUltimos6m = hist.slice(0, 6).filter((item, index) => {
+    // ATENÇÃO: isto NÃO mede aportes reais. Mede quantos meses consecutivos o
+    // patrimônio observado cresceu em relação ao snapshot anterior. Crescimento
+    // por valorização de mercado, recompra de cota, importação retroativa — tudo
+    // conta aqui como se fosse aporte. Trate como sinal de tendência patrimonial,
+    // não como evidência transacional de depósito. O nome da chave permanece por
+    // retrocompatibilidade interna, mas os consumidores devem ler como "meses
+    // com crescimento patrimonial observado nos últimos 6 meses".
+    // Tenta contagem real: meses distintos com registros em `aportes`
+    // nos últimos 6 meses. Se a tabela não existir ainda (ambientes antigos
+    // sem migração 028) ou se não houver nenhum aporte registrado, faz
+    // fallback para o sinal indireto de crescimento patrimonial.
+    let mesesComAporteReais: number | null = null;
+    try {
+      const aportes = await this.db
+        .prepare(
+          "SELECT DISTINCT substr(data_aporte, 1, 7) AS mes FROM aportes WHERE usuario_id = ? AND date(data_aporte) >= date('now', '-6 months')",
+        )
+        .bind(usuarioId)
+        .all<{ mes: string }>();
+      const linhas = aportes.results ?? [];
+      if (linhas.length > 0) mesesComAporteReais = linhas.length;
+    } catch {
+      mesesComAporteReais = null;
+    }
+
+    const mesesComAporteIndireto = hist.slice(0, 6).filter((item, index) => {
       const anterior = hist[index + 1];
       if (!anterior) return false;
       return (item.valor_total ?? 0) > (anterior.valor_total ?? 0);
     }).length;
+
+    const mesesComAporteUltimos6m = mesesComAporteReais ?? mesesComAporteIndireto;
+    const fonteMesesComAporte: "real" | "indireto" = mesesComAporteReais !== null ? "real" : "indireto";
 
     const posicoesRows = posicoesRaw.results ?? [];
     const valorPosicoes = posicoesRows.reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
@@ -289,6 +320,7 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
       evolucaoPatrimonio12m,
       idadeCarteiraMeses,
       mesesComAporteUltimos6m,
+      fonteMesesComAporte,
       percentualLiquidezImediata: patrimonioComPosicoes > 0 ? (valorLiquidezImediata / patrimonioComPosicoes) * 100 : 0,
       percentualDinheiroParado: patrimonioComPosicoes > 0 ? (valorDinheiroParado / patrimonioComPosicoes) * 100 : 0,
       percentualIliquido: patrimonioComPosicoes > 0 ? (valorIliquido / patrimonioComPosicoes) * 100 : 0,

@@ -1,12 +1,30 @@
-import { vera } from './vera/service';
+import { vera, VeraService } from './vera/service';
 import { StudioStore } from './vera/studio-store';
 import { TemplateRenderer } from './vera/studio-renderer';
+import type { VeraModelParams } from './vera/core';
 import type {
   UserFinancialProfile,
   BehavioralHistory,
   VeraIntegrationOutput,
   MessageTemplate,
 } from './vera/types';
+
+/**
+ * Carrega overrides do modelo Vera de `configuracoes_produto` (chave `vera.v1`).
+ * Sem registro? Usa defaults explícitos de `DEFAULT_VERA_MODEL_PARAMS`.
+ */
+export async function loadVeraModelParams(db: D1Database): Promise<Partial<VeraModelParams>> {
+  try {
+    const row = await db
+      .prepare("SELECT valor_json FROM configuracoes_produto WHERE chave = 'vera.v1' LIMIT 1")
+      .first<{ valor_json: string | null }>();
+    if (!row?.valor_json) return {};
+    const parsed = JSON.parse(row.valor_json) as { modelParams?: Partial<VeraModelParams> };
+    return parsed.modelParams ?? {};
+  } catch {
+    return {};
+  }
+}
 
 // Public contract types
 export interface SemanticContainerInput<T> {
@@ -125,12 +143,13 @@ export class VeraBridge {
   private store = new StudioStore();
   private renderer = new TemplateRenderer();
 
-  public avaliar(request: VeraAvaliacaoRequest): VeraAvaliacaoResponse {
+  public avaliar(request: VeraAvaliacaoRequest, modelParams: Partial<VeraModelParams> = {}): VeraAvaliacaoResponse {
     const profile = this.mapProfile(request.profile);
     const history = this.mapHistory(request.history);
 
-    // Call Vera engine
-    const veraOutput: VeraIntegrationOutput = vera.evaluate(profile, history);
+    // Call Vera engine — se params vieram do DB, instancia novo serviço; senão usa singleton default.
+    const engine = Object.keys(modelParams).length > 0 ? new VeraService(modelParams) : vera;
+    const veraOutput: VeraIntegrationOutput = engine.evaluate(profile, history);
 
     // Resolve template → frontend_payload
     const template = this.store.getTemplateByKey(veraOutput.template_payload.template_key);

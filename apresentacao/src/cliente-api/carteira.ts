@@ -1,8 +1,66 @@
 import type { AtivoResumo, CategoriaAtivo, ComparativoBenchmarkCarteira, DetalheCategoria, ResumoCarteira } from "@ei/contratos";
 import { apiRequest } from "./http";
+import { obterSummary as obterFinancialCoreSummary, obterHistorico as obterFinancialCoreHistorico, listarAssets as listarFinancialCoreAssets } from "./financialCore";
 
 export function obterResumoCarteira(): Promise<ResumoCarteira> {
   return apiRequest<ResumoCarteira>("/api/carteira/resumo", { method: "GET" });
+}
+
+/**
+ * Resumo da carteira via contrato canônico `/api/financial-core/summary`.
+ * Mapeia o payload novo (camelCase inglês) para o shape legado `ResumoCarteira` (PT-BR).
+ * Em caso de falha, cai para `/api/carteira/resumo` (deprecado mas funcional).
+ */
+export async function obterResumoCarteiraComFallback(): Promise<ResumoCarteira> {
+  try {
+    const summary = await obterFinancialCoreSummary();
+    return {
+      patrimonioTotal: summary.portfolio.totalValue,
+      patrimonioInvestimentos: summary.portfolio.investedValue,
+      patrimonioBens: summary.portfolio.otherAssetsValue,
+      patrimonioPoupanca: summary.portfolio.cashValue,
+      distribuicaoPatrimonio: summary.allocation.byClass.map((c) => ({
+        id: c.id,
+        label: c.label,
+        valor: c.value,
+        percentual: c.percent,
+      })),
+      retornoDesdeAquisicao: summary.portfolio.returnSinceInception ?? undefined,
+      retorno_desde_aquisicao: summary.portfolio.returnSinceInception ?? undefined,
+      retorno12m: summary.portfolio.returnSinceInception ?? 0,
+      retornoDisponivel: summary.portfolio.returnAvailable,
+      motivoRetornoIndisponivel: summary.portfolio.returnAvailable ? undefined : "dados_insuficientes",
+      score: summary.score?.official ?? 0,
+      quantidadeAtivos: summary.portfolio.assetCount,
+    };
+  } catch {
+    return obterResumoCarteira();
+  }
+}
+
+/**
+ * Benchmark via `/api/financial-core/summary` (campo `benchmark`) + série histórica via
+ * `/api/financial-core/history`. Fallback para `/api/carteira/benchmark` se novas rotas falharem.
+ */
+export async function obterBenchmarkCarteiraComFallback(meses = 12): Promise<ComparativoBenchmarkCarteira> {
+  try {
+    const [summary, history] = await Promise.all([
+      obterFinancialCoreSummary(),
+      obterFinancialCoreHistorico(`${meses}m`).catch(() => null),
+    ]);
+    return {
+      periodoMeses: summary.benchmark.periodMonths,
+      carteiraRetornoPeriodo: summary.benchmark.portfolioReturn,
+      cdiRetornoPeriodo: summary.benchmark.cdiReturn,
+      excessoRetorno: summary.benchmark.excessReturn,
+      fonteBenchmark: summary.benchmark.source,
+      statusAtualizacaoBenchmark: summary.benchmark.status,
+      atualizadoEmBenchmark: summary.benchmark.updatedAt,
+      serie: (history?.series ?? []).map((p) => ({ data: p.date, carteira: p.portfolioBase100, cdi: p.cdiBase100 })),
+    };
+  } catch {
+    return obterBenchmarkCarteira(meses);
+  }
 }
 
 export type DashboardPatrimonioResponse = {
@@ -15,6 +73,44 @@ export type DashboardPatrimonioResponse = {
 
 export function obterDashboardPatrimonio(): Promise<DashboardPatrimonioResponse> {
   return apiRequest<DashboardPatrimonioResponse>("/api/carteira/dashboard", { method: "GET" });
+}
+
+/**
+ * Dashboard de patrimônio derivado de `/api/financial-core/assets` + `/summary` (para totais
+ * de classes sintéticas — bens e poupança que não aparecem como ativos). Fallback: `/api/carteira/dashboard`.
+ */
+export async function obterDashboardPatrimonioComFallback(): Promise<DashboardPatrimonioResponse> {
+  try {
+    const [summary, assets] = await Promise.all([obterFinancialCoreSummary(), listarFinancialCoreAssets()]);
+    const filtros: DashboardPatrimonioResponse["filtros"] = {
+      todos: [], acao: [], fundo: [], previdencia: [], renda_fixa: [], poupanca: [], bens: [],
+    };
+    const totais: DashboardPatrimonioResponse["totais"] = {
+      todos: summary.portfolio.totalValue,
+      acao: 0, fundo: 0, previdencia: 0, renda_fixa: 0,
+      poupanca: summary.portfolio.cashValue,
+      bens: summary.portfolio.otherAssetsValue,
+    };
+    const totalRef = summary.portfolio.totalValue > 0 ? summary.portfolio.totalValue : 1;
+    for (const a of assets) {
+      const item = {
+        id: a.id,
+        nome: a.name || a.ticker,
+        categoria: a.class,
+        valor: a.currentValue,
+        percentual: Number(((a.currentValue / totalRef) * 100).toFixed(2)),
+      };
+      filtros.todos.push(item);
+      const cat = a.class as keyof typeof filtros;
+      if (cat in filtros && cat !== "todos") {
+        (filtros[cat] as typeof filtros.todos).push(item);
+        totais[cat] += a.currentValue;
+      }
+    }
+    return { filtros, totais };
+  } catch {
+    return obterDashboardPatrimonio();
+  }
 }
 
 export function listarAtivosCarteira(): Promise<AtivoResumo[]> {

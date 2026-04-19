@@ -14,7 +14,7 @@ export default function InsightsMobile() {
     let ativo = true;
     (async () => {
       try {
-        const dados = await insightsApi.obterResumo();
+        const dados = await insightsApi.obterResumoComFallback();
         if (!ativo) return;
         setResumo(dados);
         setErro('');
