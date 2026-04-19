@@ -28,7 +28,7 @@
  *                                com `ADMIN_TOKEN` do Worker (env). Também
  *                                aceita JWT admin (expira em 8h, não serve
  *                                para cron).
- *   EI_API_URL     (opcional)    Default: https://ei-api.esquiloinvest.workers.dev
+ *   EI_API_URL     (opcional)    Default: https://ei-api-gateway.giammattey-luiz.workers.dev
  *   EI_ORIGEM      (opcional)    Alternativa a --origem
  *
  * Exit codes: 0 sucesso, 1 falha crítica, 2 sucesso parcial (fallback falhou).
@@ -41,7 +41,7 @@ import { Readable } from "node:stream";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API_BASE_URL = (process.env.EI_API_URL || "https://ei-api.esquiloinvest.workers.dev").replace(/\/$/, "");
+const API_BASE_URL = (process.env.EI_API_URL || "https://ei-api-gateway.giammattey-luiz.workers.dev").replace(/\/$/, "");
 const ADMIN_TOKEN = process.env.EI_ADMIN_TOKEN;
 const TAMANHO_LOTE = 4000; // endpoint aceita até 5000, deixa margem
 const TMP_DIR = ".tmp-cvm";

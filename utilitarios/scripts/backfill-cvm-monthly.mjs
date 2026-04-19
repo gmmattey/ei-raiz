@@ -28,7 +28,7 @@
  *   EI_ADMIN_TOKEN (obrigatório)  Service token de longa duração — deve bater
  *                                 com `ADMIN_TOKEN` do Worker (env). Também
  *                                 aceita JWT admin (mas expira em 8h).
- *   EI_API_URL     (opcional)     Default: https://ei-api.esquiloinvest.workers.dev
+ *   EI_API_URL     (opcional)     Default: https://ei-api-gateway.giammattey-luiz.workers.dev
  */
 
 import { createWriteStream, createReadStream, existsSync, mkdirSync, unlinkSync } from "node:fs";
@@ -38,7 +38,7 @@ import { Readable } from "node:stream";
 
 import { normalizarCnpj, normalizarDataRef, parseLinhaCvm } from "./ingest-cvm-funds.mjs";
 
-const API_BASE_URL = (process.env.EI_API_URL || "https://ei-api.esquiloinvest.workers.dev").replace(/\/$/, "");
+const API_BASE_URL = (process.env.EI_API_URL || "https://ei-api-gateway.giammattey-luiz.workers.dev").replace(/\/$/, "");
 const ADMIN_TOKEN = process.env.EI_ADMIN_TOKEN;
 const TAMANHO_LOTE = 4000;
 const TMP_DIR = ".tmp-cvm";
