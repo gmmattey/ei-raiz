@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
-import { adminApi, clearSession, configApi, getStoredUser } from '../../cliente-api';
+import { adminApi, clearSession, getStoredUser } from '../../cliente-api';
 import { useInsights } from '../../hooks/useInsights';
-import { Menu, X, Eye, EyeOff, Moon, Sun, Bell } from 'lucide-react';
+import { Eye, EyeOff, Moon, Sun, Bell } from 'lucide-react';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { useTheme } from '../../context/ThemeContext';
+
+const NAV_MENUS = [
+  { label: 'Seu Painel', path: '/home' },
+  { label: 'Sua Carteira', path: '/carteira' },
+  { label: 'Suas Decisões', path: '/decisoes' },
+  { label: 'Seus Importes', path: '/importar' },
+];
 
 export default function GlobalHeader() {
   const navigate = useNavigate();
@@ -15,20 +22,6 @@ export default function GlobalHeader() {
   const [isAdmin, setIsAdmin] = useState(false);
   const { ocultarValores, toggleOcultarValores } = useModoVisualizacao();
   const { isDarkMode, toggleTheme } = useTheme();
-
-  const fallbackNavItems = [
-    { label: 'Home', path: '/home' },
-    { label: 'Aportes', path: '/aportes' },
-    { label: 'Decisões', path: '/decisoes' },
-    { label: 'Histórico', path: '/historico' },
-  ];
-  const sanitizeNavItems = (items) => (items || []).filter((item) => {
-    if (!item) return false;
-    if (String(item.chave || "").startsWith("quick_")) return false;
-    if (['/dashboard', '/carteira', '/insights', '/importar'].includes(item?.path)) return false;
-    return true;
-  });
-  const [navItems, setNavItems] = useState(fallbackNavItems);
   const [scrolled, setScrolled] = useState(false);
   const [insightMenuOpen, setInsightMenuOpen] = useState(false);
   const { dados: insights } = useInsights();
@@ -44,18 +37,10 @@ export default function GlobalHeader() {
     const carregar = async () => {
       try {
         setUsuario(getStoredUser());
-        const appConfig = await configApi.obterAppConfig();
         const acessoAdmin = await adminApi.obterMeAdmin().catch(() => ({ isAdmin: false }));
-        if (!ativo) return;
-        const itens = (appConfig.menus ?? [])
-          .filter((item) => item.visivel)
-          .sort((a, b) => a.ordem - b.ordem)
-          .map((item) => ({ chave: item.chave, label: item.label, path: item.path }));
-        const itensSanitizados = sanitizeNavItems(itens);
-        setNavItems(itensSanitizados.length ? itensSanitizados : sanitizeNavItems(fallbackNavItems));
-        setIsAdmin(Boolean(acessoAdmin?.isAdmin));
+        if (ativo) setIsAdmin(Boolean(acessoAdmin?.isAdmin));
       } catch {
-        if (ativo) setNavItems(sanitizeNavItems(fallbackNavItems));
+        if (ativo) setIsAdmin(false);
       }
     };
     void carregar();
@@ -63,6 +48,7 @@ export default function GlobalHeader() {
       ativo = false;
     };
   }, []);
+
 
   const iconVariant = isDarkMode ? 'branco' : 'preto';
   const profileItems = [
@@ -101,33 +87,35 @@ export default function GlobalHeader() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-[var(--border-color)] backdrop-blur-md bg-[var(--bg-primary)]/90 ${scrolled ? 'shadow-md shadow-black/5' : ''}`}>
-      <div className="flex h-16 items-center">
-        {/* Área alinhada à sidebar (220px) */}
-        <div
-          className="hidden lg:flex w-[220px] flex-shrink-0 items-center justify-start px-5 border-r border-[var(--border-color)] h-full cursor-pointer"
-          onClick={() => navigate('/home')}
-        >
+      <div className="flex h-16 items-center px-4 sm:px-6 lg:px-8">
+        {/* Logo à esquerda */}
+        <div className="cursor-pointer flex-shrink-0" onClick={() => navigate('/home')}>
           <img
             src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
             alt="Esquilo Invest"
-            className="h-7 object-contain"
+            className="h-6 object-contain"
           />
         </div>
 
-        {/* Área do conteúdo (restante do header) */}
-        <div className="flex flex-1 items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo mobile (não está no sidebar) */}
-          <div className="lg:hidden cursor-pointer" onClick={() => navigate('/home')}>
-            <img
-              src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
-              alt="Logo Esquilo Invest"
-              className="h-6 object-contain"
-            />
-          </div>
-          {/* Spacer no desktop (nada à esquerda da área de conteúdo) */}
-          <div className="hidden lg:block" />
+        {/* Menus centralizados */}
+        <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+          {NAV_MENUS.map((menu) => (
+            <button
+              key={menu.path}
+              onClick={() => navigate(menu.path)}
+              className={`text-sm font-medium transition-colors ${
+                location.pathname === menu.path
+                  ? 'text-[#F56A2A]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {menu.label}
+            </button>
+          ))}
+        </nav>
 
-          <div className="flex shrink-0 items-center gap-5">
+        {/* Controles à direita */}
+        <div className="flex items-center gap-5 flex-shrink-0">
             <button onClick={toggleOcultarValores} className="h-8 w-8 flex items-center justify-center text-[var(--text-muted)] transition-all duration-200 hover:text-[#F56A2A]">
               {ocultarValores ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -197,7 +185,6 @@ export default function GlobalHeader() {
                 </>
               )}
             </div>
-          </div>
         </div>
       </div>
     </header>
