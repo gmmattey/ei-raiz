@@ -22,13 +22,6 @@ const NAV_ITEMS = [
     inactiveIconDark: assetPath('/assets/icons/branco/carteira-premium.svg'),
   },
   {
-    label: 'Insights',
-    to: '/insights',
-    activeIcon: assetPath('/assets/icons/laranja/radar-premium.svg'),
-    inactiveIcon: assetPath('/assets/icons/preto/radar-premium.svg'),
-    inactiveIconDark: assetPath('/assets/icons/branco/radar-premium.svg'),
-  },
-  {
     label: 'Decisoes',
     to: '/decisoes',
     activeIcon: assetPath('/assets/icons/laranja/score-premium.svg'),
@@ -179,7 +172,7 @@ export default function MobileAppLayout({ children }) {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-color)] bg-[var(--bg-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-[640px] items-center justify-around">
+        <div className="mx-auto flex h-20 w-full max-w-[640px] items-center justify-around">
           {NAV_ITEMS.map((item) => {
             const isActive = item.to === '/carteira' ? isCarteiraTab : location.pathname.startsWith(item.to);
             const inactiveIcon = isDarkMode ? item.inactiveIconDark : item.inactiveIcon;
@@ -188,7 +181,7 @@ export default function MobileAppLayout({ children }) {
                 key={item.to}
                 to={item.to}
                 className={() =>
-                  `flex min-w-[56px] flex-col items-center justify-center gap-1 text-[10px] font-semibold ${
+                  `flex min-w-[64px] flex-col items-center justify-center gap-2 text-[11px] font-semibold ${
                     isActive ? 'text-[#F56A2A]' : 'text-[var(--text-secondary)]'
                   }`
                 }
@@ -196,7 +189,7 @@ export default function MobileAppLayout({ children }) {
                 <img
                   src={isActive ? item.activeIcon : inactiveIcon}
                   alt={item.label}
-                  className={`h-[22px] w-[22px] ${isActive ? '' : 'opacity-50'}`}
+                  className={`h-[32px] w-[32px] ${isActive ? '' : 'opacity-50'}`}
                 />
                 <span>{item.label}</span>
               </NavLink>
