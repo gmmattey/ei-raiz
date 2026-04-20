@@ -359,6 +359,45 @@ export default function HomeLobby() {
     return lista.slice(0, 5);
   }, [ativos, buscaAtivo]);
 
+  /* Ativos com detalhes enriquecidos (TIPO, APORTE, AVALIAÇÃO, INSTITUIÇÃO) */
+  const ativosComDetalhes = useMemo(() => {
+    return ativosFiltrados.map(ativo => {
+      // TIPO: determinar tipo do ativo
+      const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+
+      // APORTE: total investido (para fundos) ou custo de aquisição (para ações)
+      const aporte = tipo === 'fundo'
+        ? (ativo.saldoAplicacao || ativo.custoAquisicao || 0)
+        : (ativo.custoAquisicao || 0);
+
+      // AVALIAÇÃO: comparação com benchmark
+      // Para ações: rentabilidade vs IBOVESPA (usando rentabilidadeIbov)
+      // Para fundos: rentabilidade vs CDI (usando rentabilidadeCdi)
+      const benchmark = tipo === 'acao' ? 'IBOV' : 'CDI';
+      const rentabilidadeBenchmark = tipo === 'acao'
+        ? (ativo.rentabilidadeIbov || 0)
+        : (ativo.rentabilidadeCdi || 0);
+      const rentabilidadeAtivo = rentabilidadeDesdeAquisicao(ativo) || 0;
+      const avaliacao = rentabilidadeAtivo - rentabilidadeBenchmark;
+
+      // INSTITUIÇÃO: extrair de metadata ou usar CNPJ/placeholder
+      const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
+      const instituicaoAbrev = instituicao
+        ? instituicao.slice(0, 3).toUpperCase()
+        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : '???');
+
+      return {
+        ...ativo,
+        tipo,
+        aporte,
+        avaliacaoValor: avaliacao,
+        avaliacaoLabel: avaliacao >= 0 ? '+' : '',
+        benchmark,
+        instituicaoAbrev,
+      };
+    });
+  }, [ativosFiltrados]);
+
   /* Alertas laterais — oportunidades (riscos já foram ao KPI card) */
   const oportunidadesList = useMemo(() => {
     const acoes = insights?.diagnostico?.acoes ?? [];
@@ -655,48 +694,121 @@ export default function HomeLobby() {
                 Ver tudo <ChevronRight size={12} />
               </button>
             </div>
-            {ativosFiltrados.length > 0 ? (
+            {ativosComDetalhes.length > 0 ? (
               <>
-                <div className="grid grid-cols-[1fr_96px_68px_52px] px-2 mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Rent.</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Cart.</span>
-                </div>
-                <div className="space-y-0.5">
-                  {ativosFiltrados.map(ativo => {
-                    const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
-                    return (
-                      <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
-                        className="w-full grid grid-cols-[1fr_96px_68px_52px] px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
-                          <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
-                        </div>
-                        <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
-                          {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
-                        </p>
-                        {(() => {
-                          const r = rentabilidadeDesdeAquisicao(ativo);
-                          if (r === null) {
-                            return (
+                {/* Grid responsivo com overflow horizontal */}
+                <div className="overflow-x-auto -mx-5 px-5">
+                  <div className="min-w-max md:min-w-full">
+                    {/* Headers */}
+                    <div className="hidden md:grid gap-2 px-2 mb-2" style={{ gridTemplateColumns: '1fr 96px 68px 52px 40px 96px 52px 80px' }}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor Atual</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Rent.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Cart.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Tipo</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Aporte</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Aval.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Inst.</span>
+                    </div>
+
+                    {/* Mobile headers */}
+                    <div className="md:hidden grid gap-2 px-2 mb-2" style={{ gridTemplateColumns: '1fr 72px 60px 40px' }}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Rent.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Inst.</span>
+                    </div>
+
+                    {/* Desktop rows */}
+                    <div className="hidden md:space-y-0.5 space-y-0.5">
+                      {ativosComDetalhes.map(ativo => {
+                        const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
+                        const r = rentabilidadeDesdeAquisicao(ativo);
+                        return (
+                          <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
+                            className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left"
+                            style={{ gridTemplateColumns: '1fr 96px 68px 52px 40px 96px 52px 80px' }}>
+                            {/* ATIVO */}
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
+                              <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                            </div>
+                            {/* VALOR ATUAL */}
+                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                              {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
+                            </p>
+                            {/* % RENTABILIDADE */}
+                            {r === null ? (
                               <p className="text-sm font-semibold text-right self-center whitespace-nowrap text-[var(--text-muted)]">
                                 {ocultarValores ? '••••' : '—'}
                               </p>
-                            );
-                          }
-                          return (
-                            <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                              {ocultarValores ? '••••' : fmtPct(r)}
+                            ) : (
+                              <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                                {ocultarValores ? '••••' : fmtPct(r)}
+                              </p>
+                            )}
+                            {/* % CARTEIRA */}
+                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                              {ocultarValores ? '••%' : `${pct}%`}
                             </p>
-                          );
-                        })()}
-                        <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
-                          {ocultarValores ? '••%' : `${pct}%`}
-                        </p>
-                      </button>
-                    );
-                  })}
+                            {/* TIPO */}
+                            <p className="text-xs text-center self-center whitespace-nowrap uppercase font-semibold text-[var(--text-muted)]">
+                              {ativo.tipo === 'fundo' ? 'F' : 'A'}
+                            </p>
+                            {/* APORTE */}
+                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                              {ocultarValores ? '••••' : fmt(ativo.aporte)}
+                            </p>
+                            {/* AVALIAÇÃO */}
+                            <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${ativo.avaliacaoValor >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                              {ocultarValores ? '••' : `${ativo.avaliacaoLabel}${fmtPct(ativo.avaliacaoValor)}`}
+                            </p>
+                            {/* INSTITUIÇÃO */}
+                            <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
+                              {ativo.instituicaoAbrev}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Mobile rows */}
+                    <div className="md:hidden space-y-0.5">
+                      {ativosComDetalhes.map(ativo => {
+                        const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
+                        const r = rentabilidadeDesdeAquisicao(ativo);
+                        return (
+                          <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
+                            className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left h-12"
+                            style={{ gridTemplateColumns: '1fr 72px 60px 40px' }}>
+                            {/* ATIVO */}
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
+                              <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                            </div>
+                            {/* VALOR ATUAL */}
+                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                              {ocultarValores ? '••••' : fmt(ativo.valorAtual)}
+                            </p>
+                            {/* % RENTABILIDADE */}
+                            {r === null ? (
+                              <p className="text-sm font-semibold text-right self-center whitespace-nowrap text-[var(--text-muted)]">
+                                {ocultarValores ? '••' : '—'}
+                              </p>
+                            ) : (
+                              <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                                {ocultarValores ? '••' : fmtPct(r)}
+                              </p>
+                            )}
+                            {/* INSTITUIÇÃO */}
+                            <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
+                              {ativo.instituicaoAbrev}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (

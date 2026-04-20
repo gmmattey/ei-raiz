@@ -199,6 +199,43 @@ export default function HomeMobile() {
     [...ativos].sort((a, b) => Number(b.valorAtual) - Number(a.valorAtual)).slice(0, 5),
   [ativos]);
 
+  /* Ativos com detalhes enriquecidos (TIPO, APORTE, AVALIAÇÃO, INSTITUIÇÃO) */
+  const ativosComDetalhes = useMemo(() => {
+    return ativosTop.map(ativo => {
+      // TIPO: determinar tipo do ativo
+      const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+
+      // APORTE: total investido (para fundos) ou custo de aquisição (para ações)
+      const aporte = tipo === 'fundo'
+        ? (ativo.saldoAplicacao || ativo.custoAquisicao || 0)
+        : (ativo.custoAquisicao || 0);
+
+      // AVALIAÇÃO: comparação com benchmark
+      const benchmark = tipo === 'acao' ? 'IBOV' : 'CDI';
+      const rentabilidadeBenchmark = tipo === 'acao'
+        ? (ativo.rentabilidadeIbov || 0)
+        : (ativo.rentabilidadeCdi || 0);
+      const rentabilidadeAtivo = rentabilidadeDesdeAquisicao(ativo) || 0;
+      const avaliacao = rentabilidadeAtivo - rentabilidadeBenchmark;
+
+      // INSTITUIÇÃO: extrair de metadata ou usar CNPJ/placeholder
+      const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
+      const instituicaoAbrev = instituicao
+        ? instituicao.slice(0, 3).toUpperCase()
+        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : '???');
+
+      return {
+        ...ativo,
+        tipo,
+        aporte,
+        avaliacaoValor: avaliacao,
+        avaliacaoLabel: avaliacao >= 0 ? '+' : '',
+        benchmark,
+        instituicaoAbrev,
+      };
+    });
+  }, [ativosTop]);
+
   const alertasList = useMemo(() => {
     const riscos = insights?.diagnostico?.riscos ?? [];
     const acoes  = insights?.diagnostico?.acoes  ?? [];
@@ -343,7 +380,7 @@ export default function HomeMobile() {
       <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-['Sora'] text-[13px] font-bold text-[var(--text-primary)]">Principais Ativos</h3>
-          {ativosTop.length > 0 && (
+          {ativosComDetalhes.length > 0 && (
             <button onClick={() => navigate('/carteira')} className="text-[11px] font-semibold text-[#F56A2A]">
               Ver tudo
             </button>
@@ -352,36 +389,45 @@ export default function HomeMobile() {
 
         {loading ? (
           <p className="text-[12px] text-[var(--text-muted)] text-center py-4">Carregando...</p>
-        ) : ativosTop.length > 0 ? (
+        ) : ativosComDetalhes.length > 0 ? (
           <div className="space-y-3">
-            {ativosTop.map(ativo => (
-              <button
-                key={ativo.id}
-                onClick={() => navigate(`/ativo/${ativo.ticker}`)}
-                className="w-full flex items-center justify-between"
-              >
-                <div className="text-left min-w-0 flex-1">
-                  <p className="text-[13px] font-bold text-[var(--text-primary)]">{ativo.ticker}</p>
-                  <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
-                </div>
-                <div className="text-right ml-3 flex-shrink-0">
-                  <p className="text-[13px] font-bold text-[var(--text-primary)]">
-                    <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtual)}</HiddenValue>
-                  </p>
-                  {(() => {
-                    const r = rentabilidadeDesdeAquisicao(ativo);
-                    if (r === null) {
-                      return <p className="text-[11px] font-semibold text-[var(--text-muted)]">—</p>;
-                    }
-                    return (
+            {ativosComDetalhes.map(ativo => {
+              const r = rentabilidadeDesdeAquisicao(ativo);
+              return (
+                <button
+                  key={ativo.id}
+                  onClick={() => navigate(`/ativo/${ativo.ticker}`)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[13px] font-bold text-[var(--text-primary)]">{ativo.ticker}</p>
+                      <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">
+                        {ativo.tipo === 'fundo' ? 'FI' : 'AÇ'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                      <span className="text-[9px] font-semibold text-[#F56A2A] flex-shrink-0">
+                        {ativo.instituicaoAbrev}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right ml-3 flex-shrink-0">
+                    <p className="text-[13px] font-bold text-[var(--text-primary)]">
+                      <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtual)}</HiddenValue>
+                    </p>
+                    {r === null ? (
+                      <p className="text-[11px] font-semibold text-[var(--text-muted)]">—</p>
+                    ) : (
                       <p className={`text-[11px] font-semibold ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                         <HiddenValue hidden={ocultarValores}>{fmtPct(r)}</HiddenValue>
                       </p>
-                    );
-                  })()}
-                </div>
-              </button>
-            ))}
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-4">
