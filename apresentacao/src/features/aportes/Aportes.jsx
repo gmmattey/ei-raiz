@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiError, aportesApi, carteiraApi, perfilApi } from "../../cliente-api";
+import { ApiError, patrimonioApi, perfilApi } from "../../cliente-api";
 import { invalidarCacheUsuario } from "../../utils/cache";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
@@ -9,6 +9,29 @@ const parseCurrencyInput = (value) => {
   return digits ? Number(digits) / 100 : 0;
 };
 const formatCurrencyInput = (value) => moeda(Number(value || 0));
+
+const adaptarAporte = (a) => ({
+  id: a.id,
+  valor: Number(a.valorBrl ?? 0),
+  dataAporte: a.data,
+  observacao: a.descricao ?? "",
+  origem: a.origem ?? "manual",
+});
+
+const calcularResumoUltimos6m = (itens) => {
+  const hoje = new Date();
+  const corte = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+  const mesesSet = new Set();
+  let valorTotal = 0;
+  for (const a of itens) {
+    const d = new Date(a.dataAporte);
+    if (Number.isNaN(d.getTime())) continue;
+    if (d < corte) continue;
+    mesesSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    valorTotal += Number(a.valor ?? 0);
+  }
+  return { mesesDistintos6m: mesesSet.size, valorTotal6m: valorTotal };
+};
 
 export default function Aportes() {
   const navigate = useNavigate();
@@ -28,12 +51,10 @@ export default function Aportes() {
 
   const recarregarAportes = React.useCallback(async () => {
     try {
-      const [lista, resumo] = await Promise.all([
-        aportesApi.listarAportes(50),
-        aportesApi.obterResumoAportes(),
-      ]);
-      setAportesReais(lista ?? []);
-      setResumoAportes(resumo ?? null);
+      const resp = await patrimonioApi.listarAportes();
+      const adaptados = (resp?.itens ?? []).map(adaptarAporte).slice(0, 50);
+      setAportesReais(adaptados);
+      setResumoAportes(calcularResumoUltimos6m(adaptados));
     } catch {
       // silencia — lista vazia é aceitável
     }
@@ -46,12 +67,16 @@ export default function Aportes() {
         setLoading(true);
         setError("");
         const [dados, perfil] = await Promise.all([
-          carteiraApi.obterResumoCarteira(),
-          perfilApi.obterPerfil(),
+          patrimonioApi.obterResumo(),
+          perfilApi.obterPerfil().catch(() => null),
         ]);
         if (!ativo) return;
-        setResumo(dados);
-        setAporteMensal(perfil?.aporteMensal ?? 0);
+        setResumo({
+          quantidadeAtivos: dados?.quantidadeItens ?? 0,
+          patrimonioLiquido: dados?.patrimonioLiquidoBrl ?? 0,
+          valorInvestimentos: dados?.patrimonioBrutoBrl ?? 0,
+        });
+        setAporteMensal(perfil?.aporteMensalBrl ?? 0);
         await recarregarAportes();
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -81,11 +106,11 @@ export default function Aportes() {
     try {
       setRegistrandoAporte(true);
       setFeedbackAporte("");
-      await aportesApi.criarAporte({
-        valor: valorNumerico,
-        dataAporte: novaData,
-        observacao: novaObservacao.trim() || undefined,
-        origem: "manual",
+      await patrimonioApi.criarAporte({
+        tipo: "aporte",
+        valorBrl: valorNumerico,
+        data: novaData,
+        descricao: novaObservacao.trim() || null,
       });
       setNovoValor(0);
       setNovaObservacao("");
@@ -104,7 +129,7 @@ export default function Aportes() {
 
   const excluirAporte = async (id) => {
     try {
-      await aportesApi.removerAporte(id);
+      await patrimonioApi.removerAporte(id);
       await recarregarAportes();
     } catch {
       // mantém lista; UI mostra estado atual na próxima recarga
@@ -115,14 +140,8 @@ export default function Aportes() {
     try {
       setSalvando(true);
       setFeedback("");
-      const perfilAtual = await perfilApi.obterPerfil();
-      await perfilApi.salvarPerfil({
-        rendaMensal: perfilAtual?.rendaMensal ?? 0,
-        aporteMensal: Math.max(0, Number(aporteMensal) || 0),
-        horizonte: perfilAtual?.horizonte ?? "longo_prazo",
-        perfilRisco: perfilAtual?.perfilRisco ?? "moderado",
-        objetivo: perfilAtual?.objetivo ?? "independencia_financeira",
-        maturidade: Math.max(1, Math.min(5, perfilAtual?.maturidade ?? 3)),
+      await perfilApi.atualizarPerfil({
+        aporteMensalBrl: Math.max(0, Number(aporteMensal) || 0),
       });
       invalidarCacheUsuario();
       setFeedback("Meta de aporte salva com sucesso.");

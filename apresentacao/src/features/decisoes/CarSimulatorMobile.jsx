@@ -95,7 +95,7 @@ export default function CarSimulatorMobile() {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'carro' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'carro' } });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'carro', nome: form.nome, premissas: buildPremissas() });
       setResultado(data);
       sessionStorage.setItem('sim_res_carro', JSON.stringify(data));
@@ -108,7 +108,7 @@ export default function CarSimulatorMobile() {
     try {
       setSalvando(true);
       const data = await decisoesApi.salvarSimulacao({ tipo: 'carro', nome: form.nome, premissas: buildPremissas() });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'carro', id: data?.id });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'carro', id: data?.id } });
       sessionStorage.setItem('sim_form_carro', JSON.stringify(form));
     } catch { /**/ }
     finally { setSalvando(false); }

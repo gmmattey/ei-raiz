@@ -30,7 +30,7 @@ const ReserveOrFinanceSimulator = () => {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'reserva_ou_financiar' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'reserva_ou_financiar' } });
       setResultado(await decisoesApi.calcularSimulacao({ tipo: 'reserva_ou_financiar', nome: form.nome, premissas: buildPremissas() }));
     } catch { setErro('Falha ao calcular cenário.'); }
     finally { setLoading(false); }
@@ -40,7 +40,7 @@ const ReserveOrFinanceSimulator = () => {
     try {
       setLoading(true); setErro('');
       await decisoesApi.salvarSimulacao({ tipo: 'reserva_ou_financiar', nome: form.nome, premissas: buildPremissas() });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'reserva_ou_financiar' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'reserva_ou_financiar' } });
     } catch { setErro('Falha ao salvar simulação.'); }
     finally { setLoading(false); }
   };

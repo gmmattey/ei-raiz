@@ -1,20 +1,22 @@
+// Namespaces canônicos (6 domínios públicos + admin + telemetria).
 export * as authApi from "./auth";
-export * as carteiraApi from "./carteira";
-export * as importacaoApi from "./importacao";
+export * as usuarioApi from "./usuario";
 export * as perfilApi from "./perfil";
-export * as historicoApi from "./historico";
-export * as insightsApi from "./insights";
-export * as financialCoreApi from "./financialCore";
+export * as patrimonioApi from "./patrimonio";
+export * as mercadoApi from "./mercado";
 export * as decisoesApi from "./decisoes";
-export * as configApi from "./config";
-export * as conteudoApi from "./conteudo";
 export * as adminApi from "./admin";
 export * as telemetriaApi from "./telemetria";
-export * as marketApi from "./market";
-export * as portfolioApi from "./portfolio";
-export * as fundsApi from "./funds";
+
+// Catálogo FIPE (provedor externo específico, mantido isolado).
 export * as fipeApi from "./fipe";
-export * as aportesApi from "./aportes";
-export { avaliarComVera } from "./vera";
+
 export { ApiError } from "./http";
-export { clearSession, consumirMotivoSaidaSessao, getAuthToken, getStoredUser, marcarSessaoExpirada } from "./authStorage";
+export {
+  clearSession,
+  consumirMotivoSaidaSessao,
+  getAuthToken,
+  getStoredUser,
+  marcarSessaoExpirada,
+  saveSession,
+} from "./authStorage";

@@ -1,7 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { insightsApi, telemetriaApi } from '../../cliente-api';
+import { patrimonioApi, telemetriaApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { useVeraEvaluation } from './hooks/useVeraEvaluation';
+
+const FAIXA_PARA_BAND = {
+  critico: 'critical',
+  baixo: 'fragile',
+  medio: 'stable',
+  bom: 'good',
+  excelente: 'strong',
+};
+
+const composirResumoCanonico = (resumo, score) => {
+  const faixa = score?.faixa ?? null;
+  const scoreTotal = Number(score?.scoreTotal ?? 0);
+  const calculadoEm = score?.calculadoEm ?? resumo?.atualizadoEm ?? null;
+  const scoreUnificado = scoreTotal > 0 && faixa
+    ? {
+        score: scoreTotal,
+        band: FAIXA_PARA_BAND[faixa] ?? 'stable',
+        completenessStatus: 'complete',
+        calculatedAt: calculadoEm,
+      }
+    : null;
+  return {
+    scoreUnificado,
+    classificacao: faixa,
+    score: { atualizadoEm: calculadoEm, score: scoreTotal },
+    riscoPrincipal: null,
+    acaoPrioritaria: null,
+    insightPrincipal: null,
+    diagnostico: null,
+    diagnosticoFinal: null,
+    atualizacaoMercado: null,
+  };
+};
 
 export default function InsightsMobile() {
   const { ocultarValores } = useModoVisualizacao();
@@ -14,11 +47,18 @@ export default function InsightsMobile() {
     let ativo = true;
     (async () => {
       try {
-        const dados = await insightsApi.obterResumoComFallback();
+        const [resumoCanonico, score] = await Promise.all([
+          patrimonioApi.obterResumo(),
+          patrimonioApi.obterScore().catch(() => null),
+        ]);
         if (!ativo) return;
+        const dados = composirResumoCanonico(resumoCanonico, score);
         setResumo(dados);
         setErro('');
-        await telemetriaApi.registrarEventoTelemetria('insight_opened_mobile', { score: dados?.score?.score ?? 0 });
+        await telemetriaApi.registrarEvento({
+          nome: 'insight_opened_mobile',
+          dadosJson: { score: dados?.scoreUnificado?.score ?? 0 },
+        }).catch(() => null);
 
         // Trigger Vera evaluation in background
         void avaliarComVera(dados);

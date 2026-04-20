@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { carteiraApi } from '../../cliente-api';
+import { patrimonioApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { assetPath } from '../../utils/assetPath';
 import { mensagemMotivoIndisponivel } from '../../utils/motivoRentabilidade';
@@ -14,13 +14,13 @@ const ICON_BY_CATEGORY = {
   bens: '/assets/icons/laranja/home-premium.svg',
 };
 
-const TYPE_BY_PARAM = {
-  acoes: 'acao',
-  fundos: 'fundo',
-  previdencia: 'previdencia',
-  'renda-fixa': 'renda_fixa',
-  poupanca: 'poupanca',
-  bens: 'bens',
+const ROUTE_TO_TIPOS = {
+  acoes:        { tipos: ['acao', 'fii', 'etf'], categoria: 'acao' },
+  fundos:       { tipos: ['fundo'],              categoria: 'fundo' },
+  previdencia:  { tipos: ['previdencia'],        categoria: 'previdencia' },
+  'renda-fixa': { tipos: ['renda_fixa'],         categoria: 'renda_fixa' },
+  poupanca:     { tipos: ['poupanca'],           categoria: 'poupanca' },
+  bens:         { tipos: ['imovel', 'veiculo'],  categoria: 'bens' },
 };
 
 const LABEL_CATEGORIA = {
@@ -66,10 +66,28 @@ export default function AssetCategoryMobile({ manualCategoriaId }) {
     (async () => {
       try {
         setLoading(true);
-        const tipo = TYPE_BY_PARAM[categoriaId] || categoriaId;
-        const dados = await carteiraApi.obterDetalheCategoria(tipo);
+        const rotaInfo = ROUTE_TO_TIPOS[categoriaId] ?? ROUTE_TO_TIPOS.acoes;
+        const [resumo, itensResp] = await Promise.all([
+          patrimonioApi.obterResumo(),
+          patrimonioApi.listarItens(),
+        ]);
         if (!vivo) return;
-        setDetalhe(dados);
+
+        const totalPatrimonio = Number(resumo?.patrimonioBrutoBrl ?? 0);
+        const itensCategoria = (itensResp?.itens ?? []).filter((i) => rotaInfo.tipos.includes(i.tipo));
+        const ativos = itensCategoria.map((i) => ({
+          id: i.id,
+          ticker: i.ticker,
+          nome: i.nome,
+          valorAtual: i.valorAtualBrl ?? 0,
+          participacao: i.pesoPct ?? 0,
+          rentabilidadeDesdeAquisicaoPct: i.rentabilidadePct,
+          rentabilidadeConfiavel: i.rentabilidadePct != null,
+          statusAtualizacao: i.precoAtualBrl != null ? 'atualizado' : 'indisponivel',
+        }));
+        const valorTotal = ativos.reduce((acc, a) => acc + Number(a.valorAtual ?? 0), 0);
+        const participacao = totalPatrimonio > 0 ? (valorTotal / totalPatrimonio) * 100 : 0;
+        setDetalhe({ categoria: rotaInfo.categoria, ativos, valorTotal, participacao });
         setErro('');
       } catch {
         if (vivo) setErro('Não foi possível carregar esta categoria.');

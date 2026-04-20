@@ -7,7 +7,7 @@ import {
 import {
   TrendingUp, PiggyBank,
 } from 'lucide-react';
-import { carteiraApi, insightsApi, historicoApi, getStoredUser } from '../../cliente-api';
+import { patrimonioApi, getStoredUser } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { assetPath } from '../../utils/assetPath';
@@ -18,11 +18,11 @@ const FILTROS_ALL = ['1M', '3M', '6M', '1A', 'Max'];
 const FILTROS_MESES = { '1M': 1, '3M': 3, '6M': 6, '1A': 12 };
 
 const SCORE_FAIXAS = {
-  critical: { label: 'Crítico', cor: '#E85C5C' },
-  fragile:  { label: 'Frágil',  cor: '#F2C94C' },
-  stable:   { label: 'Estável', cor: '#F2C94C' },
-  good:     { label: 'Bom',     cor: '#6FCF97' },
-  strong:   { label: 'Sólido',  cor: '#6FCF97' },
+  critico: { label: 'Crítico', cor: '#E85C5C' },
+  baixo:   { label: 'Frágil',  cor: '#F2C94C' },
+  medio:   { label: 'Estável', cor: '#F2C94C' },
+  bom:     { label: 'Bom',     cor: '#6FCF97' },
+  excelente: { label: 'Sólido', cor: '#6FCF97' },
 };
 
 const fmt = (v) =>
@@ -66,13 +66,8 @@ const getAvaliacaoCor = (avaliacaoValor) => {
   return 'text-[var(--text-muted)]';
 };
 
-/**
- * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
- * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
- */
-const rentabilidadeDesdeAquisicao = (obj) => {
-  if (!obj || obj.rentabilidadeConfiavel === false) return null;
-  const v = obj.rentabilidadeDesdeAquisicaoPct;
+const rentabilidadePct = (obj) => {
+  const v = obj?.rentabilidadeMesPct ?? obj?.rentabilidadePct;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 };
 
@@ -114,34 +109,29 @@ export default function HomeMobile() {
 
   const salvarCache = (dados) => cache.set(HOME_MOBILE_CACHE_KEY, dados);
 
+  const carregarTudo = async () => {
+    const [dadosResumo, dadosScore, dadosItens, dadosHistorico] = await Promise.all([
+      patrimonioApi.obterResumo(),
+      patrimonioApi.obterScore().catch(() => null),
+      patrimonioApi.listarItens().catch(() => ({ itens: [] })),
+      patrimonioApi.obterHistorico().catch(() => ({ itens: [] })),
+    ]);
+    const pontos = [...(dadosHistorico?.itens ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+    return { dadosResumo, dadosScore, dadosItens: dadosItens?.itens ?? [], pontos };
+  };
+
   const recarregarSemPiscada = async () => {
     try {
-      const TTL = 60 * 1000;
-      const resumoCached   = cache.get('carteira_resumo', TTL);
-      const insightsCached = cache.get('insights_resumo', TTL);
-
-      const [dadosResumo, dadosInsights, dadosAtivos, dadosHistorico, dadosBenchmark] = await Promise.all([
-        resumoCached
-          ? Promise.resolve(resumoCached)
-          : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
-        insightsCached
-          ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumoComFallback().then(r => { cache.set('insights_resumo', r); return r; }),
-        carteiraApi.listarAtivosCarteira().catch(() => []),
-        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-        carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
-      ]);
-
-      const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+      const { dadosResumo, dadosScore, dadosItens, pontos } = await carregarTudo();
       setUsuario(getStoredUser());
       setResumo(dadosResumo);
-      setInsights(dadosInsights);
-      setAtivos(dadosAtivos);
+      setInsights(dadosScore);
+      setAtivos(dadosItens);
       setHistoricoMensal(pontos);
-      setBenchmark(dadosBenchmark);
+      setBenchmark(null);
       salvarCache({
-        resumo: dadosResumo, insights: dadosInsights,
-        ativos: dadosAtivos, historicoMensal: pontos, benchmark: dadosBenchmark,
+        resumo: dadosResumo, insights: dadosScore,
+        ativos: dadosItens, historicoMensal: pontos, benchmark: null,
       });
     } catch {
       setErro('Falha ao atualizar dados.');
@@ -172,26 +162,18 @@ export default function HomeMobile() {
         }
 
         setLoading(true);
-        const [dadosResumo, dadosInsights, dadosAtivos, dadosHistorico, dadosBenchmark] = await Promise.all([
-          carteiraApi.obterResumoCarteiraComFallback(),
-          insightsApi.obterResumoComFallback(),
-          carteiraApi.listarAtivosCarteira().catch(() => []),
-          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-          carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
-        ]);
+        const { dadosResumo, dadosScore, dadosItens, pontos } = await carregarTudo();
         if (!ativo) return;
 
-        const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
         setUsuario(getStoredUser());
         setResumo(dadosResumo);
-        setInsights(dadosInsights);
-        setAtivos(dadosAtivos);
+        setInsights(dadosScore);
+        setAtivos(dadosItens);
         setHistoricoMensal(pontos);
-        setBenchmark(dadosBenchmark);
-        // Salvar cache imediatamente
+        setBenchmark(null);
         salvarCache({
-          resumo: dadosResumo, insights: dadosInsights,
-          ativos: dadosAtivos, historicoMensal: pontos, benchmark: dadosBenchmark,
+          resumo: dadosResumo, insights: dadosScore,
+          ativos: dadosItens, historicoMensal: pontos, benchmark: null,
         });
       } catch {
         if (ativo) setErro('Não foi possível carregar os dados.');
@@ -202,11 +184,10 @@ export default function HomeMobile() {
     return () => { ativo = false; };
   }, []);
 
-  const score        = insights?.scoreUnificado?.score ?? insights?.score_unificado?.score ?? 0;
-  const scoreBand    = insights?.scoreUnificado?.band  ?? insights?.score_unificado?.band  ?? null;
-  const scoreFaixa   = SCORE_FAIXAS[scoreBand] ?? { label: '—', cor: '#F56A2A' };
-  const patrimonio   = Number(resumo?.patrimonioLiquido ?? resumo?.valorInvestimentos ?? 0);
-  const alertasCount = insights?.diagnostico?.riscos?.length ?? 0;
+  const score        = insights?.scoreTotal ?? 0;
+  const scoreFaixa   = insights?.faixa ? (SCORE_FAIXAS[insights.faixa] ?? { label: '—', cor: '#F56A2A' }) : { label: '—', cor: '#F56A2A' };
+  const patrimonio   = Number(resumo?.patrimonioLiquidoBrl ?? resumo?.patrimonioBrutoBrl ?? 0);
+  const alertasCount = 0;
 
   const n = historicoMensal.length;
   const filtrosDisponiveis = FILTROS_ALL.filter(f => {
@@ -218,69 +199,40 @@ export default function HomeMobile() {
     ? filtroTempo
     : (filtrosDisponiveis[filtrosDisponiveis.length - 1] ?? 'Max');
 
-  /* benchmark.serie usa índice base-100 — escala incompatível com R$ absoluto.
-     Quando CDI está ON, usa os dados do benchmark diretamente. */
-  const isCdiMode = showCDI && Boolean(benchmark?.serie?.length);
+  const isCdiMode = false;
   const dadosGrafico = useMemo(() => {
-    if (isCdiMode) {
-      const serie = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
-      const filtrada = filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
-      return filtrada.map(p => ({ ...p, anoMes: p.data?.slice(0, 7) }));
-    }
-    const pontos = filtroEfetivo === 'Max' ? historicoMensal : historicoMensal.slice(-FILTROS_MESES[filtroEfetivo]);
-    return pontos;
-  }, [historicoMensal, filtroEfetivo, isCdiMode, benchmark]);
+    if (!historicoMensal.length) return [];
+    const serie = historicoMensal.map(p => ({
+      anoMes: p.anoMes,
+      totalAtual: p.patrimonioBrutoBrl ?? 0,
+    }));
+    return filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
+  }, [historicoMensal, filtroEfetivo]);
 
   const ativosTop = useMemo(() =>
-    [...ativos].sort((a, b) => Number(b.valorAtual) - Number(a.valorAtual)).slice(0, 5),
+    [...ativos].sort((a, b) => Number(b.valorAtualBrl ?? 0) - Number(a.valorAtualBrl ?? 0)).slice(0, 5),
   [ativos]);
 
-  /* Ativos com detalhes enriquecidos (TIPO, APORTE, AVALIAÇÃO, INSTITUIÇÃO) */
   const ativosComDetalhes = useMemo(() => {
     return ativosTop.map(ativo => {
-      // TIPO: determinar tipo do ativo
-      const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+      const tipo = ativo.tipo ?? 'outro';
       const tipoLabel = getTipoLabel(tipo);
-
-      // APORTE: valor inicial declarado pelo usuário (custoAquisicao = preço de compra/investimento inicial)
-      const aporte = ativo.custoAquisicao || 0;
-
-      // AVALIAÇÃO: comparação com benchmark
-      const benchmark = tipo === 'acao' ? 'IBOV' : 'CDI';
-      const rentabilidadeBenchmark = tipo === 'acao'
-        ? (ativo.rentabilidadeIbov || 0)
-        : (ativo.rentabilidadeCdi || 0);
-      const rentabilidadeAtivo = rentabilidadeDesdeAquisicao(ativo) || 0;
-      const avaliacao = rentabilidadeAtivo - rentabilidadeBenchmark;
-
-      // INSTITUIÇÃO: extrair de metadata ou usar CNPJ/placeholder
-      const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
-      const instituicaoAbrev = instituicao
-        ? instituicao.slice(0, 3).toUpperCase()
-        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI');
-
+      const instituicaoAbrev = ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI';
       return {
         ...ativo,
         tipo,
         tipoLabel,
-        aporte,
-        avaliacaoValor: avaliacao,
-        avaliacaoQualitativa: getAvaliacaoLabel(avaliacao),
-        avaliacaoCor: getAvaliacaoCor(avaliacao),
-        benchmark,
+        aporte: 0,
+        avaliacaoValor: null,
+        avaliacaoQualitativa: getAvaliacaoLabel(null),
+        avaliacaoCor: getAvaliacaoCor(null),
+        benchmark: '',
         instituicaoAbrev,
       };
     });
   }, [ativosTop]);
 
-  const alertasList = useMemo(() => {
-    const riscos = insights?.diagnostico?.riscos ?? [];
-    const acoes  = insights?.diagnostico?.acoes  ?? [];
-    return [
-      ...riscos.slice(0, 1).map(r => ({ tipo: 'alerta',       titulo: r.titulo })),
-      ...acoes.slice(0,  1).map(a => ({ tipo: 'oportunidade', titulo: a.titulo })),
-    ];
-  }, [insights]);
+  const alertasList = [];
 
   return (
     <section className="space-y-4 pb-4">
@@ -307,7 +259,7 @@ export default function HomeMobile() {
           <div>
             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Desde aquisição</p>
             {(() => {
-              const r = rentabilidadeDesdeAquisicao(resumo);
+              const r = rentabilidadePct(resumo);
               if (r === null) {
                 return <p className="text-[14px] font-bold mt-0.5 text-[var(--text-muted)]">—</p>;
               }
@@ -429,7 +381,7 @@ export default function HomeMobile() {
         ) : ativosComDetalhes.length > 0 ? (
           <div className="space-y-3">
             {ativosComDetalhes.map(ativo => {
-              const r = rentabilidadeDesdeAquisicao(ativo);
+              const r = rentabilidadePct(ativo);
               return (
                 <button
                   key={ativo.id}
@@ -456,7 +408,7 @@ export default function HomeMobile() {
                   </div>
                   <div className="text-right ml-3 flex-shrink-0">
                     <p className="text-[13px] font-bold text-[var(--text-primary)]">
-                      <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtual)}</HiddenValue>
+                      <HiddenValue hidden={ocultarValores}>{fmt(ativo.valorAtualBrl)}</HiddenValue>
                     </p>
                     {r === null ? (
                       <p className="text-[11px] font-semibold text-[var(--text-muted)]">—</p>

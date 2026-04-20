@@ -41,7 +41,7 @@ const PropertySimulator = () => {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'imovel' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'imovel' } });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'imovel', nome: form.nome, premissas: buildPremissas() });
       setResultado(data);
       sessionStorage.setItem('sim_res_imovel', JSON.stringify(data));
@@ -54,7 +54,7 @@ const PropertySimulator = () => {
     try {
       setLoading(true); setErro('');
       const data = await decisoesApi.salvarSimulacao({ tipo: 'imovel', nome: form.nome, premissas: buildPremissas() });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'imovel', id: data?.id });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'imovel', id: data?.id } });
       setResultado(data.resultado || resultado);
       sessionStorage.setItem('sim_res_imovel', JSON.stringify(data.resultado || resultado));
       sessionStorage.setItem('sim_form_imovel', JSON.stringify(form));

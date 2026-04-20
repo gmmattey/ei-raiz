@@ -12,6 +12,37 @@ const parseCurrencyInput = (value) => {
 };
 const formatCurrencyInput = (value) => moeda(Number(value || 0));
 
+const HORIZONTE_MESES_PARA_LABEL = (meses) => {
+  const m = Number(meses ?? 0);
+  if (m <= 0) return "longo_prazo";
+  if (m < 12) return "curto_prazo";
+  if (m < 36) return "medio_prazo";
+  return "longo_prazo";
+};
+
+const LABEL_PARA_HORIZONTE_MESES = (label) => {
+  switch (label) {
+    case "curto_prazo": return 6;
+    case "medio_prazo": return 24;
+    case "longo_prazo": return 120;
+    default: return 120;
+  }
+};
+
+const adaptarPerfilCanonico = (dados) => ({
+  rendaMensal: Number(dados?.rendaMensalBrl ?? 0),
+  gastoMensal: 0,
+  aporteMensal: Number(dados?.aporteMensalBrl ?? 0),
+  reservaCaixa: 0,
+  horizonte: HORIZONTE_MESES_PARA_LABEL(dados?.horizonteMeses),
+  perfilRisco: dados?.toleranciaRisco ?? "moderado",
+  objetivo: Array.isArray(dados?.objetivos) && dados.objetivos.length > 0 ? dados.objetivos[0] : "independencia_financeira",
+  frequenciaAporte: "mensal",
+  experienciaInvestimentos: "intermediario",
+  toleranciaRiscoReal: "media",
+  maturidade: 3,
+});
+
 export default function PerfilUsuario({ embedded = false }) {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -72,40 +103,12 @@ export default function PerfilUsuario({ embedded = false }) {
     (async () => {
       try {
         setLoading(true);
-        const [perfilApiData, plataformasData, contextoApiData] = await Promise.all([
-          perfilApi.obterPerfil(),
-          perfilApi.listarPlataformas(),
-          perfilApi.obterContextoFinanceiro(),
-        ]);
+        const perfilApiData = await perfilApi.obterPerfil().catch(() => null);
         if (!ativo) return;
         if (perfilApiData) {
-          setPerfil({
-            rendaMensal: perfilApiData.rendaMensal,
-            gastoMensal: perfilApiData.gastoMensal ?? 0,
-            aporteMensal: perfilApiData.aporteMensal,
-            reservaCaixa: perfilApiData.reservaCaixa ?? 0,
-            horizonte: perfilApiData.horizonte,
-            perfilRisco: perfilApiData.perfilRisco,
-            objetivo: perfilApiData.objetivo,
-            frequenciaAporte: perfilApiData.frequenciaAporte || "mensal",
-            experienciaInvestimentos: perfilApiData.experienciaInvestimentos || "intermediario",
-            toleranciaRiscoReal: perfilApiData.toleranciaRiscoReal || "media",
-            maturidade: perfilApiData.maturidade,
-          });
+          setPerfil(adaptarPerfilCanonico(perfilApiData));
         }
-        if (contextoApiData) {
-          setContexto({
-            ...contexto,
-            ...contextoApiData,
-            patrimonioExterno: {
-              imoveis: contextoApiData.patrimonioExterno?.imoveis ?? [],
-              veiculos: contextoApiData.patrimonioExterno?.veiculos ?? [],
-              caixaDisponivel: contextoApiData.patrimonioExterno?.caixaDisponivel ?? 0,
-            },
-            dividas: contextoApiData.dividas ?? [],
-          });
-        }
-        setPlataformas(plataformasData);
+        setPlataformas([]);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate("/", { replace: true });
@@ -142,44 +145,20 @@ export default function PerfilUsuario({ embedded = false }) {
     try {
       setSaving(true);
       setError("");
-      await perfilApi.salvarPerfil({
-        rendaMensal: Number.isFinite(perfil.rendaMensal) ? Math.max(0, Number(perfil.rendaMensal)) : 0,
-        gastoMensal: Number.isFinite(perfil.gastoMensal) ? Math.max(0, Number(perfil.gastoMensal)) : 0,
-        aporteMensal: Number.isFinite(perfil.aporteMensal) ? Math.max(0, Number(perfil.aporteMensal)) : 0,
-        reservaCaixa: Number.isFinite(perfil.reservaCaixa) ? Math.max(0, Number(perfil.reservaCaixa)) : 0,
-        horizonte: (perfil.horizonte || "").trim() || "Nao informado",
-        perfilRisco: (perfil.perfilRisco || "").trim() || "moderado",
-        objetivo: (perfil.objetivo || "").trim() || "Nao informado",
-        frequenciaAporte: (perfil.frequenciaAporte || "").trim() || "mensal",
-        experienciaInvestimentos: (perfil.experienciaInvestimentos || "").trim() || "intermediario",
-        toleranciaRiscoReal: (perfil.toleranciaRiscoReal || "").trim() || "media",
-        maturidade: Math.max(1, Math.min(5, Number(perfil.maturidade) || 1)),
+      const toleranciaValida = ["conservador", "moderado", "arrojado"].includes(perfil.perfilRisco)
+        ? perfil.perfilRisco
+        : "moderado";
+      await perfilApi.atualizarPerfil({
+        rendaMensalBrl: Number.isFinite(perfil.rendaMensal) ? Math.max(0, Number(perfil.rendaMensal)) : 0,
+        aporteMensalBrl: Number.isFinite(perfil.aporteMensal) ? Math.max(0, Number(perfil.aporteMensal)) : 0,
+        horizonteMeses: LABEL_PARA_HORIZONTE_MESES(perfil.horizonte),
+        toleranciaRisco: toleranciaValida,
+        objetivos: perfil.objetivo ? [perfil.objetivo] : [],
       });
-      await perfilApi.salvarContextoFinanceiro({
-        ...contexto,
-        rendaMensal: Number.isFinite(contexto.rendaMensal) ? Math.max(0, Number(contexto.rendaMensal)) : 0,
-        gastoMensal: Number.isFinite(contexto.gastoMensal) ? Math.max(0, Number(contexto.gastoMensal)) : 0,
-        aporteMensal: Number.isFinite(contexto.aporteMensal) ? Math.max(0, Number(contexto.aporteMensal)) : 0,
-        maturidadeInvestidor: Math.max(1, Math.min(5, Number(contexto.maturidadeInvestidor) || 1)),
-        patrimonioExterno: {
-          imoveis: contexto.patrimonioExterno.imoveis.map((item) => ({
-            ...item,
-            valorEstimado: Number.isFinite(item.valorEstimado) ? item.valorEstimado : 0,
-            saldoFinanciamento: Number.isFinite(item.saldoFinanciamento) ? item.saldoFinanciamento : 0,
-          })),
-          veiculos: contexto.patrimonioExterno.veiculos.map((item) => ({
-            ...item,
-            valorEstimado: Number.isFinite(item.valorEstimado) ? item.valorEstimado : 0,
-          })),
-          caixaDisponivel: Number.isFinite(contexto.patrimonioExterno.caixaDisponivel) ? contexto.patrimonioExterno.caixaDisponivel : 0,
-        },
-        dividas: contexto.dividas.map((item) => ({
-          ...item,
-          saldoDevedor: Number.isFinite(item.saldoDevedor) ? item.saldoDevedor : 0,
-          parcelaMensal: Number.isFinite(item.parcelaMensal) ? item.parcelaMensal : 0,
-        })),
-      });
-      await telemetriaApi.registrarEventoTelemetria("profile_completed", { origem: "perfil_usuario" });
+      await telemetriaApi.registrarEvento({
+        nome: "profile_completed",
+        dadosJson: { origem: "perfil_usuario" },
+      }).catch(() => null);
       invalidarCacheUsuario();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

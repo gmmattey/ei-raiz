@@ -141,7 +141,7 @@ const FormularioLogin: React.FC<FormularioLoginProps> = ({
     setAuthError('');
     try {
       await authApi.entrar(email, passwordInput);
-      await telemetriaApi.registrarEventoTelemetria('login_success', { origem: 'landing_inline' });
+      await telemetriaApi.registrarEvento({ nome: 'login_success', dadosJson: { origem: 'landing_inline' } });
       setThemeMode('dark');
       setOcultarValores(true);
       navigate('/home');

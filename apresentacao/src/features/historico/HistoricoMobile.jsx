@@ -1,7 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, historicoApi } from '../../cliente-api';
+import { ApiError, patrimonioApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
+
+const anoMesParaData = (anoMes) => {
+  if (!anoMes) return null;
+  const [ano, mes] = String(anoMes).split('-');
+  if (!ano || !mes) return null;
+  return `${ano}-${mes}-01`;
+};
+
+const formatarAnoMes = (anoMes) => {
+  if (!anoMes) return '—';
+  const [ano, mes] = String(anoMes).split('-');
+  if (!ano || !mes) return anoMes;
+  const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const idx = Math.max(1, Math.min(12, Number(mes))) - 1;
+  return `${mesesNomes[idx]}/${ano}`;
+};
 
 const RANGES = [
   { label: '3m',  months: 3 },
@@ -40,30 +56,28 @@ export default function HistoricoMobile() {
       try {
         setLoading(true);
         setErro('');
-        const [respMensal, snapsLegado, listaEventos] = await Promise.all([
-          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-          historicoApi.listarSnapshots(24),
-          historicoApi.listarEventos(24),
-        ]);
+        const resp = await patrimonioApi.obterHistorico();
         if (!ativo) return;
-        const pontos = respMensal?.pontos ?? [];
-        const listaSnapshots = pontos.length > 0
-          ? pontos.map(p => ({
-              id: p.id,
-              data: p.dataFechamento,
-              valorTotal: p.totalAtual,
-              variacaoPercentual: p.retornoMes,
-            }))
-          : snapsLegado;
-
+        const itens = (resp?.itens ?? [])
+          .slice()
+          .sort((a, b) => String(b.anoMes).localeCompare(String(a.anoMes)));
         const limite = new Date();
         limite.setMonth(limite.getMonth() - activeRange.months);
-        const dentroPeriodo = (item) => {
-          const d = new Date(item.data);
-          return !Number.isNaN(d.getTime()) && d >= limite;
-        };
-        setSnapshots(listaSnapshots.filter(dentroPeriodo));
-        setEventos(listaEventos.filter(dentroPeriodo));
+        const listaSnapshots = itens
+          .map((p, idx) => ({
+            id: `${p.anoMes}-${idx}`,
+            data: formatarAnoMes(p.anoMes),
+            dataRef: anoMesParaData(p.anoMes),
+            valorTotal: Number(p.patrimonioBrutoBrl ?? 0),
+            variacaoPercentual: Number(p.rentabilidadeMesPct ?? 0),
+          }))
+          .filter((item) => {
+            if (!item.dataRef) return false;
+            const d = new Date(item.dataRef);
+            return !Number.isNaN(d.getTime()) && d >= limite;
+          });
+        setSnapshots(listaSnapshots);
+        setEventos([]);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/', { replace: true });
@@ -175,7 +189,7 @@ export default function HistoricoMobile() {
                   >
                     <div>
                       <p className="font-['Sora'] text-[12px] font-bold text-[var(--text-primary)]">
-                        {formatarData(snap.data)}
+                        {snap.data}
                       </p>
                       <p className="text-[10px] font-semibold uppercase text-[var(--text-secondary)]">
                         {ocultarValores

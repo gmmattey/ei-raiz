@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import EstadoVazio from '../../components/feedback/EstadoVazio';
 import { formatarData } from '../../utils/formatarData';
-import { ApiError, insightsApi, telemetriaApi } from '../../cliente-api';
+import { ApiError, patrimonioApi, telemetriaApi } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useNavigate } from 'react-router-dom';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
@@ -138,6 +138,72 @@ const resolverUrlAcao = (codigo) => {
 const INSIGHTS_CACHE_KEY = 'insights_resumo';
 const INSIGHTS_CACHE_TTL = 15 * 60 * 1000; // 15 min - reduz reprocessamento desnecessário
 
+const FAIXA_PARA_BAND = {
+  critico: 'critical',
+  baixo: 'fragile',
+  medio: 'stable',
+  bom: 'good',
+  excelente: 'strong',
+};
+
+const PILAR_PARA_CODIGO = {
+  diversificacao: 'CONC_CLASSE',
+  concentracao: 'CONC_ATIVO',
+  custo: 'CUSTO_ALTO',
+  risco: 'RISCO_ELEVADO',
+};
+
+const PILAR_DESCRICAO = {
+  diversificacao: 'A distribuição entre classes de ativos da sua carteira pode estar desbalanceada. Considere diversificar para reduzir risco.',
+  concentracao: 'Um ou mais ativos concentram parte excessiva do patrimônio. Reduzir essa concentração melhora o score.',
+  custo: 'O custo agregado da carteira está acima do recomendado. Avalie migrar para alternativas de menor taxa.',
+  risco: 'O risco agregado da carteira está acima do recomendado pelo seu perfil. Rever alocação.',
+};
+
+const composirResumoCanonico = (resumo, score) => {
+  const faixa = score?.faixa ?? null;
+  const scoreTotal = Number(score?.scoreTotal ?? 0);
+  const calculadoEm = score?.calculadoEm ?? resumo?.atualizadoEm ?? null;
+  const scoreUnificado = scoreTotal > 0 && faixa
+    ? {
+        score: scoreTotal,
+        band: FAIXA_PARA_BAND[faixa] ?? 'stable',
+        completenessStatus: 'complete',
+        calculatedAt: calculadoEm,
+      }
+    : null;
+
+  let riscoPrincipal = null;
+  const pilares = Array.isArray(score?.pilares) ? score.pilares : [];
+  if (pilares.length > 0) {
+    const pior = [...pilares].sort((a, b) => Number(a.valor ?? 0) - Number(b.valor ?? 0))[0];
+    if (pior && Number(pior.valor ?? 0) < 60) {
+      const codigo = PILAR_PARA_CODIGO[pior.chave] ?? 'DIAG_GERAL';
+      const severidade = Number(pior.valor ?? 0) < 30 ? 'alto' : Number(pior.valor ?? 0) < 50 ? 'medio' : 'baixo';
+      riscoPrincipal = {
+        codigo,
+        severidade,
+        titulo: pior.rotulo ?? 'Ponto de atenção',
+        descricao: PILAR_DESCRICAO[pior.chave] ?? 'Revise esse pilar para melhorar seu score.',
+      };
+    }
+  }
+
+  return {
+    scoreUnificado,
+    classificacao: faixa,
+    score: { atualizadoEm: calculadoEm, score: scoreTotal },
+    riscoPrincipal,
+    acaoPrioritaria: null,
+    insightPrincipal: null,
+    diagnostico: null,
+    diagnosticoFinal: null,
+    atualizacaoMercado: null,
+    dadosMercadoSessao: null,
+    confiancaDiagnostico: 'alta',
+  };
+};
+
 export default function Insights() {
   const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
@@ -148,6 +214,13 @@ export default function Insights() {
 
   useEffect(() => {
     let ativo = true;
+    const carregar = async () => {
+      const [resumoCanonico, score] = await Promise.all([
+        patrimonioApi.obterResumo(),
+        patrimonioApi.obterScore().catch(() => null),
+      ]);
+      return composirResumoCanonico(resumoCanonico, score);
+    };
     (async () => {
       try {
         const cached = cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL);
@@ -157,7 +230,7 @@ export default function Insights() {
           // atualiza em background sem mostrar loading
           void (async () => {
             try {
-              const dados = await insightsApi.obterResumoComFallback();
+              const dados = await carregar();
               if (ativo) {
                 cache.set(INSIGHTS_CACHE_KEY, dados);
                 setResumo(dados);
@@ -168,11 +241,14 @@ export default function Insights() {
         }
         setLoading(true);
         setError('');
-        const dados = await insightsApi.obterResumoComFallback();
+        const dados = await carregar();
         if (ativo) cache.set(INSIGHTS_CACHE_KEY, dados);
         if (!ativo) return;
         setResumo(dados);
-        await telemetriaApi.registrarEventoTelemetria('insight_opened', { score: dados?.score?.score ?? 0 });
+        await telemetriaApi.registrarEvento({
+          nome: 'insight_opened',
+          dadosJson: { score: dados?.scoreUnificado?.score ?? 0 },
+        }).catch(() => null);
 
         // Trigger Vera evaluation in background
         if (ativo) {
@@ -189,7 +265,7 @@ export default function Insights() {
       }
     })();
     return () => { ativo = false; };
-  }, [navigate]);
+  }, [navigate, avaliarComVera]);
 
   const cards = useMemo(() => {
     if (!resumo) return [];

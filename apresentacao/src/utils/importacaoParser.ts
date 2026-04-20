@@ -1,16 +1,15 @@
 import type { WorkSheet } from "xlsx";
-import type {
-  AbaImportacao,
-  IndexadorRendaFixa,
-  ItemAcaoBruto,
-  ItemFundoBruto,
-  ItemImovelBruto,
-  ItemPatrimonioBruto,
-  ItemPoupancaBruto,
-  ItemPrevidenciaBruto,
-  ItemRendaFixaBruto,
-  ItemVeiculoBruto,
-} from "@ei/contratos";
+
+type AbaImportacao = "acoes" | "fundos" | "previdencia" | "renda_fixa" | "poupanca" | "imoveis" | "veiculos";
+type IndexadorRendaFixa = string;
+type ItemAcaoBruto = Record<string, unknown>;
+type ItemFundoBruto = Record<string, unknown>;
+type ItemImovelBruto = Record<string, unknown>;
+type ItemPatrimonioBruto = Record<string, unknown>;
+type ItemPoupancaBruto = Record<string, unknown>;
+type ItemPrevidenciaBruto = Record<string, unknown>;
+type ItemRendaFixaBruto = Record<string, unknown>;
+type ItemVeiculoBruto = Record<string, unknown>;
 
 // ─── Lazy loader — xlsx (~300KB) só carrega quando o parse for chamado ────────
 
@@ -364,7 +363,7 @@ export async function parseXlsx(arquivo: File): Promise<ResultadoParseXlsx> {
           if (parsed.length > 0) {
             // Renumera linhas globalmente para evitar colisão
             const offset = itens.length;
-            for (const item of parsed) {
+            for (const item of parsed as Array<{ linha: number }>) {
               item.linha = offset + item.linha;
             }
             itens.push(...parsed);

@@ -33,9 +33,9 @@ export default function Configuracoes({ embedded = false }) {
     let ativo = true;
     (async () => {
       try {
-        const sessao = await authApi.obterUsuarioAutenticado();
+        const sessao = await authApi.obterSessao();
         if (!ativo) return;
-        setUsuario(sessao.usuario);
+        setUsuario({ id: sessao.usuarioId, nome: sessao.nome, email: sessao.email });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           clearSession();

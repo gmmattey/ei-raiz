@@ -9,6 +9,13 @@ database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 preview_database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
 migrations_dir = "../../infra/banco/migrations"
 
+[triggers]
+crons = [
+  "*/5 * * * *",
+  "0 3 * * *",
+  "*/30 * * * *",
+]
+
 [vars]
 GOOGLE_APPS_SCRIPT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzwrYNylQiyaWuC8gXsUDAYOC1QROvfWQ9DCiZ32GfNba9Zsxnj4_tUmREmXtS2Xt75/exec"
 WEB_BASE_URL = "http://localhost:3000"

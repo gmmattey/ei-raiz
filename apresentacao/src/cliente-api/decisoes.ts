@@ -1,40 +1,81 @@
-import type { CalcularSimulacaoEntrada, HistoricoSimulacao, PremissasMercadoSimulador, ResultadoSimulacao, Simulacao, TipoSimulacao } from "@ei/contratos";
+import type {
+  SimulacaoSaida,
+  SimulacaoCriarEntrada,
+  VeraMensagemEntrada,
+  VeraMensagemSaida,
+  TipoSimulacao,
+} from "@ei/contratos";
 import { apiRequest } from "./http";
 
-export function obterPremissasMercado(tipo: TipoSimulacao): Promise<PremissasMercadoSimulador> {
-  return apiRequest<PremissasMercadoSimulador>(`/api/decisoes/premissas/${tipo}`, { method: "GET" });
+export function listarSimulacoes(): Promise<{ itens: SimulacaoSaida[] }> {
+  return apiRequest<{ itens: SimulacaoSaida[] }>("/api/decisoes/simulacoes", { method: "GET" });
 }
 
-export function calcularSimulacao(payload: CalcularSimulacaoEntrada): Promise<ResultadoSimulacao> {
-  return apiRequest<ResultadoSimulacao>("/api/decisoes/simulacoes/calcular", {
+export function obterSimulacao(id: string): Promise<SimulacaoSaida> {
+  return apiRequest<SimulacaoSaida>(`/api/decisoes/simulacoes/${encodeURIComponent(id)}`, { method: "GET" });
+}
+
+export function criarSimulacao(entrada: SimulacaoCriarEntrada): Promise<SimulacaoSaida> {
+  return apiRequest<SimulacaoSaida>("/api/decisoes/simulacoes", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(entrada),
   });
 }
 
-export function salvarSimulacao(payload: CalcularSimulacaoEntrada): Promise<Simulacao> {
-  return apiRequest<Simulacao>("/api/decisoes/simulacoes", {
+export function enviarMensagemVera(entrada: VeraMensagemEntrada): Promise<VeraMensagemSaida> {
+  return apiRequest<VeraMensagemSaida>("/api/decisoes/vera/mensagens", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(entrada),
   });
 }
 
-export function listarSimulacoes(): Promise<Simulacao[]> {
-  return apiRequest<Simulacao[]>("/api/decisoes/simulacoes", { method: "GET" });
+// ─── Shims legados para simuladores .jsx ────────────────────────────────────
+// Serão removidos em Etapa 7 após os simuladores migrarem para criarSimulacao.
+// Cálculo local (sem rede) — backend canônico só persiste resultado.
+
+type LegacyEntrada = { tipo: string; nome?: string; premissas: Record<string, unknown> };
+
+function mapearTipo(tipoLegado: string): TipoSimulacao {
+  if (tipoLegado === "imovel" || tipoLegado === "carro") return tipoLegado === "carro" ? "veiculo" : "imovel";
+  return "outro";
 }
 
-export function obterSimulacao(id: string): Promise<Simulacao> {
-  return apiRequest<Simulacao>(`/api/decisoes/simulacoes/${id}`, { method: "GET" });
+function simularLocalmente(entrada: LegacyEntrada): Record<string, unknown> {
+  // Cálculo placeholder: retorna as premissas como resultado para preservar o shape.
+  // Cada simulador .jsx migrará a lógica real para calculos/ no backend em Etapa 7.
+  return { ...entrada.premissas, calculadoLocalmente: true };
 }
 
-export function recalcularSimulacao(id: string): Promise<Simulacao> {
-  return apiRequest<Simulacao>(`/api/decisoes/simulacoes/${id}/recalcular`, { method: "POST" });
+export async function calcularSimulacao(entrada: LegacyEntrada): Promise<SimulacaoSaida> {
+  const resultado = simularLocalmente(entrada);
+  return {
+    id: "",
+    usuarioId: "",
+    tipo: mapearTipo(entrada.tipo),
+    premissasJson: { nome: entrada.nome ?? "", tipoLegado: entrada.tipo, ...entrada.premissas },
+    resultadoJson: resultado,
+    criadoEm: new Date().toISOString(),
+  };
 }
 
-export function duplicarSimulacao(id: string): Promise<Simulacao> {
-  return apiRequest<Simulacao>(`/api/decisoes/simulacoes/${id}/duplicar`, { method: "POST" });
+export async function salvarSimulacao(entrada: LegacyEntrada): Promise<SimulacaoSaida> {
+  const resultado = simularLocalmente(entrada);
+  return criarSimulacao({
+    tipo: mapearTipo(entrada.tipo),
+    premissasJson: { nome: entrada.nome ?? "", tipoLegado: entrada.tipo, ...entrada.premissas },
+    resultadoJson: resultado,
+  });
 }
 
-export function listarHistoricoSimulacao(id: string): Promise<HistoricoSimulacao[]> {
-  return apiRequest<HistoricoSimulacao[]>(`/api/decisoes/simulacoes/${id}/historico`, { method: "GET" });
+export async function recalcularSimulacao(id: string): Promise<SimulacaoSaida> {
+  const atual = await obterSimulacao(id);
+  return {
+    ...atual,
+    resultadoJson: { ...atual.premissasJson, calculadoLocalmente: true },
+  };
+}
+
+export async function obterPremissasMercado(_tipo: string): Promise<Record<string, unknown>> {
+  // Backend canônico não expõe premissas editáveis por tipo. Cada simulador usa defaults hardcoded.
+  return {};
 }

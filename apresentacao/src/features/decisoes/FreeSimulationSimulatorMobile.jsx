@@ -32,7 +32,7 @@ export default function FreeSimulationSimulatorMobile() {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'livre' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'livre' } });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'livre', nome: form.nome, premissas: form });
       setResultado(data);
     } catch { setErro('Falha ao calcular cenário.'); }
@@ -43,7 +43,7 @@ export default function FreeSimulationSimulatorMobile() {
     try {
       setSalvando(true);
       await decisoesApi.salvarSimulacao({ tipo: 'livre', nome: form.nome, premissas: form });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'livre' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'livre' } });
     } catch { /* silencioso */ }
     finally { setSalvando(false); }
   };

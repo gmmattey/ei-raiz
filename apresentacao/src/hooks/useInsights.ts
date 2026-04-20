@@ -1,10 +1,54 @@
 import { useState, useEffect, useCallback } from "react";
-import { insightsApi } from "../cliente-api";
-import type { ResumoInsights } from "../cliente-api/insights";
+import { patrimonioApi } from "../cliente-api";
+import type { PatrimonioScoreSaida, ScoreFaixa } from "@ei/contratos";
 import { cache } from "../utils/cache";
+
+type ScoreUnificadoBand = "critical" | "fragile" | "stable" | "good" | "strong";
+
+type ResumoInsights = {
+  scoreGeral: number;
+  score: { score: number };
+  diagnostico: { titulo: string; resumo: string; descricao: string; riscos?: unknown[] };
+  riscoPrincipal: { titulo?: string; descricao?: string } | null;
+  acaoPrioritaria: { titulo?: string; descricao?: string } | null;
+  scoreHistorico: number[];
+  scoreUnificado: {
+    score: number;
+    band: ScoreUnificadoBand;
+    completenessStatus: string;
+    calculatedAt: string;
+  };
+};
 
 const CACHE_KEY = "insights_resumo";
 const CACHE_TTL_MS = 300 * 1000; // 5 min
+
+const FAIXA_PARA_BAND: Record<ScoreFaixa, "critical" | "fragile" | "stable" | "good" | "strong"> = {
+  critico: "critical",
+  baixo: "fragile",
+  medio: "stable",
+  bom: "good",
+  excelente: "strong",
+};
+
+function adaptarScore(score: PatrimonioScoreSaida): ResumoInsights {
+  const scoreValor = score.scoreTotal ?? 0;
+  const band = score.faixa ? FAIXA_PARA_BAND[score.faixa] : "stable";
+  return {
+    scoreGeral: scoreValor,
+    score: { score: scoreValor } as never,
+    diagnostico: { titulo: "", resumo: "", descricao: "" } as never,
+    riscoPrincipal: null,
+    acaoPrioritaria: null,
+    scoreHistorico: score.historico.map((h) => h.score),
+    scoreUnificado: {
+      score: scoreValor,
+      band,
+      completenessStatus: "complete",
+      calculatedAt: score.calculadoEm ?? new Date().toISOString(),
+    },
+  };
+}
 
 export function useInsights() {
   const [dados, setDados] = useState<ResumoInsights | null>(() =>
@@ -25,7 +69,8 @@ export function useInsights() {
     setLoading(true);
     setErro(null);
     try {
-      const resultado = await insightsApi.obterResumo();
+      const score = await patrimonioApi.obterScore();
+      const resultado = adaptarScore(score);
       cache.set(CACHE_KEY, resultado);
       setDados(resultado);
     } catch (e) {

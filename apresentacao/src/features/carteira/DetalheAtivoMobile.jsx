@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { carteiraApi } from '../../cliente-api';
+import { patrimonioApi } from '../../cliente-api';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { mensagemMotivoIndisponivel } from '../../utils/motivoRentabilidade';
 
@@ -59,9 +59,38 @@ export default function DetalheAtivoMobile() {
     (async () => {
       try {
         setLoading(true);
-        const dados = await carteiraApi.obterDetalheAtivo(String(ticker || ''));
+        const tickerAlvo = String(ticker || '').toUpperCase();
+        const itensResp = await patrimonioApi.listarItens();
         if (!vivo) return;
-        setAtivo(dados);
+        const itens = itensResp?.itens ?? [];
+        const item = itens.find((i) => (i.ticker ?? '').toUpperCase() === tickerAlvo)
+          ?? itens.find((i) => i.id === ticker);
+        if (!item) {
+          setErro('Ativo não encontrado na carteira.');
+          return;
+        }
+        const TIPO_PARA_CATEGORIA = {
+          acao: 'acao', fii: 'fii', etf: 'acao', fundo: 'fundo',
+          previdencia: 'previdencia', renda_fixa: 'renda_fixa',
+          poupanca: 'poupanca', imovel: 'bens', veiculo: 'bens',
+        };
+        setAtivo({
+          id: item.id,
+          ticker: item.ticker,
+          nome: item.nome,
+          categoria: TIPO_PARA_CATEGORIA[item.tipo] ?? 'outros',
+          quantidade: item.quantidade ?? 0,
+          precoMedio: item.precoMedioBrl ?? 0,
+          precoAtual: item.precoAtualBrl,
+          valorAtual: item.valorAtualBrl ?? 0,
+          participacao: item.pesoPct ?? 0,
+          rentabilidadeDesdeAquisicaoPct: item.rentabilidadePct,
+          rentabilidadeConfiavel: item.rentabilidadePct != null,
+          statusAtualizacao: item.precoAtualBrl != null ? 'atualizado' : 'indisponivel',
+          ultimaAtualizacao: item.atualizadoEm,
+          fontePreco: null,
+          benchmarkDesdeAquisicao: null,
+        });
         setErro('');
       } catch {
         if (vivo) setErro('Falha ao carregar o ativo.');

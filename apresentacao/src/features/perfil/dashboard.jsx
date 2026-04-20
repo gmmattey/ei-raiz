@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from "recharts";
-import { ApiError, carteiraApi } from "../../cliente-api";
+import { ApiError, patrimonioApi } from "../../cliente-api";
 import { useNavigate } from "react-router-dom";
 import { useModoVisualizacao } from "../../context/ModoVisualizacaoContext";
 
@@ -13,6 +13,48 @@ const filtros = [
   { label: "Poupança", value: "poupanca" },
   { label: "Bens", value: "bens" },
 ];
+
+const TIPO_PARA_FILTRO = {
+  acao: "acao",
+  fii: "acao",
+  etf: "acao",
+  fundo: "fundo",
+  previdencia: "previdencia",
+  renda_fixa: "renda_fixa",
+  poupanca: "poupanca",
+  imovel: "bens",
+  veiculo: "bens",
+  cripto: "todos",
+  caixa: "todos",
+  divida: null,
+  outro: "todos",
+};
+
+function montarDashboard(resumo) {
+  const filtrosMap = {
+    todos: [], acao: [], fundo: [], previdencia: [], renda_fixa: [], poupanca: [], bens: [],
+  };
+  const totais = {
+    todos: resumo.patrimonioBrutoBrl ?? 0,
+    acao: 0, fundo: 0, previdencia: 0, renda_fixa: 0, poupanca: 0, bens: 0,
+  };
+  for (const item of resumo.principaisAtivos ?? []) {
+    const entrada = {
+      id: item.id,
+      nome: item.nome,
+      categoria: item.tipo,
+      valor: item.valorAtualBrl ?? 0,
+      percentual: item.pesoPct ?? 0,
+    };
+    filtrosMap.todos.push(entrada);
+    const bucket = TIPO_PARA_FILTRO[item.tipo];
+    if (bucket && bucket !== "todos" && bucket in filtrosMap) {
+      filtrosMap[bucket].push(entrada);
+      totais[bucket] += entrada.valor;
+    }
+  }
+  return { filtros: filtrosMap, totais };
+}
 
 const CORES = ["#F56A2A", "#6FCF97", "#F2C94C", "#5DADE2", "#9B59B6", "#A7B0BC", "#E67E22", "#16A085"];
 
@@ -45,9 +87,9 @@ export default function Dashboard({ embedded = false }) {
       try {
         setLoading(true);
         setError("");
-        const dados = await carteiraApi.obterDashboardPatrimonio();
+        const resumo = await patrimonioApi.obterResumo();
         if (!ativo) return;
-        setDashboardData(dados);
+        setDashboardData(montarDashboard(resumo));
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate("/", { replace: true });
@@ -63,7 +105,10 @@ export default function Dashboard({ embedded = false }) {
     };
   }, [navigate]);
 
-  const dadosGraficos = dashboardData?.filtros?.[filtro] ?? [];
+  const dadosGraficos = useMemo(
+    () => dashboardData?.filtros?.[filtro] ?? [],
+    [dashboardData, filtro],
+  );
   const totalFiltro = dashboardData?.totais?.[filtro] ?? 0;
   const semBase = !loading && !error && dadosGraficos.length === 0;
 
