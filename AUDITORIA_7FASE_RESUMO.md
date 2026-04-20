@@ -277,3 +277,51 @@ Mostrar ao usuário em tooltip:
 ---
 
 **Pronto para usar. Avance quando tiver JWT admin para o rollout.**
+
+---
+
+## Post-Deployment Fix: patrimonioBruto Calculation (2026-04-20)
+
+### Problema Identificado
+Score do usuário giammattey.luiz@gmail.com estava inflado em 78 quando deveria estar ~45.
+
+**Raiz do Problema:** Arquivo `servidores/modulos-backend/insights/src/repositorio.ts` linhas 273-290:
+- `imovel` e `veiculo` vinham de `contextoPatrimonial` (sempre 0 para este usuário)
+- Dados reais de imóvel (R$ 280k) e veículo (R$ 86k) estavam em `posicoes_financeiras`
+- Esses valores eram capturados em `outros` em vez de serem categorizados corretamente
+- Resultado: patrimonioBruto = R$ 417k ✓ mas com distribuição % incorreta (88% "outros")
+- Score calculation usava `scoreConcentracaoIliquida = 1 - (0 + 0) / 100 = 1.0` (super positivo!)
+
+### Solução Aplicada
+**Commit:** `5c9183a` — Extrai imovel/veiculo diretamente de posicoes_financeiras
+
+```typescript
+// ANTES (bugado):
+const imoveis = contextoPatrimonial.imoveis;          // = 0
+const veiculos = contextoPatrimonial.veiculos;        // = 0
+const outros = Math.max(0, valorPosicoes - caixaPosicoes);  // = R$ 366k
+
+// DEPOIS (correto):
+const imoveisPos = posicoesRows.filter(x => x.tipo === 'imovel').reduce(...); // = R$ 280k
+const veiculosPos = posicoesRows.filter(x => x.tipo === 'veiculo').reduce(...); // = R$ 86k
+const imoveis = Math.max(imoveisPos, contextoPatrimonial.imoveis); // = R$ 280k
+const veiculos = Math.max(veiculosPos, contextoPatrimonial.veiculos); // = R$ 86k
+const outros = Math.max(0, valorPosicoes - valorPosicoesCategorizado); // = 0
+```
+
+### Impacto no Score
+| Métrica | Antes | Depois | 
+|---------|-------|--------|
+| % Imóveis | 0% | 67.1% |
+| % Veículos | 0% | 20.6% |
+| % Outros | 87.7% | 0% |
+| scoreConcentracaoIliquida | 1.0 | 0.123 |
+| **Score Final** | **78** | **~45** |
+| **Penalidades** | 3 | 5+ |
+
+Score agora **apropriado** para portfólio com 88% em bens + 12% investimentos + 0% retorno.
+
+### Validação
+- ✅ Deploy em `https://ei-api-gateway-production.giammattey-luiz.workers.dev`
+- ✅ Banco confirmou: imovel R$ 280k + veiculo R$ 86k presentes em posicoes_financeiras
+- ✅ Investimentos R$ 51.309,32 em 11 ativos (4 fundos + 7 ações)
