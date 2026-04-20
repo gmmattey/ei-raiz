@@ -2,7 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
 import { ChevronUp, Loader2 } from 'lucide-react';
-import { carteiraApi, getStoredUser, insightsApi } from '../../cliente-api';
+import { getStoredUser, patrimonioApi } from '../../cliente-api';
+
+const ACAO_POR_FAIXA: Record<string, string> = {
+  critico: 'Consolide a reserva de emergência antes de aumentar aportes.',
+  baixo: 'Aumente a diversificação e reduza concentração em um único ativo.',
+  medio: 'Ajuste o mix para ficar mais próximo do seu perfil de risco.',
+  bom: 'Mantenha a disciplina de aportes mensais.',
+  excelente: 'Sua carteira está alinhada. Revise o plano a cada trimestre.',
+};
 
 const PreInsight: React.FC = () => {
   const navigate = useNavigate();
@@ -18,27 +26,20 @@ const PreInsight: React.FC = () => {
     const carregarDados = async () => {
       try {
         const user = getStoredUser();
-        const [resumo, insights] = await Promise.all([
-          carteiraApi.obterResumoCarteira(),
-          insightsApi.obterResumo()
-        ]);
+        const resumo = await patrimonioApi.obterResumo();
 
         const moeda = (valor: number) =>
           new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor ?? 0);
 
+        const acao = resumo.scoreFaixa
+          ? ACAO_POR_FAIXA[resumo.scoreFaixa] ?? 'Sua carteira está sendo processada.'
+          : 'Sua carteira está sendo processada.';
+
         setData({
           userName: user?.nome?.split(' ')[0] || 'Investidor',
-          patrimonio: moeda(resumo.patrimonioLiquido ?? 0),
-          percentualJornada: resumo.quantidadeAtivos > 0 ? 'em evolução' : '0%',
-          acaoRecomendada:
-            insights.diagnosticoFinal?.oQueFazerAgora ||
-            insights.insightPrincipal?.acao ||
-            insights.diagnosticoFinal?.insightPrincipal?.acao ||
-            insights.insightPrincipal?.descricao ||
-            insights.diagnosticoFinal?.insightPrincipal?.descricao ||
-            insights.riscoPrincipal?.descricao ||
-            insights.acaoPrioritaria?.descricao ||
-            'Sua carteira está sendo processada.'
+          patrimonio: moeda(resumo.patrimonioLiquidoBrl ?? 0),
+          percentualJornada: resumo.quantidadeItens > 0 ? 'em evolução' : '0%',
+          acaoRecomendada: acao,
         });
       } catch (err) {
         console.error('Falha ao carregar PreInsight:', err);

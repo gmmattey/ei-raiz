@@ -4,7 +4,7 @@
     {
       "name": "apresentacao-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["run", "dev", "--workspace=@ei/web"],
       "port": 3000
     }
   ]

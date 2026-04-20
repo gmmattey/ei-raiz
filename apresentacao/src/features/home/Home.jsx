@@ -10,8 +10,7 @@ import {
 } from 'recharts';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  ApiError, carteiraApi, insightsApi, perfilApi, configApi,
-  historicoApi, getStoredUser,
+  ApiError, patrimonioApi, perfilApi, getStoredUser,
 } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useConteudoApp } from '../../hooks/useConteudoApp';
@@ -109,13 +108,20 @@ const getInstituicaoDisplay = (abrev) => {
 };
 
 /**
- * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
- * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
+ * Lê a rentabilidade (pct). Retorna null quando indisponível — UI exibe "—".
+ * Para resumo consolidado usa `rentabilidadeMesPct`; para item, `rentabilidadePct`.
  */
-const rentabilidadeDesdeAquisicao = (obj) => {
-  if (!obj || obj.rentabilidadeConfiavel === false) return null;
-  const v = obj.rentabilidadeDesdeAquisicaoPct;
+const rentabilidadePct = (obj) => {
+  const v = obj?.rentabilidadeMesPct ?? obj?.rentabilidadePct;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+};
+
+const BAND_POR_FAIXA = {
+  critico: 'critical',
+  baixo: 'fragile',
+  medio: 'stable',
+  bom: 'good',
+  excelente: 'strong',
 };
 
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -166,8 +172,6 @@ export default function HomeLobby() {
     showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.perfilDados ?? null));
   const [ativos, setAtivos]       = useState(() =>
     showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.ativos ?? []));
-  const [dashboard, setDashboard] = useState(() =>
-    showSuccessImport ? null : (cache.get(HOME_CACHE_KEY)?.dashboard ?? null));
   const [historicoMensal, setHistoricoMensal] = useState(() =>
     showSuccessImport ? [] : (cache.get(HOME_CACHE_KEY)?.historicoMensal ?? []));
   const [benchmark, setBenchmark] = useState(() =>
@@ -200,6 +204,29 @@ export default function HomeLobby() {
     }
   }, [navigate, openQuickModalFromState]);
 
+  const carregarTudo = async () => {
+    const [dadosResumo, dadosPerfil, dadosItens, dadosHistorico, dadosScore] = await Promise.all([
+      patrimonioApi.obterResumo(),
+      perfilApi.obterPerfil().catch(() => null),
+      patrimonioApi.listarItens().catch(() => ({ itens: [] })),
+      patrimonioApi.obterHistorico().catch(() => ({ itens: [] })),
+      patrimonioApi.obterScore().catch(() => null),
+    ]);
+    const pontos = [...(dadosHistorico?.itens ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+    const itens = dadosItens?.itens ?? [];
+    return { dadosResumo, dadosPerfil, dadosItens: itens, pontos, dadosScore };
+  };
+
+  const computarPerfilCompletude = (dadosPerfil) => {
+    if (!dadosPerfil) return 0;
+    let pre = 0;
+    if (dadosPerfil.objetivo) pre++;
+    if (dadosPerfil.horizonte) pre++;
+    if (dadosPerfil.perfilRisco) pre++;
+    if (Number(dadosPerfil.rendaMensal) > 0) pre++;
+    return Math.round((pre / 4) * 100);
+  };
+
   useEffect(() => {
     let ativo = true;
     (async () => {
@@ -209,18 +236,15 @@ export default function HomeLobby() {
         if (!showSuccessImport) {
           const dadosCache = cache.get(HOME_CACHE_KEY);
           if (ativo && dadosCache?.resumo) {
-            // Renderizar imediatamente com cache existente
             setResumo(dadosCache.resumo);
             setInsights(dadosCache.insights ?? null);
             setPerfilDados(dadosCache.perfilDados ?? null);
             setAtivos(dadosCache.ativos ?? []);
-            setDashboard(dadosCache.dashboard ?? null);
             setHistoricoMensal(dadosCache.historicoMensal ?? []);
-            setBenchmark(dadosCache.benchmark ?? null);
+            setBenchmark(null);
             setPerfilIncompleto(Boolean(dadosCache.perfilIncompleto));
             setCompletudePerfil(Number(dadosCache.completudePerfil ?? 0));
             setLoading(false);
-            // Recarregar em background se cache tiver mais de 60s (não bloqueia a UI)
             const cacheEstaFresco = Boolean(cache.get(HOME_CACHE_KEY, HOME_CACHE_FRESCA_TTL));
             if (!cacheEstaFresco) {
               setTimeout(() => { if (ativo) void recarregarHomeSemPiscada(); }, 0);
@@ -229,59 +253,25 @@ export default function HomeLobby() {
           }
         }
         setLoading(true);
-        const [dadosCarteira, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
-          await Promise.all([
-            carteiraApi.obterResumoCarteiraComFallback(),
-            perfilApi.obterPerfil().catch(() => null),
-            carteiraApi.listarAtivosCarteira().catch(() => []),
-            carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null),
-            historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-            carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
-          ]);
+        const { dadosResumo, dadosPerfil, dadosItens, pontos, dadosScore } = await carregarTudo();
         if (!ativo) return;
-        const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
-        setResumo(dadosCarteira);
-        setAtivos(dadosAtivos);
-        setDashboard(dadosDashboard);
+        setResumo(dadosResumo);
+        setAtivos(dadosItens);
         setHistoricoMensal(pontos);
-        setBenchmark(dadosBenchmark);
-        cache.set('carteira_resumo', dadosCarteira);
-        let perc = 0;
-        if (dadosPerfil) {
-          setPerfilDados(dadosPerfil);
-          let pre = 0;
-          if (dadosPerfil.objetivo)   pre++;
-          if (dadosPerfil.horizonte)  pre++;
-          if (dadosPerfil.perfilRisco) pre++;
-          if (Number(dadosPerfil.rendaMensal) > 0) pre++;
-          perc = Math.round((pre / 4) * 100);
-          setCompletudePerfil(perc);
-          setPerfilIncompleto(perc < 100);
-        }
+        setBenchmark(null);
+        setInsights(dadosScore);
+        const perc = computarPerfilCompletude(dadosPerfil);
+        if (dadosPerfil) setPerfilDados(dadosPerfil);
+        setCompletudePerfil(perc);
+        setPerfilIncompleto(perc < 100);
         setLoading(false);
-        // Salvar cache parcial de carteira imediatamente (antes de insights)
         salvarCache({
-          resumo: dadosCarteira, insights: null,
+          resumo: dadosResumo, insights: dadosScore,
           perfilDados: dadosPerfil ?? null,
-          ativos: dadosAtivos, dashboard: dadosDashboard,
-          historicoMensal: pontos, benchmark: dadosBenchmark,
+          ativos: dadosItens, dashboard: null,
+          historicoMensal: pontos, benchmark: null,
           perfilIncompleto: perc < 100, completudePerfil: perc,
         });
-        try {
-          const dadosInsights = await insightsApi.obterResumoComFallback();
-          cache.set('insights_resumo', dadosInsights);
-          if (ativo) {
-            setInsights(dadosInsights);
-            // Atualizar cache com insights completo
-            salvarCache({
-              resumo: dadosCarteira, insights: dadosInsights,
-              perfilDados: dadosPerfil ?? null,
-              ativos: dadosAtivos, dashboard: dadosDashboard,
-              historicoMensal: pontos, benchmark: dadosBenchmark,
-              perfilIncompleto: perc < 100, completudePerfil: perc,
-            });
-          }
-        } catch (e) { console.error('Falha insights:', e); }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) { navigate('/', { replace: true }); return; }
         if (ativo) { setError('Falha ao carregar dados.'); setLoading(false); }
@@ -293,60 +283,35 @@ export default function HomeLobby() {
   const recarregarHomeSemPiscada = async () => {
     try {
       setError('');
-      const TTL = 60 * 1000;
-      const rC = cache.get('carteira_resumo', TTL);
-      const iC = cache.get('insights_resumo', TTL);
-      const dC = cache.get('carteira_dashboard', TTL);
-      const hC = cache.get('historico_mensal_24', TTL);
-      const bC = cache.get('benchmark_24m', TTL);
-      const [dadosCarteira, dadosInsights, dadosPerfil, dadosAtivos, dadosDashboard, dadosHistorico, dadosBenchmark] =
-        await Promise.all([
-          rC ? Promise.resolve(rC) : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
-          iC ? Promise.resolve(iC) : insightsApi.obterResumoComFallback().then(r => { cache.set('insights_resumo', r); return r; }),
-          perfilApi.obterPerfil().catch(() => null),
-          carteiraApi.listarAtivosCarteira().catch(() => []),
-          dC ? Promise.resolve(dC) : carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
-          hC ? Promise.resolve(hC) : historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })).then(r => { cache.set('historico_mensal_24', r); return r; }),
-          bC ? Promise.resolve(bC) : carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null).then(r => { if (r) cache.set('benchmark_24m', r); return r; }),
-        ]);
-      const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
-      setResumo(dadosCarteira);
-      setInsights(dadosInsights);
-      setAtivos(dadosAtivos);
-      setDashboard(dadosDashboard);
+      const { dadosResumo, dadosPerfil, dadosItens, pontos, dadosScore } = await carregarTudo();
+      setResumo(dadosResumo);
+      setInsights(dadosScore);
+      setAtivos(dadosItens);
       setHistoricoMensal(pontos);
-      setBenchmark(dadosBenchmark);
-      let proxC = 0, proxPI = true;
-      if (dadosPerfil) {
-        setPerfilDados(dadosPerfil);
-        let pre = 0;
-        if (dadosPerfil.objetivo) pre++;
-        if (dadosPerfil.horizonte) pre++;
-        if (dadosPerfil.perfilRisco) pre++;
-        if (Number(dadosPerfil.rendaMensal) > 0) pre++;
-        proxC = Math.round((pre / 4) * 100);
-        proxPI = proxC < 100;
-      } else { setPerfilDados(null); }
-      setCompletudePerfil(proxC);
-      setPerfilIncompleto(proxPI);
+      setBenchmark(null);
+      const perc = computarPerfilCompletude(dadosPerfil);
+      setPerfilDados(dadosPerfil ?? null);
+      setCompletudePerfil(perc);
+      setPerfilIncompleto(dadosPerfil ? perc < 100 : true);
       salvarCache({
-        resumo: dadosCarteira, insights: dadosInsights,
+        resumo: dadosResumo, insights: dadosScore,
         perfilDados: dadosPerfil ?? null,
-        ativos: dadosAtivos, dashboard: dadosDashboard,
-        historicoMensal: pontos, benchmark: dadosBenchmark,
-        perfilIncompleto: proxPI, completudePerfil: proxC,
+        ativos: dadosItens, dashboard: null,
+        historicoMensal: pontos, benchmark: null,
+        perfilIncompleto: dadosPerfil ? perc < 100 : true, completudePerfil: perc,
       });
     } catch { setError('Falha ao atualizar dados.'); }
   };
 
   /* ─── Valores derivados ─── */
-  const scoreUnificado   = insights?.scoreUnificado || insights?.score_unificado;
+  const scoreBand        = insights?.faixa ? BAND_POR_FAIXA[insights.faixa] : null;
+  const scoreUnificado   = insights ? { score: insights.scoreTotal ?? 0, band: scoreBand } : null;
   const scoreExibicao    = scoreUnificado?.score ?? 0;
-  const patrimonioInvest = Number(resumo?.valorInvestimentos ?? 0);
-  const patrimonioLiquido = Number(resumo?.patrimonioLiquido ?? patrimonioInvest);
-  const alertasCount     = insights?.diagnostico?.riscos?.length ?? 0;
-  const primeiroAlerta   = insights?.diagnostico?.riscos?.[0];
-  const bandLabel        = { critical:'Crítico', fragile:'Frágil', stable:'Estável', good:'Bom', strong:'Sólido' }[scoreUnificado?.band ?? ''] ?? '';
+  const patrimonioInvest = Number(resumo?.patrimonioBrutoBrl ?? 0);
+  const patrimonioLiquido = Number(resumo?.patrimonioLiquidoBrl ?? patrimonioInvest);
+  const alertasCount     = 0;
+  const primeiroAlerta   = null;
+  const bandLabel        = { critical:'Crítico', fragile:'Frágil', stable:'Estável', good:'Bom', strong:'Sólido' }[scoreBand ?? ''] ?? '';
 
   const trilhaOnboarding = [
     { num:1, titulo:'Seu estilo', step:2, completo: Boolean(perfilDados?.objetivo && perfilDados?.perfilRisco) },
@@ -357,22 +322,30 @@ export default function HomeLobby() {
 
   /* Composição do patrimônio */
   const composicaoFrase = useMemo(() => {
-    const dist = resumo?.distribuicaoPatrimonio ?? [];
-    if (!dist.length) return null;
-    return dist
-      .filter(d => d.percentual > 0)
-      .sort((a, b) => b.percentual - a.percentual)
-      .map(d => `${d.label} ${Math.round(d.percentual)}%`)
+    const aloc = resumo?.alocacao ?? [];
+    if (!aloc.length) return null;
+    return aloc
+      .filter(a => a.pesoPct > 0)
+      .sort((a, b) => b.pesoPct - a.pesoPct)
+      .map(a => `${a.classe ?? a.tipo} ${Math.round(a.pesoPct)}%`)
       .join(' · ');
   }, [resumo]);
 
-  /* Alocação */
+  /* Alocação — agrupa por tipo canônico */
   const alocacaoData = useMemo(() => {
-    const totais = dashboard?.totais ?? {};
+    const aloc = resumo?.alocacao ?? [];
+    const totais = {};
+    for (const item of aloc) {
+      const bucket =
+        item.tipo === 'fii' || item.tipo === 'etf' ? 'fundo'
+        : item.tipo === 'imovel' || item.tipo === 'veiculo' ? 'bens'
+        : item.tipo;
+      totais[bucket] = (totais[bucket] ?? 0) + (item.valorBrl ?? 0);
+    }
     return ALOCACAO_CONFIG
       .map(c => ({ ...c, value: Number(totais[c.key] ?? 0) }))
       .filter(c => c.value > 0);
-  }, [dashboard]);
+  }, [resumo]);
   const totalAlocacao = alocacaoData.reduce((acc, c) => acc + c.value, 0);
 
   /* Filtros disponíveis baseado em dados reais */
@@ -389,55 +362,34 @@ export default function HomeLobby() {
     ? filtroTempo
     : (filtrosDisponiveis[filtrosDisponiveis.length - 1] ?? 'Max');
 
-  /* Histórico filtrado + CDI mesclado */
-  /* benchmark.serie usa índice base-100 (ex: 108.5 = +8.5% acum.) — escala incompatível com R$ absoluto.
-     Quando CDI está ON, troca para os dados do benchmark diretamente. */
-  const isCdiMode = showCDI && Boolean(benchmark?.serie?.length);
+  /* Histórico filtrado — CDI desativado por ora (backend canônico ainda não expõe benchmark). */
+  const isCdiMode = false;
   const dadosGrafico = useMemo(() => {
-    if (isCdiMode) {
-      const serie = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
-      const filtrada = filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
-      return filtrada.map(p => ({ ...p, anoMes: p.data?.slice(0, 7) }));
-    }
     if (!historicoMensal.length) return [];
-    return filtroEfetivo === 'Max' ? historicoMensal : historicoMensal.slice(-FILTROS_MESES[filtroEfetivo]);
-  }, [historicoMensal, filtroEfetivo, isCdiMode, benchmark]);
+    const serie = historicoMensal.map(p => ({
+      anoMes: p.anoMes,
+      totalAtual: p.patrimonioBrutoBrl ?? 0,
+    }));
+    return filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
+  }, [historicoMensal, filtroEfetivo]);
 
   /* Ativos filtrados */
   const ativosFiltrados = useMemo(() => {
     const busca = buscaAtivo.toLowerCase();
     const lista = busca
       ? ativos.filter(a => a.ticker?.toLowerCase().includes(busca) || a.nome?.toLowerCase().includes(busca))
-      : [...ativos].sort((a, b) => b.valorAtual - a.valorAtual);
+      : [...ativos].sort((a, b) => (b.valorAtualBrl ?? 0) - (a.valorAtualBrl ?? 0));
     return lista.slice(0, 5);
   }, [ativos, buscaAtivo]);
 
-  /* Ativos com detalhes enriquecidos (TIPO, APORTE, AVALIAÇÃO, INSTITUIÇÃO) */
+  /* Ativos com detalhes (sem benchmark IBOV/CDI nem custoAquisicao no canônico). */
   const ativosComDetalhes = useMemo(() => {
     return ativosFiltrados.map(ativo => {
-      // TIPO: determinar tipo do ativo
-      const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+      const tipo = ativo.tipo ?? 'outro';
       const tipoLabel = getTipoLabel(tipo);
-
-      // APORTE: valor inicial declarado pelo usuário (custoAquisicao = preço de compra/investimento inicial)
-      const aporte = ativo.custoAquisicao || 0;
-
-      // AVALIAÇÃO: comparação com benchmark
-      // Para ações: rentabilidade vs IBOVESPA (usando rentabilidadeIbov)
-      // Para fundos: rentabilidade vs CDI (usando rentabilidadeCdi)
-      const benchmark = tipo === 'acao' ? 'IBOV' : 'CDI';
-      const rentabilidadeBenchmark = tipo === 'acao'
-        ? (ativo.rentabilidadeIbov || 0)
-        : (ativo.rentabilidadeCdi || 0);
-      const rentabilidadeAtivo = rentabilidadeDesdeAquisicao(ativo) || 0;
-      const avaliacao = rentabilidadeAtivo - rentabilidadeBenchmark;
-
-      // INSTITUIÇÃO: extrair de metadata ou usar CNPJ/placeholder
-      const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
-      const instituicaoAbrev = instituicao
-        ? instituicao.slice(0, 3).toUpperCase()
-        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI');
-
+      const aporte = 0;
+      const avaliacao = null;
+      const instituicaoAbrev = ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI';
       return {
         ...ativo,
         tipo,
@@ -446,17 +398,14 @@ export default function HomeLobby() {
         avaliacaoValor: avaliacao,
         avaliacaoQualitativa: getAvaliacaoLabel(avaliacao),
         avaliacaoCor: getAvaliacaoCor(avaliacao),
-        benchmark,
+        benchmark: '',
         instituicaoAbrev,
       };
     });
   }, [ativosFiltrados]);
 
-  /* Alertas laterais — oportunidades (riscos já foram ao KPI card) */
-  const oportunidadesList = useMemo(() => {
-    const acoes = insights?.diagnostico?.acoes ?? [];
-    return acoes.slice(0, 2).map(a => ({ tipo: 'oportunidade', titulo: a.titulo, descricao: a.descricao }));
-  }, [insights]);
+  /* Oportunidades não existem no canônico — lista vazia. */
+  const oportunidadesList = [];
 
   /* Loading skeleton */
   if (loading) {
@@ -596,7 +545,7 @@ export default function HomeLobby() {
             {ocultarValores ? '••••••••' : fmt(patrimonioLiquido)}
           </p>
           {(() => {
-            const r = rentabilidadeDesdeAquisicao(resumo);
+            const r = rentabilidadePct(resumo);
             if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
               <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
@@ -619,7 +568,7 @@ export default function HomeLobby() {
             {ocultarValores ? '••••••••' : fmt(patrimonioInvest)}
           </p>
           {(() => {
-            const r = rentabilidadeDesdeAquisicao(resumo);
+            const r = rentabilidadePct(resumo);
             if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
               <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
@@ -776,8 +725,8 @@ export default function HomeLobby() {
                     {/* Desktop rows */}
                     <div className="hidden md:block space-y-0.5">
                       {ativosComDetalhes.map(ativo => {
-                        const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
-                        const r = rentabilidadeDesdeAquisicao(ativo);
+                        const pct = (ativo.pesoPct ?? 0).toFixed(0);
+                        const r = rentabilidadePct(ativo);
                         return (
                           <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
                             className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left"
@@ -789,7 +738,7 @@ export default function HomeLobby() {
                             </div>
                             {/* VALOR ATUAL */}
                             <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
-                              {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
+                              {ocultarValores ? '••••••' : fmt(ativo.valorAtualBrl)}
                             </p>
                             {/* % RENTABILIDADE */}
                             {r === null ? (
@@ -839,8 +788,8 @@ export default function HomeLobby() {
                     {/* Mobile rows */}
                     <div className="md:hidden space-y-0.5">
                       {ativosComDetalhes.map(ativo => {
-                        const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
-                        const r = rentabilidadeDesdeAquisicao(ativo);
+                        const pct = (ativo.pesoPct ?? 0).toFixed(0);
+                        const r = rentabilidadePct(ativo);
                         return (
                           <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
                             className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left h-12"
@@ -852,7 +801,7 @@ export default function HomeLobby() {
                             </div>
                             {/* VALOR ATUAL */}
                             <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
-                              {ocultarValores ? '••••' : fmt(ativo.valorAtual)}
+                              {ocultarValores ? '••••' : fmt(ativo.valorAtualBrl)}
                             </p>
                             {/* % RENTABILIDADE */}
                             {r === null ? (

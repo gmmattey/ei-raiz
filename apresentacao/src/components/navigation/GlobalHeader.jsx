@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
-import { adminApi, clearSession, getStoredUser } from '../../cliente-api';
+import { authApi, clearSession, getStoredUser } from '../../cliente-api';
 import { useInsights } from '../../hooks/useInsights';
 import { Eye, EyeOff, Moon, Sun, Bell } from 'lucide-react';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
@@ -37,8 +37,8 @@ export default function GlobalHeader() {
     const carregar = async () => {
       try {
         setUsuario(getStoredUser());
-        const acessoAdmin = await adminApi.obterMeAdmin().catch(() => ({ isAdmin: false }));
-        if (ativo) setIsAdmin(Boolean(acessoAdmin?.isAdmin));
+        const sessao = await authApi.obterSessao().catch(() => null);
+        if (ativo) setIsAdmin(Boolean(sessao?.ehAdmin));
       } catch {
         if (ativo) setIsAdmin(false);
       }

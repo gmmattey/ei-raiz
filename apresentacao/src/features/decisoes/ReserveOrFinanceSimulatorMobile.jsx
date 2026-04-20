@@ -33,7 +33,7 @@ export default function ReserveOrFinanceSimulatorMobile() {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'reserva_ou_financiar' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'reserva_ou_financiar' } });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'reserva_ou_financiar', nome: form.nome, premissas: buildPremissas() });
       setResultado(data);
     } catch { setErro('Falha ao calcular cenário.'); }
@@ -44,7 +44,7 @@ export default function ReserveOrFinanceSimulatorMobile() {
     try {
       setSalvando(true);
       await decisoesApi.salvarSimulacao({ tipo: 'reserva_ou_financiar', nome: form.nome, premissas: buildPremissas() });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'reserva_ou_financiar' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'reserva_ou_financiar' } });
     } catch { /**/ }
     finally { setSalvando(false); }
   };

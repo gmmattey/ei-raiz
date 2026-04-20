@@ -1,50 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { conteudoApi } from "../cliente-api";
+import { useMemo } from "react";
 
+// Conteúdo editorial (chave→texto) não tem endpoint canônico nos 6 domínios
+// públicos do backend rebuild. Hook passa a ser stub que sempre devolve fallback.
+// Será revisto em Etapa 8 se o produto pedir endpoint dedicado em admin/.
 const booleanTrueValues = new Set(["1", "true", "sim", "yes", "on"]);
 
 export function useConteudoApp() {
-  const [mapa, setMapa] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-
-  const carregar = async (ativoRef: { ativo: boolean }) => {
-    try {
-      const resposta = await conteudoApi.obterConteudoApp();
-      if (!ativoRef.ativo) return;
-      setMapa(resposta.mapa ?? {});
-    } catch {
-      if (ativoRef.ativo) setMapa({});
-    } finally {
-      if (ativoRef.ativo) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const ativoRef = { ativo: true };
-    void carregar(ativoRef);
-    const onAtualizar = () => {
-      setLoading(true);
-      void carregar(ativoRef);
-    };
-    window.addEventListener("ei:conteudo-atualizado", onAtualizar);
-    return () => {
-      ativoRef.ativo = false;
-      window.removeEventListener("ei:conteudo-atualizado", onAtualizar);
-    };
-  }, []);
+  const mapa: Record<string, string> = useMemo(() => ({}), []);
 
   const helpers = useMemo(
     () => ({
-      texto: (chave: string, fallback: string): string => mapa[chave] ?? fallback,
-      booleano: (chave: string, fallback: boolean): boolean => {
-        const valor = mapa[chave];
-        if (typeof valor !== "string") return fallback;
-        return booleanTrueValues.has(valor.trim().toLowerCase());
+      texto: (_chave: string, fallback: string): string => fallback,
+      booleano: (_chave: string, fallback: boolean): boolean => {
+        // referência usada para manter o tipo do set sem warning
+        void booleanTrueValues;
+        return fallback;
       },
       mapa,
     }),
     [mapa],
   );
 
-  return { ...helpers, loading };
+  return { ...helpers, loading: false };
 }

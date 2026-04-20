@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, aportesApi } from '../../cliente-api';
+import { ApiError, patrimonioApi } from '../../cliente-api';
 
 const moeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor ?? 0);
 const parseCurrencyInput = (value) => {
@@ -8,6 +8,29 @@ const parseCurrencyInput = (value) => {
   return digits ? Number(digits) / 100 : 0;
 };
 const formatCurrencyInput = (value) => moeda(Number(value || 0));
+
+const adaptarAporte = (a) => ({
+  id: a.id,
+  valor: Number(a.valorBrl ?? 0),
+  dataAporte: a.data,
+  observacao: a.descricao ?? '',
+  origem: a.origem ?? 'manual',
+});
+
+const calcularResumoUltimos6m = (itens) => {
+  const hoje = new Date();
+  const corte = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+  const mesesSet = new Set();
+  let valorTotal = 0;
+  for (const a of itens) {
+    const d = new Date(a.dataAporte);
+    if (Number.isNaN(d.getTime())) continue;
+    if (d < corte) continue;
+    mesesSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    valorTotal += Number(a.valor ?? 0);
+  }
+  return { mesesDistintos6m: mesesSet.size, valorTotal6m: valorTotal };
+};
 
 export default function AportesMobile() {
   const navigate = useNavigate();
@@ -21,12 +44,10 @@ export default function AportesMobile() {
 
   const recarregar = useCallback(async () => {
     try {
-      const [lista, res] = await Promise.all([
-        aportesApi.listarAportes(30),
-        aportesApi.obterResumoAportes(),
-      ]);
-      setAportes(lista ?? []);
-      setResumo(res ?? null);
+      const resp = await patrimonioApi.listarAportes();
+      const adaptados = (resp?.itens ?? []).map(adaptarAporte).slice(0, 30);
+      setAportes(adaptados);
+      setResumo(calcularResumoUltimos6m(adaptados));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) navigate('/', { replace: true });
     }
@@ -41,11 +62,11 @@ export default function AportesMobile() {
     try {
       setSalvando(true);
       setFeedback('');
-      await aportesApi.criarAporte({
-        valor: v,
-        dataAporte: data,
-        observacao: observacao.trim() || undefined,
-        origem: 'manual',
+      await patrimonioApi.criarAporte({
+        tipo: 'aporte',
+        valorBrl: v,
+        data,
+        descricao: observacao.trim() || null,
       });
       setValor(0);
       setObservacao('');
@@ -60,7 +81,7 @@ export default function AportesMobile() {
   };
 
   const excluir = async (id) => {
-    try { await aportesApi.removerAporte(id); await recarregar(); } catch { /* noop */ }
+    try { await patrimonioApi.removerAporte(id); await recarregar(); } catch { /* noop */ }
   };
 
   return (

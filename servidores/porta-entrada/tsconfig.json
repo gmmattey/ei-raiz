@@ -4,6 +4,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
     "skipLibCheck": true,
     "strict": true,
     "esModuleInterop": true,
@@ -11,17 +12,15 @@
     "resolveJsonModule": true,
     "baseUrl": "../../",
     "paths": {
-      "@ei/contratos": ["bibliotecas/contratos/src/index.ts"],
-      "@ei/validacao": ["bibliotecas/validacao/src/index.ts"],
-      "@ei/servico-autenticacao": ["servidores/modulos-backend/autenticacao/src/index.ts"],
-      "@ei/servico-carteira": ["servidores/modulos-backend/carteira/src/index.ts"],
-      "@ei/servico-decisoes": ["servidores/modulos-backend/decisoes/src/index.ts"],
-      "@ei/servico-historico": ["servidores/modulos-backend/historico/src/index.ts"],
-      "@ei/servico-importacao": ["servidores/modulos-backend/importacao/src/index.ts"],
-      "@ei/servico-insights": ["servidores/modulos-backend/insights/src/index.ts"],
-      "@ei/servico-perfil": ["servidores/modulos-backend/perfil/src/index.ts"]
+      "@ei/contratos": ["bibliotecas/contratos/index.ts"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/index.ts",
+    "src/aplicacao.ts",
+    "src/infra/**/*",
+    "src/dominios/**/*",
+    "src/jobs/**/*"
+  ],
   "exclude": ["node_modules", "dist", "testes"]
 }

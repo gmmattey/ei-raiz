@@ -1,9 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { ArrowUpRight, Clock, Filter } from "lucide-react";
 import EstadoVazio from "../../components/feedback/EstadoVazio";
-import { ApiError, historicoApi } from "../../cliente-api";
+import { ApiError, patrimonioApi } from "../../cliente-api";
 import { useNavigate } from "react-router-dom";
 import { useModoVisualizacao } from "../../context/ModoVisualizacaoContext";
+
+const anoMesParaData = (anoMes) => {
+  if (!anoMes) return null;
+  const [ano, mes] = String(anoMes).split("-");
+  if (!ano || !mes) return null;
+  return `${ano}-${mes}-01`;
+};
+
+const formatarAnoMes = (anoMes) => {
+  if (!anoMes) return "--";
+  const [ano, mes] = String(anoMes).split("-");
+  if (!ano || !mes) return anoMes;
+  const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const idx = Math.max(1, Math.min(12, Number(mes))) - 1;
+  return `${mesesNomes[idx]}/${ano}`;
+};
 
 const ranges = [
   { label: "3m", months: 3 },
@@ -37,36 +53,28 @@ export default function Historico() {
       try {
         setLoading(true);
         setError("");
-        // Prefere o histórico mensal novo (historico_carteira_mensal); se vazio,
-        // cai para snapshots_patrimonio legado. Eventos seguem o caminho antigo.
-        const [respMensal, listaSnapshotsLegado, listaEventos] = await Promise.all([
-          historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [] })),
-          historicoApi.listarSnapshots(24),
-          historicoApi.listarEventos(24),
-        ]);
+        const resp = await patrimonioApi.obterHistorico();
         if (!ativo) return;
-        const pontosMensais = respMensal?.pontos ?? [];
-        const listaSnapshots = pontosMensais.length > 0
-          ? pontosMensais.map((p) => ({
-              id: p.id,
-              usuarioId: p.usuarioId,
-              data: p.dataFechamento,
-              valorTotal: p.totalAtual,
-              variacaoPercentual: p.retornoMes,
-            }))
-          : listaSnapshotsLegado;
+        const itens = (resp?.itens ?? [])
+          .slice()
+          .sort((a, b) => String(b.anoMes).localeCompare(String(a.anoMes)));
         const limiteData = new Date();
         limiteData.setMonth(limiteData.getMonth() - activeRange.months);
-        const filtradosSnapshots = listaSnapshots.filter((item) => {
-          const data = new Date(item.data);
-          return !Number.isNaN(data.getTime()) && data >= limiteData;
-        });
-        const filtradosEventos = listaEventos.filter((item) => {
-          const data = new Date(item.data);
-          return !Number.isNaN(data.getTime()) && data >= limiteData;
-        });
+        const filtradosSnapshots = itens
+          .map((p, idx) => ({
+            id: `${p.anoMes}-${idx}`,
+            data: formatarAnoMes(p.anoMes),
+            dataRef: anoMesParaData(p.anoMes),
+            valorTotal: Number(p.patrimonioBrutoBrl ?? 0),
+            variacaoPercentual: Number(p.rentabilidadeMesPct ?? 0),
+          }))
+          .filter((item) => {
+            if (!item.dataRef) return false;
+            const d = new Date(item.dataRef);
+            return !Number.isNaN(d.getTime()) && d >= limiteData;
+          });
         setSnapshots(filtradosSnapshots);
-        setEventos(filtradosEventos);
+        setEventos([]);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate("/", { replace: true });

@@ -1,8 +1,9 @@
+import type { TelemetriaEventoEntrada, TelemetriaEventoSaida } from "@ei/contratos";
 import { apiRequest } from "./http";
 
-export function registrarEventoTelemetria(nomeEvento: string, payload?: Record<string, unknown>): Promise<{ registrado: boolean }> {
-  return apiRequest<{ registrado: boolean }>("/api/telemetria/evento", {
+export function registrarEvento(entrada: TelemetriaEventoEntrada): Promise<TelemetriaEventoSaida> {
+  return apiRequest<TelemetriaEventoSaida>("/api/telemetria/eventos", {
     method: "POST",
-    body: JSON.stringify({ nomeEvento, payload, origem: "web" }),
+    body: JSON.stringify(entrada),
   });
 }

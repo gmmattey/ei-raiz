@@ -27,7 +27,7 @@ export default function SpendOrInvestSimulatorMobile() {
   const calcular = async () => {
     try {
       setLoading(true); setErro('');
-      await telemetriaApi.registrarEventoTelemetria('simulator_started', { tipo: 'gastar_ou_investir' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_started', dadosJson: { tipo: 'gastar_ou_investir' } });
       const data = await decisoesApi.calcularSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: buildPremissas() });
       setResultado(data);
     } catch { setErro('Falha ao calcular cenário.'); }
@@ -38,7 +38,7 @@ export default function SpendOrInvestSimulatorMobile() {
     try {
       setSalvando(true);
       await decisoesApi.salvarSimulacao({ tipo: 'gastar_ou_investir', nome: form.nome, premissas: buildPremissas() });
-      await telemetriaApi.registrarEventoTelemetria('simulator_saved', { tipo: 'gastar_ou_investir' });
+      await telemetriaApi.registrarEvento({ nome: 'simulator_saved', dadosJson: { tipo: 'gastar_ou_investir' } });
     } catch { /**/ }
     finally { setSalvando(false); }
   };

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { RefreshCw, ArrowUpRight, ArrowDownRight, Search, Pencil, Filter, Download, AlertTriangle, Info } from "lucide-react";
-import { ApiError, carteiraApi, marketApi } from "../../cliente-api";
+import { ApiError, patrimonioApi } from "../../cliente-api";
 import { cache } from "../../utils/cache";
 import PageHeader from "../../components/design-system/PageHeader";
 import MetricCard from "../../components/design-system/MetricCard";
@@ -73,6 +73,42 @@ const CATEGORIA_CONFIG = {
 
 const moeda = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v ?? 0);
 
+// Mapeia rota plural → tipos canônicos que pertencem à categoria e a chave
+// "categoria" usada pelo UI legado.
+const ROUTE_TO_TIPOS = {
+  "acoes":       { tipos: ["acao", "fii", "etf"], categoria: "acao" },
+  "fundos":      { tipos: ["fundo"],              categoria: "fundo" },
+  "previdencia": { tipos: ["previdencia"],        categoria: "previdencia" },
+  "renda-fixa":  { tipos: ["renda_fixa"],         categoria: "renda_fixa" },
+  "poupanca":    { tipos: ["poupanca"],           categoria: "poupanca" },
+  "bens":        { tipos: ["imovel", "veiculo"],  categoria: "bens" },
+};
+
+function adaptarItemCategoria(item, categoriaLegacy) {
+  return {
+    id: item.id,
+    ticker: item.ticker,
+    nome: item.nome,
+    categoria: categoriaLegacy,
+    quantidade: item.quantidade ?? 0,
+    precoMedio: item.precoMedioBrl ?? 0,
+    preco_medio: item.precoMedioBrl ?? 0,
+    precoAtual: item.precoAtualBrl,
+    valorAtual: item.valorAtualBrl ?? 0,
+    participacao: item.pesoPct ?? 0,
+    rentabilidadeDesdeAquisicaoPct: item.rentabilidadePct,
+    rentabilidade_desde_aquisicao_pct: item.rentabilidadePct,
+    rentabilidadeConfiavel: item.rentabilidadePct != null,
+    statusAtualizacao: item.precoAtualBrl != null ? "atualizado" : "indisponivel",
+    status_atualizacao: item.precoAtualBrl != null ? "atualizado" : "indisponivel",
+    statusPrecoMedio: "confiavel",
+    plataforma: null,
+    vencimento: null,
+    taxa: null,
+    ganhoPerda: null,
+  };
+}
+
 /**
  * @param {Object} props
  * @param {string} [props.manualCategoriaId] - Categoria manual sobrescrevendo a URL
@@ -90,66 +126,41 @@ export default function AssetCategoryView({ manualCategoriaId = undefined }) {
   const [atualizando, setAtualizando] = useState(false);
 
   const config = CATEGORIA_CONFIG[categoriaId] || CATEGORIA_CONFIG["acoes"];
-  
-  // Mapeamento de rotas plurais para parâmetros singulares da API
-  const categoriaApiTipo = {
-    "acoes": "acao",
-    "fundos": "fundo",
-    "previdencia": "previdencia",
-    "renda-fixa": "renda_fixa",
-    "poupanca": "poupanca",
-    "bens": "bens"
-  }[categoriaId] || categoriaId;
+  const rotaInfo = ROUTE_TO_TIPOS[categoriaId] ?? ROUTE_TO_TIPOS["acoes"];
 
   const revalidarCategoria = useCallback(async (isAtivo) => {
     try {
-      const res = await carteiraApi.obterDetalheCategoria(categoriaApiTipo);
+      const [resumo, itensResp] = await Promise.all([
+        patrimonioApi.obterResumo(),
+        patrimonioApi.listarItens(),
+      ]);
       if (!isAtivo) return;
-      
+
+      const totalPatrimonio = Number(resumo?.patrimonioBrutoBrl ?? 0);
+      const itensCategoria = (itensResp?.itens ?? [])
+        .filter((i) => rotaInfo.tipos.includes(i.tipo))
+        .map((i) => adaptarItemCategoria(i, rotaInfo.categoria));
+
+      const valorTotal = itensCategoria.reduce((acc, a) => acc + Number(a.valorAtual ?? 0), 0);
+      const participacao = totalPatrimonio > 0 ? (valorTotal / totalPatrimonio) * 100 : 0;
+
+      const res = { ativos: itensCategoria, valorTotal, participacao };
       setDados(res);
       setLoading(false);
-      
-      // Salvar no cache
+
       const CACHE_KEY = `cat_detail_${categoriaId}`;
       cache.set(CACHE_KEY, res);
-      
-      // Tentar atualizar cotações se for ação
-      if (categoriaId === "acoes" && res.ativos.length > 0) {
-        const tickers = res.ativos.map(a => a.ticker).filter(Boolean);
-        if (tickers.length > 0) {
-          setAtualizando(true);
-          try {
-            const quotes = await marketApi.obterCotacoes(tickers);
-            if (isAtivo && quotes.items) {
-              const quoteMap = new Map(quotes.items.map(q => [q.ticker, q]));
-              const ativosAtualizados = res.ativos.map(a => {
-                const q = quoteMap.get(a.ticker);
-                if (!q) return a;
-                return {
-                  ...a,
-                  precoAtual: q.price,
-                  statusAtualizacao: "atualizado",
-                  valorAtual: (a.quantidade || 0) * q.price
-                };
-              });
-              const novosDados = { ...res, ativos: ativosAtualizados };
-              setDados(novosDados);
-              cache.set(CACHE_KEY, novosDados);
-            }
-          } catch (e) {
-            console.warn("Falha ao atualizar cotações em background", e);
-          } finally {
-            setAtualizando(false);
-          }
-        }
-      }
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        navigate("/", { replace: true });
+        return;
+      }
       if (isAtivo) {
         setLoading(false);
         setError("Erro ao carregar dados atualizados.");
       }
     }
-  }, [categoriaId, categoriaApiTipo]);
+  }, [categoriaId, navigate, rotaInfo]);
 
   const carregar = useCallback(async (isAtivo = true) => {
     try {

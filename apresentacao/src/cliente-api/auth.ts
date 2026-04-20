@@ -1,83 +1,95 @@
-import type { EntrarSaida, RegistrarSaida, SessaoUsuarioSaida } from "@ei/contratos";
-import { saveSession } from "./authStorage";
+import type {
+  RegistrarEntrada,
+  EntrarEntrada,
+  TokenSaida,
+  SessaoSaida,
+  RecuperarIniciarEntrada,
+  RecuperarConfirmarEntrada,
+  RecuperarRedefinirEntrada,
+} from "@ei/contratos";
+import { clearSession, saveSession } from "./authStorage";
 import { apiRequest } from "./http";
 
-export async function entrar(email: string, senha: string): Promise<EntrarSaida> {
-  const resposta = await apiRequest<EntrarSaida>("/api/auth/entrar", {
-    method: "POST",
-    body: JSON.stringify({ email, senha }),
-  });
+const EMAIL_RECUPERACAO_STORAGE_KEY = "ei:recuperacao:email";
 
+export function registrar(entrada: RegistrarEntrada): Promise<TokenSaida> {
+  return apiRequest<TokenSaida>("/api/auth/registrar", {
+    method: "POST",
+    body: JSON.stringify(entrada),
+  });
+}
+
+export async function entrar(entradaOrEmail: EntrarEntrada | string, senha?: string): Promise<TokenSaida> {
+  const entrada: EntrarEntrada = typeof entradaOrEmail === "string"
+    ? { email: entradaOrEmail, senha: senha ?? "" }
+    : entradaOrEmail;
+  const resposta = await apiRequest<TokenSaida>("/api/auth/entrar", {
+    method: "POST",
+    body: JSON.stringify(entrada),
+  });
   saveSession({
-    token: resposta.sessao.token,
-    usuario: {
-      id: resposta.usuario.id,
-      nome: resposta.usuario.nome,
-      email: resposta.usuario.email,
-    },
+    token: resposta.token,
+    usuario: { id: "", nome: "", email: entrada.email },
+  });
+  const sessao = await obterSessao();
+  saveSession({
+    token: resposta.token,
+    usuario: { id: sessao.usuarioId, nome: sessao.nome, email: sessao.email },
   });
   return resposta;
 }
 
-export async function registrar(nome: string, cpf: string, email: string, senha: string): Promise<RegistrarSaida> {
-  const resposta = await apiRequest<RegistrarSaida>("/api/auth/registrar", {
-    method: "POST",
-    body: JSON.stringify({ nome, cpf, email, senha }),
-  });
+export async function sair(): Promise<void> {
+  try {
+    await apiRequest<{ encerrado: boolean }>("/api/auth/sair", { method: "POST" });
+  } finally {
+    clearSession();
+  }
+}
 
-  saveSession({
-    token: resposta.sessao.token,
-    usuario: {
-      id: resposta.usuario.id,
-      nome: resposta.usuario.nome,
-      email: resposta.usuario.email,
-    },
+export function obterSessao(): Promise<SessaoSaida> {
+  return apiRequest<SessaoSaida>("/api/auth/sessao", { method: "GET" });
+}
+
+export function recuperarIniciar(entrada: RecuperarIniciarEntrada): Promise<{ solicitado: boolean; destinoMascara: string }> {
+  return apiRequest("/api/auth/recuperar/iniciar", {
+    method: "POST",
+    body: JSON.stringify(entrada),
   });
+}
+
+export function recuperarConfirmar(entrada: RecuperarConfirmarEntrada): Promise<{ token: string }> {
+  return apiRequest("/api/auth/recuperar/confirmar", {
+    method: "POST",
+    body: JSON.stringify(entrada),
+  });
+}
+
+export function recuperarRedefinir(entrada: RecuperarRedefinirEntrada): Promise<{ redefinido: boolean }> {
+  return apiRequest("/api/auth/recuperar/redefinir", {
+    method: "POST",
+    body: JSON.stringify(entrada),
+  });
+}
+
+// Shims compat com assinaturas antigas usadas por LandingPage.tsx. Saem em
+// Etapa 7 quando LandingPage for refatorada para consumir recuperarIniciar/
+// recuperarRedefinir diretamente.
+export async function solicitarRecuperacaoPorEmail(email: string): Promise<{ solicitado: boolean; destinoMascara: string }> {
+  try {
+    window.sessionStorage.setItem(EMAIL_RECUPERACAO_STORAGE_KEY, email);
+  } catch { /* sessionStorage indisponível: segue o baile */ }
+  return recuperarIniciar({ email });
+}
+
+export async function solicitarRecuperacaoPorCpf(_cpf: string): Promise<{ solicitado: boolean; destinoMascara: string }> {
+  throw new Error("Fluxo de recuperação por CPF indisponível: use o e-mail cadastrado.");
+}
+
+export async function redefinirSenha(pin: string, novaSenha: string): Promise<{ redefinido: boolean }> {
+  let email = "";
+  try { email = window.sessionStorage.getItem(EMAIL_RECUPERACAO_STORAGE_KEY) ?? ""; } catch { /* noop */ }
+  const resposta = await recuperarRedefinir({ email, pin, novaSenha });
+  try { window.sessionStorage.removeItem(EMAIL_RECUPERACAO_STORAGE_KEY); } catch { /* noop */ }
   return resposta;
-}
-
-export type VerificacaoCadastroResposta = {
-  cpfDisponivel: boolean;
-  emailDisponivel: boolean;
-  cadastroInterrompido?: boolean;
-  destinoMascara?: string;
-};
-
-export function verificarCadastro(cpf: string, email: string): Promise<VerificacaoCadastroResposta> {
-  return apiRequest<VerificacaoCadastroResposta>("/api/auth/verificar-cadastro", {
-    method: "POST",
-    body: JSON.stringify({ cpf, email }),
-  });
-}
-
-export function obterUsuarioAutenticado(): Promise<SessaoUsuarioSaida> {
-  return apiRequest<SessaoUsuarioSaida>("/api/auth/eu", { method: "GET" });
-}
-
-export type RecuperacaoResposta = {
-  solicitado: boolean;
-  canal: "email";
-  destinoMascara: string;
-  observacao: string;
-};
-
-export function solicitarRecuperacaoPorEmail(email: string): Promise<RecuperacaoResposta> {
-  return apiRequest<RecuperacaoResposta>("/api/auth/recuperar-senha", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-}
-
-export function solicitarRecuperacaoPorCpf(cpf: string): Promise<RecuperacaoResposta> {
-  return apiRequest<RecuperacaoResposta>("/api/auth/recuperar-acesso", {
-    method: "POST",
-    body: JSON.stringify({ cpf }),
-  });
-}
-
-export function redefinirSenha(token: string, novaSenha: string): Promise<{ redefinido: boolean }> {
-  return apiRequest<{ redefinido: boolean }>("/api/auth/redefinir-senha", {
-    method: "POST",
-    body: JSON.stringify({ token, novaSenha }),
-  });
 }

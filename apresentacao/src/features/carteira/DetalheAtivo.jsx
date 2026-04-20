@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowDownRight, ArrowRightLeft, ArrowRight, ArrowUpRight, Briefcase, Building2, ChevronLeft, Clock3, Landmark, Layers, RefreshCw, Shield, TrendingUp } from "lucide-react";
 import { formatarData } from "../../utils/formatarData";
 import { useNavigate, useParams } from "react-router-dom";
-import { ApiError, carteiraApi, marketApi, portfolioApi } from "../../cliente-api";
+import { ApiError, patrimonioApi } from "../../cliente-api";
 import { invalidarCacheUsuario } from "../../utils/cache";
 
 const moeda = (valor) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor ?? 0);
@@ -128,34 +128,57 @@ export default function DetalheAtivo() {
     setLoading(true);
     setError("");
     try {
-      const [detalhe, ativos] = await Promise.all([carteiraApi.obterDetalheAtivo(ticker), carteiraApi.listarAtivosCarteira()]);
-      const quantity = Number(detalhe.quantidade ?? 0);
-      const averagePrice = Number(detalhe.precoMedio ?? detalhe.preco_medio ?? 0);
-      let nextAnalysis = null;
-      if (quantity > 0 && averagePrice > 0) {
-        try {
-          nextAnalysis = await portfolioApi.analisarPosicao({ ticker, quantity, averagePrice });
-        } catch {
-          nextAnalysis = null;
-        }
+      const itensResp = await patrimonioApi.listarItens();
+      const itens = itensResp?.itens ?? [];
+      const tickerAlvo = String(ticker).toUpperCase();
+      const itemCanonico = itens.find((i) => (i.ticker ?? "").toUpperCase() === tickerAlvo)
+        ?? itens.find((i) => i.id === ticker);
+
+      if (!itemCanonico) {
+        setError("Ativo não encontrado na carteira.");
+        setAtivo(null);
+        return;
       }
-      try {
-        const quote = await marketApi.obterCotacao(ticker);
-        const qty = Number(detalhe.quantidade ?? 0);
-        const valorAtualMercado = quote?.price != null && qty > 0 ? qty * quote.price : null;
-        detalhe.precoAtual = quote.price ?? detalhe.precoAtual;
-        detalhe.valorAtual = valorAtualMercado ?? detalhe.valorAtual;
-        detalhe.fontePreco = quote.source ?? detalhe.fontePreco;
-        detalhe.ultimaAtualizacao = quote.updatedAt || quote.fetchedAt || detalhe.ultimaAtualizacao;
-        detalhe.statusAtualizacao = quote.price != null ? "atualizado" : (detalhe.statusAtualizacao || "indisponivel");
-      } catch {
-        // mantém detalhe original
-      }
+
+      const TIPO_PARA_CATEGORIA = {
+        acao: "acao", fii: "fii", etf: "acao", fundo: "fundo",
+        previdencia: "previdencia", renda_fixa: "renda_fixa",
+        poupanca: "poupanca", imovel: "bens", veiculo: "bens",
+      };
+      const categoria = TIPO_PARA_CATEGORIA[itemCanonico.tipo] ?? "outros";
+      const temCotacao = itemCanonico.precoAtualBrl != null;
+
+      const detalhe = {
+        id: itemCanonico.id,
+        ticker: itemCanonico.ticker ?? tickerAlvo,
+        nome: itemCanonico.nome,
+        categoria,
+        quantidade: itemCanonico.quantidade ?? 0,
+        precoMedio: itemCanonico.precoMedioBrl ?? 0,
+        preco_medio: itemCanonico.precoMedioBrl ?? 0,
+        precoAtual: itemCanonico.precoAtualBrl,
+        valorAtual: itemCanonico.valorAtualBrl ?? 0,
+        participacao: itemCanonico.pesoPct ?? 0,
+        statusAtualizacao: temCotacao ? "atualizado" : "indisponivel",
+        ultimaAtualizacao: itemCanonico.atualizadoEm,
+        plataforma: null,
+        dataAquisicao: null,
+        dataCadastro: itemCanonico.criadoEm,
+        benchmarkDesdeAquisicao: null,
+        serieTicker: [],
+        eventosTicker: [],
+        movimentacoes: [],
+      };
+
+      const ativosAdaptados = itens
+        .filter((i) => i.id !== itemCanonico.id)
+        .map((i) => ({ id: i.id, ticker: i.ticker, nome: i.nome }));
+
       setAtivo(detalhe);
-      setAnalysis(nextAnalysis);
-      setAtivosCarteira(ativos);
-      const dataBase = detalhe.dataAquisicao || detalhe.data_aquisicao || detalhe.dataCadastro || detalhe.data_cadastro;
-      const dataNormalizada = normalizarDataInput(dataBase);
+      setAnalysis(null);
+      setAtivosCarteira(ativosAdaptados);
+
+      const dataNormalizada = normalizarDataInput(itemCanonico.criadoEm);
       setDataAquisicao(dataNormalizada);
       setAporte((anterior) => ({ ...anterior, dataOperacao: anterior.dataOperacao || new Date().toISOString().slice(0, 10) }));
       setMovimentacao((anterior) => ({ ...anterior, dataMovimentacao: anterior.dataMovimentacao || dataNormalizada || new Date().toISOString().slice(0, 10) }));
@@ -196,49 +219,11 @@ export default function DetalheAtivo() {
   const ativosDestino = useMemo(() => ativosCarteira.filter((item) => item.id !== ativo?.id), [ativosCarteira, ativo]);
 
   const salvarDataAquisicao = async () => {
-    if (!ativo?.id || !dataAquisicao) return;
-    if (!window.confirm("Confirmar atualização da data de aquisição? O comparativo será recalculado.")) return;
-    setSalvandoData(true);
-    setError("");
-    setSucesso("");
-    try {
-      const resposta = await carteiraApi.atualizarDataAquisicaoAtivo(ativo.id, dataAquisicao);
-      invalidarCacheUsuario();
-      setSucesso(resposta.mensagem || "Data de aquisição atualizada e comparativos recalculados.");
-      await carregar();
-    } catch {
-      setError("Não foi possível atualizar a data de aquisição.");
-    } finally {
-      setSalvandoData(false);
-    }
+    setError("A data de aquisição é fixada no cadastro do item e não pode ser editada aqui.");
   };
 
   const vincularMovimentacao = async () => {
-    if (!ativo?.id || !movimentacao.ativoDestinoId || !movimentacao.valor || !movimentacao.dataMovimentacao) {
-      setError("Preencha destino, valor e data da movimentação.");
-      return;
-    }
-    if (!window.confirm("Confirmar vínculo da movimentação entre os ativos?")) return;
-    setVinculando(true);
-    setError("");
-    setSucesso("");
-    try {
-      const resposta = await carteiraApi.vincularMovimentacaoAtivos({
-        ativoOrigemId: ativo.id,
-        ativoDestinoId: movimentacao.ativoDestinoId,
-        valor: Number(movimentacao.valor),
-        dataMovimentacao: movimentacao.dataMovimentacao,
-        observacao: movimentacao.observacao?.trim() || undefined,
-      });
-      invalidarCacheUsuario();
-      setSucesso(resposta.mensagem || "Movimentação vinculada com sucesso.");
-      setMovimentacao((anterior) => ({ ...anterior, valor: "", observacao: "" }));
-      await carregar();
-    } catch {
-      setError("Não foi possível vincular a movimentação.");
-    } finally {
-      setVinculando(false);
-    }
+    setError("Movimentações entre ativos não estão disponíveis nesta versão.");
   };
 
   const registrarAporte = async () => {
@@ -251,15 +236,15 @@ export default function DetalheAtivo() {
     setError("");
     setSucesso("");
     try {
-      const resposta = await carteiraApi.registrarAporteAtivo(ativo.id, {
-        valorAporte: Number(aporte.valorAporte),
-        quantidade: aporte.quantidade ? Number(aporte.quantidade) : undefined,
-        precoUnitario: aporte.precoUnitario ? Number(aporte.precoUnitario) : undefined,
-        dataOperacao: aporte.dataOperacao || undefined,
-        observacao: aporte.observacao?.trim() || undefined,
+      await patrimonioApi.criarAporte({
+        itemId: ativo.id,
+        tipo: "aporte",
+        valorBrl: Number(aporte.valorAporte),
+        data: aporte.dataOperacao || new Date().toISOString().slice(0, 10),
+        descricao: aporte.observacao?.trim() || null,
       });
       invalidarCacheUsuario();
-      setSucesso(resposta.mensagem || "Compra registrada com sucesso.");
+      setSucesso("Compra registrada com sucesso.");
       setAporte((anterior) => ({ ...anterior, valorAporte: "", quantidade: "", precoUnitario: "", observacao: "" }));
       await carregar();
     } catch {
@@ -281,9 +266,9 @@ export default function DetalheAtivo() {
     setError("");
     setSucesso("");
     try {
-      const resposta = await carteiraApi.excluirAtivo(ativo.id, motivo);
+      await patrimonioApi.removerItem(ativo.id);
       invalidarCacheUsuario();
-      setSucesso(resposta.mensagem || "Ativo removido com sucesso.");
+      setSucesso("Ativo removido com sucesso.");
       setModalExclusaoAberto(false);
       setMotivoExclusao("");
       navigate("/carteira", { replace: true });

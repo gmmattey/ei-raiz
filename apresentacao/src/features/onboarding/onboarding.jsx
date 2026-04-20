@@ -145,18 +145,17 @@ const parseCurrencyToNumber = (currency) => {
 };
 
 const mapObjetivo = (value) => value || 'Objetivo nao informado';
-const mapHorizonte = (value) => value || 'Nao informado';
+const mapHorizonteMeses = (answer) => {
+  if (answer === 'Menos de 2 anos') return 12;
+  if (answer === '2 a 5 anos') return 36;
+  if (answer === 'Mais de 5 anos') return 120;
+  return 60;
+};
 const mapPerfilRisco = (answer) => {
   if (answer === 'Aproveito e compro mais') return 'arrojado';
   if (answer === 'Continuo no plano') return 'moderado';
   if (answer === 'Fico apavorado') return 'conservador';
   return 'moderado';
-};
-const mapMaturidade = (answer) => {
-  if (answer === 'Tô começando agora') return 1;
-  if (answer === 'Sei o básico') return 3;
-  if (answer === 'Sou expert mesmo') return 5;
-  return 3;
 };
 
 export default function Onboarding({ embedded = false, inline = false, onePerStep = false, onDark = false, onClose, mode = 'signup', initialStep = 1 }) {
@@ -226,44 +225,9 @@ export default function Onboarding({ embedded = false, inline = false, onePerSte
     setStepAttempted(true);
     if (!isStepValid() || isCheckingCadastro) return;
 
-    if (mode === 'signup' && currentStep === 1) {
-      setIsCheckingCadastro(true);
-      setSubmitError('');
-      setShowForgotPasswordLink(false);
-      try {
-        const cpf = formData.cpf.replace(/\D/g, '');
-        const email = formData.email.trim().toLowerCase();
-        const verificacao = await authApi.verificarCadastro(cpf, email);
-        if (!verificacao.cpfDisponivel) {
-          setSubmitError('Usuário já cadastrado. Se não lembrar a senha, recupere o acesso.');
-          setShowForgotPasswordLink(true);
-          return;
-        }
-        if (verificacao.cadastroInterrompido) {
-          setSubmitError(`Cadastro interrompido detectado para ${verificacao.destinoMascara || 'este CPF'}. Continue para concluir.`);
-        }
-        if (!verificacao.emailDisponivel) {
-          setSubmitError('E-mail já cadastrado. Se não lembrar a senha, recupere o acesso.');
-          setShowForgotPasswordLink(true);
-          return;
-        }
-      } catch (error) {
-        if (error instanceof ApiError && error.code === 'API_INDISPONIVEL') {
-          setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente em instantes.');
-        } else if (error instanceof ApiError) {
-          setSubmitError('Não foi possível validar CPF e e-mail agora. Revise os dados e tente novamente.');
-        } else {
-          setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente em instantes.');
-        }
-        return;
-      } finally {
-        setIsCheckingCadastro(false);
-      }
-    }
-
     setCurrentStep((p) => Math.min(p + 1, 4));
     setStepAttempted(false);
-    await telemetriaApi.registrarEventoTelemetria('onboarding_step_completed', { step: currentStep });
+    telemetriaApi.registrarEvento({ nome: 'onboarding_step_completed', dadosJson: { step: currentStep } }).catch(() => {});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const handlePrev = () => { setCurrentStep(p => Math.max(p - 1, 1)); setStepAttempted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -275,13 +239,13 @@ export default function Onboarding({ embedded = false, inline = false, onePerSte
 
     try {
       if (mode === 'signup') {
-        await authApi.registrar(
-          formData.name.trim(),
-          formData.cpf.replace(/\D/g, ''),
-          formData.email.trim().toLowerCase(),
-          formData.password,
-        );
-        await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding_signup_rapido' });
+        await authApi.registrar({
+          nome: formData.name.trim(),
+          cpf: formData.cpf.replace(/\D/g, ''),
+          email: formData.email.trim().toLowerCase(),
+          senha: formData.password,
+        });
+        telemetriaApi.registrarEvento({ nome: 'profile_completed', dadosJson: { origem: 'onboarding_signup_rapido' } }).catch(() => {});
         setThemeMode('dark');
         setOcultarValores(true);
         navigate('/importar', { replace: true });
@@ -294,17 +258,14 @@ export default function Onboarding({ embedded = false, inline = false, onePerSte
         '7k-15k': 15000,
         '15k+': 20000,
       };
-      await perfilApi.salvarPerfil({
-        rendaMensal: faixaParaValor[dadosPessoais.faixaRenda] || 0,
-        gastoMensal: parseCurrencyToNumber(formData.gastoMensal),
-        aporteMensal: parseCurrencyToNumber(formData.aporteMensal),
-        reservaCaixa: parseCurrencyToNumber(formData.patrimonioAtual),
-        horizonte: mapHorizonte(profileAnswers.q5),
-        perfilRisco: mapPerfilRisco(profileAnswers.q3),
-        objetivo: mapObjetivo(profileAnswers.q1),
-        maturidade: mapMaturidade(profileAnswers.q4),
+      await perfilApi.atualizarPerfil({
+        rendaMensalBrl: faixaParaValor[dadosPessoais.faixaRenda] || 0,
+        aporteMensalBrl: parseCurrencyToNumber(formData.aporteMensal),
+        horizonteMeses: mapHorizonteMeses(profileAnswers.q5),
+        toleranciaRisco: mapPerfilRisco(profileAnswers.q3),
+        objetivos: [mapObjetivo(profileAnswers.q1)],
       });
-      await telemetriaApi.registrarEventoTelemetria('profile_completed', { origem: 'onboarding_home_popup' });
+      telemetriaApi.registrarEvento({ nome: 'profile_completed', dadosJson: { origem: 'onboarding_home_popup' } }).catch(() => {});
       if (onClose) onClose(true);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -396,32 +357,6 @@ export default function Onboarding({ embedded = false, inline = false, onePerSte
     setStepAttempted(false);
     setSubmitError('');
     setShowForgotPasswordLink(false);
-
-    if (field.key === 'phone') {
-      setIsCheckingCadastro(true);
-      try {
-        const cpf = formData.cpf.replace(/\D/g, '');
-        const email = formData.email.trim().toLowerCase();
-        const verificacao = await authApi.verificarCadastro(cpf, email);
-        if (!verificacao.cpfDisponivel) {
-          setSubmitError('Usuário já cadastrado. Se não lembrar a senha, recupere o acesso.');
-          setShowForgotPasswordLink(true);
-          setIsCheckingCadastro(false);
-          return;
-        }
-        if (!verificacao.emailDisponivel) {
-          setSubmitError('E-mail já cadastrado. Se não lembrar a senha, recupere o acesso.');
-          setShowForgotPasswordLink(true);
-          setIsCheckingCadastro(false);
-          return;
-        }
-      } catch (error) {
-        setSubmitError('Não foi possível validar CPF e e-mail agora. Tente novamente.');
-        setIsCheckingCadastro(false);
-        return;
-      }
-      setIsCheckingCadastro(false);
-    }
 
     if (fieldIndex === signupFields.length - 1) {
       await handleFinish();

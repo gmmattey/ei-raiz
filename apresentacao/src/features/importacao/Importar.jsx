@@ -1,9 +1,31 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, importacaoApi, telemetriaApi } from '../../cliente-api';
+import { ApiError, patrimonioApi, telemetriaApi } from '../../cliente-api';
 import { invalidarCacheUsuario } from '../../utils/cache';
 import { baixarTemplateXlsx } from '../../utils/importacaoTemplate';
 import { parseXlsx } from '../../utils/importacaoParser';
+
+const sintetizarPreviewCanonico = (importacaoId, itensBrutos) => {
+  const itens = (itensBrutos ?? []).map((item, idx) => ({
+    linha: idx + 1,
+    status: 'ok',
+    ticker: item?.ticker ?? null,
+    nome: item?.nome ?? item?.descricao ?? null,
+    abaOrigem: item?.abaOrigem ?? item?.aba ?? null,
+    valor: Number(item?.valor ?? item?.valorTotal ?? item?.valorAtual ?? 0),
+    plataforma: item?.plataforma ?? item?.instituicao ?? null,
+    categoria: item?.categoria ?? null,
+    observacao: null,
+  }));
+  return {
+    importacaoId,
+    totalLinhas: itens.length,
+    validos: itens.length,
+    conflitos: 0,
+    erros: 0,
+    itens,
+  };
+};
 import {
   UploadCloud,
   ArrowRight,
@@ -95,8 +117,11 @@ export default function Importar({ embedded = false }) {
     setSelectedFile(file);
     setStep('processing');
     try {
-      await telemetriaApi.registrarEventoTelemetria('import_started', { arquivo: file.name, tipo: isXlsx ? 'xlsx' : 'csv' });
-      let resposta;
+      await telemetriaApi.registrarEvento({
+        nome: 'import_started',
+        dadosJson: { arquivo: file.name, tipo: isXlsx ? 'xlsx' : 'csv' },
+      }).catch(() => null);
+      let itensBrutos = [];
       if (isXlsx) {
         const resultado = await parseXlsx(file);
         if (resultado.itens.length === 0) {
@@ -104,26 +129,30 @@ export default function Importar({ embedded = false }) {
           setStep('upload');
           return;
         }
-        resposta = await importacaoApi.uploadExtrato({
-          nomeArquivo: file.name,
-          tipoArquivo: 'xlsx',
-          itens: resultado.itens,
-        });
+        itensBrutos = resultado.itens;
       } else {
         const conteudo = await file.text();
-        resposta = await importacaoApi.uploadExtrato({
-          nomeArquivo: file.name,
-          conteudo,
-          tipoArquivo: 'csv',
-        });
+        itensBrutos = [{ nome: file.name, conteudoCsv: conteudo }];
       }
-      setPreview(resposta);
-      await telemetriaApi.registrarEventoTelemetria('import_reviewed', {
-        importacaoId: resposta.importacaoId,
-        validos: resposta.validos ?? 0,
-        conflitos: resposta.conflitos ?? 0,
-        erros: resposta.erros ?? 0,
+      const canonico = await patrimonioApi.criarImportacao({
+        origem: file.name,
+        itens: itensBrutos.map((item, idx) => ({
+          linha: idx + 1,
+          tipo: 'desconhecido',
+          dadosJson: item,
+        })),
       });
+      const resposta = sintetizarPreviewCanonico(canonico.id, itensBrutos);
+      setPreview(resposta);
+      await telemetriaApi.registrarEvento({
+        nome: 'import_reviewed',
+        dadosJson: {
+          importacaoId: resposta.importacaoId,
+          validos: resposta.validos,
+          conflitos: resposta.conflitos,
+          erros: resposta.erros,
+        },
+      }).catch(() => null);
       setStep('review');
     } catch (error) {
       setErroUpload(mapearErro(error));
@@ -139,11 +168,16 @@ export default function Importar({ embedded = false }) {
       const linhasValidas = (preview.itens ?? [])
         .filter((item) => item.status === 'ok')
         .map((item) => item.linha);
-      await importacaoApi.confirmarImportacao(preview.importacaoId, linhasValidas);
-      await telemetriaApi.registrarEventoTelemetria('import_confirmed', {
-        importacaoId: preview.importacaoId,
-        itensValidos: linhasValidas.length,
-      });
+      // Backend canônico já ingere os itens na criação; confirmação é apenas
+      // sinalização local + telemetria.
+      await patrimonioApi.obterImportacao(preview.importacaoId).catch(() => null);
+      await telemetriaApi.registrarEvento({
+        nome: 'import_confirmed',
+        dadosJson: {
+          importacaoId: preview.importacaoId,
+          itensValidos: linhasValidas.length,
+        },
+      }).catch(() => null);
       invalidarCacheUsuario();
       localStorage.setItem('hasSeenPreInsight', 'true');
       navigate('/home', {

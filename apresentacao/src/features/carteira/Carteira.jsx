@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowDownRight, ArrowUpRight, Download, RefreshCw, Search, Pencil, ChevronDown, Check, AlertTriangle, Info } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from "recharts";
-import { ApiError, carteiraApi, insightsApi, marketApi, portfolioApi, historicoApi } from "../../cliente-api";
+import { ApiError, patrimonioApi } from "../../cliente-api";
 import { cache } from "../../utils/cache";
 import PageHeader from "../../components/design-system/PageHeader";
 import MetricCard from "../../components/design-system/MetricCard";
@@ -15,6 +15,76 @@ import GraficoRentabilidade from "./GraficoRentabilidade";
 const tiposDisponiveis = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
 const periodosDisponiveis = [3, 6, 12, 24];
 const ORDEM_CATEGORIAS = ["acao", "fundo", "previdencia", "renda_fixa", "poupanca", "bens"];
+
+// Mapeia tipos canônicos do backend para as categorias usadas no UI legado.
+const TIPO_PARA_CATEGORIA = {
+  acao: "acao",
+  fii: "acao",
+  etf: "acao",
+  fundo: "fundo",
+  previdencia: "previdencia",
+  renda_fixa: "renda_fixa",
+  poupanca: "poupanca",
+  imovel: "bens",
+  veiculo: "bens",
+  cripto: "outros",
+  caixa: "outros",
+  divida: null,
+  outro: "outros",
+};
+
+const FAIXA_PARA_BAND = {
+  critico: "critical",
+  baixo: "fragile",
+  medio: "fragile",
+  bom: "saudavel",
+  excelente: "saudavel",
+};
+
+const FAIXA_ROTULO = {
+  critico: "Crítico",
+  baixo: "Baixo",
+  medio: "Médio",
+  bom: "Bom",
+  excelente: "Excelente",
+};
+
+// Converte ItemPatrimonioSaida canônico no shape que a JSX espera (legacy).
+function adaptarItem(item) {
+  const categoria = TIPO_PARA_CATEGORIA[item.tipo] ?? "outros";
+  if (categoria === null) return null;
+  const precoAtual = item.precoAtualBrl;
+  const temCotacao = precoAtual != null;
+  return {
+    id: item.id,
+    ticker: item.ticker,
+    nome: item.nome,
+    categoria,
+    quantidade: item.quantidade ?? 0,
+    precoMedio: item.precoMedioBrl ?? 0,
+    preco_medio: item.precoMedioBrl ?? 0,
+    precoAtual: precoAtual,
+    valorAtual: item.valorAtualBrl ?? 0,
+    valor: item.valorAtualBrl ?? 0,
+    participacao: item.pesoPct ?? 0,
+    rentabilidadeDesdeAquisicaoPct: item.rentabilidadePct,
+    rentabilidade_desde_aquisicao_pct: item.rentabilidadePct,
+    rentabilidadeConfiavel: item.rentabilidadePct != null,
+    statusAtualizacao: temCotacao ? "atualizado" : "indisponivel",
+    status_atualizacao: temCotacao ? "atualizado" : "indisponivel",
+    statusPrecoMedio: "confiavel",
+    plataforma: "N/A",
+  };
+}
+
+function adaptarResumo(resumo) {
+  return {
+    valorInvestimentos: resumo.patrimonioBrutoBrl ?? 0,
+    patrimonioLiquido: resumo.patrimonioLiquidoBrl ?? 0,
+    rentabilidadeDesdeAquisicaoPct: null,
+    rentabilidade_confiavel: false,
+  };
+}
 
 const COR_CATEGORIA = {
   acao:       "#F56A2A",
@@ -570,36 +640,49 @@ export default function Carteira({ embedded = false }) {
     }
     setError("");
     try {
-      const TTL = 300 * 1000;
-      const resumoCached = cache.get('carteira_resumo', TTL);
-      const insightsCached = cache.get('insights_resumo', TTL);
-      const dashboardCached = cache.get('carteira_dashboard', TTL);
-      const [resumoResp, ativosResp, insightsResp, dashboardResp, benchmarkResp, historicoResp] = await Promise.all([
-        resumoCached
-          ? Promise.resolve(resumoCached)
-          : carteiraApi.obterResumoCarteiraComFallback().then(r => { cache.set('carteira_resumo', r); return r; }),
-        carteiraApi.listarAtivosCarteira(),
-        insightsCached
-          ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumoComFallback().catch(() => null).then(r => { if (r) cache.set('insights_resumo', r); return r; }),
-        dashboardCached
-          ? Promise.resolve(dashboardCached)
-          : carteiraApi.obterDashboardPatrimonioComFallback().catch(() => null).then(r => { if (r) cache.set('carteira_dashboard', r); return r; }),
-        carteiraApi.obterBenchmarkCarteiraComFallback(periodoMeses).catch(() => null),
-        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [], monthlyPerformance: { available: false, points: [] } })),
+      const [resumoCanonico, itensResp, scoreCanonico, historicoCanonico] = await Promise.all([
+        patrimonioApi.obterResumo(),
+        patrimonioApi.listarItens(),
+        patrimonioApi.obterScore().catch(() => null),
+        patrimonioApi.obterHistorico().catch(() => ({ itens: [] })),
       ]);
-      setResumo(resumoResp ?? null);
-      const ativosConsolidados = Array.isArray(ativosResp) ? consolidarAtivos(ativosResp) : [];
+
+      const resumoAdaptado = adaptarResumo(resumoCanonico);
+      setResumo(resumoAdaptado);
+
+      const itensCanonicos = itensResp?.itens ?? [];
+      const ativosAdaptados = itensCanonicos.map(adaptarItem).filter(Boolean);
+      const ativosConsolidados = consolidarAtivos(ativosAdaptados);
       setAtivos(ativosConsolidados);
-      setScoreUnificado(insightsResp?.scoreUnificado ?? insightsResp?.score_unificado ?? null);
-      setClassificacaoScore(insightsResp?.classificacao ?? null);
-      setDashboardPatrimonio(dashboardResp ?? null);
-      setBenchmark(benchmarkResp ?? null);
-      const pontos = [...(historicoResp?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+
+      if (scoreCanonico) {
+        const faixa = scoreCanonico.faixa;
+        setScoreUnificado({
+          score: scoreCanonico.scoreTotal ?? 0,
+          band: faixa ? (FAIXA_PARA_BAND[faixa] ?? "fragile") : "fragile",
+        });
+        setClassificacaoScore(faixa ? (FAIXA_ROTULO[faixa] ?? faixa) : null);
+      } else {
+        setScoreUnificado(null);
+        setClassificacaoScore(null);
+      }
+
+      setDashboardPatrimonio(null);
+      setBenchmark(null);
+
+      const pontos = (historicoCanonico?.itens ?? [])
+        .map((p) => ({
+          anoMes: p.anoMes,
+          totalAtual: p.patrimonioBrutoBrl ?? 0,
+          patrimonioLiquido: p.patrimonioLiquidoBrl ?? 0,
+          rentabilidadeMesPct: p.rentabilidadeMesPct,
+        }))
+        .sort((a, b) => a.anoMes.localeCompare(b.anoMes));
       setHistoricoMensal(pontos);
-      setMonthlyPerformance(historicoResp?.monthlyPerformance ?? { available: false, points: [] });
+      setMonthlyPerformance({ available: false, points: [] });
+
       setUltimoRefreshMercado(new Date().toISOString());
-      cache.set("carteira_v1", { resumo: resumoResp, ativos: ativosConsolidados, timestamp: Date.now() });
+      cache.set("carteira_v1", { resumo: resumoAdaptado, ativos: ativosConsolidados, timestamp: Date.now() });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         navigate("/", { replace: true });
@@ -609,7 +692,7 @@ export default function Carteira({ embedded = false }) {
     } finally {
       setLoading(false);
     }
-  }, [navigate, periodoMeses]);
+  }, [navigate]);
 
   useEffect(() => {
     void carregarDados();

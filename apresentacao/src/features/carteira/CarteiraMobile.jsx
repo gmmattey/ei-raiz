@@ -4,7 +4,7 @@ import {
   AreaChart, Area, LineChart, Line, ResponsiveContainer,
   XAxis, YAxis, Tooltip,
 } from 'recharts';
-import { carteiraApi, insightsApi, historicoApi } from '../../cliente-api';
+import { patrimonioApi } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { assetPath } from '../../utils/assetPath';
@@ -39,12 +39,36 @@ const LABEL_TIPO = {
 };
 
 const SCORE_FAIXAS = {
-  critical: { label: 'Crítico',  cor: '#E85C5C' },
-  fragile:  { label: 'Frágil',   cor: '#F2C94C' },
-  stable:   { label: 'Estável',  cor: '#F2C94C' },
-  good:     { label: 'Bom',      cor: '#6FCF97' },
-  strong:   { label: 'Sólido',   cor: '#6FCF97' },
+  critico:   { label: 'Crítico',  cor: '#E85C5C' },
+  baixo:     { label: 'Baixo',    cor: '#F2C94C' },
+  medio:     { label: 'Médio',    cor: '#F2C94C' },
+  bom:       { label: 'Bom',      cor: '#6FCF97' },
+  excelente: { label: 'Excelente', cor: '#6FCF97' },
 };
+
+const TIPO_PARA_CATEGORIA = {
+  acao: 'acao', fii: 'acao', etf: 'acao',
+  fundo: 'fundo', previdencia: 'previdencia', renda_fixa: 'renda_fixa',
+  poupanca: 'poupanca', imovel: 'bens', veiculo: 'bens',
+  cripto: 'outros', caixa: 'outros', divida: null, outro: 'outros',
+};
+
+function adaptarItem(item) {
+  const categoria = TIPO_PARA_CATEGORIA[item.tipo] ?? 'outros';
+  if (categoria === null) return null;
+  return {
+    id: item.id,
+    ticker: item.ticker,
+    nome: item.nome,
+    categoria,
+    quantidade: item.quantidade ?? 0,
+    precoMedio: item.precoMedioBrl ?? 0,
+    preco_medio: item.precoMedioBrl ?? 0,
+    precoAtual: item.precoAtualBrl,
+    valorAtual: item.valorAtualBrl ?? 0,
+    participacao: item.pesoPct ?? 0,
+  };
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -121,29 +145,29 @@ export default function CarteiraMobile() {
   const buscarDados = async (silencioso = false) => {
     if (!silencioso) setLoading(true);
     try {
-      const insightsCached = cache.get('insights_resumo', CACHE_TTL);
-      const [dadosAtivos, dadosInsights, dadosHistorico, dadosBenchmark] = await Promise.all([
-        carteiraApi.listarAtivosCarteira().catch(() => []),
-        insightsCached
-          ? Promise.resolve(insightsCached)
-          : insightsApi.obterResumoComFallback().catch(() => null),
-        historicoApi.listarHistoricoMensal(24).catch(() => ({ pontos: [], monthlyPerformance: { available: false, points: [] } })),
-        carteiraApi.obterBenchmarkCarteiraComFallback(24).catch(() => null),
+      const [itensResp, scoreResp, historicoResp] = await Promise.all([
+        patrimonioApi.listarItens().catch(() => ({ itens: [] })),
+        patrimonioApi.obterScore().catch(() => null),
+        patrimonioApi.obterHistorico().catch(() => ({ itens: [] })),
       ]);
 
-      const consolidados = Array.isArray(dadosAtivos) ? consolidarAtivos(dadosAtivos) : [];
-      const pontos = [...(dadosHistorico?.pontos ?? [])].sort((a, b) => a.anoMes.localeCompare(b.anoMes));
-      const monthlyPerf = dadosHistorico?.monthlyPerformance ?? { available: false, points: [] };
+      const consolidados = consolidarAtivos((itensResp?.itens ?? []).map(adaptarItem).filter(Boolean));
+      const pontos = (historicoResp?.itens ?? [])
+        .map((p) => ({ anoMes: p.anoMes, totalAtual: p.patrimonioBrutoBrl ?? 0 }))
+        .sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+      const dadosInsights = scoreResp
+        ? { scoreUnificado: { score: scoreResp.scoreTotal ?? 0, band: scoreResp.faixa ?? null } }
+        : null;
+      const monthlyPerf = { available: false, points: [] };
 
       setAtivos(consolidados);
       setInsights(dadosInsights);
       setHistoricoMensal(pontos);
       setMonthlyPerformance(monthlyPerf);
-      setBenchmark(dadosBenchmark);
+      setBenchmark(null);
       setErro('');
 
-      cache.set(CACHE_KEY, { ativos: consolidados, insights: dadosInsights, historicoMensal: pontos, monthlyPerformance: monthlyPerf, benchmark: dadosBenchmark });
-      if (dadosInsights) cache.set('insights_resumo', dadosInsights);
+      cache.set(CACHE_KEY, { ativos: consolidados, insights: dadosInsights, historicoMensal: pontos, monthlyPerformance: monthlyPerf, benchmark: null });
     } catch {
       if (!silencioso) setErro('Não foi possível carregar a carteira.');
     } finally {
@@ -177,8 +201,8 @@ export default function CarteiraMobile() {
     ativos.filter(a => CATS_INVESTIMENTO.includes(a.categoria)).length,
   [ativos]);
 
-  const score      = insights?.scoreUnificado?.score ?? insights?.score_unificado?.score ?? 0;
-  const scoreBand  = insights?.scoreUnificado?.band  ?? insights?.score_unificado?.band  ?? null;
+  const score      = insights?.scoreUnificado?.score ?? 0;
+  const scoreBand  = insights?.scoreUnificado?.band  ?? null;
   const scoreFaixa = SCORE_FAIXAS[scoreBand] ?? { label: '—', cor: '#F56A2A' };
 
   // Cards de categoria — exibe apenas categorias com ativos cadastrados

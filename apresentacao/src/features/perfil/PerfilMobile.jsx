@@ -18,7 +18,11 @@ export default function PerfilMobile() {
         const dados = await perfilApi.obterPerfil();
         if (!ativo) return;
         setUsuario(getStoredUser());
-        setPerfil(dados);
+        setPerfil({
+          rendaMensal: Number(dados?.rendaMensalBrl ?? 0),
+          aporteMensal: Number(dados?.aporteMensalBrl ?? 0),
+          perfilRisco: dados?.toleranciaRisco ?? null,
+        });
       } catch {
         // Mantem estado sem bloquear a tela.
       }
