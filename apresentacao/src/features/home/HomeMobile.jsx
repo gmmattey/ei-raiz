@@ -34,6 +34,39 @@ const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
 
 /**
+ * Mapeamento de tipos de ativo para nomes descritivos
+ */
+const TIPO_LABELS = {
+  'acao': 'Ações',
+  'fundo': 'Fundos',
+  'renda_fixa': 'Renda Fixa',
+  'previdencia': 'Previdência',
+  'poupanca': 'Poupança',
+  'cripto': 'Criptomoedas',
+  'bens': 'Bens',
+};
+
+const getTipoLabel = (tipo) => TIPO_LABELS[tipo] || 'Outros';
+
+/**
+ * Converte avaliação (% vs benchmark) em classificação qualitativa
+ * BOM: >= 5%, NEUTRO: -5% a 5%, RUIM: < -5%
+ */
+const getAvaliacaoLabel = (avaliacaoValor) => {
+  if (avaliacaoValor === null || avaliacaoValor === undefined) return 'N/A';
+  if (avaliacaoValor >= 5) return 'BOM';
+  if (avaliacaoValor <= -5) return 'RUIM';
+  return 'NEUTRO';
+};
+
+const getAvaliacaoCor = (avaliacaoValor) => {
+  if (avaliacaoValor === null || avaliacaoValor === undefined) return 'text-[var(--text-muted)]';
+  if (avaliacaoValor >= 5) return 'text-[#6FCF97]';
+  if (avaliacaoValor <= -5) return 'text-[#E85C5C]';
+  return 'text-[var(--text-muted)]';
+};
+
+/**
  * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
  * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
  */
@@ -207,11 +240,10 @@ export default function HomeMobile() {
     return ativosTop.map(ativo => {
       // TIPO: determinar tipo do ativo
       const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+      const tipoLabel = getTipoLabel(tipo);
 
-      // APORTE: total investido (para fundos) ou custo de aquisição (para ações)
-      const aporte = tipo === 'fundo'
-        ? (ativo.saldoAplicacao || ativo.custoAquisicao || 0)
-        : (ativo.custoAquisicao || 0);
+      // APORTE: valor inicial declarado pelo usuário (custoAquisicao = preço de compra/investimento inicial)
+      const aporte = ativo.custoAquisicao || 0;
 
       // AVALIAÇÃO: comparação com benchmark
       const benchmark = tipo === 'acao' ? 'IBOV' : 'CDI';
@@ -230,9 +262,11 @@ export default function HomeMobile() {
       return {
         ...ativo,
         tipo,
+        tipoLabel,
         aporte,
         avaliacaoValor: avaliacao,
-        avaliacaoLabel: avaliacao >= 0 ? '+' : '',
+        avaliacaoQualitativa: getAvaliacaoLabel(avaliacao),
+        avaliacaoCor: getAvaliacaoCor(avaliacao),
         benchmark,
         instituicaoAbrev,
       };
@@ -404,7 +438,7 @@ export default function HomeMobile() {
                 >
                   <div className="text-left min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-bold text-[var(--text-primary)]">{ativo.ticker}</p>
+                      <p className="text-[13px] font-bold text-[var(--text-primary)]">{ativo.nome}</p>
                       <div className="flex-shrink-0 text-[var(--text-muted)]">
                         {ativo.tipo === 'fundo' ? (
                           <PiggyBank size={14} />
@@ -414,7 +448,7 @@ export default function HomeMobile() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.ticker}</p>
                       <span className="text-[9px] font-semibold text-[#F56A2A] flex-shrink-0">
                         {ativo.instituicaoAbrev}
                       </span>

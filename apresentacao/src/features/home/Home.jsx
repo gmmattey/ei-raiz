@@ -56,6 +56,39 @@ const fmtPct = (v) =>
   `${Number(v || 0) >= 0 ? '+' : ''}${Number(v || 0).toFixed(1)}%`;
 
 /**
+ * Mapeamento de tipos de ativo para nomes descritivos
+ */
+const TIPO_LABELS = {
+  'acao': 'Ações',
+  'fundo': 'Fundos',
+  'renda_fixa': 'Renda Fixa',
+  'previdencia': 'Previdência',
+  'poupanca': 'Poupança',
+  'cripto': 'Criptomoedas',
+  'bens': 'Bens',
+};
+
+const getTipoLabel = (tipo) => TIPO_LABELS[tipo] || 'Outros';
+
+/**
+ * Converte avaliação (% vs benchmark) em classificação qualitativa
+ * BOM: >= 5%, NEUTRO: -5% a 5%, RUIM: < -5%
+ */
+const getAvaliacaoLabel = (avaliacaoValor) => {
+  if (avaliacaoValor === null || avaliacaoValor === undefined) return 'N/A';
+  if (avaliacaoValor >= 5) return 'BOM';
+  if (avaliacaoValor <= -5) return 'RUIM';
+  return 'NEUTRO';
+};
+
+const getAvaliacaoCor = (avaliacaoValor) => {
+  if (avaliacaoValor === null || avaliacaoValor === undefined) return 'text-[var(--text-muted)]';
+  if (avaliacaoValor >= 5) return 'text-[#6FCF97]';
+  if (avaliacaoValor <= -5) return 'text-[#E85C5C]';
+  return 'text-[var(--text-muted)]';
+};
+
+/**
  * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
  * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
  */
@@ -364,11 +397,10 @@ export default function HomeLobby() {
     return ativosFiltrados.map(ativo => {
       // TIPO: determinar tipo do ativo
       const tipo = ativo.tipo || (ativo.categoria === 'fundo' ? 'fundo' : 'acao');
+      const tipoLabel = getTipoLabel(tipo);
 
-      // APORTE: total investido (para fundos) ou custo de aquisição (para ações)
-      const aporte = tipo === 'fundo'
-        ? (ativo.saldoAplicacao || ativo.custoAquisicao || 0)
-        : (ativo.custoAquisicao || 0);
+      // APORTE: valor inicial declarado pelo usuário (custoAquisicao = preço de compra/investimento inicial)
+      const aporte = ativo.custoAquisicao || 0;
 
       // AVALIAÇÃO: comparação com benchmark
       // Para ações: rentabilidade vs IBOVESPA (usando rentabilidadeIbov)
@@ -389,9 +421,11 @@ export default function HomeLobby() {
       return {
         ...ativo,
         tipo,
+        tipoLabel,
         aporte,
         avaliacaoValor: avaliacao,
-        avaliacaoLabel: avaliacao >= 0 ? '+' : '',
+        avaliacaoQualitativa: getAvaliacaoLabel(avaliacao),
+        avaliacaoCor: getAvaliacaoCor(avaliacao),
         benchmark,
         instituicaoAbrev,
       };
@@ -730,8 +764,8 @@ export default function HomeLobby() {
                             style={{ gridTemplateColumns: '1fr 96px 68px 52px 40px 96px 52px 80px' }}>
                             {/* ATIVO */}
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
-                              <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                              <p className="text-sm font-semibold truncate">{ativo.nome}</p>
+                              <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.ticker}</p>
                             </div>
                             {/* VALOR ATUAL */}
                             <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
@@ -752,16 +786,16 @@ export default function HomeLobby() {
                               {ocultarValores ? '••%' : `${pct}%`}
                             </p>
                             {/* TIPO */}
-                            <p className="text-xs text-center self-center whitespace-nowrap uppercase font-semibold text-[var(--text-muted)]">
-                              {ativo.tipo === 'fundo' ? 'F' : 'A'}
+                            <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
+                              {ativo.tipoLabel}
                             </p>
                             {/* APORTE */}
                             <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
                               {ocultarValores ? '••••' : fmt(ativo.aporte)}
                             </p>
                             {/* AVALIAÇÃO */}
-                            <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${ativo.avaliacaoValor >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                              {ocultarValores ? '••' : `${ativo.avaliacaoLabel}${fmtPct(ativo.avaliacaoValor)}`}
+                            <p className={`text-xs font-semibold text-center self-center whitespace-nowrap ${ativo.avaliacaoCor}`}>
+                              {ocultarValores ? '••' : ativo.avaliacaoQualitativa}
                             </p>
                             {/* INSTITUIÇÃO */}
                             <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
