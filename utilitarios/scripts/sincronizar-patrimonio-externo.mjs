@@ -66,10 +66,10 @@ try {
   const buscarBensDoUsuario = (usuarioId) => {
     const query = `
       SELECT
-        id, tipo, descricao, valor_atual, saldo_financiamento
+        id, tipo, nome, valor_atual, metadata_json
       FROM posicoes_financeiras
       WHERE usuario_id = ? AND tipo IN ('imovel', 'veiculo')
-      ORDER BY tipo, descricao
+      ORDER BY tipo, nome
     `;
     const stmt = db.prepare(query);
     return stmt.all(usuarioId);
@@ -80,7 +80,7 @@ try {
    */
   const buscarContextoExistente = (usuarioId) => {
     const query = `
-      SELECT id, contexto_json, criado_em, atualizado_em
+      SELECT id, contexto_json, atualizado_em
       FROM perfil_contexto_financeiro
       WHERE usuario_id = ?
       LIMIT 1
@@ -97,22 +97,25 @@ try {
     const veiculos = [];
 
     for (const bem of bens) {
+      const metadata = JSON.parse(bem.metadata_json || '{}');
+      const saldoFinanciamento = Number(metadata.saldoFinanciamento) || 0;
+
       const item = {
         id: bem.id || uuidv4(),
-        tipo: bem.descricao || '',
+        tipo: bem.nome || '',
         valorEstimado: Number(bem.valor_atual) || 0,
       };
 
       if (bem.tipo === 'imovel') {
         imoveis.push({
           ...item,
-          saldoFinanciamento: Number(bem.saldo_financiamento) || 0,
+          saldoFinanciamento,
           geraRenda: false,
         });
       } else if (bem.tipo === 'veiculo') {
         veiculos.push({
           ...item,
-          quitado: (Number(bem.saldo_financiamento) || 0) === 0,
+          quitado: saldoFinanciamento === 0,
         });
       }
     }
@@ -148,7 +151,6 @@ try {
   const salvarContexto = (usuarioId, patrimonioExterno, contextoPrevio) => {
     const agora = new Date().toISOString();
     const id = contextoPrevio?.id || `ctx_${usuarioId}`;
-    const criadoEm = contextoPrevio?.criado_em || agora;
 
     const contextoJson = contextoPrevio?.contexto_json
       ? typeof contextoPrevio.contexto_json === 'string'
@@ -162,15 +164,15 @@ try {
     };
 
     const query = `
-      INSERT INTO perfil_contexto_financeiro (id, usuario_id, contexto_json, criado_em, atualizado_em)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO perfil_contexto_financeiro (id, usuario_id, contexto_json, atualizado_em)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(usuario_id) DO UPDATE SET
         contexto_json = excluded.contexto_json,
         atualizado_em = excluded.atualizado_em
     `;
 
     const stmt = db.prepare(query);
-    return stmt.run(id, usuarioId, JSON.stringify(contextoBuscado), criadoEm, agora);
+    return stmt.run(id, usuarioId, JSON.stringify(contextoBuscado), agora);
   };
 
   /**

@@ -1081,32 +1081,38 @@ export async function handleAdminRoutes(
       try {
         // Busca bens do usuário
         const bensQuery = `
-          SELECT id, tipo, descricao, valor_atual, saldo_financiamento
+          SELECT id, tipo, nome, valor_atual, metadata_json
           FROM posicoes_financeiras
           WHERE usuario_id = ? AND tipo IN ('imovel', 'veiculo')
-          ORDER BY tipo, descricao
+          ORDER BY tipo, nome
         `;
         const bensList = env.DB.prepare(bensQuery).all(usuarioId) as any[];
 
         // Transforma em patrimonioExterno
         const imoveis = bensList
           .filter((b) => b.tipo === "imovel")
-          .map((b) => ({
-            id: b.id,
-            tipo: b.descricao || "",
-            valorEstimado: Number(b.valor_atual) || 0,
-            saldoFinanciamento: Number(b.saldo_financiamento) || 0,
-            geraRenda: false,
-          }));
+          .map((b) => {
+            const metadata = JSON.parse(b.metadata_json || "{}");
+            return {
+              id: b.id,
+              tipo: b.nome || "",
+              valorEstimado: Number(b.valor_atual) || 0,
+              saldoFinanciamento: Number(metadata.saldoFinanciamento) || 0,
+              geraRenda: false,
+            };
+          });
 
         const veiculos = bensList
           .filter((b) => b.tipo === "veiculo")
-          .map((b) => ({
-            id: b.id,
-            tipo: b.descricao || "",
-            valorEstimado: Number(b.valor_atual) || 0,
-            quitado: (Number(b.saldo_financiamento) || 0) === 0,
-          }));
+          .map((b) => {
+            const metadata = JSON.parse(b.metadata_json || "{}");
+            return {
+              id: b.id,
+              tipo: b.nome || "",
+              valorEstimado: Number(b.valor_atual) || 0,
+              quitado: (Number(metadata.saldoFinanciamento) || 0) === 0,
+            };
+          });
 
         // Busca contexto existente
         const contextoPrevio = env.DB
