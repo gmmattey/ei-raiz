@@ -325,3 +325,68 @@ Score agora **apropriado** para portfólio com 88% em bens + 12% investimentos +
 - ✅ Deploy em `https://ei-api-gateway-production.giammattey-luiz.workers.dev`
 - ✅ Banco confirmou: imovel R$ 280k + veiculo R$ 86k presentes em posicoes_financeiras
 - ✅ Investimentos R$ 51.309,32 em 11 ativos (4 fundos + 7 ações)
+
+---
+
+## Post-Deployment Fix 2: Fluxo de Patrimônio Externo (2026-04-20)
+
+### Problema Identificado
+
+Usuário Luiz:
+- ❌ Imóveis/veículos não aparecem no painel de perfil
+- ❌ Não aparecem na aba "Bens" da carteira
+- ❌ Não são contabilizados na tela home de patrimônio
+
+**Causa Raiz:** Dados estão em `posicoes_financeiras` (operacional) mas não em `perfil_contexto_financeiro` (perfil).
+
+### Solução Implementada
+
+**1. Endpoint Admin para Sincronização**
+- **Arquivo:** `servidores/porta-entrada/src/server/routes/admin.routes.ts`
+- **Endpoint:** `POST /api/admin/patrimonio/sincronizar-externo`
+- **Funcionalidade:**
+  - Busca todos usuários com bens em `posicoes_financeiras`
+  - Transforma para formato `patrimonioExterno` (JSON)
+  - Sincroniza para `perfil_contexto_financeiro` com ON CONFLICT UPDATE
+  - Suporta `--usuario-id` para um usuário específico
+  - Suporta `--dry-run` para preview
+
+**2. Scripts de Sincronização**
+- `utilitarios/scripts/sincronizar-patrimonio-externo-api.mjs` — Via API (recomendado)
+- `utilitarios/scripts/sincronizar-patrimonio-externo.mjs` — Acesso direto ao banco (alternativo)
+
+**3. Migração 035**
+- `infra/banco/migrations/035_sincronizar_patrimonio_externo.sql`
+- Documentação apenas (migração efetiva feita via script)
+
+### Impacto Esperado
+
+**Imediato (após rodar sync):**
+1. ✅ Imóveis/veículos aparecem no painel de perfil
+2. ✅ Aba "Bens" da carteira lista corretamente
+3. ✅ Home patrimonio inclui bens (R$ 366k)
+4. ✅ Score apropriado ~45 (88% em bens ilíquidos)
+
+**Futuramente (próxima PR):**
+- Melhorias UI/UX no `PerfilUsuario.jsx` (feedback visual, toast de sucesso, etc.)
+
+### Como Rodar a Sincronização
+
+```bash
+# Preview (sem alterar dados)
+EI_ADMIN_TOKEN=<seu_jwt> node utilitarios/scripts/sincronizar-patrimonio-externo-api.mjs \
+  --usuario-id=4a858baf-fd89-42a8-84f2-d45c7489b2a3 \
+  --dry-run
+
+# Aplicar para Luiz
+EI_ADMIN_TOKEN=<seu_jwt> node utilitarios/scripts/sincronizar-patrimonio-externo-api.mjs \
+  --usuario-id=4a858baf-fd89-42a8-84f2-d45c7489b2a3
+
+# Aplicar para todos os usuários
+EI_ADMIN_TOKEN=<seu_jwt> node utilitarios/scripts/sincronizar-patrimonio-externo-api.mjs
+```
+
+### Referência
+- Documentação detalhada: `FIX_FLUXO_PATRIMONIO_EXTERNO.md`
+- Endpoint: `admin.routes.ts` linhas ~1044-1158
+- Frontend (a melhorar): `PerfilUsuario.jsx` linha 141

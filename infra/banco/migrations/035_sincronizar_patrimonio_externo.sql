@@ -1,0 +1,31 @@
+-- Migração 035: Sincronizar dados de imóveis e veículos de posicoes_financeiras para perfil_contexto_financeiro
+--
+-- Objetivo: Extrair imovel/veiculo da tabela posicoes_financeiras (dados operacionais)
+-- e sincronizar para perfil_contexto_financeiro (dados de perfil/contexto).
+--
+-- NOTA: Esta é uma migração preparatória que cria a estrutura.
+-- A sincronização real será feita por script Node.js para melhor controle de transformação JSON.
+--
+-- Alternativamente, usuários podem manualmente entrar no painel de perfil e salvar seus bens.
+
+-- Por enquanto, esta migração apenas documenta o schema esperado.
+-- Nenhuma alteração de dados é feita aqui.
+
+-- Schema esperado em perfil_contexto_financeiro.contexto_json:
+-- {
+--   "patrimonioExterno": {
+--     "imoveis": [
+--       { "id": "uuid", "tipo": "Casa", "valorEstimado": 280000, "saldoFinanciamento": 0, "geraRenda": false }
+--     ],
+--     "veiculos": [
+--       { "id": "uuid", "tipo": "Carro", "valorEstimado": 86000, "quitado": false }
+--     ],
+--     "caixaDisponivel": 0,
+--     "poupanca": 0
+--   },
+--   "dividas": [],
+--   "rendaMensal": 0,
+--   ...outros campos
+-- }
+
+-- A sincronização será feita via script: utilitarios/scripts/sincronizar-patrimonio-externo.mjs

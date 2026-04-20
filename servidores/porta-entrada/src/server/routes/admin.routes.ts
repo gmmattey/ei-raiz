@@ -1042,5 +1042,120 @@ export async function handleAdminRoutes(
     });
   }
 
+  // ─── Sincronizar Patrimônio Externo (imóveis, veículos) ────────────────────
+  // POST /api/admin/patrimonio/sincronizar-externo
+  // Sincroniza dados de imóveis e veículos de posicoes_financeiras para perfil_contexto_financeiro
+  // Útil quando dados estão em posicoes_financeiras (importação) mas não aparecem no painel de perfil
+  if (pathname === "/api/admin/patrimonio/sincronizar-externo" && request.method === "POST") {
+    const erroAdmin = await validarAdmin();
+    if (erroAdmin) return erroAdmin;
+
+    const body = z
+      .object({
+        usuarioId: z.string().uuid().optional(),
+        dryRun: z.boolean().default(false),
+      })
+      .parse(await parseJsonBody(request));
+
+    // Busca usuários com bens em posicoes_financeiras
+    const usuariosComBensQuery = `
+      SELECT DISTINCT usuario_id
+      FROM posicoes_financeiras
+      WHERE tipo IN ('imovel', 'veiculo')
+      ${body.usuarioId ? 'AND usuario_id = ?' : ''}
+      ORDER BY usuario_id
+    `;
+    const stmtUsuarios = env.DB.prepare(usuariosComBensQuery);
+    const usuariosRows = body.usuarioId ? stmtUsuarios.all(body.usuarioId) : stmtUsuarios.all();
+    const usuariosIds = usuariosRows.map((r: any) => r.usuario_id);
+
+    const resultado = {
+      modo: body.dryRun ? "DRY-RUN" : "APPLY",
+      usuariosAProcessar: usuariosIds.length,
+      sincronizados: 0,
+      atualizados: 0,
+      erros: [] as Array<{ usuarioId: string; erro: string }>,
+    };
+
+    for (const usuarioId of usuariosIds) {
+      try {
+        // Busca bens do usuário
+        const bensQuery = `
+          SELECT id, tipo, descricao, valor_atual, saldo_financiamento
+          FROM posicoes_financeiras
+          WHERE usuario_id = ? AND tipo IN ('imovel', 'veiculo')
+          ORDER BY tipo, descricao
+        `;
+        const bensList = env.DB.prepare(bensQuery).all(usuarioId) as any[];
+
+        // Transforma em patrimonioExterno
+        const imoveis = bensList
+          .filter((b) => b.tipo === "imovel")
+          .map((b) => ({
+            id: b.id,
+            tipo: b.descricao || "",
+            valorEstimado: Number(b.valor_atual) || 0,
+            saldoFinanciamento: Number(b.saldo_financiamento) || 0,
+            geraRenda: false,
+          }));
+
+        const veiculos = bensList
+          .filter((b) => b.tipo === "veiculo")
+          .map((b) => ({
+            id: b.id,
+            tipo: b.descricao || "",
+            valorEstimado: Number(b.valor_atual) || 0,
+            quitado: (Number(b.saldo_financiamento) || 0) === 0,
+          }));
+
+        // Busca contexto existente
+        const contextoPrevio = env.DB
+          .prepare("SELECT id, contexto_json, criado_em FROM perfil_contexto_financeiro WHERE usuario_id = ? LIMIT 1")
+          .get(usuarioId) as any;
+
+        if (!body.dryRun) {
+          // Prepara novo contexto
+          const contextoJson = contextoPrevio ? JSON.parse(contextoPrevio.contexto_json) : {};
+          const patrimonioFinal = {
+            imoveis: imoveis.length > 0 ? imoveis : contextoJson.patrimonioExterno?.imoveis || [],
+            veiculos: veiculos.length > 0 ? veiculos : contextoJson.patrimonioExterno?.veiculos || [],
+            caixaDisponivel: contextoJson.patrimonioExterno?.caixaDisponivel || 0,
+            poupanca: contextoJson.patrimonioExterno?.poupanca || 0,
+          };
+
+          const contextoFinal = {
+            ...contextoJson,
+            patrimonioExterno: patrimonioFinal,
+          };
+
+          const ctxId = contextoPrevio?.id || `ctx_${usuarioId}`;
+          const criadoEm = contextoPrevio?.criado_em || new Date().toISOString();
+          const agora = new Date().toISOString();
+
+          // Salva/atualiza
+          env.DB.prepare(
+            `INSERT INTO perfil_contexto_financeiro (id, usuario_id, contexto_json, criado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(usuario_id) DO UPDATE SET
+               contexto_json = excluded.contexto_json,
+               atualizado_em = excluded.atualizado_em`,
+          )
+            .bind(ctxId, usuarioId, JSON.stringify(contextoFinal), criadoEm, agora)
+            .run();
+        }
+
+        if (contextoPrevio) resultado.atualizados += 1;
+        else resultado.sincronizados += 1;
+      } catch (err) {
+        resultado.erros.push({
+          usuarioId,
+          erro: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    return sucesso(resultado);
+  }
+
   return null;
 }
