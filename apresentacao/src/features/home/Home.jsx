@@ -720,7 +720,7 @@ export default function HomeLobby() {
                     </div>
 
                     {/* Desktop rows */}
-                    <div className="hidden md:space-y-0.5 space-y-0.5">
+                    <div className="hidden md:block space-y-0.5">
                       {ativosComDetalhes.map(ativo => {
                         const pct = ativo.participacao > 1 ? ativo.participacao.toFixed(0) : (ativo.participacao * 100).toFixed(0);
                         const r = rentabilidadeDesdeAquisicao(ativo);
