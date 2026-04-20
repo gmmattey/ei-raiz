@@ -271,20 +271,38 @@ export class RepositorioInsightsD1 implements RepositorioInsights {
     const fonteMesesComAporte: "real" | "indireto" = mesesComAporteReais !== null ? "real" : "indireto";
 
     const posicoesRows = posicoesRaw.results ?? [];
-    const valorPosicoes = posicoesRows.reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
     const caixaPerfil = Number(perfil?.reservaCaixa ?? 0);
     const investimentos = patrimonioTotal;
-    const imoveis = contextoPatrimonial.imoveis;
-    const veiculos = contextoPatrimonial.veiculos;
-    const caixaContexto = contextoPatrimonial.caixa;
+
+    // Extrai imovel, veiculo, caixa, e divida de posicoes_financeiras
+    // para evitar dupla contagem ou misclassificacao entre posicoes_financeiras e contextoPatrimonial
+    const imoveisPos = posicoesRows
+      .filter((item) => item.tipo === "imovel")
+      .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const veiculosPos = posicoesRows
+      .filter((item) => item.tipo === "veiculo")
+      .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
     const caixaPosicoes = posicoesRows
       .filter((item) => item.tipo === "caixa" || item.tipo === "poupanca" || item.tipo === "cofrinho")
       .reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const dividasPos = posicoesRows
+      .filter((item) => item.tipo === "divida")
+      .reduce((acc, item) => acc + Math.abs(item.valor_atual ?? 0), 0);
+
+    // Usa posicoes_financeiras como fonte primaria, contextoPatrimonial como fallback
+    const caixaContexto = contextoPatrimonial.caixa;
+    const imoveis = Math.max(imoveisPos, contextoPatrimonial.imoveis);
+    const veiculos = Math.max(veiculosPos, contextoPatrimonial.veiculos);
     const caixa = Math.max(caixaContexto, caixaPosicoes, caixaPerfil);
-    const outros = Math.max(0, valorPosicoes - caixaPosicoes);
+    const passivoTotal = Math.max(dividasPos, contextoPatrimonial.dividas);
+
+    // Calcula "outros" excluindo categorias ja contabilizadas
+    const valorPosicoesCategorizado = investimentos + imoveisPos + veiculosPos + caixaPosicoes + dividasPos;
+    const valorPosicoes = posicoesRows.reduce((acc, item) => acc + (item.valor_atual ?? 0), 0);
+    const outros = Math.max(0, valorPosicoes - valorPosicoesCategorizado);
+
     const ativosLiquidos = investimentos + caixa;
     const ativosIliquidos = imoveis + veiculos;
-    const passivoTotal = contextoPatrimonial.dividas;
     const patrimonioBruto = investimentos + imoveis + veiculos + caixa + outros;
     const patrimonioLiquido = patrimonioBruto - passivoTotal;
     const patrimonioComPosicoes = Math.max(0, patrimonioBruto);

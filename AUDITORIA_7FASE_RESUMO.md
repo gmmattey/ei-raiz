@@ -130,18 +130,26 @@ ALTER TABLE historico_carteira_mensal
 ```
 rentabilidadeMesPct = (aportesMes - valorInvestimentosMes) / valorInvestimentosBase
 ```
-Onde `aportesMes` = novos aportes no mês (exclui atualizações de preço).
+Onde `aportesMes` = novos aportes no mês (exclui atualizações de preço).  
+**Escopo:** Apenas investimentos (A, B, C).
 
 **Rentabilidade acumulada desde aquisição:**
 ```
 rentabilidadeDesdeAquisicaoPct = (totalAtual - totalInvestido) / totalInvestido * 100
 ```
-Escopo: **só investimentos** (A, B, C), nunca inclui bens ou poupança.
+**Escopo:** Só investimentos (A, B, C), nunca inclui bens ou poupança.
 
-**Patrimônio líquido:**
+**Patrimônio líquido (exibido ao usuário):**
 ```
-patrimônioLíquido = valorInvestimentos + imóveisSaldo + poupança - dívidas
+patrimônioLíquido = (A+B+C) + imóveisSaldo + poupança - dívidas
+                  = patrimonioTotal
 ```
+
+**Campo interno `valorInvestimentos` (não exibido):**
+```
+valorInvestimentos = soma(familias A, B, C)
+```
+Usado apenas para cálculo de rentabilidade por família. **Não é uma nova métrica de UI** — é detalhe da fórmula interna.
 
 ---
 
@@ -171,9 +179,9 @@ patrimônioLíquido = valorInvestimentos + imóveisSaldo + poupança - dívidas
    - Requer mínimo de dados (ajustável conforme config)
    - Se carteira é nova: "Aguardando histórico de performance..."
 
-3. **Separação de escopos visível:**
-   - Patrimônio Total ≠ Valor Investimentos
-   - Exemplo: R$ 500k total (R$ 300k investimentos + R$ 150k imóvel - R$ 50k dívida)
+3. **Patrimônio total (não muda visualmente):**
+   - Continua sendo: investimentos + imóvel + poupança - dívidas
+   - Score usa isso para calcular bem-estar geral (estrutura de vida inteira)
 
 ### ✅ **Na Tela de Importação XLSX**
 
@@ -200,6 +208,7 @@ patrimônioLíquido = valorInvestimentos + imóveisSaldo + poupança - dívidas
 - 🚫 **Formulário manual de "Adicionar Ativo":** Não existe (só importação XLSX)
 - 🚫 **Layout de carteira:** Estrutura igual, só dados recalculados
 - 🚫 **Cores/temas:** Sem mudança visual
+- 🚫 **Score:** Continua medindo **bem-estar financeiro geral** (patrimônio total = investimentos + bens + poupança - dívidas). Campo `valorInvestimentos` das migrações é **interno** (só para cálculo de fórmulas A-E), não exposto ao usuário.
 
 ---
 
