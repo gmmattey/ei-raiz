@@ -4,6 +4,9 @@ import {
   AreaChart, Area, Line, ResponsiveContainer,
   XAxis, Tooltip,
 } from 'recharts';
+import {
+  TrendingUp, PiggyBank,
+} from 'lucide-react';
 import { carteiraApi, insightsApi, historicoApi, getStoredUser } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
@@ -222,7 +225,7 @@ export default function HomeMobile() {
       const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
       const instituicaoAbrev = instituicao
         ? instituicao.slice(0, 3).toUpperCase()
-        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : '???');
+        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI');
 
       return {
         ...ativo,
@@ -402,9 +405,13 @@ export default function HomeMobile() {
                   <div className="text-left min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="text-[13px] font-bold text-[var(--text-primary)]">{ativo.ticker}</p>
-                      <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">
-                        {ativo.tipo === 'fundo' ? 'FI' : 'AÇ'}
-                      </span>
+                      <div className="flex-shrink-0 text-[var(--text-muted)]">
+                        {ativo.tipo === 'fundo' ? (
+                          <PiggyBank size={14} />
+                        ) : (
+                          <TrendingUp size={14} />
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>

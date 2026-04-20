@@ -384,7 +384,7 @@ export default function HomeLobby() {
       const instituicao = ativo.instituicao || ativo.metadata?.instituicao;
       const instituicaoAbrev = instituicao
         ? instituicao.slice(0, 3).toUpperCase()
-        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : '???');
+        : (ativo.cnpj ? ativo.cnpj.slice(0, 3).toUpperCase() : 'NI');
 
       return {
         ...ativo,
