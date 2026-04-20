@@ -396,15 +396,21 @@ export class ServicoReconstrucaoCarteiraPadrao implements ServicoReconstrucaoCar
           0,
         );
 
-        const [mesAnterior, primeiroMes] = await Promise.all([
-          this.deps.historicoMensal.obterMesAnterior(usuarioId, cursorParaGravar),
-          this.deps.historicoMensal.obterMesMaisAntigo(usuarioId),
-        ]);
+        const mesAnterior = await this.deps.historicoMensal.obterMesAnterior(
+          usuarioId,
+          cursorParaGravar,
+        );
 
         const { rentabilidadeMesPct, rentabilidadeAcumPct } = calcularRetornosMensais(
           payload.valorInvestimentos,
-          mesAnterior?.valorInvestimentos ?? null,
-          primeiroMes?.valorInvestimentos ?? null,
+          totalInvestido,
+          mesAnterior
+            ? {
+                valorInvestimentos: mesAnterior.valorInvestimentos,
+                totalInvestido: mesAnterior.totalInvestido,
+                rentabilidadeAcumPct: mesAnterior.rentabilidadeAcumPct,
+              }
+            : null,
         );
 
         await this.deps.historicoMensal.gravar(

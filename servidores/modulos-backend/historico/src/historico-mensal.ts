@@ -31,38 +31,52 @@ export interface RepositorioHistoricoMensal {
 
 const arredondarPercentual = (valor: number): number => Number(valor.toFixed(4));
 
+export type ReferenciaMesAnterior = {
+  valorInvestimentos: number;
+  totalInvestido: number;
+  rentabilidadeAcumPct: number;
+};
+
 /**
- * Rentabilidade mensal e acumulada calculadas EXCLUSIVAMENTE sobre o escopo de
+ * Rentabilidade mensal e acumulada, calculadas EXCLUSIVAMENTE sobre o escopo de
  * investimentos (famílias A, B, C). Bens e poupança NÃO entram — senão uma
- * valorização imobiliária aparece como "rendimento" da carteira.
+ * valorização imobiliária apareceria como "rendimento" da carteira.
  *
- * Quando `aportesMes` é informado, aplica-se aproximação TWR (Time-Weighted
- * Return) de um período: o numerador desconta aportes líquidos do mês, isolando
- * ganho de mercado de dinheiro novo que entrou. Sem aportes, reduz à variação
- * simples mês-a-mês.
+ * Modelo: TWR (Time-Weighted Return) encadeado, aproximação de Dietz simples.
+ *  - aportesMes = Δ totalInvestido (custo acumulado Σ qtd×preço) entre o mês atual e o anterior.
+ *    Positivo = aporte/compra; negativo = retirada/venda. Custo médio mantém-se por definição,
+ *    então Δ totalInvestido isola fluxos de caixa da valorização de mercado.
+ *  - rentabilidadeMesPct = (valorInv_atual - valorInv_anterior - aportesMes) / valorInv_anterior
+ *  - rentabilidadeAcumPct = encadeado: (1 + acumAnterior)(1 + mesAtual) - 1
  *
- * Bases zeradas ou inválidas retornam 0 (não lança) para manter reconstrução
- * contínua em meses-buraco.
+ * Sem mês anterior (primeiro ponto): ambos retornam 0 — é a base da série.
+ * Bases zeradas ou inválidas também retornam 0 para manter reconstrução contínua em meses-buraco.
  */
 export function calcularRetornosMensais(
   valorInvestimentosAtual: number,
-  valorInvestimentosMesAnterior: number | null,
-  valorInvestimentosPrimeiroMes: number | null,
-  aportesMes: number = 0,
+  totalInvestidoAtual: number,
+  mesAnterior: ReferenciaMesAnterior | null,
 ): { rentabilidadeMesPct: number; rentabilidadeAcumPct: number } {
-  const rentabilidadeMesPct =
-    valorInvestimentosMesAnterior && valorInvestimentosMesAnterior > 0
-      ? ((valorInvestimentosAtual - valorInvestimentosMesAnterior - aportesMes) /
-          valorInvestimentosMesAnterior) *
-        100
-      : 0;
+  if (
+    !mesAnterior ||
+    !(mesAnterior.valorInvestimentos > 0) ||
+    !Number.isFinite(valorInvestimentosAtual) ||
+    !Number.isFinite(totalInvestidoAtual)
+  ) {
+    return { rentabilidadeMesPct: 0, rentabilidadeAcumPct: 0 };
+  }
 
+  const aportesMes = totalInvestidoAtual - mesAnterior.totalInvestido;
+  const rentabilidadeMesPct =
+    ((valorInvestimentosAtual - mesAnterior.valorInvestimentos - aportesMes) /
+      mesAnterior.valorInvestimentos) *
+    100;
+
+  const acumAnterior = Number.isFinite(mesAnterior.rentabilidadeAcumPct)
+    ? mesAnterior.rentabilidadeAcumPct
+    : 0;
   const rentabilidadeAcumPct =
-    valorInvestimentosPrimeiroMes && valorInvestimentosPrimeiroMes > 0
-      ? ((valorInvestimentosAtual - valorInvestimentosPrimeiroMes) /
-          valorInvestimentosPrimeiroMes) *
-        100
-      : 0;
+    ((1 + acumAnterior / 100) * (1 + rentabilidadeMesPct / 100) - 1) * 100;
 
   return {
     rentabilidadeMesPct: arredondarPercentual(rentabilidadeMesPct),
@@ -160,20 +174,23 @@ export class ServicoHistoricoMensalPadrao implements ServicoHistoricoMensal {
     payload: PayloadHistoricoMensal,
     origem: OrigemHistoricoMensal = "fechamento_mensal",
   ): Promise<PontoHistoricoMensal> {
-    const [mesAnterior, primeiroMes] = await Promise.all([
-      this.repositorio.obterMesAnterior(usuarioId, anoMes),
-      this.repositorio.obterMesMaisAntigo(usuarioId),
-    ]);
-
-    const { rentabilidadeMesPct, rentabilidadeAcumPct } = calcularRetornosMensais(
-      payload.valorInvestimentos,
-      mesAnterior?.valorInvestimentos ?? null,
-      primeiroMes?.valorInvestimentos ?? null,
-    );
+    const mesAnterior = await this.repositorio.obterMesAnterior(usuarioId, anoMes);
 
     const totalInvestido = payload.ativos.reduce(
       (acc, a) => acc + Number(a.totalInvestido ?? 0),
       0,
+    );
+
+    const { rentabilidadeMesPct, rentabilidadeAcumPct } = calcularRetornosMensais(
+      payload.valorInvestimentos,
+      totalInvestido,
+      mesAnterior
+        ? {
+            valorInvestimentos: mesAnterior.valorInvestimentos,
+            totalInvestido: mesAnterior.totalInvestido,
+            rentabilidadeAcumPct: mesAnterior.rentabilidadeAcumPct,
+          }
+        : null,
     );
 
     const dataFechamento = calcularUltimoDiaDoMes(anoMes);

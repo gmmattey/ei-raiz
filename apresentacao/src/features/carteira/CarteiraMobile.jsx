@@ -43,7 +43,7 @@ const SCORE_FAIXAS = {
   fragile:  { label: 'Frágil',   cor: '#F2C94C' },
   stable:   { label: 'Estável',  cor: '#F2C94C' },
   good:     { label: 'Bom',      cor: '#6FCF97' },
-  strong:   { label: 'Ótimo',    cor: '#6FCF97' },
+  strong:   { label: 'Sólido',   cor: '#6FCF97' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -202,8 +202,9 @@ export default function CarteiraMobile() {
     return ['todos', ...Array.from(tipos).sort()];
   }, [ativos]);
 
-  // Filtros de tempo disponíveis baseados no histórico mensal
-  const n = historicoMensal.length;
+  // Fonte canônica: monthlyPerformance.points (TWR pré-calculado).
+  const pontosTwr = monthlyPerformance?.points ?? [];
+  const n = pontosTwr.length;
   const filtrosDisponiveis = FILTROS_ALL.filter(f => {
     if (f === 'Max') return n > 0;
     return n >= FILTROS_MESES[f];
@@ -216,24 +217,13 @@ export default function CarteiraMobile() {
   const isCdiMode    = showCDI && temBenchmark;
 
   const dadosGrafico = useMemo(() => {
-    if (filtroTipo === 'todos' && benchmark?.serie?.length) {
-      const serie  = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
-      const fatia  = filtroEfetivo === 'Max' ? serie : serie.slice(-FILTROS_MESES[filtroEfetivo]);
-      return fatia.map(p => ({
-        anoMes:   p.data?.slice(0, 7),
-        carteira: Number(p.carteira) - 100,
-        cdi:      Number(p.cdi) - 100,
-      }));
-    }
+    const fatia = filtroEfetivo === 'Max' ? pontosTwr : pontosTwr.slice(-FILTROS_MESES[filtroEfetivo]);
 
-    const dados = [...historicoMensal];
-    const fatia = filtroEfetivo === 'Max' ? dados : dados.slice(-FILTROS_MESES[filtroEfetivo]);
-
-    // CDI normalizado ao início do período exibido
+    // CDI re-normalizado ao início da fatia (benchmark.serie é base-100 desde o início do histórico).
     const cdiMap = {};
     if (filtroTipo === 'todos' && benchmark?.serie?.length) {
       const benchSerie = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
-      const inicioAnoMes = fatia[0]?.anoMes ?? '';
+      const inicioAnoMes = fatia[0]?.month ?? '';
       const pontoBase = benchSerie.find(p => (p.data?.slice(0, 7) ?? '') >= inicioAnoMes) ?? benchSerie[0];
       const cdiBase = Number(pontoBase?.cdi ?? 100);
       benchSerie.forEach(p => {
@@ -244,13 +234,20 @@ export default function CarteiraMobile() {
       });
     }
 
-    return fatia.map(p => {
-      const totalAtual     = Number(p.totalAtual ?? 0);
-      const totalInvestido = Number(p.totalInvestido ?? 0);
-      const carteira = totalInvestido > 0 ? ((totalAtual / totalInvestido) - 1) * 100 : null;
-      return { anoMes: p.anoMes, carteira, cdi: cdiMap[p.anoMes] ?? null };
-    });
-  }, [historicoMensal, benchmark, filtroTipo, filtroEfetivo, ativos]);
+    // Re-base: returnPercent acumula desde o primeiro ponto da série; ao filtrar
+    // período, subtraímos a base da fatia para que a janela comece em zero.
+    const base = Number(fatia[0]?.returnPercent ?? 0);
+    return fatia.map(p => ({
+      anoMes: p.month,
+      carteira: Number(p.returnPercent ?? 0) - base,
+      cdi: cdiMap[p.month] ?? null,
+    }));
+  }, [pontosTwr, benchmark, filtroTipo, filtroEfetivo]);
+
+  // TWR plano (variância zero em todos os pontos): backend não está marcando a
+  // mercado. Esconde o card — não mostra linha reta em 0% que não serve para
+  // decisão nenhuma.
+  const twrPlano = dadosGrafico.length > 0 && dadosGrafico.every(p => Number(p.carteira ?? 0) === Number(dadosGrafico[0].carteira ?? 0));
 
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -286,7 +283,10 @@ export default function CarteiraMobile() {
               className="font-['Sora'] text-[28px] font-bold leading-tight"
               style={{ color: scoreFaixa.cor }}
             >
-              <HiddenValue hidden={ocultarValores}>{Math.round(score)}</HiddenValue>
+              <HiddenValue hidden={ocultarValores}>
+                {Math.round(score)}
+                <span className="text-[14px] font-semibold text-[var(--text-muted)]">/1000</span>
+              </HiddenValue>
             </p>
           </div>
           <p
@@ -300,7 +300,7 @@ export default function CarteiraMobile() {
 
       {/* Gráfico de Rentabilidade — só aparece com série mensal real suficiente.
           Sem dados reais = card oculto por completo. Sem placeholder. */}
-      {monthlyPerformance.available && (
+      {monthlyPerformance.available && pontosTwr.length >= 2 && !twrPlano && (
       <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
         {/* Cabeçalho do gráfico */}
         <div className="flex items-center justify-between mb-3">

@@ -144,7 +144,7 @@ export default function Historico() {
                     <div>
                       <p className="font-['Sora'] text-sm font-bold">{snap.data}</p>
                       <p className="text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-tight">
-                        Variação {ocultarValores ? '••••••••' : `${snap.variacaoPercentual.toFixed(2)}%`}
+                        Variação {ocultarValores ? '••••••••' : `${snap.variacaoPercentual >= 0 ? '+' : ''}${snap.variacaoPercentual.toFixed(2)}%`}
                       </p>
                     </div>
                     <p className="font-['Sora'] text-sm font-bold">{ocultarValores ? '••••••••' : moeda(snap.valorTotal)}</p>

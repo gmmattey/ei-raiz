@@ -34,28 +34,65 @@ test("calcularUltimoDiaDoMes retorna ISO do último dia", () => {
   assert.ok(calcularUltimoDiaDoMes("2026-04").startsWith("2026-04-30"));
 });
 
-test("calcularRetornosMensais: rentabilidade do mês e acumulada", () => {
-  const r = calcularRetornosMensais(1100, 1000, 800);
+test("calcularRetornosMensais: mesmo totalInvestido (sem aporte) → rendimento puro", () => {
+  // valorInv sobe 1000 → 1100 sem mudança de totalInvestido: rendimento = 10%
+  const r = calcularRetornosMensais(1100, 1000, {
+    valorInvestimentos: 1000,
+    totalInvestido: 1000,
+    rentabilidadeAcumPct: 0,
+  });
   assert.equal(r.rentabilidadeMesPct, 10);
-  assert.equal(r.rentabilidadeAcumPct, 37.5);
+  assert.equal(r.rentabilidadeAcumPct, 10);
 });
 
-test("calcularRetornosMensais: bases nulas ou zeradas retornam 0", () => {
-  assert.deepEqual(calcularRetornosMensais(1000, null, null), {
-    rentabilidadeMesPct: 0,
-    rentabilidadeAcumPct: 0,
-  });
-  assert.deepEqual(calcularRetornosMensais(1000, 0, 0), {
+test("calcularRetornosMensais: sem mês anterior → 0 em ambos (primeiro ponto)", () => {
+  assert.deepEqual(calcularRetornosMensais(1000, 1000, null), {
     rentabilidadeMesPct: 0,
     rentabilidadeAcumPct: 0,
   });
 });
 
-test("calcularRetornosMensais: aporte do mês é descontado do numerador (TWR)", () => {
-  // mês anterior: 1000, atual: 1200, aporte no mês: 100
+test("calcularRetornosMensais: mês anterior com bases zeradas retorna 0", () => {
+  const r = calcularRetornosMensais(1000, 1000, {
+    valorInvestimentos: 0,
+    totalInvestido: 0,
+    rentabilidadeAcumPct: 0,
+  });
+  assert.deepEqual(r, { rentabilidadeMesPct: 0, rentabilidadeAcumPct: 0 });
+});
+
+test("calcularRetornosMensais: Δ totalInvestido é tratado como aporte (TWR Dietz)", () => {
+  // mês anterior: valorInv=1000, totalInv=1000. Atual: valorInv=1200, totalInv=1100 → aporte=100
   // ganho de mercado = (1200 - 1000 - 100) / 1000 = 10% (não 20%)
-  const r = calcularRetornosMensais(1200, 1000, 1000, 100);
+  const r = calcularRetornosMensais(1200, 1100, {
+    valorInvestimentos: 1000,
+    totalInvestido: 1000,
+    rentabilidadeAcumPct: 0,
+  });
   assert.equal(r.rentabilidadeMesPct, 10);
+});
+
+test("calcularRetornosMensais: acumulado é encadeado (TWR) a partir do acumAnterior", () => {
+  // acumAnterior = 10%, mesAtual = 10% → acumNovo = 1.10 * 1.10 - 1 = 21%
+  const r = calcularRetornosMensais(1210, 1000, {
+    valorInvestimentos: 1100,
+    totalInvestido: 1000,
+    rentabilidadeAcumPct: 10,
+  });
+  assert.equal(r.rentabilidadeMesPct, 10);
+  assert.equal(r.rentabilidadeAcumPct, 21);
+});
+
+test("calcularRetornosMensais: aportes proporcionais (valorInv e totalInv sobem juntos) → retorno 0", () => {
+  // cenário real do bug: valorInv e totalInv sobem em paralelo (dinheiro novo, sem marcação).
+  // Antes: (1200-1000)/1000 = 20% (ingênuo); agora: aporte=200, retorno = (1200-1000-200)/1000 = 0%.
+  const r = calcularRetornosMensais(1200, 1200, {
+    valorInvestimentos: 1000,
+    totalInvestido: 1000,
+    rentabilidadeAcumPct: 0,
+  });
+  assert.equal(r.rentabilidadeMesPct, 0);
+  assert.equal(r.rentabilidadeAcumPct, 0);
 });
 
 class RepoFakeHistoricoMensal implements RepositorioHistoricoMensal {
@@ -121,28 +158,31 @@ class RepoFakeHistoricoMensal implements RepositorioHistoricoMensal {
   }
 }
 
-const payloadFake = (patrimonio: number): PayloadHistoricoMensal => ({
+const payloadFake = (
+  valorInvestimentos: number,
+  totalInvestido: number = valorInvestimentos,
+): PayloadHistoricoMensal => ({
   ativos: [
     {
       id: "a1",
       ticker: "PETR4",
       nome: "Petrobras",
       categoria: "acao",
-      valorAtual: patrimonio,
-      totalInvestido: patrimonio,
+      valorAtual: valorInvestimentos,
+      totalInvestido,
       retornoAcumulado: 0,
       participacao: 100,
       confiavel: true,
     },
   ],
-  valorInvestimentos: patrimonio,
-  patrimonioInvestimentos: patrimonio,
+  valorInvestimentos,
+  patrimonioInvestimentos: valorInvestimentos,
   patrimonioBens: 0,
   patrimonioPoupanca: 0,
   patrimonioDividas: 0,
-  patrimonioTotal: patrimonio,
+  patrimonioTotal: valorInvestimentos,
   distribuicaoPatrimonio: [
-    { id: "investimentos", label: "Investimentos", valor: patrimonio, percentual: 100 },
+    { id: "investimentos", label: "Investimentos", valor: valorInvestimentos, percentual: 100 },
   ],
   confiavel: true,
 });
@@ -161,16 +201,32 @@ test("ServicoHistoricoMensalPadrao: registra primeiro mês com retornos zerados"
   assert.equal(ponto.origem, "fechamento_mensal");
 });
 
-test("ServicoHistoricoMensalPadrao: calcula rentabilidade mensal e acumulada vs primeiro mês", async () => {
+test("ServicoHistoricoMensalPadrao: encadeia rentabilidade acumulada (TWR) ao longo de vários meses", async () => {
   const repo = new RepoFakeHistoricoMensal();
   const servico = new ServicoHistoricoMensalPadrao(repo);
 
-  await servico.registrarFechamentoMensal("u1", "2026-01", payloadFake(1000));
-  await servico.registrarFechamentoMensal("u1", "2026-02", payloadFake(1100));
-  const ponto = await servico.registrarFechamentoMensal("u1", "2026-03", payloadFake(1200));
+  // Cenário: totalInvestido estável em 1000, só valorInv cresce (valorização pura).
+  await servico.registrarFechamentoMensal("u1", "2026-01", payloadFake(1000, 1000));
+  await servico.registrarFechamentoMensal("u1", "2026-02", payloadFake(1100, 1000));
+  const ponto = await servico.registrarFechamentoMensal("u1", "2026-03", payloadFake(1210, 1000));
 
-  assert.ok(Math.abs(ponto.rentabilidadeMesPct - 9.0909) < 0.01); // (1200-1100)/1100
-  assert.equal(ponto.rentabilidadeAcumPct, 20); // (1200-1000)/1000
+  assert.ok(Math.abs(ponto.rentabilidadeMesPct - 10) < 0.01); // (1210-1100)/1100
+  assert.ok(Math.abs(ponto.rentabilidadeAcumPct - 21) < 0.01); // 1.10 * 1.10 - 1
+});
+
+test("ServicoHistoricoMensalPadrao: aporte proporcional não infla rentabilidade (bug do 3705%)", async () => {
+  const repo = new RepoFakeHistoricoMensal();
+  const servico = new ServicoHistoricoMensalPadrao(repo);
+
+  // Reproduz o cenário real: totalInvestido e valorInvestimentos sobem em paralelo.
+  // Antes da correção: acum = ((56675-1489)/1489)*100 = 3705% — totalmente enganoso.
+  // Agora: aportes = Δ totalInvestido, retorno real = 0% em todos os meses.
+  await servico.registrarFechamentoMensal("u1", "2026-01", payloadFake(1489, 1489));
+  await servico.registrarFechamentoMensal("u1", "2026-02", payloadFake(3175, 3175));
+  const ponto = await servico.registrarFechamentoMensal("u1", "2026-03", payloadFake(56675, 56675));
+
+  assert.equal(ponto.rentabilidadeMesPct, 0);
+  assert.equal(ponto.rentabilidadeAcumPct, 0);
 });
 
 // ─── avaliarRentabilidadeMensal ─────────────────────────────────────────────

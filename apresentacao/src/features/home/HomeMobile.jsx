@@ -14,6 +14,14 @@ const HOME_MOBILE_CACHE_FRESCA_TTL = 60 * 1000;
 const FILTROS_ALL = ['1M', '3M', '6M', '1A', 'Max'];
 const FILTROS_MESES = { '1M': 1, '3M': 3, '6M': 6, '1A': 12 };
 
+const SCORE_FAIXAS = {
+  critical: { label: 'Crítico', cor: '#E85C5C' },
+  fragile:  { label: 'Frágil',  cor: '#F2C94C' },
+  stable:   { label: 'Estável', cor: '#F2C94C' },
+  good:     { label: 'Bom',     cor: '#6FCF97' },
+  strong:   { label: 'Sólido',  cor: '#6FCF97' },
+};
+
 const fmt = (v) =>
   new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: 'BRL', maximumFractionDigits: 0,
@@ -159,7 +167,9 @@ export default function HomeMobile() {
   }, []);
 
   const score        = insights?.scoreUnificado?.score ?? insights?.score_unificado?.score ?? 0;
-  const patrimonio   = Number(resumo?.patrimonioTotal ?? 0);
+  const scoreBand    = insights?.scoreUnificado?.band  ?? insights?.score_unificado?.band  ?? null;
+  const scoreFaixa   = SCORE_FAIXAS[scoreBand] ?? { label: '—', cor: '#F56A2A' };
+  const patrimonio   = Number(resumo?.patrimonioLiquido ?? resumo?.valorInvestimentos ?? 0);
   const alertasCount = insights?.diagnostico?.riscos?.length ?? 0;
 
   const n = historicoMensal.length;
@@ -236,8 +246,13 @@ export default function HomeMobile() {
           </div>
           <div>
             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Score</p>
-            <p className="text-[14px] font-bold mt-0.5 text-[#F56A2A]">
-              <HiddenValue hidden={ocultarValores}>{Math.round(score)}</HiddenValue>
+            <p className="text-[14px] font-bold mt-0.5" style={{ color: scoreFaixa.cor }}>
+              <HiddenValue hidden={ocultarValores}>
+                {Math.round(score)}<span className="text-[var(--text-muted)] font-semibold">/1000</span>
+              </HiddenValue>
+            </p>
+            <p className="text-[9px] font-semibold mt-0.5" style={{ color: scoreFaixa.cor }}>
+              {scoreFaixa.label}
             </p>
           </div>
           <div>

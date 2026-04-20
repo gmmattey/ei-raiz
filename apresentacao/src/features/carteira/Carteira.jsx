@@ -34,6 +34,16 @@ const LABEL_CATEGORIA = {
   outros:     "Outros",
 };
 
+// Valor aplicado de um ativo (principalmente fundos/prev/RF): quando quantidade
+// e preço médio estão íntegros, é qtd × preço médio. Caso contrário (importações
+// de fundos sem cotas, previdência com saldo contábil sem cota), usa valorAtual
+// como proxy — evita mostrar R$ 0 mentiroso para uma posição que de fato existe.
+const calcularValorAplicado = (asset) => {
+  const qtd = Number(asset?.quantidade ?? 0);
+  const preco = Number(asset?.precoMedio ?? asset?.preco_medio ?? 0);
+  return qtd > 0 && preco > 0 ? qtd * preco : Number(asset?.valorAtual ?? asset?.valor ?? 0);
+};
+
 const TooltipDonut = ({ active, payload, ocultarValores = false }) => {
   if (!active || !payload?.length) return null;
   const { name, value, percent } = payload[0];
@@ -46,7 +56,7 @@ const TooltipDonut = ({ active, payload, ocultarValores = false }) => {
   );
 };
 
-const GraficoAlocacao = ({ ativos, patrimonioTotal, ocultarValores = false }) => {
+const GraficoAlocacao = ({ ativos, totalInvestimentos, ocultarValores = false }) => {
   const dados = useMemo(() => {
     const mapa = {};
     for (const a of ativos) {
@@ -59,10 +69,10 @@ const GraficoAlocacao = ({ ativos, patrimonioTotal, ocultarValores = false }) =>
         name: LABEL_CATEGORIA[cat] ?? cat,
         cat,
         value: valor,
-        percent: patrimonioTotal > 0 ? valor / patrimonioTotal : 0,
+        percent: totalInvestimentos > 0 ? valor / totalInvestimentos : 0,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [ativos, patrimonioTotal]);
+  }, [ativos, totalInvestimentos]);
 
   if (dados.length === 0) return null;
 
@@ -344,7 +354,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
   const rentabilidadeIndisponivel = rentabilidadeValor === null;
   const rentabilidade = rentabilidadeValor ?? 0;
 
-  const valorAplicado = quantidade * precoMedio;
+  const valorAplicado = calcularValorAplicado(asset);
   const ganhoAbsoluto = valorAtual - valorAplicado;
 
   if (isAcao) {
@@ -353,7 +363,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm font-semibold">{asset.ticker}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">
           {ocultarValores ? "••••••••" : moeda(precoMedio)}
           <StatusPrecoMedioBadge status={statusPrecoMedioDe(asset)} />
@@ -375,7 +385,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4">
@@ -394,7 +404,7 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(ganhoAbsoluto)}</td>
-        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade.toFixed(2)}%`)}</td>
+        <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAplicado)}</td>
         <td className="py-4 px-4">
           <button onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')} className="p-2 border border-[#EFE7DC] rounded-xl hover:bg-white text-[var(--text-secondary)] hover:text-[#F56A2A] transition-colors">
@@ -423,7 +433,8 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
 // Componente para grupo de categoria
 const GrupoCategoria = React.memo(({ categoria, ativos: grupoAtivos, ocultarValores, resumo, isColapsed, onToggle, navigate }) => {
   const totalGrupo = grupoAtivos.reduce((acc, a) => acc + Number(a.valorAtual ?? a.valor ?? 0), 0);
-  const percGrupo = resumo?.patrimonioTotal > 0 ? (totalGrupo / resumo.patrimonioTotal) * 100 : 0;
+  const patrimonioRef = Number(resumo?.patrimonioLiquido ?? resumo?.valorInvestimentos ?? 0);
+  const percGrupo = patrimonioRef > 0 ? (totalGrupo / patrimonioRef) * 100 : 0;
 
   const colunasPorTipo = {
     acao: ["Ticker", "Posição", "%Aloc", "Rent.%", "Preço Médio", "Último Preço", "Qtd", ""],
@@ -651,16 +662,12 @@ export default function Carteira({ embedded = false }) {
 
   const scoreValor = Number(scoreUnificado?.score ?? 0);
   const badgeScore = classificacaoScore || (scoreUnificado?.band ?? "—");
-  const patrimonioTotal = Number(resumo?.patrimonioTotal ?? 0);
-  const patrimonioInvest = Number(resumo?.patrimonioInvestimentos ?? patrimonioTotal);
+  const patrimonioInvest = Number(resumo?.valorInvestimentos ?? 0);
   const categoriasUnicas = new Set((ativos ?? []).map((a) => a.categoria).filter(Boolean)).size;
   const semAtivos = !loading && !error && (ativos?.length ?? 0) === 0;
   const resumoFundos = useMemo(() => {
     const fundos = [...(ativosPorCategoria.fundo ?? [])].sort((a, b) => Number(b.valorAtual ?? 0) - Number(a.valorAtual ?? 0));
     return fundos.slice(0, 6).map((f) => {
-      const quantidade = Number(f.quantidade ?? 0);
-      const precoMedio = Number(f.precoMedio ?? f.preco_medio ?? 0);
-      const valorAplicado = quantidade > 0 && precoMedio > 0 ? quantidade * precoMedio : Number(f.valorAtual ?? 0);
       const valorLiquido = Number(f.valorAtual ?? 0);
       return {
         id: f.id,
@@ -668,7 +675,7 @@ export default function Carteira({ embedded = false }) {
         posicao: valorLiquido,
         alocacao: Number(f.participacao ?? 0),
         rentabilidade: rentabilidadeDesdeAquisicao(f),
-        valorAplicado,
+        valorAplicado: calcularValorAplicado(f),
         valorLiquido,
       };
     });
@@ -689,7 +696,7 @@ export default function Carteira({ embedded = false }) {
   }, [ativosPorCategoria]);
 
   const totaisResumo = useMemo(() => {
-    const total = Number(resumo?.patrimonioTotal ?? 0);
+    const total = Number(resumo?.patrimonioLiquido ?? resumo?.valorInvestimentos ?? 0);
     const totalAcoes = resumoAcoes.reduce((acc, i) => acc + i.posicao, 0);
     const totalFundos = resumoFundos.reduce((acc, i) => acc + i.posicao, 0);
     return {
@@ -702,13 +709,13 @@ export default function Carteira({ embedded = false }) {
         percentual: total > 0 ? (totalFundos / total) * 100 : 0,
       },
     };
-  }, [resumo?.patrimonioTotal, resumoAcoes, resumoFundos]);
+  }, [resumo?.patrimonioLiquido, resumo?.valorInvestimentos, resumoAcoes, resumoFundos]);
 
   if (embedded) {
     return (
       <div className="w-full bg-[var(--bg-primary)] font-['Inter'] text-[var(--text-primary)]">
         <div className="w-full space-y-4">
-          <GraficoAlocacao ativos={ativos} patrimonioTotal={resumo?.patrimonioTotal ?? 0} ocultarValores={ocultarValores} />
+          <GraficoAlocacao ativos={ativos} totalInvestimentos={Number(resumo?.valorInvestimentos ?? 0)} ocultarValores={ocultarValores} />
 
           <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4 shadow-md shadow-black/5">
             <div className="mb-3 flex items-center justify-between gap-2">
@@ -864,7 +871,7 @@ export default function Carteira({ embedded = false }) {
                 if (retorno === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
                 return (
                   <p className={`text-xs font-semibold mt-1.5 ${retorno >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                    {ocultarValores ? '••••' : `${retorno.toFixed(2)}%`}{' '}
+                    {ocultarValores ? '••••' : `${retorno >= 0 ? '+' : ''}${retorno.toFixed(2)}%`}{' '}
                     <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
                   </p>
                 );
@@ -897,7 +904,7 @@ export default function Carteira({ embedded = false }) {
 
         {embedded && ativos.length > 0 && (
           <div className="mb-8 w-full">
-            <GraficoAlocacao ativos={ativos} patrimonioTotal={resumo?.patrimonioTotal ?? 0} ocultarValores={ocultarValores} />
+            <GraficoAlocacao ativos={ativos} totalInvestimentos={Number(resumo?.valorInvestimentos ?? 0)} ocultarValores={ocultarValores} />
           </div>
         )}
 

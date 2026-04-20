@@ -400,21 +400,85 @@ export default function Insights() {
               </div>
             )}
 
-            {/* Row 3: Source Attribution */}
-            {veraPayload && (
-              <div className="text-xs text-[#0B1218]/50 text-center pt-4 border-t border-[var(--border-color)]">
-                <span>
-                  Análise por{' '}
-                  <span className="font-semibold text-[#0B1218]/70">
-                    {veraPayload.source === 'cloudflare' ? 'Vera Cloudflare LLM' :
-                     veraPayload.source === 'openai' ? 'Vera OpenAI' :
-                     veraPayload.source === 'gemini' ? 'Vera Gemini' :
-                     veraPayload.source === 'anthropic' ? 'Vera Claude' :
-                     'Vera IA'}
-                  </span>
-                </span>
-              </div>
-            )}
+            {/* Row 3: Origem dos dados — transparência do pipeline de insights */}
+            {(() => {
+              const timestampCotacoes =
+                atualizacaoMercado?.ultimaAtualizacao || atualizacaoMercado?.ultima_atualizacao;
+              const statusCotacoes = atualizacaoMercado?.statusGeral || atualizacaoMercado?.status_geral;
+              const coberturaCotacoes = Number(atualizacaoMercado?.cobertura ?? 0);
+              const fontesCotacoes = (atualizacaoMercado?.fontes || [])
+                .filter((f) => f?.fonte && f.fonte !== 'nenhuma' && Number(f?.quantidade) > 0)
+                .map((f) => String(f.fonte).toUpperCase());
+              const STATUS_COTACOES_LABEL = {
+                atualizado: { cor: '#1A7A45', texto: 'Cotações atualizadas' },
+                atrasado: { cor: '#B8880A', texto: 'Cotações defasadas' },
+                indisponivel: { cor: '#E85C5C', texto: 'Sem cotações' },
+              };
+              const statusLabel = statusCotacoes ? STATUS_COTACOES_LABEL[statusCotacoes] : null;
+              const formatarDataHora = (iso) => {
+                if (!iso) return null;
+                const d = new Date(iso);
+                if (Number.isNaN(d.getTime())) return null;
+                return d.toLocaleString('pt-BR', {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                });
+              };
+              const temOrigem = timestampScore || timestampCotacoes || fontesCotacoes.length > 0 || veraPayload;
+              if (!temOrigem) return null;
+              return (
+                <div className="rounded-xl border border-[var(--border-color)] bg-white p-6 space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#0B1218]/50">
+                    Origem dos dados
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    {timestampScore && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#0B1218]/50">Score calculado</span>
+                        <span className="text-[#0B1218]/70">{formatarDataHora(timestampScore)}</span>
+                      </div>
+                    )}
+                    {(timestampCotacoes || statusLabel) && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#0B1218]/50">Cotações</span>
+                        <span className="text-right">
+                          {statusLabel && (
+                            <span className="font-semibold" style={{ color: statusLabel.cor }}>
+                              {statusLabel.texto}
+                            </span>
+                          )}
+                          {timestampCotacoes && (
+                            <span className="text-[#0B1218]/70 ml-1">
+                              · {formatarDataHora(timestampCotacoes)}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {coberturaCotacoes > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#0B1218]/50">Cobertura</span>
+                        <span className="text-[#0B1218]/70">
+                          {coberturaCotacoes.toFixed(0)}%
+                          {fontesCotacoes.length > 0 && ` · ${fontesCotacoes.join(', ')}`}
+                        </span>
+                      </div>
+                    )}
+                    {veraPayload && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#0B1218]/50">Narrativa</span>
+                        <span className="text-[#0B1218]/70">
+                          {veraPayload.source === 'cloudflare' ? 'Vera · Cloudflare' :
+                           veraPayload.source === 'openai' ? 'Vera · OpenAI' :
+                           veraPayload.source === 'gemini' ? 'Vera · Gemini' :
+                           veraPayload.source === 'anthropic' ? 'Vera · Claude' :
+                           'Vera IA'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

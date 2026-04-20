@@ -289,8 +289,8 @@ export default function HomeLobby() {
   /* ─── Valores derivados ─── */
   const scoreUnificado   = insights?.scoreUnificado || insights?.score_unificado;
   const scoreExibicao    = scoreUnificado?.score ?? 0;
-  const patrimonioTotal  = Number(resumo?.patrimonioTotal ?? 0);
-  const patrimonioInvest = Number(resumo?.patrimonioInvestimentos ?? patrimonioTotal);
+  const patrimonioInvest = Number(resumo?.valorInvestimentos ?? 0);
+  const patrimonioLiquido = Number(resumo?.patrimonioLiquido ?? patrimonioInvest);
   const alertasCount     = insights?.diagnostico?.riscos?.length ?? 0;
   const primeiroAlerta   = insights?.diagnostico?.riscos?.[0];
   const bandLabel        = { critical:'Crítico', fragile:'Frágil', stable:'Estável', good:'Bom', strong:'Sólido' }[scoreUnificado?.band ?? ''] ?? '';
@@ -500,7 +500,7 @@ export default function HomeLobby() {
             {texto('home.kpi.patrimonio', 'Patrimônio total')}
           </p>
           <p className="font-['Sora'] text-2xl font-bold leading-tight">
-            {ocultarValores ? '••••••••' : fmt(patrimonioTotal)}
+            {ocultarValores ? '••••••••' : fmt(patrimonioLiquido)}
           </p>
           {(() => {
             const r = rentabilidadeDesdeAquisicao(resumo);
@@ -660,7 +660,7 @@ export default function HomeLobby() {
                 <div className="grid grid-cols-[1fr_96px_68px_52px] px-2 mb-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Var. 12m</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Rent.</span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Cart.</span>
                 </div>
                 <div className="space-y-0.5">

@@ -47,6 +47,39 @@ export default function InsightsMobile() {
 
   const veraSections = veraPayload ? parseVeraBody(veraPayload.body) : { problem: '', why: '', how: '' };
 
+  const scoreUnificado = resumo?.scoreUnificado || resumo?.score_unificado;
+  const atualizacaoMercado = resumo?.atualizacaoMercado || resumo?.atualizacao_mercado;
+  const timestampScore = scoreUnificado?.calculatedAt || resumo?.score?.atualizadoEm;
+  const timestampCotacoes =
+    atualizacaoMercado?.ultimaAtualizacao || atualizacaoMercado?.ultima_atualizacao;
+  const statusCotacoes = atualizacaoMercado?.statusGeral || atualizacaoMercado?.status_geral;
+  const coberturaCotacoes = Number(atualizacaoMercado?.cobertura ?? 0);
+  const fontesCotacoes = (atualizacaoMercado?.fontes || [])
+    .filter((f) => f?.fonte && f.fonte !== 'nenhuma' && Number(f?.quantidade) > 0)
+    .map((f) => String(f.fonte).toUpperCase());
+
+  const formatarDataHora = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const STATUS_COTACOES_LABEL = {
+    atualizado: { cor: '#1A7A45', texto: 'Cotações atualizadas' },
+    atrasado: { cor: '#B8880A', texto: 'Cotações defasadas' },
+    indisponivel: { cor: '#E85C5C', texto: 'Sem cotações' },
+  };
+  const statusLabel = statusCotacoes ? STATUS_COTACOES_LABEL[statusCotacoes] : null;
+
+  const temOrigemParaExibir =
+    timestampScore || timestampCotacoes || fontesCotacoes.length > 0 || veraPayload;
+
   return (
     <section className="space-y-6 pb-6">
       {/* Header */}
@@ -137,19 +170,60 @@ export default function InsightsMobile() {
             </div>
           )}
 
-          {/* Source Attribution */}
-          {veraPayload && (
-            <div className="text-xs text-[#0B1218]/50 text-center pt-4 border-t border-[var(--border-color)]">
-              <span>
-                Por{' '}
-                <span className="font-semibold text-[#0B1218]/70">
-                  {veraPayload.source === 'cloudflare' ? 'Vera Cloudflare LLM' :
-                   veraPayload.source === 'openai' ? 'Vera OpenAI' :
-                   veraPayload.source === 'gemini' ? 'Vera Gemini' :
-                   veraPayload.source === 'anthropic' ? 'Vera Claude' :
-                   'Vera IA'}
-                </span>
-              </span>
+          {/* Origem dos dados — transparência do pipeline de insights */}
+          {temOrigemParaExibir && (
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-4 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                Origem dos dados
+              </p>
+
+              {timestampScore && (
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text-muted)]">Score calculado</span>
+                  <span className="text-[var(--text-secondary)]">{formatarDataHora(timestampScore)}</span>
+                </div>
+              )}
+
+              {(timestampCotacoes || statusLabel) && (
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text-muted)]">Cotações</span>
+                  <span className="text-right">
+                    {statusLabel && (
+                      <span className="font-semibold" style={{ color: statusLabel.cor }}>
+                        {statusLabel.texto}
+                      </span>
+                    )}
+                    {timestampCotacoes && (
+                      <span className="text-[var(--text-secondary)] ml-1">
+                        · {formatarDataHora(timestampCotacoes)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {coberturaCotacoes > 0 && (
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text-muted)]">Cobertura</span>
+                  <span className="text-[var(--text-secondary)]">
+                    {coberturaCotacoes.toFixed(0)}%
+                    {fontesCotacoes.length > 0 && ` · ${fontesCotacoes.join(', ')}`}
+                  </span>
+                </div>
+              )}
+
+              {veraPayload && (
+                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-[var(--border-color)]">
+                  <span className="text-[var(--text-muted)]">Narrativa</span>
+                  <span className="text-[var(--text-secondary)]">
+                    {veraPayload.source === 'cloudflare' ? 'Vera · Cloudflare' :
+                     veraPayload.source === 'openai' ? 'Vera · OpenAI' :
+                     veraPayload.source === 'gemini' ? 'Vera · Gemini' :
+                     veraPayload.source === 'anthropic' ? 'Vera · Claude' :
+                     'Vera IA'}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </>

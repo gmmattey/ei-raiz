@@ -48,8 +48,11 @@ export default function GraficoRentabilidade({ historicoMensal, monthlyPerforman
   const temBenchmark = filtroTipo === 'todos' && Boolean(benchmark?.serie?.length);
   const isCdiMode = showCDI && temBenchmark;
 
-  // Filtros de tempo disponíveis (baseados no histórico mensal)
-  const n = (historicoMensal ?? []).length;
+  // Fonte canônica: monthlyPerformance.points (TWR pré-calculado pelo backend,
+  // base de valorInvestimentos, ajustado por aportes do mês).
+  // historicoMensal é mantido apenas para backward-compat (não alimenta cálculo).
+  const pontosTwr = monthlyPerformance?.points ?? [];
+  const n = pontosTwr.length;
   const filtrosDisponiveis = ['1M', '3M', '6M', '1A', 'Max'].filter(f => {
     if (f === 'Max') return n > 0;
     return n >= FILTROS_MESES[f];
@@ -59,14 +62,13 @@ export default function GraficoRentabilidade({ historicoMensal, monthlyPerforman
     : (filtrosDisponiveis[filtrosDisponiveis.length - 1] ?? 'Max');
 
   const dadosGrafico = useMemo(() => {
-    const dados = [...(historicoMensal ?? [])];
-    const fatia = filtroEfetivo === 'Max' ? dados : dados.slice(-FILTROS_MESES[filtroEfetivo]);
+    const fatia = filtroEfetivo === 'Max' ? pontosTwr : pontosTwr.slice(-FILTROS_MESES[filtroEfetivo]);
 
     // CDI normalizado ao início do período exibido (benchmark serie é composto desde o início do histórico)
     const cdiMap = {};
     if (filtroTipo === 'todos' && benchmark?.serie?.length) {
       const benchSerie = [...benchmark.serie].sort((a, b) => a.data.localeCompare(b.data));
-      const inicioAnoMes = fatia[0]?.anoMes ?? '';
+      const inicioAnoMes = fatia[0]?.month ?? '';
       const pontoBase = benchSerie.find(p => (p.data?.slice(0, 7) ?? '') >= inicioAnoMes) ?? benchSerie[0];
       const cdiBase = Number(pontoBase?.cdi ?? 100);
       benchSerie.forEach(p => {
@@ -77,20 +79,29 @@ export default function GraficoRentabilidade({ historicoMensal, monthlyPerforman
       });
     }
 
-    return fatia.map(p => {
-      const totalAtual     = Number(p.totalAtual ?? 0);
-      const totalInvestido = Number(p.totalInvestido ?? 0);
-      const carteira = totalInvestido > 0 ? ((totalAtual / totalInvestido) - 1) * 100 : null;
-      return { anoMes: p.anoMes, carteira, cdi: cdiMap[p.anoMes] ?? null };
-    });
-  }, [historicoMensal, benchmark, filtroTipo, filtroEfetivo]);
+    // Re-base: returnPercent é acumulado desde o primeiro ponto da série de 24m.
+    // Ao filtrar, o primeiro ponto da janela deve ser zero — subtraímos a base da fatia.
+    const base = Number(fatia[0]?.returnPercent ?? 0);
+    return fatia.map(p => ({
+      anoMes: p.month,
+      carteira: Number(p.returnPercent ?? 0) - base,
+      cdi: cdiMap[p.month] ?? null,
+    }));
+  }, [pontosTwr, benchmark, filtroTipo, filtroEfetivo]);
 
   const semDados = dadosGrafico.length < 2 || dadosGrafico.every(p => p.carteira === null);
+
+  // TWR plano: todos os pontos iguais (variância zero). Acontece quando o
+  // backend de fechamento mensal registrou snapshots sem marcação a mercado
+  // (valorInvestimentos == totalInvestido em todos os meses). Linha reta em 0%
+  // é inútil e enganosa — esconde o card até haver variação real.
+  const valoresCarteira = dadosGrafico.map(p => Number(p.carteira ?? 0));
+  const twrPlano = valoresCarteira.every(v => v === valoresCarteira[0]);
 
   // Defesa-em-profundidade: mesmo com monthlyPerformance.available=true, a
   // derivação por tipo/tempo pode zerar os pontos úteis (ex: filtroTipo sem
   // cobertura). Nesse caso, oculta o card por completo — nunca placeholder.
-  if (semDados) return null;
+  if (semDados || twrPlano) return null;
 
   return (
     <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-6 mb-8 fade-in-up">

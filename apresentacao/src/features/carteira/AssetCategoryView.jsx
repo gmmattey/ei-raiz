@@ -379,11 +379,8 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
            {ocultarValores ? "••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}
         </td>
         <td className="py-5 px-6 text-sm font-medium text-[#0B1218]">{ocultarValores ? "••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
-        <td className="py-5 px-6 text-sm font-bold text-[#0B1218]">
-           {ocultarValores ? "••••" : moeda(valorAtual)}
-        </td>
         <td className="py-5 px-6 text-right">
-          <button 
+          <button
             onClick={() => navigate(asset.ticker ? `/ativo/${asset.ticker}` : '/perfil')}
             className="p-2.5 border border-[#EFE7DC] rounded-xl hover:bg-white transition-all opacity-0 group-hover:opacity-100"
           >

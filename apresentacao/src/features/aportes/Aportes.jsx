@@ -165,7 +165,7 @@ export default function Aportes() {
         {!loading && !error && !semBase && (
           <div className="p-8 border border-[#EFE7DC] rounded-xl space-y-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-3">Base atual</p>
-            <p className="text-sm text-[#0B1218]/70 mb-2">Patrimonio: <span className="font-semibold text-[#0B1218]">{moeda(resumo?.patrimonioTotal)}</span></p>
+            <p className="text-sm text-[#0B1218]/70 mb-2">Patrimonio: <span className="font-semibold text-[#0B1218]">{moeda(resumo?.patrimonioLiquido ?? resumo?.valorInvestimentos)}</span></p>
             <p className="text-sm text-[#0B1218]/70 mb-6">Ativos: <span className="font-semibold text-[#0B1218]">{resumo?.quantidadeAtivos ?? 0}</span></p>
             <div className="border border-[#EFE7DC] rounded-xl p-5 bg-[#FAFAFA]">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0B1218]/40 mb-2">Meta de aporte mensal</label>
