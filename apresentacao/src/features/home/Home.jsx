@@ -89,6 +89,26 @@ const getAvaliacaoCor = (avaliacaoValor) => {
 };
 
 /**
+ * Retorna a URL do logo da instituição ou um placeholder com sigla
+ * Mapeamento de instituições conhecidas para seus logos
+ */
+const getInstituicaoDisplay = (abrev) => {
+  // Mapeamento de abreviaturas/nomes para URLs de logo
+  const logoMap = {
+    'XPL': 'https://via.placeholder.com/32?text=XPL',
+    'BTG': 'https://via.placeholder.com/32?text=BTG',
+    'ITAU': 'https://via.placeholder.com/32?text=ITU',
+    'BBBR': 'https://via.placeholder.com/32?text=BB',
+    'CAIXA': 'https://via.placeholder.com/32?text=CEF',
+    'BRADESCO': 'https://via.placeholder.com/32?text=BRA',
+    // Adicionar mais conforme necessário
+  };
+
+  // Retorna logo se existir, caso contrário retorna null (para placeholder)
+  return logoMap[abrev] || null;
+};
+
+/**
  * Lê a rentabilidade acumulada desde a aquisição. Retorna null quando
  * `rentabilidadeConfiavel=false` — UI deve exibir "—" nesse caso, nunca 0.
  */
@@ -736,20 +756,20 @@ export default function HomeLobby() {
                     {/* Headers */}
                     <div className="hidden md:grid gap-2 px-2 mb-2" style={{ gridTemplateColumns: '1fr 96px 68px 52px 40px 96px 52px 80px' }}>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor Atual</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Rent.</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">% Cart.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Valor Atual</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">% Rent.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">% Cart.</span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Tipo</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Aporte</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Aval.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Aporte</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Aval.</span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Inst.</span>
                     </div>
 
                     {/* Mobile headers */}
                     <div className="md:hidden grid gap-2 px-2 mb-2" style={{ gridTemplateColumns: '1fr 72px 60px 40px' }}>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Ativo</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Valor</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-right">Rent.</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Valor</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Rent.</span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center">Inst.</span>
                     </div>
 
@@ -768,21 +788,21 @@ export default function HomeLobby() {
                               <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.ticker}</p>
                             </div>
                             {/* VALOR ATUAL */}
-                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                            <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
                               {ocultarValores ? '••••••' : fmt(ativo.valorAtual)}
                             </p>
                             {/* % RENTABILIDADE */}
                             {r === null ? (
-                              <p className="text-sm font-semibold text-right self-center whitespace-nowrap text-[var(--text-muted)]">
+                              <p className="text-sm font-semibold text-center self-center whitespace-nowrap text-[var(--text-muted)]">
                                 {ocultarValores ? '••••' : '—'}
                               </p>
                             ) : (
-                              <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                              <p className={`text-sm font-semibold text-center self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                                 {ocultarValores ? '••••' : fmtPct(r)}
                               </p>
                             )}
                             {/* % CARTEIRA */}
-                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                            <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
                               {ocultarValores ? '••%' : `${pct}%`}
                             </p>
                             {/* TIPO */}
@@ -790,7 +810,7 @@ export default function HomeLobby() {
                               {ativo.tipoLabel}
                             </p>
                             {/* APORTE */}
-                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                            <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
                               {ocultarValores ? '••••' : fmt(ativo.aporte)}
                             </p>
                             {/* AVALIAÇÃO */}
@@ -798,9 +818,19 @@ export default function HomeLobby() {
                               {ocultarValores ? '••' : ativo.avaliacaoQualitativa}
                             </p>
                             {/* INSTITUIÇÃO */}
-                            <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
-                              {ativo.instituicaoAbrev}
-                            </p>
+                            <div className="flex items-center justify-center self-center">
+                              {getInstituicaoDisplay(ativo.instituicaoAbrev) ? (
+                                <img
+                                  src={getInstituicaoDisplay(ativo.instituicaoAbrev)}
+                                  alt={ativo.instituicaoAbrev}
+                                  className="h-6 w-6 rounded object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs font-semibold text-[var(--text-muted)] px-2 py-1 rounded bg-[var(--bg-secondary)]">
+                                  {ativo.instituicaoAbrev}
+                                </span>
+                              )}
+                            </div>
                           </button>
                         );
                       })}
@@ -821,23 +851,25 @@ export default function HomeLobby() {
                               <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
                             </div>
                             {/* VALOR ATUAL */}
-                            <p className="text-sm font-semibold text-right self-center whitespace-nowrap">
+                            <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
                               {ocultarValores ? '••••' : fmt(ativo.valorAtual)}
                             </p>
                             {/* % RENTABILIDADE */}
                             {r === null ? (
-                              <p className="text-sm font-semibold text-right self-center whitespace-nowrap text-[var(--text-muted)]">
+                              <p className="text-sm font-semibold text-center self-center whitespace-nowrap text-[var(--text-muted)]">
                                 {ocultarValores ? '••' : '—'}
                               </p>
                             ) : (
-                              <p className={`text-sm font-semibold text-right self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                              <p className={`text-sm font-semibold text-center self-center whitespace-nowrap ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                                 {ocultarValores ? '••' : fmtPct(r)}
                               </p>
                             )}
                             {/* INSTITUIÇÃO */}
-                            <p className="text-xs text-center self-center whitespace-nowrap font-semibold text-[var(--text-muted)]">
-                              {ativo.instituicaoAbrev}
-                            </p>
+                            <div className="flex items-center justify-center self-center">
+                              <span className="text-xs font-semibold text-[var(--text-muted)] px-2 py-1 rounded bg-[var(--bg-secondary)]">
+                                {ativo.instituicaoAbrev}
+                              </span>
+                            </div>
                           </button>
                         );
                       })}
