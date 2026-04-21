@@ -1,0 +1,25 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bg   { fill: #FFFFFF; }
+    .dot  { fill: #111111; }
+    .line { stroke: #FF6A00; }
+
+    @media (prefers-color-scheme: dark) {
+      .bg   { fill: #0B1218; }
+      .dot  { fill: #FFFFFF; }
+      .line { stroke: #FF6A00; }
+    }
+  </style>
+
+  <!-- fundo com bordas arredondadas -->
+  <rect class="bg" width="1024" height="1024" rx="220"/>
+
+  <!-- ponto -->
+  <circle class="dot" cx="410" cy="520" r="56"/>
+
+  <!-- contra-barra laranja -->
+  <line class="line"
+        x1="515" y1="320" x2="705" y2="720"
+        stroke-width="118"
+        stroke-linecap="round"/>
+</svg>
