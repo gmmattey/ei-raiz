@@ -1,25 +1,17 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <style>
-    .bg   { fill: #FFFFFF; }
-    .dot  { fill: #111111; }
-    .line { stroke: #FF6A00; }
-
+    .dot { fill: #111111; }
     @media (prefers-color-scheme: dark) {
-      .bg   { fill: #0B1218; }
-      .dot  { fill: #FFFFFF; }
-      .line { stroke: #FF6A00; }
+      .dot { fill: #FFFFFF; }
     }
   </style>
-
-  <!-- fundo com bordas arredondadas -->
-  <rect class="bg" width="1024" height="1024" rx="220"/>
-
-  <!-- ponto -->
-  <circle class="dot" cx="410" cy="520" r="56"/>
-
-  <!-- contra-barra laranja -->
-  <line class="line"
-        x1="515" y1="320" x2="705" y2="720"
-        stroke-width="118"
-        stroke-linecap="round"/>
+  <!-- Geometria base: iconApp_Esquilo_preto / _branco (canvas 428.86×518.02) -->
+  <!-- Centralizado em 1024×1024 com scale 1.581 e offset (173, 102) -->
+  <g transform="translate(173 102) scale(1.581)">
+    <!-- ponto -->
+    <circle class="dot" cx="118.81" cy="399.21" r="118.81"/>
+    <!-- contra-barra laranja -->
+    <line x1="179.87" y1="59" x2="369.87" y2="459"
+          stroke="#ff6a00" stroke-width="118" stroke-linecap="round"/>
+  </g>
 </svg>
