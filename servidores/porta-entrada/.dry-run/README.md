@@ -1,1 +1,0 @@
-This folder contains the built output assets for the worker "ei-api-gateway" generated at 2026-04-20T11:58:41.713Z.
