@@ -1,18 +1,35 @@
 {
   "name": "Esquilo Invest",
   "short_name": "Esquilo",
-  "description": "Consolidar carteira, traduzir riscos e orientar decisoes com dados reais.",
+  "description": "Consolide seus investimentos, entenda risco e concentração da carteira e receba orientações objetivas para decidir melhor.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B1218",
   "theme_color": "#0B1218",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/assets/logo/esquilo-invest-simbolo.png",
+      "src": "/assets/logo/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/logo/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/logo/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["finance"]
 }
-

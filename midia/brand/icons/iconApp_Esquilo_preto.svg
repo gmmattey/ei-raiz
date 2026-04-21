@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="428.86743"
+   height="518.0235"
+   viewBox="0 0 428.86743 518.0235"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <!-- ponto -->
+  <circle
+     cx="118.81042"
+     cy="399.21307"
+     fill="#111111"
+     id="circle1"
+     r="118.81041"
+     style="stroke-width:2.12161" />
+  <!-- contra-barra laranja -->
+  <line
+     x1="179.86743"
+     y1="59"
+     x2="369.86743"
+     y2="459"
+     stroke="#ff6a00"
+     stroke-width="118"
+     stroke-linecap="round"
+     id="line1" />
+</svg>
