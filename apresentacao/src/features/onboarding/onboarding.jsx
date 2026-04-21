@@ -305,7 +305,7 @@ export default function Onboarding({ embedded = false, inline = false, onePerSte
     return (
       <div className="min-h-screen bg-[#0B1218] flex flex-col items-center justify-center text-white animate-in zoom-in-95 duration-700">
         <img src={assetPath('/assets/logo/logo-horizontal-fundo-escuro-invest-laranja.svg')} alt="Logo" className="h-[54px] md:h-[65px] object-contain mb-10" />
-        <h1 className="font-['Sora'] text-2xl font-bold text-center">Bem-vindo ao Esquilo Invest</h1>
+        <h1 className="font-['Sora'] text-2xl font-bold text-center">Bem-vindo ao Esquilo Wallet</h1>
         <p className="mt-4 font-['Inter'] text-[#F5F0EB]/60 text-center px-4">Conta criada e perfil salvo. Redirecionando para importacao da carteira...</p>
         <div className="mt-8 flex items-center justify-center w-16 h-16 rounded-full bg-[#6FCF97]/20 text-[#6FCF97]"><Check size={32} /></div>
         <button 

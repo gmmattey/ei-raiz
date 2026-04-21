@@ -107,7 +107,7 @@ function criarAbaGuia(wb: WorkBook): void {
   const ws: WorkSheet = {};
 
   const linhas: [number, number, unknown, Record<string, unknown>?][] = [
-    [0, 0, "🐿 Esquilo Invest", estiloTitulo()],
+    [0, 0, "🐿 Esquilo Wallet", estiloTitulo()],
     [1, 0, "Modelo de Importação de Patrimônio · v2", estiloSubtitulo()],
     [2, 0, ""],
     [3, 0, "COMO USAR ESTE ARQUIVO", estiloDestaque(COR_LARANJA)],

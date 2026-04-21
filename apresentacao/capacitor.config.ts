@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.esquiloinvest.app',
-  appName: 'Esquilo Invest',
+  appName: 'Esquilo Wallet',
   webDir: 'dist'
 };
 

@@ -92,7 +92,7 @@ export default function GlobalHeader() {
         <div className="cursor-pointer flex-shrink-0" onClick={() => navigate('/home')}>
           <img
             src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
-            alt="Esquilo Invest"
+            alt="Esquilo Wallet"
             className="h-6 object-contain"
           />
         </div>

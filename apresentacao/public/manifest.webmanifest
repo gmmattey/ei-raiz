@@ -1,6 +1,6 @@
 {
-  "name": "Esquilo Invest",
-  "short_name": "Esquilo",
+  "name": "Esquilo Wallet",
+  "short_name": "Esquilo Wallet",
   "description": "Consolide seus investimentos, entenda risco e concentração da carteira e receba orientações objetivas para decidir melhor.",
   "start_url": "/",
   "display": "standalone",

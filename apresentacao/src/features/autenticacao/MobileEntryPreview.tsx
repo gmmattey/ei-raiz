@@ -166,7 +166,7 @@ export default function MobileEntryPreview() {
             onClick={() => navigate('/')}
             className="text-[#F56A2A] hover:text-[#ff8a5c] text-[14px] font-bold transition-colors flex items-center gap-2 group"
           >
-            Conhecer o Esquilo Invest
+            Conhecer o Esquilo Wallet
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

@@ -72,7 +72,7 @@ const PreInsight: React.FC = () => {
           <div className="mb-20 cursor-pointer fade-in-up" onClick={handleContinue}>
             <img
               src={assetPath('/assets/logo/logo-horizontal-fundo-escuro-invest-laranja.svg')}
-              alt="Esquilo Invest"
+              alt="Esquilo Wallet"
               className="h-[40px] opacity-40 hover:opacity-100 transition-all"
             />
           </div>
