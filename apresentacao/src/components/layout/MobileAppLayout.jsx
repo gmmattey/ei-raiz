@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Moon, Sun } from 'lucide-react';
 import { assetPath } from '../../utils/assetPath';
+import LogoEsquiloWallet from '../brand/LogoEsquiloWallet';
 import { useTheme } from '../../context/ThemeContext';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
 import { cache } from '../../utils/cache';
@@ -46,7 +47,7 @@ const ROTA_TITULOS = {
   '/poupanca': 'Carteira',
   '/bens': 'Carteira',
   '/ativo/': 'Carteira',
-  '/insights': 'Insights',
+  '/insights': 'Notificações',
   '/decisoes': 'Decisões',
   '/perfil': 'Perfil',
   '/historico': 'Histórico',
@@ -54,7 +55,12 @@ const ROTA_TITULOS = {
   '/importar': 'Importar',
   '/configuracoes': 'Configurações',
   '/perfil-de-risco': 'Perfil de Risco',
+  '/contexto-financeiro': 'Contexto financeiro',
 };
+
+const TAB_ROUTES = ['/home', '/carteira', '/decisoes', '/perfil'];
+const SWIPE_THRESHOLD = 60;
+const SWIPE_MAX_OFFAXIS = 50;
 
 function getRotaTitulo(pathname) {
   if (pathname === '/home' || pathname === '/') return null;
@@ -79,6 +85,32 @@ export default function MobileAppLayout({ children }) {
 
   const titulo = getRotaTitulo(location.pathname);
 
+  const touchStart = useRef(null);
+  const onTouchStart = (e) => {
+    const t = e.touches?.[0];
+    if (!t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchEnd = (e) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const dt = Date.now() - start.t;
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dt > 600) return;
+    const tabIdx = TAB_ROUTES.findIndex((r) => location.pathname.startsWith(r));
+    const activeIdx = tabIdx !== -1 ? tabIdx : (isCarteiraTab ? 1 : -1);
+    if (activeIdx === -1) return;
+    const nextIdx = dx < 0 ? activeIdx + 1 : activeIdx - 1;
+    if (nextIdx < 0 || nextIdx >= TAB_ROUTES.length) return;
+    navigate(TAB_ROUTES[nextIdx]);
+  };
+
   const isCarteiraTab =
     location.pathname.startsWith('/carteira') ||
     location.pathname.startsWith('/ativo/') ||
@@ -96,8 +128,8 @@ export default function MobileAppLayout({ children }) {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header fixo */}
       <header
-        className="fixed inset-x-0 top-0 z-40 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-color)]"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        className="fixed inset-x-0 top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--border-color)]"
+        style={{ paddingTop: 'env(safe-area-inset-top)', transform: 'translateZ(0)', willChange: 'transform' }}
       >
         <div className="mx-auto flex h-14 w-full max-w-[640px] items-center justify-between px-4">
           {titulo ? (
@@ -105,22 +137,7 @@ export default function MobileAppLayout({ children }) {
               {titulo}
             </span>
           ) : (
-            <svg viewBox="0 0 721 109" className="h-6" aria-label="Esquilo wallet">
-              <text
-                x="0" y="86" fontSize="112" fontWeight="700"
-                fontFamily="Sora, Inter, system-ui, sans-serif"
-                fill={isDarkMode ? '#ffffff' : '#0b1218'}
-              >
-                Esquilo
-              </text>
-              <text
-                x="429" y="88" fontSize="112" fontWeight="300"
-                fontFamily="Inter, Sora, system-ui, sans-serif"
-                fill="#F56A2A"
-              >
-                wallet
-              </text>
-            </svg>
+            <LogoEsquiloWallet variant={isDarkMode ? 'dark' : 'light'} className="h-6 w-auto" />
           )}
 
           <div className="flex items-center gap-2">
@@ -166,12 +183,17 @@ export default function MobileAppLayout({ children }) {
 
       <main
         className="mx-auto w-full max-w-[640px] px-4 pb-24"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 72px)', touchAction: 'pan-y' }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {children}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-color)] bg-[var(--bg-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-color)] bg-[var(--bg-card)] pb-[env(safe-area-inset-bottom)]"
+        style={{ transform: 'translateZ(0)', willChange: 'transform' }}
+      >
         <div className="mx-auto flex h-20 w-full max-w-[640px] items-center justify-around">
           {NAV_ITEMS.map((item) => {
             const isActive = item.to === '/carteira' ? isCarteiraTab : location.pathname.startsWith(item.to);

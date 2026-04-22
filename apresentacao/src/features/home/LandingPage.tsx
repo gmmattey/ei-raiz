@@ -167,8 +167,8 @@ const FormularioLogin: React.FC<FormularioLoginProps> = ({
     setIsSubmitting(true);
     setAuthError('');
     try {
-      const resposta = await authApi.solicitarRecuperacaoPorEmail(email);
-      setRecoveryInfo(`Solicitação enviada para ${resposta.destinoMascara}.`);
+      await authApi.solicitarRecuperacaoPorEmail(email);
+      setRecoveryInfo('Se existir uma conta com esse e-mail, enviaremos um PIN de 6 dígitos.');
       setForgotStage('reset');
     } catch (error) {
       setAuthError(mapApiAuthError(error));
@@ -186,8 +186,8 @@ const FormularioLogin: React.FC<FormularioLoginProps> = ({
     setIsSubmitting(true);
     setAuthError('');
     try {
-      const resposta = await authApi.solicitarRecuperacaoPorCpf(cpf);
-      setRecoveryInfo(`Conta localizada: ${resposta.destinoMascara}. Enviamos o PIN por e-mail.`);
+      await authApi.solicitarRecuperacaoPorCpf(cpf);
+      setRecoveryInfo('Enviamos o PIN por e-mail.');
       setForgotStage('reset');
       setLoginStep('forgotPassword');
     } catch (error) {

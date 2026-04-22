@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Opção 2 — Dashboard Cards · Esquilo Wallet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --laranja: #F56A2A;
+      --laranja-suave: #FFF3EC;
+      --escuro: #0B1218;
+      --escuro-suave: #1a242e;
+      --texto-secundario: rgba(11, 18, 24, 0.6);
+      --texto-muted: rgba(11, 18, 24, 0.38);
+      --creme: #EFE7DC;
+      --bg: #F5F1EA;
+      --branco: #FFFFFF;
+      --zebra: rgba(11, 18, 24, 0.025);
+      --verde: #6FCF97;
+      --amarelo: #F2C94C;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--escuro);
+      padding: 32px 24px 80px;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .brand-logo { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 22px; color: var(--escuro); letter-spacing: -0.02em; }
+    .brand-logo span { color: var(--laranja); font-weight: 600; }
+    .topbar-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--texto-secundario);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .topbar-meta strong { color: var(--escuro); font-weight: 700; letter-spacing: 0.1em; }
+
+    .hero {
+      background: var(--escuro);
+      color: #fff;
+      border-radius: 28px;
+      padding: 40px 44px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,106,42,0.25), transparent 70%);
+    }
+    .hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--laranja);
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 38px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 14px;
+      opacity: 0.7;
+      max-width: 600px;
+      line-height: 1.55;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .step-card .n { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: var(--laranja); }
+    .step-card .t { font-size: 12px; color: #fff; font-weight: 600; margin-top: 4px; }
+    .step-card .d { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; line-height: 1.4; }
+
+    .sheet-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: var(--branco);
+      border-radius: 14px;
+      padding: 6px;
+      overflow-x: auto;
+    }
+    .sheet-tab {
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--texto-secundario);
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-tab.active {
+      background: var(--laranja);
+      color: #fff;
+    }
+    .sheet-tab .count {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(11,18,24,0.08);
+    }
+    .sheet-tab.active .count { background: rgba(255,255,255,0.25); }
+
+    .sheet {
+      background: var(--branco);
+      border-radius: 20px;
+      padding: 28px 32px 24px;
+      box-shadow: 0 1px 3px rgba(11,18,24,0.04), 0 10px 40px rgba(11,18,24,0.05);
+      margin-bottom: 20px;
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(11,18,24,0.06);
+    }
+    .sheet-header h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .sheet-header p { font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
+
+    .sheet-actions { display: flex; gap: 8px; }
+    .sheet-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      border: none;
+    }
+    .sheet-btn.primary { background: var(--laranja); color: #fff; }
+
+    /* Tabela sem linhas: zebra invisível + espaçamento generoso */
+    .data-head {
+      display: grid;
+      grid-template-columns: 0.5fr 1.1fr 1.4fr 0.8fr 1fr 0.9fr 1.1fr;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--escuro);
+      border-radius: 12px;
+      color: #fff;
+    }
+    .data-head .h {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.72);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .data-head .h .req {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--laranja);
+    }
+
+    .data-rows {
+      padding-top: 8px;
+    }
+    .data-row {
+      display: grid;
+      grid-template-columns: 0.5fr 1.1fr 1.4fr 0.8fr 1fr 0.9fr 1.1fr;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      align-items: center;
+    }
+    .data-row:nth-child(even) { background: var(--zebra); }
+    .data-row .c {
+      font-size: 14px;
+      color: var(--escuro);
+    }
+    .data-row .idx {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--texto-muted);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--escuro);
+      color: #fff;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+    .tag.orange { background: var(--laranja); }
+
+    .select-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--laranja-suave);
+      border: 1px solid rgba(245,106,42,0.2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--laranja);
+    }
+    .select-pill::after {
+      content: '▾';
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    .select-pill.dark {
+      background: rgba(11,18,24,0.05);
+      border-color: rgba(11,18,24,0.1);
+      color: var(--escuro);
+    }
+
+    .money { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .money .prefix { opacity: 0.45; font-weight: 500; margin-right: 2px; }
+
+    .empty {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px dashed rgba(11,18,24,0.15);
+      color: var(--texto-muted);
+      font-size: 12px;
+    }
+
+    .footer-legend {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: var(--laranja-suave);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      font-size: 12px;
+      color: var(--escuro);
+    }
+    .footer-legend strong { font-family: 'Sora', sans-serif; letter-spacing: 0.08em; }
+
+    .side-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .side-card {
+      background: var(--branco);
+      border-radius: 16px;
+      padding: 20px 22px;
+    }
+    .side-card h4 {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--laranja);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .side-card ul { list-style: none; }
+    .side-card li {
+      font-size: 13px;
+      padding: 8px 0;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: var(--escuro);
+    }
+    .side-card li::before {
+      content: '';
+      flex: 0 0 6px;
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 50%;
+      background: var(--laranja);
+    }
+    .side-card li span { color: var(--texto-secundario); }
+
+    .meta {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 11px;
+      color: var(--texto-secundario);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand-logo">esquilo<span>\wallet</span></div>
+      <div class="topbar-meta">
+        <span>Modelo v2.1</span>
+        <span>·</span>
+        <strong>Importação de Patrimônio</strong>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-label">Passo a passo</div>
+      <h1>Organize seu patrimônio em uma planilha só.</h1>
+      <p>Abas separadas para cada classe de ativo. Campos com listas suspensas para padronizar. Tudo o que você precisa fazer é preencher e voltar.</p>
+
+      <div class="steps">
+        <div class="step-card">
+          <div class="n">01</div>
+          <div class="t">Escolha as abas</div>
+          <div class="d">Use só as que se aplicam ao seu caso</div>
+        </div>
+        <div class="step-card">
+          <div class="n">02</div>
+          <div class="t">Preencha campos com •</div>
+          <div class="d">Os marcados com bolinha laranja são obrigatórios</div>
+        </div>
+        <div class="step-card">
+          <div class="n">03</div>
+          <div class="t">Use os dropdowns</div>
+          <div class="d">Instituições, tipos e indexadores têm lista pronta</div>
+        </div>
+        <div class="step-card">
+          <div class="n">04</div>
+          <div class="t">Salve e envie</div>
+          <div class="d">Upload na tela de importação da carteira</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-tabs">
+      <div class="sheet-tab active">📈 Ações <span class="count">3</span></div>
+      <div class="sheet-tab">🏦 Fundos</div>
+      <div class="sheet-tab">📄 Renda Fixa</div>
+      <div class="sheet-tab">🏛️ Previdência</div>
+      <div class="sheet-tab">🏠 Imóveis</div>
+      <div class="sheet-tab">🚗 Veículos</div>
+      <div class="sheet-tab">💰 Poupança</div>
+    </div>
+
+    <div class="sheet">
+      <div class="sheet-header">
+        <div>
+          <h2>Ações, ETFs e FIIs</h2>
+          <p>Ativos listados na B3. Ticker obrigatório, um por linha.</p>
+        </div>
+        <div class="sheet-actions">
+          <button class="sheet-btn">+ Importar do broker</button>
+          <button class="sheet-btn primary">Adicionar linha</button>
+        </div>
+      </div>
+
+      <div class="data-head">
+        <div class="h">#</div>
+        <div class="h">Ticker <span class="req"></span></div>
+        <div class="h">Nome</div>
+        <div class="h">Qtd <span class="req"></span></div>
+        <div class="h">Preço médio</div>
+        <div class="h">Data compra</div>
+        <div class="h">Corretora ▾</div>
+      </div>
+
+      <div class="data-rows">
+        <div class="data-row">
+          <div class="c idx">01</div>
+          <div class="c"><span class="tag">PETR4</span></div>
+          <div class="c">Petrobras PN</div>
+          <div class="c money">100</div>
+          <div class="c money"><span class="prefix">R$</span>34,50</div>
+          <div class="c">15/01/2026</div>
+          <div class="c"><span class="select-pill">XP Investimentos</span></div>
+        </div>
+        <div class="data-row">
+          <div class="c idx">02</div>
+          <div class="c"><span class="tag">MXRF11</span></div>
+          <div class="c">Maxi Renda FII</div>
+          <div class="c money">50</div>
+          <div class="c money"><span class="prefix">R$</span>16,80</div>
+          <div class="c">01/02/2026</div>
+          <div class="c"><span class="select-pill">BTG Pactual</span></div>
+        </div>
+        <div class="data-row">
+          <div class="c idx">03</div>
+          <div class="c"><span class="tag orange">VALE3</span></div>
+          <div class="c">Vale S.A.</div>
+          <div class="c money">30</div>
+          <div class="c money"><span class="prefix">R$</span>68,20</div>
+          <div class="c">10/12/2025</div>
+          <div class="c"><span class="select-pill dark">NuInvest</span></div>
+        </div>
+        <div class="data-row">
+          <div class="c idx">04</div>
+          <div class="c"><span class="empty">digite</span></div>
+          <div class="c"><span class="empty">auto</span></div>
+          <div class="c"><span class="empty">0</span></div>
+          <div class="c"><span class="empty">R$ 0,00</span></div>
+          <div class="c"><span class="empty">dd/mm/aaaa</span></div>
+          <div class="c"><span class="select-pill dark" style="opacity:0.5">Selecionar ▾</span></div>
+        </div>
+        <div class="data-row">
+          <div class="c idx">05</div>
+          <div class="c"><span class="empty">&nbsp;</span></div>
+          <div class="c"><span class="empty">&nbsp;</span></div>
+          <div class="c"><span class="empty">&nbsp;</span></div>
+          <div class="c"><span class="empty">&nbsp;</span></div>
+          <div class="c"><span class="empty">&nbsp;</span></div>
+          <div class="c"><span class="select-pill dark" style="opacity:0.5">Selecionar ▾</span></div>
+        </div>
+      </div>
+
+      <div class="footer-legend">
+        <span><strong style="color:var(--laranja)">●</strong> Obrigatório</span>
+        <span style="color:var(--texto-secundario)">Sem marca · opcional</span>
+        <span>▾ Campo com lista suspensa</span>
+        <span style="margin-left:auto; font-size:11px; color:var(--texto-secundario);">Valores em BRL · Datas DD/MM/AAAA</span>
+      </div>
+    </div>
+
+    <div class="side-cards">
+      <div class="side-card">
+        <h4>Dropdowns disponíveis</h4>
+        <ul>
+          <li><strong>Corretora</strong>&nbsp;<span>— XP, BTG, NuInvest, Itaú, Rico, Clear…</span></li>
+          <li><strong>Tipo de fundo</strong>&nbsp;<span>— Multimercado, Ações, RF, FII, Previdência…</span></li>
+          <li><strong>Indexador</strong>&nbsp;<span>— CDI, IPCA, SELIC, PRE, IGPM</span></li>
+          <li><strong>Tipo de imóvel</strong>&nbsp;<span>— Residencial, Comercial, Terreno, Rural</span></li>
+        </ul>
+      </div>
+      <div class="side-card">
+        <h4>Regras de preenchimento</h4>
+        <ul>
+          <li><strong>Valores</strong>&nbsp;<span>— números em R$, sem separadores (35000 ou 35000,00)</span></li>
+          <li><strong>Datas</strong>&nbsp;<span>— DD/MM/AAAA (ex.: 15/01/2026)</span></li>
+          <li><strong>CNPJ</strong>&nbsp;<span>— com ou sem pontuação, tanto faz</span></li>
+          <li><strong>Duplicidade</strong>&nbsp;<span>— Esquilo detecta e pergunta antes de sobrescrever</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="meta">opção 02 · dashboard cards</div>
+  </div>
+</body>
+</html>

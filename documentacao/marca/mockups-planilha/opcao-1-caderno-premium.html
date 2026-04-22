@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Opção 1 — Caderno Premium · Esquilo Wallet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --laranja: #F56A2A;
+      --laranja-suave: #FFF3EC;
+      --escuro: #0B1218;
+      --texto-secundario: rgba(11, 18, 24, 0.6);
+      --texto-muted: rgba(11, 18, 24, 0.35);
+      --creme: #EFE7DC;
+      --papel: #FBF7F1;
+      --branco: #FFFFFF;
+      --verde: #6FCF97;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--creme);
+      color: var(--escuro);
+      padding: 40px 24px 80px;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--papel);
+      border-radius: 24px;
+      padding: 56px 64px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 20px 60px rgba(11,18,24,0.08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .brand-logo { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 28px; color: var(--escuro); letter-spacing: -0.02em; }
+    .brand-logo span { color: var(--laranja); font-weight: 600; }
+
+    h1 {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 40px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    h1 .accent { color: var(--laranja); }
+    .subtitle { font-size: 14px; color: var(--texto-secundario); margin-bottom: 40px; max-width: 640px; line-height: 1.5; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--texto-secundario);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }
+    .tab.active {
+      background: var(--escuro);
+      color: #fff;
+    }
+    .tab.dim {
+      border: 1px solid rgba(11,18,24,0.12);
+    }
+
+    .guide {
+      background: var(--branco);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .guide-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--laranja-suave);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .guide h3 { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+    .guide-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .step-num {
+      font-family: 'Sora', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--laranja);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .step-text { font-size: 12px; color: var(--texto-secundario); line-height: 1.5; }
+
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      margin: 48px 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--laranja); }
+    .section-hint { font-size: 13px; color: var(--texto-secundario); margin-bottom: 24px; }
+
+    .sheet {
+      background: var(--branco);
+      border-radius: 20px;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .sheet-head {
+      display: grid;
+      grid-template-columns: 120px 1.4fr 0.8fr 1fr 0.8fr 1fr;
+      gap: 8px;
+      padding-bottom: 16px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed rgba(11,18,24,0.08);
+    }
+    .col-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--texto-secundario);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .col-label.required::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--laranja);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 120px 1.4fr 0.8fr 1fr 0.8fr 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 14px 0;
+    }
+    .row + .row { border-top: 1px dashed rgba(11,18,24,0.06); }
+    .cell {
+      font-size: 14px;
+      color: var(--escuro);
+      padding: 8px 4px;
+    }
+    .cell.muted { color: var(--texto-muted); font-style: italic; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px 4px 8px;
+      border-radius: 999px;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .chip::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--laranja);
+    }
+    .chip.dark {
+      background: rgba(11,18,24,0.06);
+      color: var(--escuro);
+    }
+    .chip.dark::before { background: var(--escuro); }
+    .dropdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .dropdown::after {
+      content: '▾';
+      font-size: 10px;
+      opacity: 0.6;
+    }
+    .ghost {
+      border: 1px dashed rgba(11,18,24,0.18);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      color: var(--texto-muted);
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px dashed rgba(11,18,24,0.08);
+      font-size: 11px;
+      color: var(--texto-secundario);
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-dot.req { background: var(--laranja); }
+    .legend-dot.opt { background: rgba(11,18,24,0.2); }
+
+    .panel-hint {
+      background: linear-gradient(135deg, var(--escuro), #1f2a33);
+      border-radius: 20px;
+      padding: 24px 28px;
+      color: #fff;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+    .panel-hint .badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--laranja);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .panel-hint h4 { font-family: 'Sora', sans-serif; font-size: 15px; margin-bottom: 4px; }
+    .panel-hint p { font-size: 12px; opacity: 0.75; line-height: 1.5; }
+
+    .meta {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 11px;
+      color: var(--texto-secundario);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand">
+      <div class="brand-logo">esquilo<span>\wallet</span></div>
+    </div>
+
+    <h1>Importe sua <span class="accent">carteira</span>.</h1>
+    <p class="subtitle">Preencha apenas as abas que fazem sentido para você. Valores em R$, datas no formato AAAA-MM-DD. Campos com ponto laranja são obrigatórios.</p>
+
+    <div class="tabs">
+      <div class="tab active">📈 Ações</div>
+      <div class="tab dim">🏦 Fundos</div>
+      <div class="tab dim">📄 Renda Fixa</div>
+      <div class="tab dim">🏛️ Previdência</div>
+      <div class="tab dim">🏠 Imóveis</div>
+      <div class="tab dim">🚗 Veículos</div>
+      <div class="tab dim">💰 Poupança</div>
+    </div>
+
+    <div class="guide">
+      <div class="guide-icon">🧭</div>
+      <div style="width:100%;">
+        <h3>Como preencher</h3>
+        <div class="guide-steps">
+          <div>
+            <div class="step-num">01</div>
+            <div class="step-text">Escolha a aba certa para cada ativo. Não misture tipos diferentes em uma mesma aba.</div>
+          </div>
+          <div>
+            <div class="step-num">02</div>
+            <div class="step-text">Use as listas suspensas nos campos com seta — elas evitam erros de ortografia.</div>
+          </div>
+          <div>
+            <div class="step-num">03</div>
+            <div class="step-text">Salve o arquivo como .xlsx e faça upload na tela de importação.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Ações, ETFs e FIIs</div>
+    <div class="section-hint">Uma linha por ativo. Se preencher Quantidade e Preço Médio, calculamos o Valor Total. Ou vice-versa.</div>
+
+    <div class="sheet">
+      <div class="sheet-head">
+        <div class="col-label required">Ticker</div>
+        <div class="col-label">Nome do ativo</div>
+        <div class="col-label required">Quantidade</div>
+        <div class="col-label">Preço médio</div>
+        <div class="col-label">Data compra</div>
+        <div class="col-label">Corretora</div>
+      </div>
+
+      <div class="row">
+        <div class="cell"><span class="chip">PETR4</span></div>
+        <div class="cell">Petrobras PN</div>
+        <div class="cell">100</div>
+        <div class="cell">R$ 34,50</div>
+        <div class="cell">15/01/2026</div>
+        <div class="cell"><span class="dropdown">XP Investimentos</span></div>
+      </div>
+      <div class="row">
+        <div class="cell"><span class="chip">MXRF11</span></div>
+        <div class="cell">Maxi Renda FII</div>
+        <div class="cell">50</div>
+        <div class="cell">R$ 16,80</div>
+        <div class="cell">01/02/2026</div>
+        <div class="cell"><span class="dropdown">BTG Pactual</span></div>
+      </div>
+      <div class="row">
+        <div class="cell"><span class="chip dark">VALE3</span></div>
+        <div class="cell">Vale S.A.</div>
+        <div class="cell">30</div>
+        <div class="cell">R$ 68,20</div>
+        <div class="cell">10/12/2025</div>
+        <div class="cell"><span class="dropdown">NuInvest</span></div>
+      </div>
+      <div class="row">
+        <div class="cell ghost">digite o ticker</div>
+        <div class="cell ghost">opcional</div>
+        <div class="cell ghost">qtd.</div>
+        <div class="cell ghost">R$ 0,00</div>
+        <div class="cell ghost">dd/mm/aaaa</div>
+        <div class="cell"><span class="dropdown" style="opacity:0.5">Selecionar</span></div>
+      </div>
+      <div class="row">
+        <div class="cell ghost">&nbsp;</div>
+        <div class="cell ghost">&nbsp;</div>
+        <div class="cell ghost">&nbsp;</div>
+        <div class="cell ghost">&nbsp;</div>
+        <div class="cell ghost">&nbsp;</div>
+        <div class="cell"><span class="dropdown" style="opacity:0.5">Selecionar</span></div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot req"></span> Obrigatório</div>
+        <div class="legend-item"><span class="legend-dot opt"></span> Opcional</div>
+        <div class="legend-item">▾ Campo com lista suspensa</div>
+      </div>
+    </div>
+
+    <div class="panel-hint">
+      <div class="badge">💡</div>
+      <div>
+        <h4>Dica do Esquilo</h4>
+        <p>Se você recebe extrato da corretora, exporte o PDF e nos envie — em breve faremos a leitura automática. Por enquanto, copie o ticker e a quantidade de cada posição.</p>
+      </div>
+    </div>
+
+    <div class="meta">opção 01 · caderno premium</div>
+  </div>
+</body>
+</html>

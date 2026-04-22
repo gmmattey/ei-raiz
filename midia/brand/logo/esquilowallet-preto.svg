@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="720.80884"
-   height="108.52799"
-   viewBox="0 0 720.80884 108.52799"
+   width="768.0625"
+   height="108.52798"
+   viewBox="0 0 768.0625 108.52799"
    role="img"
    aria-labelledby="title desc"
    version="1.1"
    id="svg9"
+   sodipodi:docname="esquilowallet-preto.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="768.0625"
+       height="108.52799"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
   <defs
      id="defs2" />
   <title
@@ -16,7 +37,7 @@
   <desc
      id="desc">Logo horizontal do Esquilo Invest com símbolo e wordmark 'invest' em laranja.</desc>
   <g
-     transform="translate(-314.18408,-5.872101)"
+     transform="translate(-309.36795,-5.8721008)"
      id="g9">
     <g
        transform="translate(305,92)"
@@ -29,7 +50,7 @@
          style="font-weight:bold;font-family:Sora"
          id="text7"><tspan
            id="tspan1"
-           style="fill:#ffffff">Esquilo</tspan></text>
+           style="fill:#ffffff">esquilo</tspan></text>
       <text
          x="428.82883"
          y="2.0045044"
@@ -37,7 +58,9 @@
          fill="#f56a2a"
          style="font-weight:300;font-family:Inter"
          id="text8"><tspan
-           id="tspan2">wallet</tspan></text>
+           id="tspan2"><tspan
+   style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:Inter;-inkscape-font-specification:'Inter Semi-Bold'"
+   id="tspan3">\</tspan>wallet</tspan></text>
     </g>
   </g>
 </svg>

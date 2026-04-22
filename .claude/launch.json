@@ -6,6 +6,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace=@ei/web"],
       "port": 3000
+    },
+    {
+      "name": "porta-entrada-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=@ei/api"],
+      "port": 8787
+    },
+    {
+      "name": "dev-all",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:all"],
+      "port": 3000
     }
   ]
 }

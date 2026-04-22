@@ -2,9 +2,11 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <!-- SVG adaptativo: alterna fundo branco/escuro conforme tema do OS -->
-    <link rel="icon" type="image/svg+xml" href="/assets/logo/icon-adaptativo.svg" />
-    <!-- Fallback PNG para browsers sem suporte a SVG favicon -->
+    <!-- Ícone do app — alterna conforme tema do OS (media query). -->
+    <link rel="icon" type="image/svg+xml" href="/assets/logo/iconApp_Esquilo_preto.svg" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo/iconApp_Esquilo_branco.svg" media="(prefers-color-scheme: dark)" />
+    <!-- Fallback para browsers sem suporte a media query em favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/logo/iconApp_Esquilo_branco.svg" />
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/logo/icon-96x96.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="/assets/logo/icon-48x48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/icon-32x32.png" />

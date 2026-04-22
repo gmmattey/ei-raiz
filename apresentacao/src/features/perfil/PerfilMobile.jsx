@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStoredUser, perfilApi } from '../../cliente-api';
+import { authApi, getStoredUser, perfilApi } from '../../cliente-api';
 import { assetPath } from '../../utils/assetPath';
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(value || 0));
 
 export default function PerfilMobile() {
   const navigate = useNavigate();
@@ -33,9 +30,10 @@ export default function PerfilMobile() {
   }, []);
 
   const itens = [
-    { label: 'Perfil de risco', sub: perfil?.perfilRisco || 'Definir perfil', icon: '/assets/icons/laranja/radar-premium.svg', route: '/perfil-de-risco' },
-    { label: 'Configuracoes', sub: 'Preferencias de conta e privacidade', icon: '/assets/icons/laranja/configuracoes-premium.svg', route: '/configuracoes' },
-    { label: 'Historico', sub: 'Movimentacoes e snapshots', icon: '/assets/icons/laranja/historico-premium.svg', route: '/historico' },
+    { label: 'Contexto financeiro', icon: '/assets/icons/laranja/carteira-premium.svg', route: '/contexto-financeiro' },
+    { label: 'Perfil de risco', icon: '/assets/icons/laranja/radar-premium.svg', route: '/perfil-de-risco' },
+    { label: 'Configurações', icon: '/assets/icons/laranja/configuracoes-premium.svg', route: '/configuracoes' },
+    { label: 'Histórico', icon: '/assets/icons/laranja/historico-premium.svg', route: '/historico' },
   ];
 
   return (
@@ -46,45 +44,40 @@ export default function PerfilMobile() {
             <img src={assetPath('/assets/icons/laranja/perfil-premium.svg')} alt="" className="h-6 w-6" />
           </div>
           <div>
-            <p className="font-['Sora'] text-[18px] font-bold text-[var(--text-primary)]">{usuario?.nome || 'Usuario'}</p>
+            <p className="font-['Sora'] text-[18px] font-bold text-[var(--text-primary)]">{usuario?.nome || 'Usuário'}</p>
             <p className="text-[12px] text-[var(--text-secondary)]">{usuario?.email || 'Conta ativa'}</p>
           </div>
         </div>
       </header>
 
-      <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Contexto financeiro</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="rounded-[12px] border border-[var(--border-color)] px-3 py-2">
-            <p className="text-[10px] text-[var(--text-secondary)]">Renda mensal</p>
-            <p className="text-[12px] font-bold text-[var(--text-primary)]">{formatCurrency(perfil?.rendaMensal || 0)}</p>
-          </div>
-          <div className="rounded-[12px] border border-[var(--border-color)] px-3 py-2">
-            <p className="text-[10px] text-[var(--text-secondary)]">Aporte mensal</p>
-            <p className="text-[12px] font-bold text-[var(--text-primary)]">{formatCurrency(perfil?.aporteMensal || 0)}</p>
-          </div>
-        </div>
-      </article>
-
-      <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
         {itens.map((item) => (
           <button
             key={item.route}
             onClick={() => navigate(item.route)}
-            className="flex w-full items-center justify-between rounded-[14px] border border-[var(--border-color)] bg-[var(--bg-card)] px-4 py-3 text-left"
+            className="flex flex-col items-start gap-2 rounded-[14px] border border-[var(--border-color)] bg-[var(--bg-card)] p-3 text-left active:opacity-80"
           >
-            <div className="flex items-center gap-3">
-              <img src={assetPath(item.icon)} alt="" className="h-5 w-5" />
-              <div>
-                <p className="text-[13px] font-semibold text-[var(--text-primary)]">{item.label}</p>
-                <p className="text-[11px] text-[var(--text-secondary)]">{item.sub}</p>
-              </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#F56A2A]/10">
+              <img src={assetPath(item.icon)} alt="" className="h-4 w-4" />
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#F56A2A]">Abrir</span>
+            <p className="text-[12px] font-bold leading-tight text-[var(--text-primary)]">{item.label}</p>
           </button>
         ))}
       </div>
+
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await authApi.sair();
+          } finally {
+            navigate('/', { replace: true });
+          }
+        }}
+        className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#E85C5C]/40 bg-[var(--bg-card)] px-4 py-3 text-[13px] font-semibold text-[#E85C5C]"
+      >
+        Sair da conta
+      </button>
     </section>
   );
 }
-

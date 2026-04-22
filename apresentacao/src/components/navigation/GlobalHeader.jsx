@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { assetPath } from '../../utils/assetPath';
+import LogoEsquiloWallet from '../brand/LogoEsquiloWallet';
 import { authApi, clearSession, getStoredUser } from '../../cliente-api';
 import { useInsights } from '../../hooks/useInsights';
 import { Eye, EyeOff, Moon, Sun, Bell } from 'lucide-react';
@@ -90,11 +91,7 @@ export default function GlobalHeader() {
       <div className="flex h-16 items-center px-4 sm:px-6 lg:px-8">
         {/* Logo à esquerda */}
         <div className="cursor-pointer flex-shrink-0" onClick={() => navigate('/home')}>
-          <img
-            src={assetPath(isDarkMode ? '/assets/logo/esquilowallet-preto.svg' : '/assets/logo/esquilowallet-branco.svg')}
-            alt="Esquilo Wallet"
-            className="h-6 object-contain"
-          />
+          <LogoEsquiloWallet variant={isDarkMode ? 'dark' : 'light'} className="h-6 w-auto" />
         </div>
 
         {/* Menus centralizados */}

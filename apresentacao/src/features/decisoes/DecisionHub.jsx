@@ -13,7 +13,8 @@ const DecisionHub = () => {
       try {
         const data = await decisoesApi.listarSimulacoes();
         if (!ativo) return;
-        setRecentes((data || []).slice(0, 3));
+        const itens = Array.isArray(data) ? data : (data?.itens ?? []);
+        setRecentes(itens.slice(0, 3));
       } catch {
         if (!ativo) return;
         setRecentes([]);

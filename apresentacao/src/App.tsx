@@ -65,6 +65,7 @@ const PerfilMobile = React.lazy(() => import('./features/perfil/PerfilMobile'));
 const Configuracoes = React.lazy(() => import('./features/perfil/Configuracoes'));
 const PerfilRiscoMobile = React.lazy(() => import('./features/perfil/PerfilRiscoMobile'));
 const ConfiguracoesMobile = React.lazy(() => import('./features/perfil/ConfiguracoesMobile'));
+const ContextoFinanceiroMobile = React.lazy(() => import('./features/perfil/ContextoFinanceiroMobile'));
 
 // Admin
 const PainelAdmin = React.lazy(() => import('./features/admin/PainelAdmin'));
@@ -320,6 +321,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/perfil-de-risco" element={<ProtectedRoute><ResponsiveLayout><ResponsivePerfilRisco /></ResponsiveLayout></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><ResponsiveLayout><ResponsivePerfil /></ResponsiveLayout></ProtectedRoute>} />
           <Route path="/configuracoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveConfiguracoes /></ResponsiveLayout></ProtectedRoute>} />
+          <Route path="/contexto-financeiro" element={<ProtectedRoute><ResponsiveLayout><ContextoFinanceiroMobile /></ResponsiveLayout></ProtectedRoute>} />
 
           {/* Admin */}
           <Route

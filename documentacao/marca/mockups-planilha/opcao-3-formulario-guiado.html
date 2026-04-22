@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Opção 3 — Formulário Guiado · Esquilo Wallet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --laranja: #F56A2A;
+      --laranja-suave: #FFF3EC;
+      --escuro: #0B1218;
+      --texto-secundario: rgba(11, 18, 24, 0.58);
+      --texto-muted: rgba(11, 18, 24, 0.35);
+      --creme: #EFE7DC;
+      --bg: #FAF6F0;
+      --branco: #FFFFFF;
+      --verde: #6FCF97;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--escuro);
+      min-height: 100vh;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      max-width: 1320px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    aside {
+      background: var(--escuro);
+      color: #fff;
+      padding: 40px 28px 40px 36px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-logo {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+      margin-bottom: 44px;
+    }
+    .brand-logo span { color: var(--laranja); font-weight: 600; }
+
+    .side-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 14px;
+    }
+
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      gap: 12px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: #fff; }
+    .nav-item.active {
+      background: var(--laranja);
+      color: #fff;
+      font-weight: 600;
+    }
+    .nav-item .emoji { width: 22px; text-align: center; font-size: 15px; }
+    .nav-item .n { flex: 1; }
+    .nav-item .c {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      font-weight: 700;
+    }
+    .nav-item.active .c { background: rgba(255,255,255,0.22); }
+
+    .progress-box {
+      margin-top: auto;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .progress-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-fill {
+      width: 38%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--laranja), #ff8a55);
+      border-radius: 999px;
+    }
+    .progress-hint { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+    /* Main */
+    main {
+      padding: 48px 56px 80px;
+      max-width: 900px;
+    }
+
+    .breadcrumb {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--texto-secundario);
+      margin-bottom: 10px;
+    }
+    .breadcrumb strong { color: var(--laranja); }
+
+    h1 {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 36px;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .lead {
+      font-size: 14px;
+      color: var(--texto-secundario);
+      line-height: 1.6;
+      max-width: 640px;
+      margin-bottom: 32px;
+    }
+
+    .guide-banner {
+      background: var(--branco);
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 40px;
+      border-left: 4px solid var(--laranja);
+    }
+    .guide-banner .ico {
+      font-size: 22px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--laranja-suave);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .guide-banner h4 { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .guide-banner p { font-size: 12px; color: var(--texto-secundario); line-height: 1.5; }
+    .guide-banner .link {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--laranja);
+    }
+
+    .item-card {
+      background: var(--branco);
+      border-radius: 20px;
+      padding: 32px 36px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(11,18,24,0.04);
+    }
+    .item-card header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(11,18,24,0.06);
+    }
+    .item-idx {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .item-idx .num {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item-idx .t {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .item-idx .t small {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--texto-secundario);
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .card-actions { display: flex; gap: 6px; }
+    .act-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(11,18,24,0.04);
+      color: var(--texto-secundario);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .act-btn.danger { color: #E85C5C; }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px 20px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .field.s-3 { grid-column: span 3; }
+    .field.s-4 { grid-column: span 4; }
+    .field.s-5 { grid-column: span 5; }
+    .field.s-6 { grid-column: span 6; }
+    .field.s-8 { grid-column: span 8; }
+    .field.s-12 { grid-column: span 12; }
+
+    .field label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--texto-secundario);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .field label .star {
+      color: var(--laranja);
+      font-weight: 700;
+    }
+
+    .input {
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid rgba(11,18,24,0.12);
+      padding: 8px 2px 10px;
+      font-family: 'Sora', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--escuro);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .input.required {
+      border-bottom-color: var(--laranja);
+    }
+    .input .prefix {
+      color: var(--texto-muted);
+      font-weight: 400;
+      font-size: 14px;
+    }
+    .input.empty { color: var(--texto-muted); font-weight: 400; font-style: italic; font-size: 14px; }
+
+    .select {
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid rgba(11,18,24,0.12);
+      padding: 8px 2px 10px;
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--escuro);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .select .arrow {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .select.required { border-bottom-color: var(--laranja); }
+    .select.empty .v { color: var(--texto-muted); font-weight: 400; font-size: 14px; font-style: italic; }
+
+    .hint {
+      font-size: 11px;
+      color: var(--texto-muted);
+      margin-top: 2px;
+    }
+
+    .add-row {
+      border: 1.5px dashed rgba(11,18,24,0.15);
+      background: transparent;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      color: var(--texto-secundario);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .add-row:hover { border-color: var(--laranja); color: var(--laranja); }
+    .add-row .plus {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .bottom-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 36px;
+    }
+    .btn {
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--laranja); color: #fff; }
+    .btn.ghost { background: var(--branco); color: var(--escuro); }
+
+    .pop {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 240px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(11,18,24,0.15), 0 1px 2px rgba(11,18,24,0.05);
+      padding: 8px;
+      z-index: 2;
+      display: none;
+    }
+    .pop.visible { display: block; }
+    .pop-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--escuro);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pop-item:hover, .pop-item.sel {
+      background: var(--laranja-suave);
+      color: var(--laranja);
+      font-weight: 600;
+    }
+    .pop-item .sub { font-size: 11px; color: var(--texto-muted); font-weight: 400; }
+    .pop-item.sel .sub { color: var(--laranja); opacity: 0.7; }
+
+    .meta {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 11px;
+      color: var(--texto-secundario);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand-logo">esquilo<span>\wallet</span></div>
+
+      <div class="side-label">Classes de ativos</div>
+      <nav class="nav">
+        <div class="nav-item active">
+          <span class="emoji">📈</span>
+          <span class="n">Ações · ETFs · FIIs</span>
+          <span class="c">3</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">🏦</span>
+          <span class="n">Fundos</span>
+          <span class="c">0</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">📄</span>
+          <span class="n">Renda Fixa</span>
+          <span class="c">0</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">🏛️</span>
+          <span class="n">Previdência</span>
+          <span class="c">0</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">🏠</span>
+          <span class="n">Imóveis</span>
+          <span class="c">0</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">🚗</span>
+          <span class="n">Veículos</span>
+          <span class="c">0</span>
+        </div>
+        <div class="nav-item">
+          <span class="emoji">💰</span>
+          <span class="n">Poupança</span>
+          <span class="c">0</span>
+        </div>
+      </nav>
+
+      <div class="progress-box">
+        <div class="progress-title">Preenchimento</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="progress-hint">3 de 8 abas iniciadas · 5 pendentes</div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="breadcrumb">Importação · <strong>Ações</strong></div>
+      <h1>Conte pra gente quais ações <br/>você tem na carteira.</h1>
+      <p class="lead">Para cada ativo listado na B3, preencha o ticker, a quantidade e o preço médio de compra. Use os dropdowns para escolher a corretora — evita erro de digitação.</p>
+
+      <div class="guide-banner">
+        <div class="ico">🧭</div>
+        <div>
+          <h4>Precisa de ajuda?</h4>
+          <p>Se a corretora não aparece na lista, escolha "Outra" e digite manualmente. Valores em R$, datas no formato DD/MM/AAAA.</p>
+        </div>
+        <div class="link">Ver guia ›</div>
+      </div>
+
+      <!-- Card 1 -->
+      <div class="item-card">
+        <header>
+          <div class="item-idx">
+            <div class="num">01</div>
+            <div class="t">Ativo <small>completo</small></div>
+          </div>
+          <div class="card-actions">
+            <div class="act-btn">⎘</div>
+            <div class="act-btn danger">×</div>
+          </div>
+        </header>
+
+        <div class="fields">
+          <div class="field s-3">
+            <label>Ticker <span class="star">*</span></label>
+            <div class="input required">PETR4</div>
+            <span class="hint">Código da B3</span>
+          </div>
+          <div class="field s-5">
+            <label>Nome do ativo</label>
+            <div class="input">Petrobras PN</div>
+            <span class="hint">Preenchemos automaticamente</span>
+          </div>
+          <div class="field s-4">
+            <label>Quantidade <span class="star">*</span></label>
+            <div class="input required">100</div>
+            <span class="hint">Cotas inteiras ou fracionárias</span>
+          </div>
+
+          <div class="field s-4">
+            <label>Preço médio</label>
+            <div class="input"><span class="prefix">R$</span> 34,50</div>
+          </div>
+          <div class="field s-4">
+            <label>Data da compra</label>
+            <div class="input">15 / 01 / 2026</div>
+          </div>
+          <div class="field s-4">
+            <label>Corretora ▾</label>
+            <div class="select">
+              <span class="v">XP Investimentos</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="pop visible">
+              <div class="pop-item sel">XP Investimentos <span class="sub">selecionada</span></div>
+              <div class="pop-item">BTG Pactual</div>
+              <div class="pop-item">NuInvest</div>
+              <div class="pop-item">Itaú</div>
+              <div class="pop-item">Clear</div>
+              <div class="pop-item">Outra… <span class="sub">digitar</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="item-card">
+        <header>
+          <div class="item-idx">
+            <div class="num">02</div>
+            <div class="t">Ativo <small>completo</small></div>
+          </div>
+          <div class="card-actions">
+            <div class="act-btn">⎘</div>
+            <div class="act-btn danger">×</div>
+          </div>
+        </header>
+
+        <div class="fields">
+          <div class="field s-3">
+            <label>Ticker <span class="star">*</span></label>
+            <div class="input required">MXRF11</div>
+          </div>
+          <div class="field s-5">
+            <label>Nome do ativo</label>
+            <div class="input">Maxi Renda FII</div>
+          </div>
+          <div class="field s-4">
+            <label>Quantidade <span class="star">*</span></label>
+            <div class="input required">50</div>
+          </div>
+          <div class="field s-4">
+            <label>Preço médio</label>
+            <div class="input"><span class="prefix">R$</span> 16,80</div>
+          </div>
+          <div class="field s-4">
+            <label>Data da compra</label>
+            <div class="input">01 / 02 / 2026</div>
+          </div>
+          <div class="field s-4">
+            <label>Corretora ▾</label>
+            <div class="select">
+              <span class="v">BTG Pactual</span>
+              <span class="arrow">▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 — parcial -->
+      <div class="item-card">
+        <header>
+          <div class="item-idx">
+            <div class="num">03</div>
+            <div class="t">Novo ativo <small>em preenchimento</small></div>
+          </div>
+          <div class="card-actions">
+            <div class="act-btn">⎘</div>
+            <div class="act-btn danger">×</div>
+          </div>
+        </header>
+
+        <div class="fields">
+          <div class="field s-3">
+            <label>Ticker <span class="star">*</span></label>
+            <div class="input required empty">digite o código</div>
+          </div>
+          <div class="field s-5">
+            <label>Nome do ativo</label>
+            <div class="input empty">preenche sozinho</div>
+          </div>
+          <div class="field s-4">
+            <label>Quantidade <span class="star">*</span></label>
+            <div class="input required empty">0</div>
+          </div>
+          <div class="field s-4">
+            <label>Preço médio</label>
+            <div class="input empty"><span class="prefix">R$</span> 0,00</div>
+          </div>
+          <div class="field s-4">
+            <label>Data da compra</label>
+            <div class="input empty">dd / mm / aaaa</div>
+          </div>
+          <div class="field s-4">
+            <label>Corretora ▾</label>
+            <div class="select empty">
+              <span class="v">Selecionar corretora</span>
+              <span class="arrow">▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="add-row">
+        <span class="plus">+</span>
+        Adicionar mais um ativo
+      </button>
+
+      <div class="bottom-actions">
+        <button class="btn ghost">← Voltar</button>
+        <button class="btn primary">Salvar e continuar →</button>
+      </div>
+
+      <div class="meta">opção 03 · formulário guiado</div>
+    </main>
+  </div>
+</body>
+</html>

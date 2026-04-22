@@ -59,7 +59,9 @@ export default function DecisionHubMobile() {
       try {
         const dados = await decisoesApi.listarSimulacoes();
         if (!ativo) return;
-        setHistorico(dados || []);
+        setHistorico(Array.isArray(dados) ? dados : (dados?.itens ?? []));
+      } catch {
+        if (ativo) setHistorico([]);
       } finally {
         if (ativo) setLoading(false);
       }

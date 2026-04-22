@@ -251,43 +251,48 @@ export default function HomeMobile() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)] mb-2">
           Patrimônio total
         </p>
-        <p className="font-['Sora'] text-[32px] font-bold leading-[38px] text-[var(--text-primary)]">
-          <HiddenValue hidden={ocultarValores}>{fmt(patrimonio)}</HiddenValue>
-        </p>
+        {patrimonio > 0 ? (
+          <>
+            <p className="font-['Sora'] text-[32px] font-bold leading-[38px] text-[var(--text-primary)]">
+              <HiddenValue hidden={ocultarValores}>{fmt(patrimonio)}</HiddenValue>
+            </p>
 
-        <div className="mt-3 flex items-center gap-5 flex-wrap">
-          <div>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Desde aquisição</p>
-            {(() => {
-              const r = rentabilidadePct(resumo);
-              if (r === null) {
-                return <p className="text-[14px] font-bold mt-0.5 text-[var(--text-muted)]">—</p>;
-              }
-              return (
-                <p className={`text-[14px] font-bold mt-0.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
-                  <HiddenValue hidden={ocultarValores}>{fmtPct(r)}</HiddenValue>
+            <div className="mt-3 grid grid-cols-3 gap-3 items-start">
+              <div>
+                <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Desde aquisição</p>
+                {(() => {
+                  const r = rentabilidadePct(resumo);
+                  if (r === null) {
+                    return <p className="text-[14px] font-bold mt-0.5 text-[var(--text-muted)]">—</p>;
+                  }
+                  return (
+                    <p className={`text-[14px] font-bold mt-0.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+                      <HiddenValue hidden={ocultarValores}>{fmtPct(r)}</HiddenValue>
+                    </p>
+                  );
+                })()}
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Score</p>
+                <p className="text-[14px] font-bold mt-0.5" style={{ color: scoreFaixa.cor }}>
+                  <HiddenValue hidden={ocultarValores}>
+                    {Math.round(score)}<span className="text-[var(--text-muted)] font-semibold">/1000</span>
+                  </HiddenValue>
                 </p>
-              );
-            })()}
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Score</p>
-            <p className="text-[14px] font-bold mt-0.5" style={{ color: scoreFaixa.cor }}>
-              <HiddenValue hidden={ocultarValores}>
-                {Math.round(score)}<span className="text-[var(--text-muted)] font-semibold">/1000</span>
-              </HiddenValue>
-            </p>
-            <p className="text-[9px] font-semibold mt-0.5" style={{ color: scoreFaixa.cor }}>
-              {scoreFaixa.label}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Alertas</p>
-            <p className={`text-[14px] font-bold mt-0.5 ${alertasCount > 0 ? 'text-[#E85C5C]' : 'text-[#6FCF97]'}`}>
-              {alertasCount}
-            </p>
-          </div>
-        </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Alertas</p>
+                <p className={`text-[14px] font-bold mt-0.5 ${alertasCount > 0 ? 'text-[#E85C5C]' : 'text-[#6FCF97]'}`}>
+                  {alertasCount}
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="font-['Sora'] text-[18px] font-semibold text-[var(--text-secondary)]">
+            Sem patrimônio declarado
+          </p>
+        )}
       </article>
 
       {/* Evolução patrimonial */}
@@ -425,18 +430,18 @@ export default function HomeMobile() {
         ) : (
           <div className="flex flex-col items-center gap-3 py-4">
             <p className="text-[12px] text-[var(--text-muted)] text-center">Nenhum ativo cadastrado ainda.</p>
-            <div className="flex gap-2 w-full">
+            <div className="grid grid-cols-2 gap-2 w-full">
               <button
                 onClick={() => navigate('/importar')}
-                className="flex-1 rounded-xl bg-[#F56A2A] py-2.5 text-[11px] font-bold text-white"
+                className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-[#F56A2A] text-[11px] font-bold text-white whitespace-nowrap"
               >
                 Importar
               </button>
               <button
                 onClick={() => navigate('/carteira')}
-                className="flex-1 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] py-2.5 text-[11px] font-bold text-[var(--text-primary)]"
+                className="flex h-11 min-w-0 items-center justify-center rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[11px] font-bold text-[var(--text-primary)] whitespace-nowrap"
               >
-                Cadastrar manualmente
+                Cadastrar
               </button>
             </div>
           </div>

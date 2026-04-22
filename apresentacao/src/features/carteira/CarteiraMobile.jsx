@@ -279,49 +279,6 @@ export default function CarteiraMobile() {
   return (
     <section className="space-y-4 pb-4">
 
-      {/* Cards: Investimentos + Score */}
-      <div className="grid grid-cols-2 gap-3">
-
-        {/* Card Investimentos */}
-        <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4 shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)] flex flex-col justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)] mb-2">
-              Investimentos
-            </p>
-            <p className="font-['Sora'] text-[18px] font-bold leading-tight text-[var(--text-primary)]">
-              <HiddenValue hidden={ocultarValores}>{fmt(totalInvestimentos)}</HiddenValue>
-            </p>
-          </div>
-          <p className="text-[10px] text-[var(--text-muted)] mt-2">
-            {loading ? '...' : `${qtdInvestimentos} ativo${qtdInvestimentos !== 1 ? 's' : ''}`}
-          </p>
-        </article>
-
-        {/* Card Score */}
-        <article className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-card)] p-4 shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)] flex flex-col justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)] mb-2">
-              Score
-            </p>
-            <p
-              className="font-['Sora'] text-[28px] font-bold leading-tight"
-              style={{ color: scoreFaixa.cor }}
-            >
-              <HiddenValue hidden={ocultarValores}>
-                {Math.round(score)}
-                <span className="text-[14px] font-semibold text-[var(--text-muted)]">/1000</span>
-              </HiddenValue>
-            </p>
-          </div>
-          <p
-            className="text-[10px] font-semibold mt-2"
-            style={{ color: scoreFaixa.cor }}
-          >
-            {scoreFaixa.label}
-          </p>
-        </article>
-      </div>
-
       {/* Gráfico de Rentabilidade — só aparece com série mensal real suficiente.
           Sem dados reais = card oculto por completo. Sem placeholder. */}
       {monthlyPerformance.available && pontosTwr.length >= 2 && !twrPlano && (
@@ -521,7 +478,7 @@ export default function CarteiraMobile() {
           onClick={() => navigate('/importar')}
           className="w-full rounded-[12px] bg-[#F56A2A] px-3 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white"
         >
-          Importar
+          Importar carteira
         </button>
       </div>
 

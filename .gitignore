@@ -65,3 +65,9 @@ docker-compose.override.yml
 temp/
 tmp/
 .tmp-cvm/
+
+# Cloudflare wrangler local state
+.wrangler/
+
+# Backups de banco (dumps locais)
+backups/

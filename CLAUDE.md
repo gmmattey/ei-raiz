@@ -197,8 +197,7 @@ GET    /api/admin/cvm
 
 ## Banco de Dados — 26 Tabelas + 9 Views
 
-**D1 prod:** `esquilo-invest` (ID `2a4849fa-e980-4540-bd60-514b740287d3`)
-**D1 dev:** `esquilo-invest-dev` (ID `e2a0b0a8-484d-4507-b21c-facf090481dd`)
+**D1 dev/prod (compartilhado):** `esquilo-invest-dev` (ID `e2a0b0a8-484d-4507-b21c-facf090481dd`) — ambos os ambientes apontam para o mesmo banco em `wrangler.toml`.
 **Migration canônica:** `infra/banco/migrations/100_rebuild_canonical.sql`
 
 ### Tabelas

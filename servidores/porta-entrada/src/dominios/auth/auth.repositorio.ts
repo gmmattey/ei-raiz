@@ -43,8 +43,8 @@ export const repositorioAuth = (bd: Bd) => ({
   },
   async inserirUsuario(linha: Omit<LinhaUsuario, 'criado_em' | 'atualizado_em'>): Promise<void> {
     await bd.executar(
-      `INSERT INTO usuarios (id, nome, cpf, email, senha_hash)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO usuarios (id, nome, cpf, email, senha_hash, atualizado_em)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
       linha.id,
       linha.nome,
       linha.cpf,
