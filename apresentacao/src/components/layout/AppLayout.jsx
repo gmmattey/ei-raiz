@@ -2,12 +2,7 @@ import React from 'react';
 import GlobalHeader from '../navigation/GlobalHeader';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
-
-const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.21,1.02,0.73,1] } },
-  exit:    { opacity: 0, y: -6, transition: { duration: 0.15 } }
-};
+import { pageVariants } from '../../utils/motion-tokens';
 
 export function AppLayout({ children }) {
   return (

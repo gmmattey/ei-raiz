@@ -309,7 +309,8 @@ const FormularioLogin: React.FC<FormularioLoginProps> = ({
               type="button"
               onClick={handleLoginSubmit}
               disabled={passwordInput.length < 5 || isSubmitting}
-              className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center"
+              data-haptic
+              className="w-full bg-[#F56A2A] text-white font-['Inter'] font-semibold rounded-xl py-3.5 hover:bg-[#d95a20] transition-colors disabled:opacity-50 flex justify-center btn-tap"
             >
               {isSubmitting ? 'Entrando...' : 'Entrar'}
             </button>

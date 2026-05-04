@@ -1,34 +1,22 @@
 {
+  "id": "/",
   "name": "Esquilo Wallet",
-  "short_name": "Esquilo Wallet",
+  "short_name": "Esquilo",
   "description": "Consolide seus investimentos, entenda risco e concentração da carteira e receba orientações objetivas para decidir melhor.",
-  "start_url": "/",
+  "lang": "pt-BR",
+  "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#0B1218",
-  "theme_color": "#0B1218",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#09121C",
+  "theme_color": "#09121C",
   "orientation": "portrait-primary",
+  "categories": ["finance"],
   "icons": [
     {
       "src": "/assets/logo/iconApp_Esquilo_branco.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
-    },
-    {
-      "src": "/assets/logo/iconApp_Esquilo_preto.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/logo/icon-48x48.png",
-      "sizes": "48x48",
-      "type": "image/png"
-    },
-    {
-      "src": "/assets/logo/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png"
     },
     {
       "src": "/assets/logo/icon-192x192.png",
@@ -40,8 +28,13 @@
       "src": "/assets/logo/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/icon-adaptativo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
-  ],
-  "categories": ["finance"]
+  ]
 }

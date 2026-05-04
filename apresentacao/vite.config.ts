@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import legacy from '@vitejs/plugin-legacy'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
@@ -14,6 +15,50 @@ export default defineConfig({
       // Alguns WebViews antigos falham se o polyfill for injetado via module.
       modernPolyfills: false,
       renderLegacyChunks: true,
+    }),
+    // vite-plugin-pwa deve vir DEPOIS do plugin-legacy (requisito oficial).
+    VitePWA({
+      registerType: 'autoUpdate',
+      // Não gera manifest — usamos o manifest.webmanifest manual em /public.
+      manifest: false,
+      workbox: {
+        // Precache todos os assets do build: JS, CSS, HTML, fontes, ícones.
+        globPatterns: ['**/*.{js,css,html,woff,woff2,ttf,eot,ico,png,svg,webp}'],
+        // Evitar precache de sourcemaps e chunks de dev.
+        globIgnores: ['**/node_modules/**', '**/*.map'],
+        // Controla quanto tempo o SW espera a rede antes de cair no cache.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            // Home consolidada — NetworkFirst com fallback em 5s.
+            // Garante dados frescos, mas a tela carrega do cache se a rede demorar.
+            urlPattern: /\/api\/patrimonio\/resumo(\?.*)?$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-resumo',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 1, maxAgeSeconds: 300 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Fontes Google — CacheFirst (mudam raramente, impacto enorme no LCP).
+            urlPattern: /^https:\/\/fonts\.gstatic\.com/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-stylesheets' },
+          },
+        ],
+      },
     }),
   ],
   server: {

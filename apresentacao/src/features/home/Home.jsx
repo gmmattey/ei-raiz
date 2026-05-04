@@ -541,14 +541,14 @@ export default function HomeLobby() {
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">
             {texto('home.kpi.patrimonio', 'Patrimônio total')}
           </p>
-          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+          <p className="font-['Sora'] text-2xl font-semibold tracking-tight leading-tight num-tabular">
             {ocultarValores ? '••••••••' : fmt(patrimonioLiquido)}
           </p>
           {(() => {
             const r = rentabilidadePct(resumo);
             if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
-              <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+              <p className={`text-xs font-semibold mt-1.5 num-tabular ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                 {ocultarValores ? '••••' : fmtPct(r)}{' '}
                 <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
               </p>
@@ -564,14 +564,14 @@ export default function HomeLobby() {
         {/* Investimentos */}
         <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Investimentos</p>
-          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+          <p className="font-['Sora'] text-2xl font-semibold tracking-tight leading-tight num-tabular">
             {ocultarValores ? '••••••••' : fmt(patrimonioInvest)}
           </p>
           {(() => {
             const r = rentabilidadePct(resumo);
             if (r === null) return <p className="text-xs text-[var(--text-muted)] mt-1.5">—</p>;
             return (
-              <p className={`text-xs font-semibold mt-1.5 ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
+              <p className={`text-xs font-semibold mt-1.5 num-tabular ${r >= 0 ? 'text-[#6FCF97]' : 'text-[#E85C5C]'}`}>
                 {ocultarValores ? '••••' : fmtPct(r)}{' '}
                 <span className="text-[var(--text-muted)] font-normal">desde aquisição</span>
               </p>
@@ -582,7 +582,7 @@ export default function HomeLobby() {
         {/* Score */}
         <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Score</p>
-          <p className="font-['Sora'] text-2xl font-bold leading-tight">
+          <p className="font-['Sora'] text-2xl font-semibold tracking-tight leading-tight num-tabular">
             {ocultarValores ? '•••• / 1000' : `${scoreExibicao} / 1000`}
           </p>
           {bandLabel && (
@@ -599,7 +599,7 @@ export default function HomeLobby() {
         <button onClick={() => navigate('/insights')}
           className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5 text-left hover:border-[#F56A2A] transition-colors">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1.5">Alertas</p>
-          <p className="font-['Sora'] text-2xl font-bold leading-tight">{alertasCount}</p>
+          <p className="font-['Sora'] text-2xl font-semibold tracking-tight leading-tight num-tabular">{alertasCount}</p>
           <p className={`text-xs font-semibold mt-1.5 ${alertasCount > 0 ? 'text-[#E85C5C]' : 'text-[#6FCF97]'}`}>
             {alertasCount > 0 ? 'ações necessárias' : 'tudo em ordem'}
           </p>

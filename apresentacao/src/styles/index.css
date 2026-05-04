@@ -13,6 +13,14 @@
   --text-muted: #8A94A3;
   --border-color: #EFE7DC;
   --accent: #F56A2A;
+
+  /* Motion tokens — espelham os valores em motion-tokens.ts */
+  --ease-standard:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 380ms;
 }
 
 .dark {
@@ -25,7 +33,7 @@
   --text-primary: #e8eef5;
   --text-secondary: #b2bfce;
   --text-muted: #8f9caf;
-  --border-color: #24344966;
+  --border-color: #2D3748;
   --accent: #F56A2A;
   color-scheme: dark;
 }
@@ -57,12 +65,20 @@
     padding: 0;
     overflow-x: hidden;
     background-color: var(--bg-primary);
+    /* Gradiente ambiental sutil — 4% de laranja no topo dá calor sem competir com o conteúdo */
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% 0%,
+      color-mix(in srgb, var(--accent) 4%, transparent),
+      transparent 60%
+    );
     color: var(--text-primary);
     font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    transition: background-color 0.3s, color 0.3s;
+    font-feature-settings: 'cv11' 1, 'ss01' 1, 'ss03' 1;
+    transition: background-color var(--dur-base) var(--ease-standard),
+                color var(--dur-base) var(--ease-standard);
   }
 
   /* Estabilidade de layout para imagens e blocos carregando */
@@ -77,6 +93,20 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Focus ring — usa a cor de accent em vez do azul padrão do browser.
+     :focus-visible garante que só aparece via teclado, não em cliques. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  /* Seleção de texto com a identidade de marca */
+  ::selection {
+    background: rgba(245, 106, 42, 0.22);
+    color: var(--text-primary);
   }
 }
 
@@ -159,9 +189,8 @@ html.legacy img {
   background-color: color-mix(in srgb, var(--bg-card) 88%, transparent) !important;
 }
 
-.dark [class*="shadow-"],
-.dark [class*="shadow"] {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+.dark [class*="shadow-black/"] {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3) !important;
 }
 
 .dark table tr {
@@ -178,33 +207,15 @@ html.legacy img {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0B1218/10;
+  background: rgba(11, 18, 24, 0.10);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
   transition: background 0.3s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #F56A2A;
-  background-clip: padding-box;
-}
-
-/* Custom scrollbar premium */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #0B1218/10;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  transition: background 0.3s ease;
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -214,7 +225,7 @@ html.legacy img {
 
 /* Utilitários de Transição Sóbria (Premium) */
 .fade-in-up {
-  animation: fadeInUp 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  animation: fadeInUp var(--dur-slow) var(--ease-decelerate) forwards;
 }
 
 @keyframes fadeInUp {
@@ -241,4 +252,24 @@ html.legacy img {
   100% {
     background-position: 200% 0;
   }
+}
+
+/* Números tabulares — aplicar em valores monetários e percentuais.
+   Impede o "pulo" horizontal dos dígitos ao atualizar/animar. */
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* Press state premium para botões primários.
+   Aplica micro-compressão no tap sem mexer no layout — feedback tátil visual. */
+.btn-tap {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.btn-tap:active {
+  transform: scale(0.98);
 }

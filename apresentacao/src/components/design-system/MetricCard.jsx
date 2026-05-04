@@ -5,10 +5,10 @@ export default function MetricCard({ label, value, badge, subtitle }) {
   const { ocultarValores } = useModoVisualizacao();
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-6 rounded-xl shadow-md shadow-black/5 transition-all hover:shadow-lg duration-300">
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-6 rounded-xl shadow-md shadow-black/5 transition-shadow transition-transform hover:shadow-lg hover:-translate-y-px duration-[120ms]">
       <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest block mb-4">{label}</span>
       <div className="flex items-baseline gap-2 flex-wrap">
-        <h3 className="font-['Sora'] text-2xl font-bold text-[var(--text-primary)]">{ocultarValores ? '••••••••' : value}</h3>
+        <h3 className="font-['Sora'] text-2xl font-semibold tracking-tight num-tabular text-[var(--text-primary)]">{ocultarValores ? '••••••••' : value}</h3>
         {badge && (
           <span
             style={{ backgroundColor: badge.bg, color: badge.color }}
