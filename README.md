@@ -1,80 +1,70 @@
-# 🐿️ Esquilo Invest - Monorepo
+# EI Raiz
 
-Bem-vindo ao monorepo do **Esquilo Invest**, uma plataforma completa de consolidação de carteira, diagnóstico de risco e inteligência financeira.
+Monorepo Cloudflare-native da nova arquitetura do Esquilo Invest, voltado à consolidação de carteira, diagnóstico de risco e inteligência financeira.
 
-## 🏗️ Arquitetura e Estrutura
+## Arquitetura
 
-O projeto utiliza **npm workspaces** e é focado no ecossistema **Cloudflare-native** (Workers, Pages, D1, R2).
+O projeto utiliza npm workspaces e separa aplicação, domínio, contratos compartilhados e persistência.
 
-```
-Esquilo Invest/
-├── 📱 apps/
-│   ├── web/           # Frontend React + Vite (Cloudflare Pages)
-│   └── api/           # Gateway API (Cloudflare Workers)
-├── 🧠 servicos/       # Lógica de domínio modular (reutilizável)
-│   ├── autenticacao/  # Gestão de usuários e sessões
-│   ├── carteira/      # Gestão de ativos e cotações
-│   ├── importacao/    # Motores de parse e normalização de dados
-│   ├── insights/      # Motor de score e análises preditivas
-│   └── ...            # Outros módulos de domínio
-├── 📦 pacotes/        # Bibliotecas compartilhadas
-│   ├── contratos/     # Tipos e interfaces comuns (Single Source of Truth)
-│   ├── validacao/     # Schemas de validação (Zod)
-│   └── utilitarios/   # Helpers transversais
-└── 🗄️ banco/          # Migrations SQL e scripts D1
+```text
+apps/
+  web/             Frontend React + Vite
+  api/             API em Cloudflare Workers
+servicos/          Regras de domínio reutilizáveis
+pacotes/           Contratos, validações e utilitários
+banco/             Migrations e scripts para D1
+docs/              Arquitetura, produto e identidade visual
 ```
 
-## 🚀 Como Iniciar (Desenvolvimento)
+## Pré-requisitos
 
-### Pré-requisitos
-- **Node.js 18+**
-- **npm v9+**
-- **Wrangler CLI** (`npm install -g wrangler`)
+- Node.js 18 ou superior
+- npm 9 ou superior
+- Wrangler CLI
 
-### Instalação
-Na raiz do projeto:
+## Desenvolvimento local
+
 ```bash
 npm install
-```
-
-### Rodar a Aplicação
-Você pode rodar apenas o frontend ou ambos (API + Web):
-
-**Opção 1 (Recomendada - Tudo junto):**
-```bash
 npm run dev:all
 ```
-*   Web: `http://localhost:3000`
-*   API: `http://localhost:8787` (ou porta configurada no wrangler)
 
-**Opção 2 (Apenas Web):**
+Serviços esperados:
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:8787`
+
+Também é possível executar os ambientes separadamente:
+
 ```bash
 npm run dev
-```
-
-**Opção 3 (Apenas API):**
-```bash
 npm run dev:api
 ```
 
-## 🛠️ Scripts Principais
+## Scripts principais
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev:all` | Inicia Frontend e API simultaneamente |
-| `npm run build` | Build de todos os workspaces |
-| `npm run typecheck` | Verifica tipos em todo o monorepo |
-| `npm run deploy:api` | Deploy da API para Cloudflare Workers |
-| `npm run deploy:web` | Build e Deploy do Frontend para Cloudflare Pages |
+| Comando | Finalidade |
+|---|---|
+| `npm run dev:all` | Inicia web e API |
+| `npm run build` | Gera os builds dos workspaces |
+| `npm run typecheck` | Valida os tipos do monorepo |
+| `npm run deploy:api` | Publica a API em Workers |
+| `npm run deploy:web` | Publica o frontend em Pages |
 
-## 📖 Documentação Detalhada
+## Documentação
 
-- ⚡ **[SETUP_RAPIDO.md](./SETUP_RAPIDO.md)**: Setup em 2 minutos para desenvolvedores.
-- 📖 **[AMBIENTE_LOCAL.md](./AMBIENTE_LOCAL.md)**: Guia completo de configuração e troubleshooting.
-- 🏗️ **[docs/arquitetura/](./docs/arquitetura/)**: Detalhes técnicos da infraestrutura.
-- 🎨 **[docs/marca/](./docs/marca/)**: Design System e Identidade Visual.
+- `SETUP_RAPIDO.md`: configuração inicial
+- `AMBIENTE_LOCAL.md`: ambiente local e troubleshooting
+- `docs/arquitetura/`: decisões e fluxos técnicos
+- `docs/marca/`: identidade visual e design system
 
----
+## Regras de manutenção
 
-**Versão:** 0.1.0  
-**Status:** Desenvolvimento Ativo 🛠️
+- Contratos compartilhados devem permanecer em `pacotes/`.
+- Regras de domínio não devem ser duplicadas entre web e API.
+- Mudanças em banco precisam incluir migration versionada.
+- Documentação que não representa o código atual deve ser atualizada ou arquivada.
+
+## Status
+
+Arquitetura em desenvolvimento ativo. Versão de referência: `0.1.0`.
