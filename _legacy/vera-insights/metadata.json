@@ -1,0 +1,5 @@
+{
+  "name": "Vera Project",
+  "description": "Cloudflare-style management console for Vera Engine. Manage AI priorities, models, API keys, and monitor token usage and request logs.",
+  "requestFramePermissions": []
+}

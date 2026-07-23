@@ -1,0 +1,186 @@
+[
+  {
+    "id": "critical_deficit",
+    "name": "Déficit Mensal Crítico",
+    "condition": "profile.expenses > profile.income",
+    "response": {
+      "analise_geral": {
+        "analise": "Sua saúde financeira está em estado de alerta máximo. O déficit mensal está consumindo seu patrimônio ou gerando dívidas.",
+        "acao": "Corte imediato de 20% das despesas variáveis e suspensão de novos investimentos."
+      },
+      "acoes": {
+        "analise": "Renda variável apresenta risco desproporcional neste momento.",
+        "acao": "Não comprar. Avaliar venda de ativos para cobrir o rombo mensal se necessário.",
+        "recomendacoes": []
+      },
+      "fundos": {
+        "analise": "Evitar fundos com baixa liquidez.",
+        "acao": "Manter apenas o que for essencial.",
+        "recomendacoes": []
+      },
+      "previdencia": {
+        "analise": "Pausar aportes.",
+        "acao": "Redirecionar fluxo para o caixa mensal."
+      },
+      "poupanca": {
+        "analise": "Reserva sendo drenada.",
+        "acao": "Estancar a perda de capital é a prioridade zero."
+      }
+    }
+  },
+  {
+    "id": "no_emergency_fund",
+    "name": "Fluxo Positivo sem Reserva",
+    "condition": "profile.income > profile.expenses && (profile.liquidAssets || 0) < (profile.expenses * 3)",
+    "response": {
+      "analise_geral": {
+        "analise": "Você tem capacidade de poupança, mas sua base de segurança (reserva) está muito baixa.",
+        "acao": "Todo o excedente mensal deve ser destinado ao Tesouro Selic até atingir 6 meses de despesas."
+      },
+      "acoes": {
+        "analise": "Ainda não é o momento de exposição a risco.",
+        "acao": "Aguardar formação da reserva antes de novos aportes em ações.",
+        "recomendacoes": []
+      },
+      "fundos": {
+        "analise": "Focar em fundos DI de taxa zero.",
+        "acao": "Priorizar liquidez diária.",
+        "recomendacoes": []
+      },
+      "previdencia": {
+        "analise": "Manter apenas o básico.",
+        "acao": "Focar no curto prazo (reserva) primeiro."
+      },
+      "poupanca": {
+        "analise": "Sua prioridade absoluta.",
+        "acao": "Aportar 100% do excedente aqui."
+      }
+    }
+  },
+  {
+    "id": "high_debt_growing",
+    "name": "Endividamento Estrutural",
+    "condition": "profile.income > profile.expenses && (profile.totalDebt || 0) > (profile.income * 6)",
+    "response": {
+      "analise_geral": {
+        "analise": "Você está conseguindo poupar, mas carrega um passivo pesado que compromete seu futuro.",
+        "acao": "Estratégia de 'Avalanche': pagar primeiro as dívidas de juros mais altos."
+      },
+      "acoes": {
+        "analise": "O retorno esperado das ações raramente supera o custo de dívidas bancárias.",
+        "acao": "Suspender aportes em bolsa e amortizar dívidas.",
+        "recomendacoes": []
+      },
+      "fundos": {
+        "analise": "Resgate fundos de baixo desempenho para quitar dívidas.",
+        "acao": "Otimização de passivos.",
+        "recomendacoes": []
+      },
+      "previdencia": {
+        "analise": "Proteção de longo prazo.",
+        "acao": "Manter se for via empresa, caso contrário, amortizar dívida."
+      },
+      "poupanca": {
+        "analise": "Manter apenas o mínimo de segurança.",
+        "acao": "O excesso deve ir para quitação de dívidas."
+      }
+    }
+  },
+  {
+    "id": "young_investor",
+    "name": "Jovem em Fase de Acumulação",
+    "condition": "profile.income > profile.expenses && profile.age < 35 && (profile.liquidAssets || 0) >= (profile.expenses * 6)",
+    "response": {
+      "analise_geral": {
+        "analise": "Cenário ideal: jovem, com reserva formada e fluxo positivo. Hora de acelerar.",
+        "acao": "Aumentar exposição em ativos de crescimento e diversificação internacional."
+      },
+      "acoes": {
+        "analise": "Foco em Small Caps e empresas de tecnologia/crescimento.",
+        "acao": "Aportar 50% do excedente em Renda Variável.",
+        "recomendacoes": [
+          { "ativo": "WEGE3", "tipo": "compra", "justificativa": "Crescimento consistente e exposição global." },
+          { "ativo": "IVVB11", "tipo": "compra", "justificativa": "Exposição ao S&P 500 e proteção cambial." }
+        ]
+      },
+      "fundos": {
+        "analise": "Explorar fundos de ações e multimercados arrojados.",
+        "acao": "Diversificar em gestão ativa.",
+        "recomendacoes": []
+      },
+      "previdencia": {
+        "analise": "PGBL com foco em ações.",
+        "acao": "Aproveitar diferimento fiscal."
+      },
+      "poupanca": {
+        "analise": "Reserva ok.",
+        "acao": "Manter apenas o colchão de segurança."
+      }
+    }
+  },
+  {
+    "id": "mature_investor",
+    "name": "Investidor Maduro (Renda)",
+    "condition": "profile.income > profile.expenses && profile.age >= 35 && profile.age <= 60 && (profile.liquidAssets || 0) >= (profile.expenses * 6)",
+    "response": {
+      "analise_geral": {
+        "analise": "Fase de consolidação. Equilíbrio entre crescimento e geração de renda.",
+        "acao": "Focar em ativos geradores de proventos e proteção contra inflação."
+      },
+      "acoes": {
+        "analise": "Empresas sólidas, 'vacas leiteiras' de dividendos.",
+        "acao": "Aportar em setores perenes (Energia, Bancos, Saneamento).",
+        "recomendacoes": [
+          { "ativo": "EGIE3", "tipo": "compra", "justificativa": "Setor elétrico com previsibilidade de caixa." },
+          { "ativo": "ITUB4", "tipo": "compra", "justificativa": "Eficiência bancária e dividendos recorrentes." }
+        ]
+      },
+      "fundos": {
+        "analise": "FIIs de tijolo para renda mensal isenta.",
+        "acao": "Aumentar exposição em logística e escritórios premium.",
+        "recomendacoes": [
+          { "ativo": "HGLG11", "tipo": "compra", "justificativa": "Líder em galpões logísticos." }
+        ]
+      },
+      "previdencia": {
+        "analise": "Planejamento sucessório e fiscal.",
+        "acao": "Manter aportes em VGBL/PGBL regressivo."
+      },
+      "poupanca": {
+        "analise": "Reserva de oportunidade.",
+        "acao": "Manter liquidez para aproveitar quedas do mercado."
+      }
+    }
+  },
+  {
+    "id": "retirement_preservation",
+    "name": "Aposentadoria e Preservação",
+    "condition": "profile.age > 60",
+    "response": {
+      "analise_geral": {
+        "analise": "Fase de usufruto e preservação de capital. O risco deve ser minimizado.",
+        "acao": "Priorizar Renda Fixa pós-fixada e inflação curta."
+      },
+      "acoes": {
+        "analise": "Reduzir volatilidade.",
+        "acao": "Manter apenas ações de baixíssimo risco e alto dividendo.",
+        "recomendacoes": [
+          { "ativo": "BBSE3", "tipo": "compra", "justificativa": "Seguros com baixa correlação ao ciclo econômico." }
+        ]
+      },
+      "fundos": {
+        "analise": "FIIs de papel e tijolo defensivos.",
+        "acao": "Foco em renda mensal.",
+        "recomendacoes": []
+      },
+      "previdencia": {
+        "analise": "Fase de resgate ou sucessão.",
+        "acao": "Avaliar a melhor forma tributária de retirada."
+      },
+      "poupanca": {
+        "analise": "Liquidez máxima.",
+        "acao": "Manter 12 meses de despesas em liquidez diária."
+      }
+    }
+  }
+]
