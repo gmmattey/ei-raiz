@@ -1,0 +1,30 @@
+node_modules/
+.wrangler/
+.dev.vars
+.mf/
+dist/
+
+# Audit (reference only, not part of Quanto)
+_audit/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Build artifacts
+*.tsbuildinfo
+
+# Zip files (imports)
+*.zip
+
+# Claude Code (local dev config)
+.claude/
+memory-index.json

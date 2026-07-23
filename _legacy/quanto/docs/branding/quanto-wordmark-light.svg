@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 380 100" width="760" height="200">
+  <rect width="380" height="100" fill="#FBFCFD"/>
+  <!-- icon light -->
+  <g>
+    <rect width="100" height="100" rx="24" fill="#FBFCFD" stroke="#E8EDF1" stroke-width="1.5"/>
+    <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#16242F" stroke-width="9" stroke-linecap="round"/>
+    <rect x="66.5" y="56.0" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48.0" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40.0" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+  </g>
+  <!-- wordmark -->
+  <text x="118" y="60"
+        font-family="Archivo, 'Arial Black', Arial, sans-serif"
+        font-size="36" font-weight="800"
+        letter-spacing="-0.02em"
+        fill="#16242F">Quanto</text>
+  <text x="118" y="60"
+        font-family="Archivo, 'Arial Black', Arial, sans-serif"
+        font-size="36" font-weight="800"
+        dx="138" letter-spacing="-0.02em"
+        fill="#2A5A66">.</text>
+  <text x="118" y="78"
+        font-family="Inter, Arial, sans-serif"
+        font-size="11" font-weight="500" letter-spacing="0.12em"
+        fill="#5E6B76">QUANTO VOCÊ TEM, DE FATO</text>
+</svg>

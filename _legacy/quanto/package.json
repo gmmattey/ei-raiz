@@ -1,0 +1,35 @@
+{
+  "name": "quanto",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quanto voce tem, de fato.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute quanto-db --local --file=schema.sql",
+    "db:seed": "wrangler d1 execute quanto-db --local --file=seed.sql",
+    "db:reset": "wrangler d1 execute quanto-db --local --file=schema.sql && wrangler d1 execute quanto-db --local --file=seed.sql",
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:api": "playwright test tests/api.spec.ts",
+    "test:cutover-postflight": "node scripts/post-cutover-smoke.mjs",
+    "test:cutover-preflight": "node scripts/preflight-cutover.mjs",
+    "test:cutover-worker": "playwright test tests/cutover-worker.spec.ts",
+    "test:e2e": "playwright test tests/e2e.spec.ts",
+    "test:auth": "playwright test tests/auth.spec.ts",
+    "test:cvm": "playwright test tests/cvm.spec.ts",
+    "sync:web-runtime-assets": "node scripts/sync-web-runtime-assets.mjs",
+    "test:rollback-rehearsal": "node scripts/rehearse-assets-cutover.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250612.0",
+    "@playwright/test": "^1.61.0",
+    "exceljs": "^4.4.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.18.0",
+    "xlsx": "^0.18.5"
+  }
+}
