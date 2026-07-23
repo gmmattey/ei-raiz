@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquilo Invest | O Tradutor da sua Vida Financeira</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* =========================================================
+           ⬇️ COPIAR ISSO PARA: frontend/cloudflare/styles/index.css ⬇️
+           ========================================================= */
+           
+        /* TOKENS LOCAIS (Vibe Cloudflare) */
+        :root {
+            --bg-page: #FFFFFF;
+            --bg-surface: #F9FAFB;
+            --bg-surface-hover: #F3F4F6;
+            --brand-orange: #FF7300;
+            --brand-orange-hover: #E66800;
+            --brand-dark: #0F172A;
+            --text-main: #111827;
+            --text-muted: #4B5563;
+            --border-light: #E5E7EB;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-orange: 0 4px 14px rgba(255, 115, 0, 0.25);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-page); color: var(--text-main);
+            font-family: 'Inter', sans-serif; line-height: 1.6;
+            -webkit-font-smoothing: antialiased; overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--brand-dark); letter-spacing: -0.02em; }
+        .highlight { color: var(--brand-orange); }
+        a { text-decoration: none; color: inherit; transition: color 0.2s; }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+        /* HEADER */
+        header {
+            border-bottom: 1px solid var(--border-light);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px); position: fixed;
+            width: 100%; top: 0; z-index: 100;
+        }
+
+        .nav-container { display: flex; justify-content: space-between; align-items: center; height: 72px; }
+        .logo-area { display: flex; align-items: center; gap: 12px; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 22px; color: var(--brand-dark); }
+        .logo-area img { height: 36px; width: auto; }
+        
+        .nav-actions { display: flex; gap: 16px; align-items: center; }
+
+        /* BOTOES */
+        .btn-text {
+            background: none; border: none; font-family: 'Inter', sans-serif; font-weight: 600;
+            color: var(--text-muted); font-size: 15px; cursor: pointer; transition: color 0.2s;
+        }
+        .btn-text:hover { color: var(--brand-orange); }
+
+        .btn-primary {
+            background-color: var(--brand-orange); color: #FFFFFF;
+            padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 15px;
+            border: none; cursor: pointer; transition: all 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary:hover { background-color: var(--brand-orange-hover); box-shadow: var(--shadow-orange); transform: translateY(-1px); }
+
+        .btn-secondary {
+            background-color: transparent; color: var(--brand-dark);
+            padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 15px;
+            border: 1px solid var(--border-light); cursor: pointer; transition: all 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif;
+        }
+        .btn-secondary:hover { border-color: var(--brand-dark); background-color: var(--bg-surface); }
+
+        /* HERO SECTION (Estilo Cloudflare - 2 Colunas) */
+        .hero { padding: 160px 0 80px; background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%); border-bottom: 1px solid var(--border-light); }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        
+        .hero-content h1 { font-size: 58px; font-weight: 800; line-height: 1.1; margin-bottom: 24px; color: var(--brand-dark); }
+        .hero-content p { font-size: 20px; color: var(--text-muted); margin-bottom: 40px; max-width: 540px; }
+        .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+        
+        /* Hero Visual Mockup (CSS Puro) */
+        .hero-visual { position: relative; perspective: 1000px; }
+        .mockup-window { 
+            background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 12px; 
+            box-shadow: var(--shadow-lg); overflow: hidden; transform: rotateY(-5deg) rotateX(5deg);
+            transition: transform 0.5s ease;
+        }
+        .mockup-window:hover { transform: rotateY(0) rotateX(0); }
+        .mockup-header { background: var(--bg-surface); padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; gap: 6px; }
+        .mockup-dot { width: 10px; height: 10px; border-radius: 50%; background: #E5E7EB; }
+        .mockup-dot.red { background: #EF4444; } .mockup-dot.yellow { background: #F59E0B; } .mockup-dot.green { background: #10B981; }
+        .mockup-body { padding: 30px; display: grid; gap: 20px; }
+        .mockup-card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .mockup-icon { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,115,0,0.1); color: var(--brand-orange); display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .mockup-text-line { height: 12px; background: #E5E7EB; border-radius: 6px; margin-bottom: 8px; }
+        .mockup-text-line.short { width: 60%; }
+        .mockup-text-line.orange { background: var(--brand-orange); width: 40%; }
+
+        /* TRUST STRIP */
+        .trust-strip { padding: 40px 0; border-bottom: 1px solid var(--border-light); background: #FFFFFF; }
+        .trust-container { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .trust-item { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-weight: 500; font-size: 15px; }
+        .trust-item i { color: var(--brand-orange); font-size: 20px; }
+
+        /* ZIG-ZAG SECTIONS (Problema / Solução) */
+        .zigzag-section { padding: 100px 0; }
+        .zigzag-section.bg-gray { background-color: var(--bg-surface); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .zigzag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .zigzag-text h2 { font-size: 40px; margin-bottom: 24px; line-height: 1.2; }
+        .zigzag-text p { font-size: 18px; color: var(--text-muted); margin-bottom: 24px; }
+        
+        .pain-list { list-style: none; }
+        .pain-list li { margin-bottom: 16px; font-size: 16px; display: flex; align-items: flex-start; gap: 12px; color: var(--text-main); }
+        .pain-list i { color: #EF4444; margin-top: 4px; }
+        .check-list i { color: #10B981; } /* Verde para a solução */
+
+        .feature-box { background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 12px; padding: 40px; box-shadow: var(--shadow-md); text-align: center; position: relative; }
+        .feature-box i.main-icon { font-size: 70px; color: var(--brand-dark); margin-bottom: 24px; }
+        .feature-box h3 { font-size: 24px; margin-bottom: 12px; }
+
+        /* PILLARS GRID */
+        .pillars-section { padding: 100px 0; text-align: center; background: #FFFFFF; }
+        .section-header { margin-bottom: 64px; max-width: 700px; margin-inline: auto; }
+        .section-header h2 { font-size: 40px; margin-bottom: 16px; }
+        .section-header p { font-size: 18px; color: var(--text-muted); }
+        
+        .pillars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; text-align: left; }
+        .pillar-card { background: var(--bg-page); border: 1px solid var(--border-light); border-radius: 12px; padding: 40px 32px; transition: all 0.3s ease; box-shadow: var(--shadow-sm); }
+        .pillar-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-light); }
+        .pillar-icon { margin-bottom: 24px; color: var(--brand-orange); font-size: 32px; }
+        .pillar-card h3 { font-size: 22px; margin-bottom: 16px; }
+        .pillar-card p { color: var(--text-muted); font-size: 15px; }
+
+        /* CTA DARK BOTTOM */
+        .cta-bottom { background-color: var(--brand-dark); color: #FFFFFF; padding: 100px 0; text-align: center; }
+        .cta-bottom h2 { color: #FFFFFF; font-size: 48px; margin-bottom: 24px; }
+        .cta-bottom p { font-size: 20px; color: #94A3B8; max-width: 600px; margin: 0 auto 40px; }
+        
+        .btn-white {
+            background-color: #FFFFFF; color: var(--brand-dark);
+            padding: 14px 32px; border-radius: 6px; font-weight: 700; font-size: 16px;
+            border: none; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-white:hover { background-color: var(--border-light); transform: translateY(-2px); }
+
+        /* FOOTER SIMPLES */
+        footer { background: var(--bg-page); padding: 40px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-muted); font-size: 14px; }
+
+        /* MODAIS (MANTIDOS INTACTOS, APENAS CORES ATUALIZADAS PARA MATCH) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 999; opacity: 0; transition: opacity 0.3s ease; overflow-y: auto; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: var(--bg-page); padding: 40px; border-radius: 12px;
+            width: 100%; max-width: 420px; box-shadow: var(--shadow-lg);
+            position: relative; transform: translateY(20px); transition: transform 0.3s ease; margin: auto;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        #signupModal .modal-content { max-width: 540px; }
+
+        .close-modal { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+        .close-modal:hover { color: var(--brand-orange); }
+        .modal-header { margin-bottom: 24px; }
+        .modal-header h2 { font-size: 28px; line-height: 1.2; }
+        .modal-header p { color: var(--text-muted); font-size: 14px; margin-top: 8px; }
+
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: var(--text-main); }
+        .input-group input {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border-light);
+            border-radius: 6px; font-size: 15px; background: var(--bg-surface); color: var(--text-main);
+            outline: none; transition: border 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus { border-color: var(--brand-orange); box-shadow: 0 0 0 3px rgba(255,115,0,0.1); background: #FFF; }
+        
+        .email-suggestions {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #fff; border: 1px solid var(--border-light); border-radius: 6px;
+            margin-top: 4px; z-index: 10; display: none; box-shadow: var(--shadow-md); overflow: hidden;
+        }
+        .email-suggestions div { padding: 10px 16px; cursor: pointer; color: var(--text-muted); font-size: 14px; }
+        .email-suggestions div:hover { background: var(--bg-surface); color: var(--brand-orange); }
+        
+        .keyboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .key-btn { background: var(--bg-page); border: 1px solid var(--border-light); padding: 14px 0; border-radius: 6px; font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.2s; color: var(--text-main); box-shadow: var(--shadow-sm); }
+        .key-btn:hover { border-color: var(--text-muted); }
+        .key-action { background: var(--bg-surface); color: var(--text-muted); }
+        
+        .password-display { display: flex; gap: 12px; justify-content: center; margin-bottom: 10px; height: 48px; align-items: center; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-light); }
+        .pwd-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border-light); transition: all 0.2s; }
+        .pwd-dot.filled { background: var(--brand-orange); transform: scale(1.2); }
+
+        .modal-links { display: flex; justify-content: space-between; margin-top: 24px; font-size: 13px; }
+        .modal-links a { color: var(--brand-orange); font-weight: 600; cursor: pointer; }
+        .modal-links a:hover { text-decoration: underline; }
+
+        @media (max-width: 992px) { 
+            .hero-grid, .zigzag-grid { grid-template-columns: 1fr; gap: 40px; }
+            .hero { padding-top: 120px; text-align: center; }
+            .hero-content p { margin-inline: auto; }
+            .hero-actions { justify-content: center; }
+            .pillars-grid { grid-template-columns: 1fr; }
+            .zigzag-grid > div:first-child { order: 2; } /* Mobile reorder para imagem ficar em cima */
+        }
+        @media (max-width: 500px) { .input-row { grid-template-columns: 1fr; gap: 0; } .hero h1 { font-size: 40px; } }
+        /* ==================== FIM DO CSS ==================== */
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR CLOUDFLARE STYLE -->
+    <header>
+        <div class="container nav-container">
+            <div class="logo-area">
+                <img src="https://github.com/serealdemanga/esquilo-invest/blob/main/icons/esquilo.png?raw=true" alt="Logotipo Esquilo">
+                Esquilo Invest
+            </div>
+            <div class="nav-actions">
+                <button class="btn-text" id="openLoginBtn">Entrar</button>
+                <button class="btn-primary" id="openSignupHeaderBtn">Criar conta</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION (2 COLUNAS) -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <h1>Você sabe quanto tem investido <span class="highlight">de verdade?</span></h1>
+                <p>O Esquilo organiza sua carteira, traduz o "economês" para português claro e diz exatamente qual deve ser a sua próxima jogada financeira. Sem conflito de interesses.</p>
+                <div class="hero-actions">
+                    <button class="btn-primary" id="openSignupHeroBtn" style="padding: 14px 28px; font-size: 16px;">
+                        Começar gratuitamente
+                    </button>
+                    <button class="btn-secondary" onclick="document.getElementById('solucao').scrollIntoView({behavior: 'smooth'})">
+                        Como funciona
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="mockup-window">
+                    <div class="mockup-header">
+                        <div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mockup-card">
+                            <div class="mockup-icon"><i class="fa-solid fa-wallet"></i></div>
+                            <div style="flex: 1;">
+                                <div class="mockup-text-line"></div>
+                                <div class="mockup-text-line short"></div>
+                            </div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;"><i class="fa-solid fa-chart-line"></i></div>
+                            <div style="flex: 1;">
+                                <div class="mockup-text-line"></div>
+                                <div class="mockup-text-line orange"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUST STRIP -->
+    <div class="trust-strip">
+        <div class="container trust-container">
+            <div class="trust-item"><i class="fa-solid fa-lock"></i> Dados 100% Privados</div>
+            <div class="trust-item"><i class="fa-solid fa-bolt"></i> Importação Mágica via CSV</div>
+            <div class="trust-item"><i class="fa-solid fa-brain"></i> Inteligência Artificial</div>
+            <div class="trust-item"><i class="fa-solid fa-ban"></i> Zero Conflito de Interesses</div>
+        </div>
+    </div>
+
+    <!-- ZIG-ZAG 1: A DOR -->
+    <section class="zigzag-section bg-gray">
+        <div class="container zigzag-grid">
+            <div class="zigzag-text">
+                <h2>O problema não é o investimento. <br>É a <span class="highlight">desorientação.</span></h2>
+                <p>A maioria das plataformas atuais mostra gráficos que você não entende ou empurra produtos que só dão lucro para o gerente do banco.</p>
+                <ul class="pain-list">
+                    <li><i class="fa-solid fa-xmark"></i> Dinheiro espalhado e difícil de consolidar.</li>
+                    <li><i class="fa-solid fa-xmark"></i> Medo constante de investir errado.</li>
+                    <li><i class="fa-solid fa-xmark"></i> Culpa por não acompanhar o próprio patrimônio.</li>
+                </ul>
+            </div>
+            <div class="feature-box">
+                <i class="fa-solid fa-box-archive main-icon"></i>
+                <h3>Sua carteira hoje é uma caixa preta.</h3>
+                <p style="color: var(--text-muted);">Nós viemos para abrir essa caixa.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PILLARS / FEATURES GRID -->
+    <section class="pillars-section" id="solucao">
+        <div class="container">
+            <div class="section-header">
+                <h2>O seu <span class="highlight">tradutor financeiro</span></h2>
+                <p>Nós organizamos a bagunça e dizemos o que você precisa ouvir, de forma simples e direta.</p>
+            </div>
+            <div class="pillars-grid">
+                <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <h3>1. Consolidar</h3>
+                    <p>Suba seus extratos e veja com precisão cirúrgica quanto tem no total e onde cada centavo está alocado. Chega de abrir 3 apps diferentes.</p>
+                </div>
+                <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-language"></i></div>
+                    <h3>2. Traduzir</h3>
+                    <p>Lemos "alta exposição a derivativos" e traduzimos para você: "Risco alto detectado. Se o mercado virar, você perde muito."</p>
+                </div>
+                <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-compass"></i></div>
+                    <h3>3. Orientar</h3>
+                    <p>Entregamos apenas <strong>uma ação realista por vez</strong>. Validada com a sua renda atual para garantir que você consegue executar sem estresse.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BOTTOM CTA -->
+    <section class="cta-bottom">
+        <div class="container">
+            <h2>Pronto para ter clareza financeira?</h2>
+            <p>Junte-se a nós. Não vendemos produtos, entregamos organização e paz de espírito para o seu dinheiro.</p>
+            <button class="btn-white" id="openSignupFooterBtn">
+                Criar minha conta agora <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+            </button>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Esquilo Invest. Construído para investidores reais.</p>
+        </div>
+    </footer>
+
+    <!-- MODAIS (MANTIDOS E REVISADOS) -->
+    
+    <!-- MODAL DE LOGIN -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('loginModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2>Acessar conta</h2>
+                <p>Bem-vindo de volta ao Esquilo.</p>
+            </div>
+            
+            <div class="input-group">
+                <label>CPF ou E-mail</label>
+                <input type="text" id="loginUser" placeholder="000.000.000-00 ou email@exemplo.com" autocomplete="off">
+                <div class="email-suggestions" id="emailSuggestions"></div>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 16px;">
+                <label>Senha de 6 dígitos</label>
+                <div class="password-display" id="pwdDisplay">
+                    <div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div>
+                    <div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div>
+                </div>
+            </div>
+
+            <div class="keyboard-grid" id="virtualKeyboard"></div>
+
+            <button class="btn-primary" id="btnAcessarConta" style="width: 100%; justify-content: center; font-size: 16px; padding: 14px;">
+                Entrar <i class="fa-solid fa-lock-open"></i>
+            </button>
+
+            <div class="modal-links">
+                <a href="javascript:void(0)" onclick="showToast('Recuperação de senha em breve!')">Esqueci a senha</a>
+                <a href="javascript:void(0)" onclick="switchModal('loginModal', 'signupModal')">Criar conta</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO -->
+    <div class="modal-overlay" id="signupModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('signupModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2>Criar conta</h2>
+                <p>Organize sua vida financeira em menos de 1 minuto.</p>
+            </div>
+            
+            <div class="input-group">
+                <label>Nome Completo</label>
+                <input type="text" id="cadNome" placeholder="Seu nome">
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>CPF</label>
+                    <input type="text" id="cadCpf" placeholder="000.000.000-00" maxlength="14">
+                </div>
+                <div class="input-group">
+                    <label>Nascimento</label>
+                    <input type="text" id="cadNasc" placeholder="DD/MM/AAAA" maxlength="10">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>WhatsApp</label>
+                <input type="text" id="cadPhone" placeholder="(00) 00000-0000" maxlength="15">
+            </div>
+
+            <div class="input-group">
+                <label>E-mail</label>
+                <input type="email" id="cadEmail" placeholder="seu@email.com">
+            </div>
+
+            <div class="input-group">
+                <label>Criar Senha (6 números)</label>
+                <input type="password" id="cadSenha" placeholder="••••••" maxlength="6" inputmode="numeric">
+            </div>
+
+            <button class="btn-primary" id="btnCriarContaFinal" style="width: 100%; justify-content: center; font-size: 16px; padding: 14px;">
+                Finalizar cadastro <i class="fa-solid fa-rocket"></i>
+            </button>
+
+            <div class="modal-links" style="justify-content: center;">
+                <a href="javascript:void(0)" onclick="switchModal('signupModal', 'loginModal')">Já possui conta? Entrar</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================
+           ⬇️ COPIAR ISSO PARA: frontend/cloudflare/scripts/index.js ⬇️
+           ========================================================= */
+
+        function showToast(message) {
+            let toast = document.getElementById('customToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'customToast';
+                toast.style.cssText = 'position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: var(--brand-dark); color: #FFF; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-family: "Inter", sans-serif; z-index: 10000; box-shadow: var(--shadow-lg); opacity: 0; transition: opacity 0.3s ease; pointer-events: none; border-left: 4px solid var(--brand-orange);';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--brand-orange); margin-right: 8px;"></i> ' + message;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }
+
+        // LÓGICA MODAIS
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+            if(id === 'loginModal') { shuffleKeyboard(); clearPassword(); }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function switchModal(closeId, openId) {
+            closeModal(closeId);
+            setTimeout(() => openModal(openId), 300);
+        }
+
+        // Listeners dos Botões
+        document.getElementById('openLoginBtn')?.addEventListener('click', () => openModal('loginModal'));
+        document.getElementById('openSignupHeaderBtn')?.addEventListener('click', () => openModal('signupModal'));
+        document.getElementById('openSignupHeroBtn')?.addEventListener('click', () => openModal('signupModal'));
+        document.getElementById('openSignupFooterBtn')?.addEventListener('click', () => openModal('signupModal'));
+
+        // Redirects Fake pro Preview
+        document.getElementById('btnAcessarConta')?.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            showToast('Login efetuado! Autenticando...');
+            setTimeout(() => closeModal('loginModal'), 1000);
+        });
+        
+        document.getElementById('btnCriarContaFinal')?.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            showToast('Conta criada com sucesso!');
+            setTimeout(() => closeModal('signupModal'), 1000);
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+        });
+
+        // MÁSCARAS
+        document.getElementById('cadNome')?.addEventListener('input', function() {
+            let val = this.value.toLowerCase().replace(/(?:^|\s)\S/g, a => a.toUpperCase());
+            this.value = val.replace(/\s(De|Da|Do|Dos|Das)\s/g, m => m.toLowerCase());
+        });
+
+        document.getElementById('cadCpf')?.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 11) val = val.slice(0, 11);
+            if (val.length > 9) val = val.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            else if (val.length > 6) val = val.replace(/(\d{3})(\d{3})(\d{3})/, "$1.$2.$3");
+            else if (val.length > 3) val = val.replace(/(\d{3})(\d{3})/, "$1.$2");
+            this.value = val;
+        });
+
+        document.getElementById('cadNasc')?.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 8) val = val.slice(0, 8);
+            if (val.length > 4) val = val.replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3");
+            else if (val.length > 2) val = val.replace(/(\d{2})(\d{1,2})/, "$1/$2");
+            this.value = val;
+        });
+
+        document.getElementById('cadPhone')?.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, '');
+            if (val.length > 11) val = val.slice(0, 11);
+            if (val.length > 2) val = val.replace(/^(\d{2})(\d)/g, '($1) $2');
+            if (val.length > 9) val = val.replace(/(\d{5})(\d)/, '$1-$2');
+            this.value = val;
+        });
+        
+        document.getElementById('cadSenha')?.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, ''); // Garante só números na senha do cadastro
+        });
+
+        // AUTOCOMPLETE DE EMAIL
+        const loginUser = document.getElementById('loginUser');
+        const suggestionsBox = document.getElementById('emailSuggestions');
+        const domains = ['@gmail.com', '@hotmail.com', '@outlook.com', '@yahoo.com.br', '@apple.com'];
+
+        loginUser?.addEventListener('input', function() {
+            let val = this.value;
+            if (/[a-zA-Z@]/.test(val)) {
+                if (val.includes('@')) {
+                    const parts = val.split('@');
+                    const typedDomain = parts[1];
+                    suggestionsBox.innerHTML = '';
+                    let hasMatch = false;
+                    domains.forEach(domain => {
+                        if (domain.startsWith('@' + typedDomain) && '@'+typedDomain !== domain) {
+                            let div = document.createElement('div');
+                            div.innerText = parts[0] + domain;
+                            div.onclick = () => {
+                                loginUser.value = parts[0] + domain;
+                                suggestionsBox.style.display = 'none';
+                                loginUser.focus();
+                            };
+                            suggestionsBox.appendChild(div);
+                            hasMatch = true;
+                        }
+                    });
+                    suggestionsBox.style.display = hasMatch ? 'block' : 'none';
+                } else { suggestionsBox.style.display = 'none'; }
+            } else {
+                suggestionsBox.style.display = 'none';
+                val = val.replace(/\D/g, '');
+                if (val.length > 11) val = val.slice(0, 11);
+                if (val.length > 9) val = val.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                else if (val.length > 6) val = val.replace(/(\d{3})(\d{3})(\d{3})/, "$1.$2.$3");
+                else if (val.length > 3) val = val.replace(/(\d{3})(\d{3})/, "$1.$2");
+                this.value = val;
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target !== loginUser && suggestionsBox) suggestionsBox.style.display = 'none';
+        });
+
+        // TECLADO VIRTUAL LOGIN
+        let passwordLength = 0;
+        const maxPassword = 6;
+        const keyboardGrid = document.getElementById('virtualKeyboard');
+        const pwdDots = document.querySelectorAll('.pwd-dot');
+
+        function shuffleKeyboard() {
+            if(!keyboardGrid) return;
+            keyboardGrid.innerHTML = '';
+            let digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            digits.sort(() => Math.random() - 0.5);
+            for(let i=0; i<10; i+=2) {
+                let btn = document.createElement('button');
+                btn.className = 'key-btn';
+                btn.innerText = `${digits[i]} ou ${digits[i+1]}`;
+                btn.onclick = () => typePassword();
+                keyboardGrid.appendChild(btn);
+            }
+            let clearBtn = document.createElement('button');
+            clearBtn.className = 'key-btn key-action';
+            clearBtn.innerHTML = '<i class="fa-solid fa-delete-left"></i>';
+            clearBtn.onclick = () => clearPassword();
+            keyboardGrid.appendChild(clearBtn);
+        }
+
+        function typePassword() {
+            if (passwordLength < maxPassword) {
+                pwdDots[passwordLength].classList.add('filled');
+                passwordLength++;
+                shuffleKeyboard();
+            }
+        }
+
+        function clearPassword() {
+            passwordLength = 0;
+            pwdDots.forEach(dot => dot.classList.remove('filled'));
+            shuffleKeyboard();
+        }
+    </script>
+</body>
+</html>

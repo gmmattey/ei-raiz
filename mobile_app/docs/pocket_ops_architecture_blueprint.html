@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pocket Ops - Blueprint de Arquitetura</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: #0f1f2b;
+      --panel-alt: #112736;
+      --line: #294557;
+      --text: #e8f1f7;
+      --muted: #98abbb;
+      --amber: #ffb347;
+      --cyan: #67d6ff;
+      --green: #6de6b3;
+      --red: #ff8f8f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(255, 179, 71, 0.18), transparent 28%),
+        linear-gradient(180deg, #04080d 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .page {
+      width: 1280px;
+      min-height: 720px;
+      padding: 40px 44px 34px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+      padding: 24px 28px;
+      border: 1px solid rgba(255, 179, 71, 0.18);
+      background: linear-gradient(135deg, rgba(255, 179, 71, 0.14), rgba(15, 31, 43, 0.88));
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .badge {
+      align-self: flex-start;
+      padding: 10px 14px;
+      border: 1px solid rgba(103, 214, 255, 0.22);
+      background: rgba(103, 214, 255, 0.08);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .legend-card {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      background: rgba(15, 31, 43, 0.78);
+    }
+
+    .legend-card h2 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .legend-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .diagram {
+      display: grid;
+      grid-template-columns: 1.45fr 1.15fr 1.1fr 0.95fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .lane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: rgba(8, 18, 26, 0.88);
+      position: relative;
+    }
+
+    .lane-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .box {
+      padding: 14px 14px 12px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(17, 39, 54, 0.94), rgba(11, 24, 35, 0.96));
+    }
+
+    .box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .pill {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(103, 214, 255, 0.08);
+    }
+
+    .flow {
+      margin-top: auto;
+      padding: 14px 16px;
+      border: 1px dashed rgba(255, 179, 71, 0.22);
+      background: rgba(255, 179, 71, 0.05);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .flow strong {
+      color: var(--amber);
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .footer-card {
+      min-height: 128px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: rgba(9, 18, 27, 0.9);
+    }
+
+    .footer-card h3 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .footer-card li + li {
+      margin-top: 5px;
+    }
+
+    .status-keep { color: var(--green); }
+    .status-adjust { color: var(--amber); }
+    .status-rebuild { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>Pocket Ops - Blueprint do MVP Mobile</h1>
+        <p>
+          Estrutura inicial para migrar o dashboard financeiro atual para um app Flutter real,
+          preservando o contrato do backend em AppScript e adaptando a experiência para leitura
+          vertical, toque e execução local em Android e iPhone.
+        </p>
+      </div>
+      <div class="badge">Sprint Complexa | v2.0.0</div>
+    </section>
+
+    <section class="legend">
+      <article class="legend-card">
+        <h2>Manter</h2>
+        <p>Contrato do payload, cálculo de score, radar, missão, recomendação principal e Esquilo IA.</p>
+      </article>
+      <article class="legend-card">
+        <h2>Ajustar</h2>
+        <p>Hierarquia visual, navegação, loading, componentes de detalhe por categoria e consumo HTTP.</p>
+      </article>
+      <article class="legend-card">
+        <h2>Recriar</h2>
+        <p>Shell mobile nativo, roteamento Flutter, cards táticos, estado local e endpoint JSON do AppScript.</p>
+      </article>
+    </section>
+
+    <section class="diagram">
+      <article class="lane">
+        <h2 class="lane-title">Flutter App</h2>
+        <div class="box">
+          <span class="pill">App Shell</span>
+          <strong>main.dart + PocketOpsApp</strong>
+          <span>MaterialApp, tema tático leve, roteador simples e bootstrap por `dart-define`.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Tela 1</span>
+          <strong>Home / Visão</strong>
+          <span>Patrimônio, performance consolidada, score, alocação por macroclasse, radar e missão.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Tela 2</span>
+          <strong>Carteira / Categorias</strong>
+          <span>Blocos de Ações, Fundos e Previdência com navegação para detalhes por categoria.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Tela 3</span>
+          <strong>Insights / Esquilo IA</strong>
+          <span>Quebra do score, recomendação principal e leitura remota sob demanda.</span>
+        </div>
+        <div class="flow">
+          <strong>Fluxo:</strong> boot do app → carrega dashboard → monta home → abre detalhe → consulta IA quando necessário.
+        </div>
+      </article>
+
+      <article class="lane">
+        <h2 class="lane-title">Estado + Serviços</h2>
+        <div class="box">
+          <span class="pill">Estado</span>
+          <strong>DashboardController</strong>
+          <span>Controla loading, erro, refresh, payload atual e leitura da Esquilo IA sem duplicar regra.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Serviço</span>
+          <strong>AppScriptDashboardService</strong>
+          <span>Encapsula chamadas HTTP para `dashboard`, `ai-analysis` e `health` com timeout e parse seguro.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Modelos</span>
+          <strong>DashboardPayload + CategorySnapshot + PortfolioHolding</strong>
+          <span>Normalizam o JSON do AppScript para widgets pequenos e páginas de detalhe.</span>
+        </div>
+        <div class="box">
+          <span class="pill">UI Blocks</span>
+          <strong>Widgets táticos independentes</strong>
+          <span>Hero, anel de alocação, radar, missão, score e cards por ativo ficam isolados por responsabilidade.</span>
+        </div>
+      </article>
+
+      <article class="lane">
+        <h2 class="lane-title">AppScript API</h2>
+        <div class="box">
+          <span class="pill">Entrada</span>
+          <strong>Backend_Core.gs</strong>
+          <span>`doGet()` segue servindo HTML por padrão e passa a entregar JSON quando `format=json`.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Roteamento</span>
+          <strong>Mobile_Api.gs</strong>
+          <span>Resolve `resource=dashboard`, `resource=ai-analysis` e `resource=health` sem quebrar o web atual.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Contrato</span>
+          <strong>Payload reaproveitado</strong>
+          <span>`getDashboardData()` continua sendo a fonte principal. O mobile apenas consome via HTTP.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Segurança</span>
+          <strong>Token opcional por Script Property</strong>
+          <span>Se configurado, o endpoint mobile valida `MOBILE_APP_API_TOKEN` sem mudar regra de negócio.</span>
+        </div>
+      </article>
+
+      <article class="lane">
+        <h2 class="lane-title">Dados + Backend</h2>
+        <div class="box">
+          <span class="pill">Fonte primária</span>
+          <strong>BigQuery</strong>
+          <span>Tabelas operacionais seguem como leitura principal da carteira.</span>
+        </div>
+        <div class="box">
+          <span class="pill">Fallback</span>
+          <strong>Google Sheets</strong>
+          <span>Planilha operacional continua servindo contingência, cache de mercado e histórico.</span>
+        </div>
+        <div class="box">
+          <span class="pill">IA</span>
+          <strong>Gemini / OpenAI</strong>
+          <span>Mesma estratégia atual, sem lógica paralela para o app mobile.</span>
+        </div>
+        <div class="flow">
+          <strong>Backbone:</strong> BigQuery → normalização Apps Script → payload unificado → endpoint JSON → Flutter.
+        </div>
+      </article>
+    </section>
+
+    <section class="footer">
+      <article class="footer-card">
+        <h3>Decisão de Migração</h3>
+        <ul>
+          <li><span class="status-keep">Manter:</span> score, alertas, missão, radar, recomendação e payload central.</li>
+          <li><span class="status-adjust">Ajustar:</span> linguagem visual, navegação por tabs, detalhe de categoria e leitura mobile.</li>
+          <li><span class="status-rebuild">Recriar:</span> app shell Flutter, componentes nativos, endpoint HTTP e setup local.</li>
+        </ul>
+      </article>
+      <article class="footer-card">
+        <h3>Caminho Seguro do MVP</h3>
+        <ul>
+          <li>1. Entregar home enxuta e navegável.</li>
+          <li>2. Consumir somente o contrato já existente do AppScript.</li>
+          <li>3. Deixar Android pronto para teste local imediato.</li>
+          <li>4. Preparar iOS estruturalmente, com execução dependente de Mac + Xcode.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
