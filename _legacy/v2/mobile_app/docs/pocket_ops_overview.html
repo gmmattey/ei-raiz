@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Ops v2.0.0 | Esquilo Mobile MVP</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #061018;
+        --bg-soft: #0c1823;
+        --panel: rgba(8, 16, 24, 0.84);
+        --panel-strong: rgba(5, 11, 17, 0.95);
+        --panel-soft: rgba(14, 25, 37, 0.92);
+        --text: #eff5f7;
+        --muted: #9db1bc;
+        --amber: #f7b955;
+        --amber-soft: rgba(247, 185, 85, 0.14);
+        --cyan: #56d5de;
+        --cyan-soft: rgba(86, 213, 222, 0.12);
+        --green: #7ed9a3;
+        --line: rgba(128, 159, 176, 0.22);
+        --shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+        --radius-xl: 28px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(86, 213, 222, 0.14), transparent 30%),
+          radial-gradient(circle at top right, rgba(247, 185, 85, 0.16), transparent 28%),
+          linear-gradient(180deg, #041018 0%, #07131c 42%, #0b1823 100%);
+        color: var(--text);
+        font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+      }
+
+      body {
+        padding: 40px 24px 56px;
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      .cover {
+        position: relative;
+        overflow: hidden;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 36px;
+        background:
+          linear-gradient(145deg, rgba(8, 18, 28, 0.96), rgba(12, 22, 34, 0.88)),
+          #08131d;
+        box-shadow: var(--shadow);
+      }
+
+      .cover::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -28% 45%;
+        height: 340px;
+        background: radial-gradient(circle, rgba(247, 185, 85, 0.18), transparent 68%);
+        pointer-events: none;
+      }
+
+      .cover-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: flex-start;
+      }
+
+      .brand {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .brand-mark {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(160deg, rgba(247, 185, 85, 0.18), rgba(86, 213, 222, 0.1)),
+          rgba(15, 23, 31, 0.92);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .brand-mark img {
+        width: 48px;
+        height: 48px;
+      }
+
+      .brand-kicker {
+        margin: 0 0 6px;
+        font-size: 12px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--cyan);
+      }
+
+      .brand-name {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+
+      .release-pill {
+        display: inline-flex;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(247, 185, 85, 0.28);
+        background: rgba(247, 185, 85, 0.12);
+        color: #ffe2af;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .cover-content {
+        position: relative;
+        z-index: 1;
+        margin-top: 52px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.82fr);
+        gap: 30px;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 54px;
+        line-height: 0.98;
+        letter-spacing: -0.03em;
+      }
+
+      .cover p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+        font-size: 16px;
+      }
+
+      .cover-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .meta-card,
+      .card,
+      .spotlight {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .meta-card {
+        padding: 16px 18px;
+      }
+
+      .meta-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--amber);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .meta-card span {
+        display: block;
+        color: var(--text);
+        font-weight: 600;
+        line-height: 1.45;
+      }
+
+      .content {
+        margin-top: 28px;
+        display: grid;
+        gap: 22px;
+      }
+
+      .section-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .span-12 { grid-column: span 12; }
+      .span-8 { grid-column: span 8; }
+      .span-7 { grid-column: span 7; }
+      .span-6 { grid-column: span 6; }
+      .span-5 { grid-column: span 5; }
+      .span-4 { grid-column: span 4; }
+
+      .card,
+      .spotlight {
+        padding: 24px;
+      }
+
+      .section-tag {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--cyan-soft);
+        color: var(--cyan);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 14px 0 12px;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .body-text,
+      li,
+      td,
+      th {
+        color: var(--muted);
+        line-height: 1.68;
+        font-size: 15px;
+      }
+
+      ul {
+        margin: 14px 0 0;
+        padding-left: 18px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .stat {
+        padding: 16px;
+        border-radius: var(--radius-md);
+        background: var(--panel-soft);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .stat strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text);
+        font-size: 26px;
+      }
+
+      .spotlight {
+        background:
+          linear-gradient(160deg, rgba(247, 185, 85, 0.12), rgba(86, 213, 222, 0.04)),
+          rgba(9, 17, 26, 0.94);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .timeline-item .step {
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(247, 185, 85, 0.1);
+        border: 1px solid rgba(247, 185, 85, 0.2);
+        color: #ffe2af;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        align-items: stretch;
+        margin-top: 20px;
+      }
+
+      .flow-node {
+        position: relative;
+        padding: 18px;
+        border-radius: 20px;
+        background: var(--panel-soft);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .flow-node strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--text);
+        font-size: 16px;
+      }
+
+      .flow-node::after {
+        content: "→";
+        position: absolute;
+        top: 50%;
+        right: -16px;
+        transform: translateY(-50%);
+        color: rgba(247, 185, 85, 0.78);
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .flow-node:last-child::after {
+        display: none;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .stack-layer {
+        padding: 18px;
+        border-radius: 18px;
+        background: var(--panel-soft);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .stack-layer small {
+        display: inline-flex;
+        margin-bottom: 10px;
+        color: var(--amber);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .callout {
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px solid rgba(247, 185, 85, 0.22);
+        background: var(--amber-soft);
+        color: var(--text);
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #ffe2af;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        overflow: hidden;
+        border-radius: 18px;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--text);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .badge {
+        display: inline-flex;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .footer-note {
+        margin-top: 18px;
+        color: #86a0ae;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @media print {
+        body {
+          padding: 16px;
+          background: #07121a;
+        }
+
+        .page {
+          max-width: none;
+        }
+
+        .cover,
+        .card,
+        .spotlight,
+        .meta-card {
+          box-shadow: none;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .cover-content,
+        .section-grid,
+        .flow,
+        .stats,
+        .cover-meta {
+          grid-template-columns: 1fr;
+        }
+
+        .span-12,
+        .span-8,
+        .span-7,
+        .span-6,
+        .span-5,
+        .span-4 {
+          grid-column: span 12;
+        }
+
+        .flow-node::after {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="cover">
+        <div class="cover-top">
+          <div class="brand">
+            <div class="brand-mark">
+              <img
+                src="../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+                alt="Ícone do Esquilo"
+              />
+            </div>
+            <div>
+              <p class="brand-kicker">Esquilo Invest</p>
+              <p class="brand-name">Pocket Ops</p>
+            </div>
+          </div>
+          <span class="release-pill">Pocket Ops v2.0.0</span>
+        </div>
+
+        <div class="cover-content">
+          <div>
+            <h1>Arquitetura do MVP Mobile e integração Flutter + AppScript</h1>
+            <p>
+              Documento visual de acompanhamento da release <strong>Pocket Ops
+              v2.0.0</strong>, consolidando a estrutura técnica do app Flutter,
+              a ponte com o AppScript e o recorte funcional entregue para teste
+              local no Android.
+            </p>
+            <div class="badge-row">
+              <span class="badge">Flutter mobile real</span>
+              <span class="badge">Backend em AppScript</span>
+              <span class="badge">APK debug Android</span>
+              <span class="badge">MVP sem nova regra de negócio</span>
+            </div>
+          </div>
+
+          <div class="cover-meta">
+            <div class="meta-card">
+              <strong>Release principal</strong>
+              <span>Pocket Ops v2.0.0</span>
+            </div>
+            <div class="meta-card">
+              <strong>Escopo</strong>
+              <span>Migração do dashboard web para app mobile Flutter</span>
+            </div>
+            <div class="meta-card">
+              <strong>Backend</strong>
+              <span>AppScript publicado como Web App em `/exec`</span>
+            </div>
+            <div class="meta-card">
+              <strong>Plataforma-alvo</strong>
+              <span>Android local com APK debug para validação rápida</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content">
+        <div class="section-grid">
+          <article class="card span-7">
+            <span class="section-tag">Visão Geral</span>
+            <h2>Solução pensada para migrar com segurança</h2>
+            <p class="body-text">
+              O app Flutter replica a leitura principal do produto atual em um
+              fluxo mobile real, sem duplicar regra de negócio e sem substituir
+              o backend existente. O AppScript continua centralizando os
+              cálculos, leituras e payloads; o Flutter organiza navegação,
+              renderização de cards táticos e consumo HTTP para Android.
+            </p>
+            <div class="stats">
+              <div class="stat">
+                <strong>4</strong>
+                Blocos-chave no app: navegação, estado, modelos e serviços.
+              </div>
+              <div class="stat">
+                <strong>1</strong>
+                Endpoint base reutilizado no AppScript, com recursos JSON por
+                `resource`.
+              </div>
+              <div class="stat">
+                <strong>0</strong>
+                Novas regras de negócio adicionadas nesta release.
+              </div>
+            </div>
+          </article>
+
+          <aside class="spotlight span-5">
+            <span class="section-tag">Escopo do MVP</span>
+            <h2>O que entra agora</h2>
+            <div class="timeline">
+              <div class="timeline-item">
+                <div class="step">Home</div>
+                <div class="body-text">
+                  Patrimônio total, performance, score da carteira, alocação,
+                  radar e missão do mês em leitura vertical.
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="step">Detalhe</div>
+                <div class="body-text">
+                  Navegação simples para categorias, preservando cada bloco como
+                  unidade independente.
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="step">IA</div>
+                <div class="body-text">
+                  Estrutura pronta para a Esquilo IA, consumindo o mesmo backend
+                  quando o endpoint estiver acessível ao app.
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <article class="card">
+          <span class="section-tag">Diagrama</span>
+          <h2>Fluxo técnico da arquitetura</h2>
+          <p class="body-text">
+            O mobile consome o AppScript por HTTP, interpreta envelopes JSON e
+            transforma o payload em modelos Dart usados por telas e widgets
+            independentes.
+          </p>
+          <div class="flow">
+            <div class="flow-node">
+              <strong>Flutter App</strong>
+              <div class="body-text">
+                `PocketOpsApp`, `DashboardScreen`, tabs e detalhe por categoria.
+              </div>
+            </div>
+            <div class="flow-node">
+              <strong>Service Layer</strong>
+              <div class="body-text">
+                `AppScriptDashboardService` monta a URL, chama o backend e
+                normaliza erros.
+              </div>
+            </div>
+            <div class="flow-node">
+              <strong>AppScript Web App</strong>
+              <div class="body-text">
+                `/exec?format=json&resource=...` responde dashboard, IA e health.
+              </div>
+            </div>
+            <div class="flow-node">
+              <strong>Dados e cálculo</strong>
+              <div class="body-text">
+                Planilhas, métricas e motor analítico continuam centralizados no
+                backend atual.
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <div class="section-grid">
+          <article class="card span-6">
+            <span class="section-tag">Camadas</span>
+            <h2>Separação por responsabilidade</h2>
+            <div class="stack">
+              <div class="stack-layer">
+                <small>App</small>
+                <div class="body-text">
+                  Shell do aplicativo, tema, roteamento e bootstrap.
+                </div>
+              </div>
+              <div class="stack-layer">
+                <small>Features</small>
+                <div class="body-text">
+                  Home, detalhe de categoria, insights e controladores.
+                </div>
+              </div>
+              <div class="stack-layer">
+                <small>Services</small>
+                <div class="body-text">
+                  Cliente HTTP para AppScript e tratamento de resposta remota.
+                </div>
+              </div>
+              <div class="stack-layer">
+                <small>Models</small>
+                <div class="body-text">
+                  Estruturas Dart que espelham o payload do backend sem criar
+                  regra paralela.
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card span-6">
+            <span class="section-tag">Decisões</span>
+            <h2>Principais escolhas desta release</h2>
+            <ul>
+              <li>Aplicar a URL real do AppScript no app para simplificar o teste local.</li>
+              <li>Manter `--dart-define` como override sem desmontar a configuração existente.</li>
+              <li>Preservar o AppScript como backend principal, sem duplicação de lógica.</li>
+              <li>Isolar a home em cards táticos legíveis, otimizados para leitura vertical.</li>
+              <li>Tratar HTML de login do Google como erro explícito de integração, e não como falha genérica de parse.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="card">
+          <span class="section-tag">Integração</span>
+          <h2>Conexão Flutter + AppScript</h2>
+          <p class="body-text">
+            A base URL ativa desta execução foi aplicada diretamente na
+            configuração do app. O objetivo é garantir um APK debug pronto para
+            validar a integração real no Android sem depender de placeholders.
+          </p>
+          <div class="callout">
+            <strong>Endpoint base aplicado</strong>
+            https://script.google.com/macros/s/AKfycbya0mKpePyZV79S3ta0hJf0fhhwWfeUFwfopMOsZRSuqT7EF8LiTz6dV2suOuJNWve-/exec
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Ponto</th>
+                <th>Implementação atual</th>
+                <th>Observação operacional</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Base URL</td>
+                <td>`AppEnvironment.appScriptBaseUrl`</td>
+                <td>Usa a URL real como padrão e ainda aceita override por `--dart-define`.</td>
+              </tr>
+              <tr>
+                <td>Chamadas remotas</td>
+                <td>`AppScriptDashboardService`</td>
+                <td>Monta query com `format=json` e `resource=dashboard|health|ai-analysis`.</td>
+              </tr>
+              <tr>
+                <td>Tratamento de erro</td>
+                <td>Exceções de integração normalizadas no app</td>
+                <td>Quando o backend devolve HTML de login, a mensagem aponta o problema de publicação/acesso.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout" style="margin-top: 18px;">
+            <strong>Status desta execução</strong>
+            A URL foi aplicada corretamente no Flutter e o build Android segue
+            íntegro. Na validação remota, porém, o endpoint publicado em
+            <code>/exec</code> respondeu uma página HTML de login do Google em
+            vez de JSON, indicando bloqueio de acesso do Web App para o app
+            mobile nativo.
+          </div>
+        </article>
+
+        <div class="section-grid">
+          <article class="card span-8">
+            <span class="section-tag">Mapa de Arquivos</span>
+            <h2>Blocos principais do projeto mobile</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Arquivo</th>
+                  <th>Papel no MVP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>`lib/core/config/app_environment.dart`</td>
+                  <td>Release, versão e URL base do AppScript.</td>
+                </tr>
+                <tr>
+                  <td>`lib/services/app_script_dashboard_service.dart`</td>
+                  <td>Chamada HTTP, envelope JSON e tratamento de falhas remotas.</td>
+                </tr>
+                <tr>
+                  <td>`lib/features/dashboard/dashboard_screen.dart`</td>
+                  <td>Home principal com visão operacional, carteira e insights.</td>
+                </tr>
+                <tr>
+                  <td>`lib/models/dashboard_payload.dart`</td>
+                  <td>Modelos Dart do dashboard e dados das categorias.</td>
+                </tr>
+                <tr>
+                  <td>`android/app/src/main/AndroidManifest.xml`</td>
+                  <td>Permissão de internet para o APK consumindo o backend.</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="spotlight span-4">
+            <span class="section-tag">Conclusão Executiva</span>
+            <h2>MVP pronto para validação prática</h2>
+            <p class="body-text">
+              A release <strong>Pocket Ops v2.0.0</strong> já organiza a base
+              do app Flutter, conecta o consumo ao AppScript e prepara o Android
+              para teste local com APK debug. O ponto crítico de operação deixa
+              de ser o app e passa a ser a acessibilidade do Web App publicado.
+            </p>
+            <div class="footer-note">Documento visual de acompanhamento do MVP mobile</div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
