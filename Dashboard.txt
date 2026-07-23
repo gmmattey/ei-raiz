@@ -1,0 +1,1998 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquilo Invest - Painel Giammattey</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/serealdemanga/esquilo-invest/refs/heads/main/icons/esquilo.png">
+    <!-- Manifesto minimo para Android/Chrome. Em ambiente estatico ele deve ser publicado ao lado do HTML. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- Metadados minimos para o icone de tela inicial no iOS. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/serealdemanga/esquilo-invest/refs/heads/main/icons/esquilo.png">
+    <meta name="apple-mobile-web-app-title" content="Esquilo Invest">
+    <meta name="theme-color" content="#05070a">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --bg-dark: #05070a;
+            --card-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent);
+        }
+
+        .font-hud { font-family: 'Orbitron', sans-serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+        .glass { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .gradient-text { background: linear-gradient(90deg, #f59e0b, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-action { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .btn-action:hover:not(:disabled) { transform: scale(1.02); filter: brightness(1.1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+        .ai-glow { border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.1); }
+
+        /* Exibe ou oculta valores sensíveis sem alterar os dados em memória. */
+        .hide-value { transition: filter 0.3s ease; }
+        .ghost-active .hide-value { filter: blur(8px); pointer-events: none; user-select: none; }
+
+        /* Controla os cards expansíveis usados como pastas do dashboard. */
+        .folder-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.3s ease; }
+        .folder-active .folder-content { max-height: 1400px; padding-top: 0; }
+        .folder-active .folder-arrow { transform: rotate(180deg); }
+
+        .select-filter { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); color: #e2e8f0; padding: 0.4rem 0.6rem; border-radius: 0.25rem; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-family: 'Inter', sans-serif; }
+        .select-filter:focus { outline: none; border-color: rgba(245, 158, 11, 0.5); }
+        .inst-icon { width: 24px; height: 24px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); padding: 4px; object-fit: contain; }
+        .inst-fallback { display: inline-flex; align-items: center; justify-content: center; padding: 0; font-size: 10px; font-weight: 700; color: #e2e8f0; text-transform: uppercase; }
+        .chart-btn { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: rgba(255, 255, 255, 0.06); transition: all 0.2s ease; }
+        .chart-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+        /* Orbitron = titulos curtos, labels de destaque e valores principais. Inter = corpo, descricoes e mensagens auxiliares. */
+        .font-display { font-family: 'Orbitron', sans-serif; }
+        .type-kicker {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .type-brand {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            line-height: 1;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        .type-meta-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.45;
+            letter-spacing: 0.04em;
+            color: rgba(241, 245, 249, 0.9);
+        }
+
+        .type-heading {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.08em;
+            color: #f8fafc;
+        }
+
+        .type-value-lg {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: #f8fafc;
+        }
+
+        .type-value-sm {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+
+        .type-body {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .type-body-strong {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+            color: #f8fafc;
+        }
+
+        .type-body-xs {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            line-height: 1.55;
+            color: #94a3b8;
+        }
+
+        .type-body-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .type-action {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .type-table-head {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        /* Padroniza o estilo base dos icones de interface para uso incremental nas proximas sprints. */
+        .app-icon-button {
+            display: inline-flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.32);
+            color: rgba(226, 232, 240, 0.76);
+            backdrop-filter: blur(10px);
+            transition: background 0.24s ease, border-color 0.24s ease, color 0.24s ease, transform 0.24s ease;
+        }
+
+        .app-icon-button:hover {
+            background: rgba(15, 23, 42, 0.5);
+            border-color: rgba(255, 255, 255, 0.14);
+            color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .app-icon-button--active {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.22);
+            color: #fbbf24;
+        }
+
+        .app-icon {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        /* Estrutura o header como faixa leve, sem card, para separar contexto do restante da tela. */
+        .dashboard-header-shell {
+            position: relative;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .dashboard-header-shell::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.28), rgba(255, 255, 255, 0));
+            opacity: 0.72;
+        }
+
+        .dashboard-header-mark {
+            filter: drop-shadow(0 18px 28px rgba(245, 158, 11, 0.16));
+        }
+
+        .dashboard-header-meta {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.7rem;
+            min-height: 1.5rem;
+        }
+
+        /* Separa o patrimonio consolidado do header para reforcar a hierarquia entre contexto e leitura executiva. */
+        .portfolio-brief-shell {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.92));
+            border: 1px solid rgba(245, 158, 11, 0.14);
+            box-shadow: 0 22px 42px rgba(2, 6, 23, 0.18);
+        }
+
+        /* Organiza o bloco executivo com densidade controlada e boa leitura em qualquer breakpoint. */
+        .portfolio-brief-card {
+            background: rgba(2, 6, 23, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Mantem a mensagem executiva curta e destacada sem parecer card secundario disperso. */
+        .portfolio-brief-message {
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.26), rgba(2, 6, 23, 0.18));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Padroniza os cards principais abaixo do header com densidade mais compacta e cantos retos. */
+        .dashboard-summary-card {
+            background: linear-gradient(180deg, rgba(11, 18, 32, 0.92), rgba(8, 15, 28, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0;
+            box-shadow: 0 14px 28px rgba(2, 6, 23, 0.14);
+            transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+        }
+
+        .dashboard-summary-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.18);
+        }
+
+        /* Controla o glow por card sem exagerar no blur nem no contraste das bordas. */
+        .dashboard-summary-card--blue {
+            border-color: rgba(96, 165, 250, 0.18);
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.07);
+        }
+
+        .dashboard-summary-card--purple {
+            border-color: rgba(168, 85, 247, 0.18);
+            box-shadow: 0 14px 28px rgba(126, 34, 206, 0.07);
+        }
+
+        .dashboard-summary-card--green {
+            border-color: rgba(52, 211, 153, 0.18);
+            box-shadow: 0 14px 28px rgba(5, 150, 105, 0.07);
+        }
+
+        /* Mantem icone, titulo e valor alinhados com menos volume visual no estado resumido. */
+        .dashboard-summary-card__icon {
+            display: inline-flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .dashboard-summary-card__icon--blue {
+            color: #93c5fd;
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(96, 165, 250, 0.18);
+        }
+
+        .dashboard-summary-card__icon--purple {
+            color: #d8b4fe;
+            background: rgba(168, 85, 247, 0.12);
+            border-color: rgba(192, 132, 252, 0.18);
+        }
+
+        .dashboard-summary-card__icon--green {
+            color: #86efac;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(52, 211, 153, 0.18);
+        }
+
+        /* Aplica a mesma hierarquia tipografica do header aos cards principais. */
+        .dashboard-summary-card__label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .dashboard-summary-card__title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: 0.06em;
+            color: rgba(241, 245, 249, 0.88);
+        }
+
+        .dashboard-summary-card__value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.65rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        /* Organiza a area expansivel dos cards com menos altura base e melhor aproveitamento do espaco. */
+        .dashboard-summary-card__body {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.7rem;
+        }
+
+        /* Resume o card antes da expansao completa com uma linha de leitura operacional. */
+        .dashboard-summary-card__summary {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #94a3b8;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__summary {
+            max-width: 52rem;
+        }
+
+        .dashboard-summary-card__detail-shell {
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.85rem;
+        }
+
+        .dashboard-summary-card__detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .dashboard-summary-card__filter-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .dashboard-summary-card__filter-row .select-filter {
+            min-width: 8.75rem;
+        }
+
+        .dashboard-summary-card__actions {
+            display: none;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            padding-top: 0.2rem;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__actions {
+            display: flex;
+        }
+
+        .dashboard-summary-card__action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.7rem 0.95rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #e2e8f0;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-summary-card__action:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .dashboard-summary-card__action--secondary {
+            color: #cbd5e1;
+        }
+
+        .dashboard-summary-card__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .dashboard-summary-card__header > :first-child {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__header {
+            align-items: center;
+        }
+
+        /* Reune icones de acao dos blocos resumidos sem chamar mais atencao que o valor principal. */
+        .dashboard-summary-card__tools {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .dashboard-summary-card__tool {
+            display: inline-flex;
+            width: 1.85rem;
+            height: 1.85rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: #94a3b8;
+            transition: background 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+        }
+
+        .dashboard-summary-card__tool:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+        }
+
+        .dashboard-summary-card__tool:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .dashboard-summary-card__close {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.55rem 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #cbd5e1;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-summary-card__close:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.16);
+            color: #f8fafc;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__tools {
+            display: none;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__close {
+            display: inline-flex;
+        }
+
+        /* Remove o grid no estado expandido para garantir que o card ativo ocupe toda a largura sem sobras laterais. */
+        .summary-grid-expanded {
+            display: block !important;
+            width: 100%;
+        }
+
+        .summary-grid-expanded [data-summary-card].is-hidden {
+            display: none;
+        }
+
+        .summary-grid-expanded [data-summary-card].is-active {
+            display: block;
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            animation: summary-expand-in 0.22s ease;
+        }
+
+        [data-summary-card].is-active {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 28px 56px rgba(2, 6, 23, 0.24);
+        }
+
+        /* Distribui o modo expandido em colunas no tablet e desktop para aproveitar a largura total sem poluir a leitura. */
+        @media (min-width: 768px) {
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__body {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.85rem;
+                align-items: start;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__body > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__detail-shell {
+                height: 100%;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__actions {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Empilha os pontos criticos do expandido no mobile para evitar compressao feia e overflow horizontal. */
+        @media (max-width: 767px) {
+            .dashboard-summary-card__header {
+                flex-wrap: wrap;
+            }
+
+            .dashboard-summary-card__header > :first-child {
+                flex-basis: calc(100% - 2.3rem);
+            }
+
+            .dashboard-summary-card__tools {
+                margin-left: auto;
+            }
+
+            [data-summary-card].is-active .dashboard-summary-card__header {
+                align-items: flex-start;
+            }
+
+            [data-summary-card].is-active .dashboard-summary-card__close {
+                width: 100%;
+            }
+
+            .dashboard-summary-card__value {
+                font-size: 1.45rem;
+            }
+
+            .dashboard-summary-card__detail-shell {
+                padding: 0.75rem;
+            }
+
+            .dashboard-summary-card__detail-row,
+            .dashboard-summary-card__filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .dashboard-summary-card__detail-row > * {
+                width: 100%;
+            }
+
+            .dashboard-summary-card__detail-row .type-value-sm,
+            .dashboard-summary-card__detail-row .hide-value {
+                text-align: left;
+            }
+
+            .dashboard-summary-card__filter-row .select-filter {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .dashboard-summary-card__actions {
+                flex-direction: column;
+            }
+
+            .dashboard-summary-card__action {
+                width: 100%;
+            }
+        }
+
+        /* Mostra a modal utilitaria para recursos ainda indisponiveis sem sair da pagina. */
+        .feature-popup-shell {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 15, 28, 0.96));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 26px 60px rgba(2, 6, 23, 0.38);
+        }
+
+        /* Aplica shimmer leve enquanto o dashboard carrega para manter sensacao de app vivo. */
+        .dashboard-loading [data-loading-block] {
+            position: relative;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .dashboard-loading [data-loading-block]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .dashboard-loading [data-loading-block]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            animation: dashboard-shimmer 1.25s ease-in-out infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+
+        @keyframes dashboard-shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes summary-expand-in {
+            from {
+                opacity: 0;
+                transform: scale(0.985);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .alert-pulse { animation: pulse-red 2s infinite; }
+        .loading-dots:after { content: '.'; animation: dots 1s steps(5, end) infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-10 min-h-screen ghost-active" id="main-body">
+    <svg aria-hidden="true" focusable="false" class="absolute h-0 w-0 overflow-hidden">
+        <symbol id="icon-hide" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M10.58 10.58a2 2 0 1 0 2.84 2.84" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.11 11 7.5a11.8 11.8 0 0 1-3.04 4.36" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M6.61 6.61A11.84 11.84 0 0 0 1 11.5C2.73 15.89 7 19 12 19c1.72 0 3.35-.37 4.82-1.03" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12a9 9 0 0 1-15.36 6.36" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M3 12A9 9 0 0 1 18.36 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M18 2v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M6 22v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-actions" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M7 16V9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M12 16V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M17 16v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="icon-funds" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 3 8l9 5 9-5-9-5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="m3 12 9 5 9-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="m3 16 9 5 9-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-previdencia" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 6 5.5v5.5c0 4.3 2.5 8.3 6 10 3.5-1.7 6-5.7 6-10V5.5L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="m9.5 12 1.7 1.7L14.8 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-expand" viewBox="0 0 24 24" fill="none">
+            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-chart" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="m6 15 4-4 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="icon-ai" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M12 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="m5.64 5.64 2.83 2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="m15.53 15.53 2.83 2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M3 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="M17 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="m5.64 18.36 2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path d="m15.53 8.47 2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8" />
+        </symbol>
+    </svg>
+    <div class="max-w-7xl mx-auto">
+        <!-- Dashboard Header: START -->
+        <header class="relative mb-6 lg:mb-7" data-block="dashboard-header">
+            <div class="pointer-events-none absolute inset-x-0 -top-8 h-20 bg-[radial-gradient(circle_at_left,rgba(245,158,11,0.18),transparent_62%)] opacity-80"></div>
+            <div class="dashboard-header-shell relative">
+                <div class="relative flex items-start justify-between gap-4 sm:items-center">
+                    <!-- Header Brand Row: START -->
+                    <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+                        <img src="https://raw.githubusercontent.com/serealdemanga/esquilo-invest/refs/heads/main/icons/esquilo.png" alt="Esquilo Invest" class="dashboard-header-mark h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14">
+                        <h1 class="type-brand text-[1.45rem] sm:text-[1.75rem] md:text-[2rem]">Esquilo Invest</h1>
+                    </div>
+                    <!-- Header Brand Row: END -->
+
+                    <!-- Header Controls Row: START -->
+                    <div class="flex items-center gap-2">
+                        <button id="ghost-toggle" onclick="toggleGhostMode()" class="app-icon-button app-icon-button--active" title="Ocultar conteudo sensivel" aria-label="Ocultar conteudo sensivel">
+                            <svg id="ghost-icon" class="app-icon text-amber-300 transition" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-hide"></use>
+                            </svg>
+                        </button>
+                        <button onclick="loadDashboardData()" class="app-icon-button" title="Atualizar dashboard" aria-label="Atualizar dashboard">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-refresh"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Header Controls Row: END -->
+                </div>
+
+                <!-- Header Meta Row: START -->
+                <div class="relative mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <div class="dashboard-header-meta" data-empty-field>
+                        <span class="type-kicker">Squad</span>
+                        <span id="header-squad" class="type-meta-value"></span>
+                    </div>
+                    <div class="dashboard-header-meta" data-empty-field>
+                        <span class="type-kicker">Nivel</span>
+                        <span id="header-level" class="type-meta-value"></span>
+                    </div>
+                </div>
+                <!-- Header Meta Row: END -->
+            </div>
+        </header>
+        <!-- Dashboard Header: END -->
+
+        <!-- Portfolio Brief: START -->
+        <section class="mb-6 lg:mb-7" data-block="portfolio-brief">
+            <div class="portfolio-brief-shell grid gap-4 rounded-[2rem] p-4 sm:p-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)] lg:items-stretch lg:gap-5 lg:p-6" data-loading-block>
+                <div class="portfolio-brief-card rounded-[1.5rem] p-4 sm:p-5" data-empty-field>
+                    <div class="space-y-3">
+                        <p class="type-kicker text-amber-200/72">Patrimonio consolidado</p>
+                        <p id="patrimonio-total" class="hide-value type-value-lg text-[2.25rem] sm:text-[2.65rem] lg:text-[2.9rem]"></p>
+                        <div class="flex flex-wrap items-center gap-2 type-body-label text-amber-100/72" data-empty-field>
+                            <span>Performance do periodo</span>
+                            <span id="exec-performance" class="hide-value type-value-sm text-sm text-emerald-300 md:text-base"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="portfolio-brief-message rounded-[1.5rem] p-4 sm:p-5" data-empty-field>
+                    <div class="space-y-3">
+                        <p class="type-kicker">Recado rapido</p>
+                        <p id="exec-status-text" class="type-body-strong text-[1.3rem] leading-tight sm:text-[1.45rem]">Carteira em analise</p>
+                        <p class="type-body text-sm leading-6 text-slate-400">Snapshot do round para decidir rapido sem perder tempo no lobby da carteira.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Portfolio Brief: END -->
+
+        <!-- Expandable Summary Cards: START -->
+        <section class="grid grid-cols-1 gap-4 mb-9 md:grid-cols-2 lg:grid-cols-3 lg:gap-5 lg:mb-10" data-block="summary-folder-grid">
+            <!-- Previdencia Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--blue overflow-hidden rounded-none p-4" data-block="previdencia-card" data-summary-card="previdencia" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--blue">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-previdencia"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Reserva de longo prazo</p>
+                            <p class="dashboard-summary-card__title">Previdencia</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Previdencia')" title="Grafico e analise" aria-label="Grafico e analise de previdencia">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de previdencia">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de previdencia">Fechar</button>
+                </div>
+                <p id="previdencia-total" class="dashboard-summary-card__value hide-value mt-3 text-white"></p>
+                <p class="dashboard-summary-card__summary mt-2.5">Reserva de previdencia organizada para leitura rapida do volume e da base principal.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-blue-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2" data-empty-field>
+                                <span class="type-body-xs text-[11px] text-slate-300">Plataforma: <span id="previdencia-plataforma"></span></span>
+                                <span id="previdencia-plataforma-valor" class="hide-value type-value-sm text-[11px] text-blue-300"></span>
+                            </div>
+                            <p id="previdencia-plano" class="px-1 text-[10px] italic leading-5 text-slate-500" data-empty-field></p>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-blue-200/75">Conteudo detalhado</p>
+                            <div class="dashboard-summary-card__filter-row">
+                                <span class="dashboard-summary-card__label">Filtro</span>
+                                <select id="prev-filter-inst" class="select-filter">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div id="previdencia-list" class="space-y-2"></div>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Previdencia')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Previdencia Card: END -->
+
+            <!-- Investments Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--purple overflow-hidden rounded-none p-4" data-block="investments-card" data-summary-card="investimentos" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--purple">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-funds"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Carteira passiva</p>
+                            <p class="dashboard-summary-card__title">Fundos de investimento</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Fundos de investimento')" title="Grafico e analise" aria-label="Grafico e analise de fundos de investimento">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de fundos de investimento">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de fundos de investimento">Fechar</button>
+                </div>
+                <p id="investimentos-total" class="dashboard-summary-card__value hide-value mt-3 text-white"></p>
+                <p class="dashboard-summary-card__summary mt-2.5">Bloco de fundos concentrado no essencial: valor total, base principal e atalhos prontos para a Sprint 3.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-purple-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2" data-empty-field>
+                                <span class="type-body-xs text-[11px] text-slate-300">Instituicao: XP</span>
+                                <span class="hide-value type-value-sm text-[11px] text-purple-300" id="investimentos-plataforma-valor"></span>
+                            </div>
+                            <div class="rounded-none bg-white/3 px-3 py-2">
+                                <p class="dashboard-summary-card__label mb-2">Distribuicao</p>
+                                <div class="dashboard-summary-card__detail-row mb-1 text-[10px] tracking-[0.04em] text-slate-400" data-empty-field>
+                                    <span id="fundo-top-1-name"></span>
+                                    <span id="fundo-top-1-value" class="hide-value text-slate-300"></span>
+                                </div>
+                                <div class="dashboard-summary-card__detail-row text-[10px] tracking-[0.04em] text-slate-400" data-empty-field>
+                                    <span id="fundo-top-2-name"></span>
+                                    <span id="fundo-top-2-value" class="hide-value text-slate-300"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-purple-200/75">Conteudo detalhado</p>
+                            <div class="dashboard-summary-card__filter-row">
+                                <span class="dashboard-summary-card__label">Filtro</span>
+                                <select id="invest-filter-inst" class="select-filter">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div id="invest-list" class="space-y-2"></div>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Fundos de investimento')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Investments Card: END -->
+
+            <!-- Actions Summary Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--green overflow-hidden rounded-none p-4" data-block="actions-summary-card" data-summary-card="acoes" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--green">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-actions"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Operacao direta</p>
+                            <p class="dashboard-summary-card__title">Acoes</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Acoes')" title="Grafico e analise" aria-label="Grafico e analise de acoes">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de acoes">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de acoes">Fechar</button>
+                </div>
+                <p id="acoes-total" class="dashboard-summary-card__value hide-value mt-3 text-emerald-100"></p>
+                <p class="dashboard-summary-card__summary mt-2.5">Leitura resumida das posicoes em bolsa para saber rapido quanto esta exposto na corretora.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-emerald-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2" data-empty-field>
+                                <span class="type-body-xs text-[11px] text-slate-300">Corretora: XP</span>
+                                <span class="hide-value type-value-sm text-[11px] text-emerald-300" id="acoes-corretora-valor"></span>
+                            </div>
+                            <p class="px-1 text-[10px] leading-5 text-slate-500">Ativos operados diretamente via Home Broker.</p>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-emerald-200/75">Conteudo detalhado</p>
+                            <p class="type-body-xs px-1 text-slate-400">Use o bloco expandido para revisar rapidamente o valor alocado e os sinais operacionais antes de abrir a tabela principal.</p>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Acoes')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Actions Summary Card: END -->
+        </section>
+        <!-- Expandable Summary Cards: END -->
+
+        <!-- Recommended Action Card: START -->
+        <section class="glass p-6 rounded-3xl border-2 border-amber-500/70 bg-gradient-to-r from-amber-500/10 via-transparent to-red-500/10 mb-8" data-block="recommended-action-card" data-loading-block>
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-2">
+                    <p class="type-kicker text-amber-300">Alerta e recomendacao</p>
+                    <p id="recommended-action-main" class="type-heading text-2xl md:text-3xl text-white">VENDER ATIVO</p>
+                </div>
+                <div class="space-y-2">
+                    <p id="recommended-action-reason" class="type-body text-sm text-slate-300"></p>
+                    <p id="recommended-action-impact" class="type-body-strong text-sm text-amber-200"></p>
+                </div>
+            </div>
+        </section>
+        <!-- Recommended Action Card: END -->
+
+        <!-- AI Analysis Card: START -->
+        <section class="glass p-6 rounded-3xl ai-glow bg-gradient-to-br from-violet-900/15 to-transparent mb-10" data-block="ai-analysis-card" data-loading-block>
+            <div class="flex flex-col items-start justify-between gap-4 mb-4 md:flex-row md:items-center">
+                <div class="flex items-center gap-3">
+                    <svg class="h-8 w-8 text-violet-300" viewBox="0 0 24 24" aria-hidden="true">
+                        <use href="#icon-ai"></use>
+                    </svg>
+                    <div>
+                        <h2 class="type-heading text-lg text-violet-400">Esquilo IA</h2>
+                        <p class="type-body-label text-slate-400">Suporte tatico em preparo</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="requestStrategyAnalysis()" id="strategy-btn" class="btn-action type-action bg-violet-600 text-white px-6 py-2.5 rounded-xl">
+                        Chamar Esquilo IA
+                    </button>
+                </div>
+            </div>
+            <div id="ai-response" class="type-body text-sm md:text-base text-slate-200 leading-relaxed min-h-[80px] p-5 bg-black/30 rounded-xl border border-white/5 whitespace-pre-wrap">
+                O hub da Esquilo IA fica aqui quando os modulos taticos estiverem online.
+            </div>
+        </section>
+        <!-- AI Analysis Card: END -->
+
+        <!-- Main Trading Grid: START -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-8" data-block="main-trading-grid">
+            <!-- Actions Table Card: START -->
+            <div class="xl:col-span-2" data-block="actions-table-card">
+                <div class="glass rounded-3xl overflow-hidden border border-white/5">
+                    <div class="p-6 bg-white/5 flex flex-col gap-3 md:flex-row md:justify-between md:items-center border-b border-white/5">
+                        <h2 class="type-heading text-sm uppercase tracking-widest">Acoes em carteira (XP)</h2>
+                        <div class="flex flex-col md:flex-row md:items-center gap-2">
+                            <span id="alert-text" class="type-body-label text-red-500 alert-pulse">Sem alertas criticos</span>
+                            <div class="flex gap-2">
+                                <select id="acoes-filter-inst" class="select-filter">
+                                    <option value="">Instituicao</option>
+                                </select>
+                                <select id="acoes-filter-rec" class="select-filter">
+                                    <option value="">Recomendacao</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-900/50 type-table-head">
+                                <tr>
+                                    <th class="p-5">Ativo</th>
+                                    <th class="p-5">Rentabilidade</th>
+                                    <th class="p-5">Recomendacao</th>
+                                    <th class="p-5">Detalhes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-body" class="text-sm">
+                                <tr class="hover:bg-white/5 transition-all border-b border-white/5">
+                                    <td class="p-5 text-slate-400" colspan="4">Nenhum ativo encontrado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Actions Table Card: END -->
+
+            <!-- Sidebar Cards: START -->
+            <div class="space-y-6" data-block="dashboard-sidebar">
+                <!-- Orders Card: START -->
+                <div class="glass p-6 rounded-3xl border-l-4 border-amber-500" data-block="orders-card">
+                    <h3 class="type-heading text-[11px] text-amber-500 mb-4 uppercase tracking-widest">Proximas ordens</h3>
+
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="type-body-label text-slate-500 mb-1">Sair de</p>
+                            <div class="flex justify-between items-center">
+                                <span id="sell-asset" class="type-body-strong text-white"></span>
+                                <span id="sell-value" class="type-value-sm text-red-400 text-xs hide-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                            <p class="type-body-label text-amber-500 mb-1">Entrar em (XP)</p>
+                            <div class="flex justify-between items-center">
+                                <span id="buy-asset" class="type-body-strong text-white"></span>
+                                <span id="buy-value" class="type-value-sm text-amber-400 text-xs hide-value"></span>
+                            </div>
+                        </div>
+
+                        <button onclick="executeSwap()" id="swap-btn" class="w-full btn-action type-action bg-amber-500 text-slate-950 py-4 rounded-2xl mt-2 shadow-lg shadow-amber-500/20">
+                            Executar Troca (Bolsa)
+                        </button>
+                    </div>
+                </div>
+                <!-- Orders Card: END -->
+
+                <!-- Support Notes Card: START -->
+                <div class="glass p-5 rounded-3xl border border-white/5" data-block="support-notes-card">
+                    <p class="type-body-label text-slate-400 mb-2">Leitura complementar</p>
+                    <p class="type-body-xs text-slate-500 mb-3">Indicadores e observacoes de apoio ao diagnostico da carteira.</p>
+                    <p id="portfolio-score-note" class="type-body-xs text-slate-500" data-empty-field></p>
+                    <p id="squad-tip" class="type-body text-[11px] text-slate-500 mt-2" data-empty-field></p>
+                </div>
+                <!-- Support Notes Card: END -->
+            </div>
+            <!-- Sidebar Cards: END -->
+        </section>
+        <!-- Main Trading Grid: END -->
+
+        <!-- Feature Popup: START -->
+        <div id="feature-popup" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+            <button class="absolute inset-0 bg-slate-950/78 backdrop-blur-sm" onclick="closeFeaturePopup()" aria-label="Fechar aviso"></button>
+            <div class="feature-popup-shell relative z-10 w-full max-w-md rounded-[1.8rem] p-6">
+                <div class="space-y-4">
+                    <p id="feature-popup-tag" class="type-kicker text-amber-200/72">Modo em preparo</p>
+                    <div class="space-y-2">
+                        <h3 id="feature-popup-title" class="type-heading text-2xl text-white">Feature em calibragem</h3>
+                        <p id="feature-popup-message" class="type-body text-sm leading-6 text-slate-300">Essa rota ainda nao esta ativa.</p>
+                    </div>
+                    <button onclick="closeFeaturePopup()" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 type-action text-slate-200 transition hover:bg-white/10">Voltar para o painel</button>
+                </div>
+            </div>
+        </div>
+        <!-- Feature Popup: END -->
+    </div>
+
+    <script>
+        // ---------------------------------------------------------------------
+        // Application State
+        // ---------------------------------------------------------------------
+
+        /**
+         * Estado unico do dashboard. Centraliza dados carregados, filtros ativos
+         * e controles de comportamento para evitar dependencias implicitas entre cards.
+         */
+        const appState = {
+            dashboardData: null,
+            aiLocked: false,
+            activeSummaryCard: '',
+            filtersBound: false,
+            isLoading: false,
+            refreshTimerId: null,
+            filters: {
+                actionsInst: '',
+                actionsRec: '',
+                investInst: '',
+                prevInst: ''
+            }
+        };
+
+        /**
+         * Configuracoes operacionais da interface.
+         */
+        const appConfig = {
+            refreshIntervalMs: 60000,
+            chartSvg: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13L7 9L11 12L17 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        };
+
+        // ---------------------------------------------------------------------
+        // DOM and Formatting Helpers
+        // ---------------------------------------------------------------------
+
+        function getElement(id) {
+            return document.getElementById(id);
+        }
+
+        function isEmptyValue(value) {
+            if (value === null || value === undefined) return true;
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (!trimmed) return true;
+                if (trimmed.toLowerCase() === 'sem dados') return true;
+            }
+            return false;
+        }
+
+        function displayValue(value, fallback = '-') {
+            return isEmptyValue(value) ? fallback : value;
+        }
+
+        /**
+         * Atualiza um elemento simples por ID e oculta o conteiner marcado com
+         * `data-empty-field` quando nao ha conteudo util para exibir.
+         */
+        function setText(id, value) {
+            const element = getElement(id);
+            if (!element) return;
+
+            const target = element.closest('[data-empty-field]') || element;
+            if (isEmptyValue(value)) {
+                element.textContent = '';
+                target.classList.add('hidden');
+                return;
+            }
+
+            element.textContent = value;
+            target.classList.remove('hidden');
+        }
+
+        function setHtml(id, html) {
+            const element = getElement(id);
+            if (!element) return;
+            element.innerHTML = html;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, function (char) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[char];
+            });
+        }
+
+        /**
+         * Escapa valores usados dentro de onclick inline para manter o popup seguro.
+         * Entrada: texto simples que sera interpolado em string JavaScript.
+         * Saida: string segura para atributos inline.
+         */
+        function escapeJsString(value) {
+            return String(value ?? '')
+                .replace(/\r?\n/g, ' ')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'");
+        }
+
+        /**
+         * Alterna o estado visual de loading do dashboard.
+         * Entrada: booleano indicando se a tela esta carregando.
+         * Saida: apenas classes visuais para shimmer leve e bloqueio temporario de interacoes.
+         */
+        function setDashboardLoading(isLoading) {
+            const body = getElement('main-body');
+            appState.isLoading = !!isLoading;
+            if (!body) return;
+
+            body.classList.toggle('dashboard-loading', appState.isLoading);
+        }
+
+        /**
+         * Fecha todos os estados expandidos do grid resumido e restaura a visao inicial.
+         * Entrada: container do grid de resumo.
+         * Saida: atualiza classes visuais sem alterar dados do dashboard.
+         */
+        function resetSummaryGrid(grid) {
+            if (!grid) return;
+
+            appState.activeSummaryCard = '';
+            grid.classList.remove('summary-grid-expanded');
+            grid.removeAttribute('data-summary-mode');
+            grid.removeAttribute('data-active-summary-card');
+
+            grid.querySelectorAll('[data-summary-card]').forEach(function (card) {
+                card.classList.remove('is-active', 'is-hidden', 'folder-active');
+            });
+
+            grid.querySelectorAll('[data-summary-trigger]').forEach(function (button) {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        /**
+         * Mostra o detalhamento de um bloco resumido e recolhe os demais cards.
+         * Entrada: botao de expansao clicado no card.
+         * Saida: alterna somente classes e mantem um bloco ativo por vez.
+         */
+        function toggleSummaryCard(trigger) {
+            const card = trigger?.closest('[data-summary-card]');
+            const grid = card?.closest('[data-block="summary-folder-grid"]');
+            if (!card || !grid) return;
+
+            const cardId = card.getAttribute('data-summary-card') || '';
+            const shouldClose = card.classList.contains('is-active');
+
+            resetSummaryGrid(grid);
+            if (shouldClose) return;
+
+            appState.activeSummaryCard = cardId;
+            grid.classList.add('summary-grid-expanded');
+            grid.setAttribute('data-summary-mode', 'expanded');
+            grid.setAttribute('data-active-summary-card', cardId);
+
+            grid.querySelectorAll('[data-summary-card]').forEach(function (item) {
+                const isActive = item === card;
+                item.classList.toggle('is-active', isActive);
+                item.classList.toggle('folder-active', isActive);
+                item.classList.toggle('is-hidden', !isActive);
+            });
+
+            trigger.setAttribute('aria-expanded', 'true');
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /**
+         * Exibe um popup simples para recursos ainda indisponiveis nesta versao.
+         * Entrada: tipo do recurso e rotulo opcional de contexto.
+         * Saida: modal de feedback sem navegar para fora do dashboard.
+         */
+        function showFeaturePopup(featureType, contextLabel) {
+            const popup = getElement('feature-popup');
+            const tag = getElement('feature-popup-tag');
+            const title = getElement('feature-popup-title');
+            const message = getElement('feature-popup-message');
+            if (!popup || !tag || !title || !message) return;
+
+            const safeContext = contextLabel || 'Esse modulo';
+            const popupConfig = featureType === 'ai'
+                ? {
+                    tag: 'Esquilo IA em pit stop',
+                    title: 'Esquilo IA ainda esta calibrando os gadgets.',
+                    message: 'O modo tatico do ' + safeContext + ' ainda nao foi liberado. Segura mais um round que ele volta para o lobby.'
+                }
+                : {
+                    tag: 'Analise em preparo',
+                    title: safeContext + ' ainda esta sem visor tatico.',
+                    message: 'O grafico e a analise detalhada desse bloco entram no proximo loadout. Por enquanto seguimos no resumo rapido.'
+                };
+
+            tag.textContent = popupConfig.tag;
+            title.textContent = popupConfig.title;
+            message.textContent = popupConfig.message;
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+        }
+
+        /**
+         * Fecha o popup utilitario de recursos indisponiveis.
+         * Entrada: nenhuma.
+         * Saida: remove apenas o overlay visual da tela.
+         */
+        function closeFeaturePopup() {
+            const popup = getElement('feature-popup');
+            if (!popup) return;
+
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+        }
+
+        function getInitials(name) {
+            const cleaned = String(name || '').trim();
+            if (!cleaned) return 'SD';
+
+            const parts = cleaned.split(/\s+/).filter(Boolean);
+            if (!parts.length) return 'SD';
+
+            const first = parts[0].charAt(0);
+            const second = parts.length > 1 ? parts[1].charAt(0) : (parts[0].charAt(1) || '');
+            return (first + second).toUpperCase();
+        }
+
+        function isValidIconUrl(url) {
+            return typeof url === 'string' && /^https?:\/\/.+/i.test(url);
+        }
+
+        /**
+         * Gera o icone visual de instituicao com fallback por iniciais.
+         * Consome nome e URL opcional retornados pelo backend.
+         */
+        function getInstitutionIconMarkup(name, url) {
+            const safeName = escapeHtml(name || '');
+            const initials = getInitials(name);
+            const fallbackHtml = '<div class="inst-icon inst-fallback">' + escapeHtml(initials) + '</div>';
+
+            if (isValidIconUrl(url)) {
+                const safeUrl = escapeHtml(url);
+                const safeFallback = fallbackHtml.replace(/'/g, '&#39;');
+                return '<img class="inst-icon" src="' + safeUrl + '" alt="' + safeName + '" onerror="this.outerHTML=\'' + safeFallback + '\'">';
+            }
+
+            return fallbackHtml;
+        }
+
+        /**
+         * Preenche seletores de filtro com opcoes derivadas dos dados ja carregados.
+         * Mantem a selecao atual sempre que o valor ainda existir na lista.
+         */
+        function populateSelect(id, options, selected) {
+            const select = getElement(id);
+            if (!select) return;
+
+            const unique = Array.from(new Set((options || []).filter(Boolean))).sort();
+            const html = ['<option value="">Todos</option>']
+                .concat(unique.map(function (option) {
+                    const safeOption = escapeHtml(option);
+                    return '<option value="' + safeOption + '">' + safeOption + '</option>';
+                }))
+                .join('');
+
+            select.innerHTML = html;
+            if (selected && unique.includes(selected)) {
+                select.value = selected;
+            }
+        }
+
+        function formatPercentValue(value) {
+            if (isEmptyValue(value)) return '';
+            if (typeof value === 'string') return value;
+
+            const numericValue = Number(value);
+            if (Number.isNaN(numericValue)) return '';
+
+            const pct = Math.abs(numericValue) <= 1 ? numericValue * 100 : numericValue;
+            return pct.toLocaleString('pt-BR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            }) + '%';
+        }
+
+        // ---------------------------------------------------------------------
+        // Derived Dashboard Text
+        // ---------------------------------------------------------------------
+
+        function getPerformanceText(summary) {
+            const candidate = summary?.performance
+                ?? summary?.performancePct
+                ?? summary?.performancePercent
+                ?? summary?.rentabilidade
+                ?? summary?.rentabilidadePct;
+
+            if (candidate !== null && candidate !== undefined && candidate !== '') {
+                return formatPercentValue(candidate);
+            }
+
+            return '';
+        }
+
+        function getPortfolioStatusText(score, alerts) {
+            let base = 'Carteira em analise';
+            const status = score?.status;
+
+            if (status === 'Crítico' || status === 'Critico') base = 'Carteira em risco';
+            else if (status === 'Instável' || status === 'Instavel') base = 'Carteira instavel';
+            else if (status === 'Saudável' || status === 'Saudavel') base = 'Carteira saudavel';
+
+            const criticalAlert = Array.isArray(alerts)
+                ? alerts.find(function (alert) { return alert?.type === 'Crítico' || alert?.type === 'Critico'; })
+                : null;
+
+            if (criticalAlert) {
+                const asset = criticalAlert.asset || criticalAlert.symbol || '';
+                base += asset ? ' com risco em ' + asset : ' com alerta critico';
+            }
+
+            return base;
+        }
+
+        function getImpactText(action) {
+            if (action === 'Vender') return 'reduz risco da carteira';
+            if (action === 'Revisar') return 'ajusta posicao para evitar perdas';
+            return 'mantem disciplina da carteira';
+        }
+
+        /**
+         * Determina a acao em destaque com base em alertas criticos e, na ausencia
+         * deles, na pior rentabilidade do conjunto de acoes em carteira.
+         */
+        function getRecommendedAction(alerts, actions) {
+            const alertList = Array.isArray(alerts) ? alerts : [];
+            const actionList = Array.isArray(actions) ? actions : [];
+            const criticalAlert = alertList.find(function (alert) {
+                return alert?.type === 'Crítico' || alert?.type === 'Critico';
+            });
+
+            if (criticalAlert) {
+                const asset = criticalAlert.asset || criticalAlert.symbol || 'Ativo';
+                const reason = criticalAlert.message ? 'Motivo: ' + criticalAlert.message : 'Motivo: alerta critico';
+                return {
+                    action: 'Vender',
+                    asset: asset,
+                    reason: reason,
+                    impact: getImpactText('Vender')
+                };
+            }
+
+            const worstAction = actionList.reduce(function (worst, item) {
+                if (!item) return worst;
+                if (!worst) return item;
+                return (item.rent ?? 0) < (worst.rent ?? 0) ? item : worst;
+            }, null);
+
+            if (worstAction) {
+                const asset = worstAction.ticker || worstAction.name || 'Ativo';
+                const rentText = displayValue(
+                    worstAction.rendimentoPct || formatPercentValue(worstAction.rent ?? 0),
+                    'indisponivel'
+                );
+                return {
+                    action: 'Revisar',
+                    asset: asset,
+                    reason: 'Motivo: rentabilidade ' + rentText,
+                    impact: getImpactText('Revisar')
+                };
+            }
+
+            return {
+                action: 'Revisar',
+                asset: 'Carteira',
+                reason: 'Motivo: sem alertas criticos',
+                impact: getImpactText('Revisar')
+            };
+        }
+
+        function getRecommendationClass(recommendation) {
+            if (recommendation === 'Vender') return 'bg-red-500/20 text-red-400';
+            if (recommendation === 'Revisar') return 'bg-amber-500/20 text-amber-400';
+            if (recommendation === 'Monitorar') return 'bg-blue-500/20 text-blue-400';
+            return 'bg-emerald-500/20 text-emerald-400';
+        }
+
+        // ---------------------------------------------------------------------
+        // Filter State
+        // ---------------------------------------------------------------------
+
+        function updateFilterStateFromDom() {
+            const actionsInst = getElement('acoes-filter-inst');
+            const actionsRec = getElement('acoes-filter-rec');
+            const investInst = getElement('invest-filter-inst');
+            const prevInst = getElement('prev-filter-inst');
+
+            if (actionsInst) appState.filters.actionsInst = actionsInst.value;
+            if (actionsRec) appState.filters.actionsRec = actionsRec.value;
+            if (investInst) appState.filters.investInst = investInst.value;
+            if (prevInst) appState.filters.prevInst = prevInst.value;
+        }
+
+        /**
+         * Reidrata os filtros visuais com base nos dados disponiveis e no estado
+         * atual da aplicacao. Deve ser executado antes de renderizar listas filtradas.
+         */
+        function renderFilterControls(data) {
+            populateSelect('acoes-filter-inst', (data.actions || []).map(function (item) { return item.institution; }), appState.filters.actionsInst);
+            populateSelect('acoes-filter-rec', (data.actions || []).map(function (item) { return item.recommendation; }), appState.filters.actionsRec);
+            populateSelect('invest-filter-inst', (data.investments || []).map(function (item) { return item.institution; }), appState.filters.investInst);
+            populateSelect('prev-filter-inst', (data.previdencias || []).map(function (item) { return item.institution; }), appState.filters.prevInst);
+            updateFilterStateFromDom();
+        }
+
+        function getFilteredActions() {
+            const items = appState.dashboardData?.actions || [];
+            return items.filter(function (item) {
+                if (appState.filters.actionsInst && item.institution !== appState.filters.actionsInst) return false;
+                if (appState.filters.actionsRec && item.recommendation !== appState.filters.actionsRec) return false;
+                return true;
+            });
+        }
+
+        function getFilteredInvestments() {
+            const items = appState.dashboardData?.investments || [];
+            return items.filter(function (item) {
+                return !appState.filters.investInst || item.institution === appState.filters.investInst;
+            });
+        }
+
+        function getFilteredPrevidencias() {
+            const items = appState.dashboardData?.previdencias || [];
+            return items.filter(function (item) {
+                return !appState.filters.prevInst || item.institution === appState.filters.prevInst;
+            });
+        }
+
+        // ---------------------------------------------------------------------
+        // Block Renderers
+        // ---------------------------------------------------------------------
+
+        /**
+         * Renderiza o bloco superior do dashboard.
+         * Consome summary, score, alerts e profile para atualizar headline, score e status.
+         */
+        function renderHeader(summary, score, alerts, profile) {
+            setText('exec-status-text', getPortfolioStatusText(score, alerts));
+            setText('exec-performance', getPerformanceText(summary));
+            setText('patrimonio-total', summary?.total || '');
+            setText('header-score', score?.score != null ? String(score.score) : '');
+            setText('header-score-status', score?.status || '');
+
+            const squadValue = profile?.squad || '';
+            const squadLabel = squadValue.replace(/^Squad\s+/i, '');
+            const levelValue = profile?.level !== null && profile?.level !== undefined && profile?.level !== ''
+                ? String(profile.level)
+                : '';
+
+            setText('header-squad', squadLabel);
+            setText('header-level', levelValue);
+        }
+
+        /**
+         * Renderiza o card de acao recomendada.
+         * Usa alerts e actions para destacar prioridade operacional do dia.
+         */
+        function renderRecommendedActionCard(alerts, actions) {
+            const recommendation = getRecommendedAction(alerts, actions);
+            const mainText = (recommendation.action || 'Revisar').toUpperCase() + ' ' + (recommendation.asset || 'Ativo');
+
+            setText('recommended-action-main', mainText);
+            setText('recommended-action-reason', recommendation.reason || '');
+            setText('recommended-action-impact', 'Impacto: ' + (recommendation.impact || getImpactText(recommendation.action)));
+        }
+
+        /**
+         * Renderiza o conteudo padrao do card de analise IA.
+         * So substitui o conteudo quando a resposta ainda nao foi travada por uma analise manual.
+         */
+        function renderAIAnalysisCard(generalAdvice) {
+            if (appState.aiLocked || isEmptyValue(generalAdvice)) return;
+
+            const safeAdvice = escapeHtml(generalAdvice).replace(/\n/g, '<br>');
+            setHtml('ai-response', safeAdvice);
+        }
+
+        /**
+         * Renderiza os cards-resumo laterais de patrimonio por bloco.
+         * Usa summary, previdenciaInfo e fundosTop para manter os cards independentes.
+         */
+        function renderPortfolioSummaryCards(summary, previdenciaInfo, fundosTop) {
+            setText('previdencia-total', summary?.previdencia || '');
+            setText('investimentos-total', summary?.fundos || '');
+            setText('acoes-total', summary?.acoes || '');
+            setText('investimentos-plataforma-valor', summary?.fundos || '');
+            setText('acoes-corretora-valor', summary?.acoes || '');
+
+            setText('previdencia-plataforma', previdenciaInfo?.platform || '');
+            setText('previdencia-plataforma-valor', previdenciaInfo?.platformValue || summary?.previdencia || '');
+            setText('previdencia-plano', previdenciaInfo?.topPlan ? 'Plano: ' + previdenciaInfo.topPlan : '');
+
+            setText('fundo-top-1-name', fundosTop?.[0]?.name || '');
+            setText('fundo-top-1-value', fundosTop?.[0]?.value || '');
+            setText('fundo-top-2-name', fundosTop?.[1]?.name || '');
+            setText('fundo-top-2-value', fundosTop?.[1]?.value || '');
+        }
+
+        /**
+         * Renderiza o resumo de alertas do card de acoes.
+         * Recebe uma lista completa de alertas e aplica ordenacao por severidade.
+         */
+        function renderAlertsCard(alerts) {
+            const alertElement = getElement('alert-text');
+            if (!alertElement) return;
+
+            const alertList = Array.isArray(alerts) ? alerts.slice() : [];
+            if (!alertList.length) {
+                alertElement.textContent = 'Sem alertas criticos';
+                return;
+            }
+
+            const order = { 'Crítico': 0, 'Critico': 0, 'Atenção': 1, 'Atencao': 1, 'Informativo': 2 };
+            alertList.sort(function (a, b) {
+                return (order[a.type] ?? 9) - (order[b.type] ?? 9);
+            });
+
+            const lines = alertList.map(function (alert) {
+                const tag = escapeHtml(String(alert.type || 'Info').toUpperCase());
+                const message = escapeHtml(displayValue(alert.message, 'Sem detalhes'));
+                return '<span class="block">' + tag + ': ' + message + '</span>';
+            });
+
+            alertElement.innerHTML = lines.join('');
+        }
+
+        /**
+         * Renderiza o card de ordens sugeridas.
+         * Consome o payload `orders` ja preparado pelo backend para manter compatibilidade.
+         */
+        function renderOrdersCard(orders) {
+            setText('sell-asset', orders?.sell?.symbol || '');
+            setText('sell-value', isEmptyValue(orders?.sell?.value) ? '' : '- ' + orders.sell.value);
+            setText('buy-asset', orders?.buy?.symbol || '');
+            setText('buy-value', isEmptyValue(orders?.buy?.value) ? '' : '+ ' + orders.buy.value);
+        }
+
+        /**
+         * Renderiza observacoes complementares do dashboard.
+         * Usa score.explanation e tip para manter a leitura auxiliar separada do card principal.
+         */
+        function renderSupportNotesCard(score, tip) {
+            setText('portfolio-score-note', score?.explanation || '');
+            setText('squad-tip', tip || '');
+        }
+
+        /**
+         * Renderiza a tabela principal de acoes.
+         * Espera uma lista de acoes ja filtradas no frontend.
+         */
+        function renderActionsTable(items) {
+            const tbody = getElement('inventory-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!Array.isArray(items) || !items.length) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.className = 'hover:bg-white/5 transition-all border-b border-white/5';
+                emptyRow.innerHTML = '<td class="p-5 type-body text-slate-400" colspan="4">Nenhum ativo encontrado</td>';
+                tbody.appendChild(emptyRow);
+                return;
+            }
+
+            items.forEach(function (action) {
+                const rentClass = action.rent < 0 ? 'text-red-400' : 'text-emerald-400';
+                const recommendationClass = getRecommendationClass(action.recommendation);
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white/5 transition-all border-b border-white/5';
+                row.innerHTML = ''
+                    + '<td class="p-5">'
+                    + '    <div class="type-heading text-xs">' + escapeHtml(displayValue(action.ticker, '-')) + '</div>'
+                    + '    <div class="type-body-xs text-slate-400">' + escapeHtml(displayValue(action.name, '-')) + '</div>'
+                    + '</td>'
+                    + '<td class="p-5">'
+                    + '    <div class="hide-value type-value-sm ' + rentClass + '">' + escapeHtml(displayValue(action.rendimentoAbs, '-')) + '</div>'
+                    + '    <div class="hide-value type-body-xs text-slate-400">' + escapeHtml(displayValue(action.rendimentoPct, '-')) + '</div>'
+                    + '</td>'
+                    + '<td class="p-5"><span class="px-2 py-1 ' + recommendationClass + ' rounded type-action">' + escapeHtml(displayValue(action.recommendation, '-')) + '</span></td>'
+                    + '<td class="p-5"><button class="btn-action type-action text-amber-300 hover:text-amber-200" onclick="toggleActionDetails(this)">Detalhes</button></td>';
+
+                const detailsRow = document.createElement('tr');
+                detailsRow.className = 'action-detail-row hidden border-b border-white/5 bg-white/5';
+                detailsRow.innerHTML = ''
+                    + '<td class="p-5 type-body text-xs text-slate-300" colspan="4">'
+                    + '    <div class="flex flex-wrap gap-6">'
+                    + '        <div><span class="type-body-xs text-slate-500">Preco medio:</span> <span class="hide-value type-value-sm">' + escapeHtml(displayValue(action.avgPrice, '-')) + '</span></div>'
+                    + '        <div><span class="type-body-xs text-slate-500">Preco atual:</span> <span class="hide-value type-value-sm">' + escapeHtml(displayValue(action.currentPrice, '-')) + '</span></div>'
+                    + '        <div><span class="type-body-xs text-slate-500">Quantidade:</span> <span class="hide-value type-value-sm">' + escapeHtml(displayValue(action.qty, '-')) + '</span></div>'
+                    + '    </div>'
+                    + '</td>';
+
+                tbody.appendChild(row);
+                tbody.appendChild(detailsRow);
+            });
+        }
+
+        /**
+         * Renderiza o card de investimentos.
+         * Consome uma lista ja filtrada e limita a exibicao inicial aos tres primeiros itens.
+         */
+        function renderInvestmentsCard(items) {
+            const container = getElement('invest-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const limitedItems = Array.isArray(items) ? items.slice(0, 3) : [];
+
+            if (!limitedItems.length) {
+                container.innerHTML = '<div class="type-body-xs text-slate-500">Nenhum investimento encontrado.</div>';
+                return;
+            }
+
+            limitedItems.forEach(function (item) {
+                const rentClass = item.rentRaw < 0 ? 'text-red-400' : 'text-emerald-400';
+                const recommendationClass = getRecommendationClass(item.recommendation);
+                const iconHtml = getInstitutionIconMarkup(item.institution, item.institutionIcon);
+                const itemLabel = displayValue(item.name, 'Fundos de investimento');
+                const chartHtml = '<button type="button" class="chart-btn text-slate-300" onclick="showFeaturePopup(\'chart\', \'' + escapeJsString(itemLabel) + '\')" title="Grafico e analise" aria-label="Grafico e analise de ' + escapeHtml(itemLabel) + '">' + appConfig.chartSvg + '</button>';
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 bg-white/5 p-3 rounded-none';
+                row.innerHTML = ''
+                    + '<div class="flex items-center gap-3">'
+                    + iconHtml
+                    + '    <div>'
+                    + '        <p class="type-body-strong text-xs text-slate-200">' + escapeHtml(displayValue(item.name, '-')) + '</p>'
+                    + '        <p class="type-body-xs text-slate-400">' + escapeHtml(displayValue(item.institution, '-')) + '</p>'
+                    + '    </div>'
+                    + '</div>'
+                    + '<div class="text-right">'
+                    + '    <p class="type-value-sm text-xs hide-value">' + escapeHtml(displayValue(item.valorAtual, '-')) + '</p>'
+                    + '    <p class="type-body-xs ' + rentClass + ' hide-value">' + escapeHtml(displayValue(item.rentPct, '-')) + '</p>'
+                    + '    <span class="px-2 py-1 ' + recommendationClass + ' rounded-none type-action">' + escapeHtml(displayValue(item.recommendation, '-')) + '</span>'
+                    + '</div>'
+                    + '<div>' + chartHtml + '</div>';
+
+                container.appendChild(row);
+            });
+        }
+
+        /**
+         * Renderiza o card de previdencia.
+         * Consome uma lista ja filtrada e mantem a mesma estrutura visual do card atual.
+         */
+        function renderPrevidenciaCard(items) {
+            const container = getElement('previdencia-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const limitedItems = Array.isArray(items) ? items.slice(0, 3) : [];
+
+            if (!limitedItems.length) {
+                container.innerHTML = '<div class="type-body-xs text-slate-500">Nenhum plano encontrado.</div>';
+                return;
+            }
+
+            limitedItems.forEach(function (item) {
+                const rentClass = item.rentRaw < 0 ? 'text-red-400' : 'text-emerald-400';
+                const recommendationClass = getRecommendationClass(item.recommendation);
+                const iconHtml = getInstitutionIconMarkup(item.institution, item.institutionIcon);
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 bg-white/5 p-3 rounded-none';
+                row.innerHTML = ''
+                    + '<div class="flex items-center gap-3">'
+                    + iconHtml
+                    + '    <div>'
+                    + '        <p class="type-body-strong text-xs text-slate-200">' + escapeHtml(displayValue(item.name, '-')) + '</p>'
+                    + '        <p class="type-body-xs text-slate-400">' + escapeHtml(displayValue(item.institution, '-')) + '</p>'
+                    + '    </div>'
+                    + '</div>'
+                    + '<div class="text-right">'
+                    + '    <p class="type-value-sm text-xs hide-value">' + escapeHtml(displayValue(item.valorAtual, '-')) + '</p>'
+                    + '    <p class="type-body-xs ' + rentClass + ' hide-value">' + escapeHtml(displayValue(item.rentPct, '-')) + '</p>'
+                    + '    <span class="px-2 py-1 ' + recommendationClass + ' rounded-none type-action">' + escapeHtml(displayValue(item.recommendation, '-')) + '</span>'
+                    + '</div>';
+
+                container.appendChild(row);
+            });
+        }
+
+        function renderFilteredCards() {
+            renderActionsTable(getFilteredActions());
+            renderInvestmentsCard(getFilteredInvestments());
+            renderPrevidenciaCard(getFilteredPrevidencias());
+        }
+
+        /**
+         * Orquestra a atualizacao completa da tela.
+         * Cada card recebe apenas o subconjunto de dados necessario para permanecer isolado.
+         */
+        function renderApp() {
+            const data = appState.dashboardData || {};
+
+            renderHeader(data.summary || {}, data.score || {}, data.alerts || [], data.profile || {});
+            renderRecommendedActionCard(data.alerts || [], data.actions || []);
+            renderAIAnalysisCard(data.generalAdvice || '');
+            renderPortfolioSummaryCards(data.summary || {}, data.previdenciaInfo || {}, data.fundosTop || []);
+            renderAlertsCard(data.alerts || []);
+            renderOrdersCard(data.orders || {});
+            renderSupportNotesCard(data.score || {}, data.tip || '');
+            renderFilterControls(data);
+            renderFilteredCards();
+        }
+
+        // ---------------------------------------------------------------------
+        // User Actions and Data Loading
+        // ---------------------------------------------------------------------
+
+        function handleDashboardDataLoaded(data) {
+            appState.dashboardData = data || {};
+            renderApp();
+            setDashboardLoading(false);
+        }
+
+        function handleDashboardLoadFailure() {
+            setDashboardLoading(false);
+            setText('alert-text', 'Erro ao carregar dados');
+        }
+
+        /**
+         * Carrega o payload principal do dashboard via Apps Script.
+         * Entrada: nenhuma. Saida: atualiza appState.dashboardData e dispara renderApp.
+         */
+        function loadDashboardData() {
+            setDashboardLoading(true);
+            if (typeof google === 'undefined' || !google.script?.run) {
+                setDashboardLoading(false);
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(handleDashboardDataLoaded)
+                .withFailureHandler(handleDashboardLoadFailure)
+                .getDashboardData();
+        }
+
+        /**
+         * Exibe um retorno local para a Esquilo IA enquanto o recurso real ainda nao foi liberado.
+         * Mantem o texto travado no card para nao ser sobrescrito nos proximos refreshes.
+         */
+        function showAiUnavailableState(triggerButton) {
+            const responseContainer = getElement('ai-response');
+            if (!responseContainer) return;
+
+            appState.aiLocked = true;
+
+            if (triggerButton) {
+                triggerButton.disabled = false;
+                triggerButton.classList.remove('opacity-50');
+                if (triggerButton.id === 'ai-btn') {
+                    triggerButton.innerHTML = 'Modo em preparo';
+                }
+            }
+
+            responseContainer.classList.remove('hidden');
+            responseContainer.innerHTML = 'Esquilo IA ainda esta aquecendo os modulos taticos. Por enquanto seguimos no manual do squad e esse suporte entra no proximo loadout.';
+            showFeaturePopup('ai', 'Esquilo IA');
+        }
+
+        /**
+         * Aciona o placeholder local da Esquilo IA sem chamar backend ou alterar o fluxo de negocio.
+         */
+        function requestStrategyAnalysis() {
+            const button = getElement('strategy-btn');
+            showAiUnavailableState(button);
+        }
+
+        /**
+         * Mantem compatibilidade com o fluxo legado de analise tatica.
+         * Reaproveita o mesmo placeholder local para nao depender de servicos externos.
+         */
+        function requestAIAnalysis() {
+            const button = getElement('ai-btn');
+            showAiUnavailableState(button);
+        }
+
+        /**
+         * Simula o envio visual da ordem na interface atual.
+         * Mantido sem alterar a regra existente de apenas desabilitar o botao.
+         */
+        function executeSwap() {
+            const button = getElement('swap-btn');
+            if (!button) return;
+
+            button.innerHTML = 'ORDEM ENVIADA';
+            button.disabled = true;
+            button.classList.replace('bg-amber-500', 'bg-slate-800');
+            button.classList.add('text-slate-500', 'cursor-not-allowed');
+        }
+
+        // ---------------------------------------------------------------------
+        // UI Events
+        // ---------------------------------------------------------------------
+
+        /**
+         * Mantem compatibilidade com interacoes legadas de expansao fora do grid principal.
+         * Entrada: elemento clicado.
+         * Saida: alterna apenas a classe visual folder-active.
+         */
+        function toggleFolder(element) {
+            if (!element) return;
+            element.classList.toggle('folder-active');
+        }
+
+        /**
+         * Alterna o modo fantasma da interface.
+         * Usa o body principal e o botao do header para sincronizar estado visual e protecao de dados.
+         */
+        function toggleGhostMode() {
+            const body = getElement('main-body');
+            const icon = getElement('ghost-icon');
+            const button = getElement('ghost-toggle');
+            if (!body) return;
+
+            const active = body.classList.toggle('ghost-active');
+            if (button) {
+                button.classList.toggle('app-icon-button--active', active);
+            }
+            if (icon) {
+                icon.classList.toggle('text-amber-300', active);
+                icon.classList.toggle('text-slate-300', !active);
+            }
+        }
+
+        function toggleActionDetails(button) {
+            const row = button?.closest('tr');
+            const detailsRow = row?.nextElementSibling;
+            if (!row || !detailsRow || !detailsRow.classList.contains('action-detail-row')) return;
+
+            detailsRow.classList.toggle('hidden');
+            button.textContent = detailsRow.classList.contains('hidden') ? 'Detalhes' : 'Ocultar';
+        }
+
+        /**
+         * Registra os eventos dos filtros uma unica vez.
+         * Cada alteracao apenas atualiza o estado local e re-renderiza os cards dependentes.
+         */
+        function bindFilterEvents() {
+            if (appState.filtersBound) return;
+            appState.filtersBound = true;
+
+            const actionsInst = getElement('acoes-filter-inst');
+            const actionsRec = getElement('acoes-filter-rec');
+            const investInst = getElement('invest-filter-inst');
+            const prevInst = getElement('prev-filter-inst');
+
+            if (actionsInst) {
+                actionsInst.addEventListener('change', function (event) {
+                    appState.filters.actionsInst = event.target.value;
+                    renderFilteredCards();
+                });
+            }
+
+            if (actionsRec) {
+                actionsRec.addEventListener('change', function (event) {
+                    appState.filters.actionsRec = event.target.value;
+                    renderFilteredCards();
+                });
+            }
+
+            if (investInst) {
+                investInst.addEventListener('change', function (event) {
+                    appState.filters.investInst = event.target.value;
+                    renderFilteredCards();
+                });
+            }
+
+            if (prevInst) {
+                prevInst.addEventListener('change', function (event) {
+                    appState.filters.prevInst = event.target.value;
+                    renderFilteredCards();
+                });
+            }
+        }
+
+        function startDashboardAutoRefresh() {
+            if (appState.refreshTimerId) {
+                window.clearInterval(appState.refreshTimerId);
+            }
+
+            appState.refreshTimerId = window.setInterval(function () {
+                loadDashboardData();
+            }, appConfig.refreshIntervalMs);
+        }
+
+        /**
+         * Ponto unico de inicializacao do frontend.
+         * Deve ser chamado apenas apos o carregamento completo do documento.
+         */
+        function initApp() {
+            bindFilterEvents();
+            loadDashboardData();
+            startDashboardAutoRefresh();
+        }
+
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>

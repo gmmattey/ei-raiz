@@ -1,0 +1,72 @@
+Validacao de icone - Esquilo Invest
+
+Objetivo
+
+Documentar como validar os icones de homescreen e browser configurados nesta sprint, sem entrar em escopo de PWA completa.
+
+Arquivos principais
+
+- Dashboard.txt
+- dashboard-preview.html
+- preview-header.html
+- manifest.webmanifest
+- assets/icons/apple-touch-icon-180.png
+- assets/icons/icon-192.png
+- assets/icons/icon-512.png
+- assets/icons/favicon-32.png
+- assets/icons/favicon-16.png
+
+Configuracao atual
+
+- iOS:
+  - apple-touch-icon 180x180
+  - apple-mobile-web-app-title = Esquilo Invest
+  - theme-color = #05070a
+
+- Android/Chrome:
+  - favicon 32x32
+  - manifest.webmanifest com icones 192x192 e 512x512
+  - theme_color e background_color = #05070a
+
+Como testar no iOS
+
+1. Publicar o HTML em uma URL acessivel no Safari do iPhone ou iPad.
+2. Abrir a pagina.
+3. Tocar em Compartilhar.
+4. Escolher Adicionar a Tela de Inicio.
+5. Confirmar se o icone exibido e o nome Esquilo Invest aparecem corretamente.
+
+Observacao importante para iOS
+
+- O dashboard real hoje aponta o apple-touch-icon para a URL publica da marca usada no projeto.
+- Os previews locais usam o asset local apple-touch-icon-180.png.
+- Se no futuro o asset local 180x180 for publicado por URL junto do dashboard real, o ideal e trocar o link remoto atual por esse asset final.
+
+Como testar no Android/Chrome
+
+1. Servir localmente ou publicar a pasta com:
+   - dashboard-preview.html
+   - preview-header.html
+   - manifest.webmanifest
+   - assets/icons/*
+2. Abrir no Chrome Android.
+3. Verificar se o site carrega sem erro de manifesto.
+4. Usar o menu do Chrome para criar atalho ou adicionar a tela inicial quando disponivel.
+5. Confirmar se o icone exibido usa a marca do Esquilo Invest.
+
+Observacao importante para Android/Chrome
+
+- O manifest.webmanifest precisa estar acessivel por URL junto do HTML.
+- No contexto do Apps Script, isso exige que o arquivo seja servido/publicado de forma acessivel ao cliente.
+- Esta sprint nao implementa service worker, instalacao automatica nem PWA completa.
+
+Checklist rapido
+
+- apple-touch-icon presente
+- apple-mobile-web-app-title presente
+- favicon presente
+- manifest.webmanifest presente
+- icon-192.png presente
+- icon-512.png presente
+- identidade visual coerente com a marca
+- sem alteracao de layout ou regra de negocio
