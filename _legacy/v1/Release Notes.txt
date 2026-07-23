@@ -1,0 +1,456 @@
+Release Note - Sereal de Manga v1.0.16
+Estrutura
+
+Concluida a validacao estrutural e a documentacao minima de teste dos icones para iOS e Android/Chrome.
+Mantido o escopo apenas em branding de icone e metadados, sem abrir PWA completa nem alterar layout da dashboard.
+
+Frontend
+
+Documentado o fluxo de teste manual para Safari iOS e Chrome Android, com orientacoes sobre manifest, apple-touch-icon e favicon.
+Adicionado um arquivo de apoio para futura validacao do time fora desta conversa.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Fechado o ciclo com checklist explicito de arquivos e pontos de validacao do icone.
+Registrada a limitacao do contexto Apps Script para servir o manifest ao cliente no ambiente publicado.
+
+Observacoes
+
+Esta entrega encerra a sprint de icones.
+Nao foi implementado service worker, instalacao automatica nem comportamento completo de PWA.
+
+Release Note - Sereal de Manga v1.0.15
+Estrutura
+
+Adicionado o manifesto minimo de icones para Android/Chrome e alinhado o head dos arquivos principais com favicon e apontamento de manifest.
+Mantido o escopo fechado em branding de icone, sem service worker, sem logica de instalacao e sem alteracoes de layout.
+
+Frontend
+
+Criado o arquivo manifest.webmanifest com nome da aplicacao, cores base e icones de 192x192 e 512x512.
+Gerado favicon dedicado em 32x32 para uso em browser e aplicado nos previews locais.
+O dashboard real passou a expor link de manifest e favicon no head, enquanto os previews locais apontam diretamente para os assets gerados no projeto.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Android/Chrome agora contam com um conjunto minimo de metadata de icone no projeto, em vez de depender apenas da logo remota generica.
+Os tamanhos exigidos para atalho e identidade visual de app foram explicitamente organizados e referenciados.
+
+Observacoes
+
+No contexto de Apps Script, o manifest criado precisa estar acessivel ao cliente junto do HTML para o WebApp publicado consumir esse arquivo por URL.
+Esta etapa implementa o manifesto minimo e a configuracao de head, sem expandir para PWA completa.
+
+Release Note - Sereal de Manga v1.0.14
+Estrutura
+
+Configurados os metadados minimos de iOS para exibicao correta do icone do Esquilo Invest ao adicionar o WebApp a tela inicial.
+Dashboard real, dashboard-preview.html e preview-header.html foram alinhados nesta etapa apenas no bloco de head.
+
+Frontend
+
+Adicionado apple-touch-icon com tamanho explicito de 180x180 e apple-mobile-web-app-title com o nome Esquilo Invest.
+Os previews locais passaram a apontar para o asset local gerado na etapa anterior, facilitando a validacao visual do icone fora do Apps Script.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+O head do projeto deixou de depender apenas do favicon para iOS e passou a expor metadados especificos para a tela inicial.
+Mantido o theme-color existente para consistencia visual sem expandir o escopo para comportamento completo de PWA.
+
+Observacoes
+
+Esta entrega cobre apenas a configuracao de iOS.
+Favicon e manifest minimo para Android/Chrome ficam reservados para a proxima etapa.
+
+Release Note - Sereal de Manga v1.0.13
+Estrutura
+
+Organizada a base local de assets de icone para o Esquilo Invest com arquivos dedicados para iOS e Android/Chrome.
+Mantido o escopo fechado em branding de icone, sem alterar layout, backend ou comportamento da dashboard.
+
+Frontend
+
+Criado um master quadrado de icone com fundo de marca para uso em atalhos de tela inicial e derivados em 180x180, 192x192 e 512x512.
+Copiada a logo oficial atual para dentro da pasta de assets como fonte de referencia do conjunto de icones.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Resolvida a ausencia de assets locais organizados para configuracao futura de apple-touch-icon, favicon e manifest minimo.
+O icone base foi adaptado apenas para uso em homescreen, preservando a marca do header sem substitui-la.
+
+Observacoes
+
+Esta entrega cobre apenas a organizacao dos assets de icone.
+Configuracao de head para iOS e Android/Chrome fica reservada para as proximas etapas.
+
+Release Note - Sereal de Manga v1.0.12
+Estrutura
+
+Concluida a padronizacao visual final dos blocos expansivos com shells principais e internos em linguagem reta e tecnica.
+Dashboard real e dashboard-preview.html foram alinhados na etapa final para refletir o mesmo acabamento visual do modo resumido e do modo expandido.
+
+Frontend
+
+Os cards de Acoes, Fundos de investimento e Previdencia passaram a usar cantos totalmente retos nos shells principais, nos blocos de detalhe e nas linhas internas renderizadas.
+Os controles pequenos do fluxo expansivo foram mantidos com raio minimo de 4px para preservar usabilidade sem quebrar a linguagem quadrada do conjunto.
+O preview local foi atualizado para espelhar a mesma padronizacao visual final, incluindo listas mockadas e blocos expandidos.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Removida a mistura residual entre blocos arredondados e blocos retos dentro do sistema expansivo.
+As linhas dinamicas renderizadas no detalhamento passaram a seguir a mesma linguagem tecnica dos shells fixos.
+
+Observacoes
+
+Esta entrega fecha a revisao visual final dos blocos expansivos e do preview.
+Nao houve alteracao de logica, dados ou contratos existentes.
+
+Release Note - Sereal de Manga v1.0.11
+Estrutura
+
+A responsividade dos blocos expansivos foi refinada sem alterar a hierarquia definida na tarefa anterior.
+Dashboard real e dashboard-preview.html agora compartilham os mesmos ajustes de layout responsivo no modo resumido e no modo expandido.
+
+Frontend
+
+No tablet e no desktop, o bloco expandido passou a distribuir o detalhamento em duas colunas internas para aproveitar melhor a largura total sem deixar areas mortas.
+No mobile, header, filtros, linhas de detalhe e acoes do expandido agora empilham naturalmente para evitar compressao feia e manter leitura limpa.
+Foram criadas utilitarias pequenas para linhas de detalhe e filtros, permitindo quebrar o layout interno com previsibilidade entre breakpoints.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Removido o risco de overflow horizontal nos filtros e nas acoes do modo expandido em telas menores.
+Neutralizado o espacamento residual do modo resumido quando o bloco ativo vira grid no estado expandido.
+
+Observacoes
+
+Esta entrega cobre apenas a responsividade dos blocos expansivos.
+Revisao visual final e fechamento do preview ficam reservados para a Tarefa 5.
+
+Release Note - Sereal de Manga v1.0.10
+Estrutura
+
+Reorganizado o layout interno dos blocos expandidos para seguir uma hierarquia fixa: header, valor principal, resumo, detalhamento e acoes.
+Dashboard real e dashboard-preview.html receberam o mesmo modelo estrutural para leitura expandida.
+
+Frontend
+
+Cada bloco expandido agora exibe um botao de fechar claro no header, substituindo a dependencia visual exclusiva do icone de expansao.
+As areas detalhadas foram agrupadas em shells internos mais legiveis, com separacao entre informacoes de contexto e conteudo detalhado.
+Adicionada uma faixa de acoes no rodape do expandido com atalho para grafico/analise e retorno rapido aos blocos.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+O modo expandido deixou de parecer apenas um card aberto e passou a ter leitura de painel completo, com foco claro no conteudo.
+O retorno ao estado resumido ficou mais previsivel por contar com um botao explicito de fechar no topo e uma acao secundaria no rodape.
+
+Observacoes
+
+Esta entrega cobre apenas a organizacao interna do modo expandido.
+Refino responsivo final dos expandidos fica reservado para a Tarefa 4.
+
+Release Note - Sereal de Manga v1.0.9
+Estrutura
+
+Refatorado o estado de expansao dos blocos resumidos para um modo explicito de card unico em largura total.
+Dashboard real e dashboard-preview.html passaram a marcar o bloco expandido com estado dedicado no container e no card ativo.
+
+Frontend
+
+Ao expandir Acoes, Fundos ou Previdencia, o container deixa de operar como grid e o bloco ativo ocupa 100 por cento da largura disponivel.
+Os outros blocos sao removidos visualmente durante a expansao, eliminando espaco vazio lateral e reduzindo ambiguidade de leitura.
+Adicionada uma transicao curta de entrada por fade e scale, sem efeito lateral de escorregamento.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Removido o comportamento residual que ainda permitia a percepcao de expansao parcial dentro do grid.
+O estado expandido agora fica previsivel e rastreavel por atributos de estado no container, sem alterar dados ou regras de negocio.
+
+Observacoes
+
+Esta entrega cobre apenas o comportamento de expansao full width.
+Botao dedicado de fechar e reorganizacao interna do conteudo expandido ficam para a Tarefa 3.
+
+Release Note - Sereal de Manga v1.0.8
+Estrutura
+
+Iniciada a refatoracao dos blocos expansivos pela camada visual, sem alterar o comportamento de expansao nesta etapa.
+Ajustados os shells dos cards de Acoes, Fundos e Previdencia no dashboard real e no preview para uma base mais compacta.
+
+Frontend
+
+Border-radius dos tres cards principais foi reduzido para uma faixa mais tecnica, removendo a aparencia excessivamente oval.
+Padding, espacamentos internos, tamanho dos icones e area resumida dos cards foram compactados para reduzir a altura visual em torno de 15 a 20 por cento.
+Containers internos do modo detalhado tambem ficaram mais densos, com menos volume em chips, blocos auxiliares e botoes passivos.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Reduzido o excesso de vazio interno dos cards no estado resumido sem mexer na leitura dos valores principais.
+Mantido intacto o comportamento atual de expansao para que a mudanca de UX full width entre isoladamente na Tarefa 2.
+
+Observacoes
+
+Esta entrega cobre apenas bordas e densidade visual dos blocos expansivos.
+Nao houve alteracao de layout global, responsividade estrutural, backend, logica de negocio ou dados.
+
+Release Note - Sereal de Manga v1.0.7
+Estrutura
+
+Centralizado o sistema tipografico do dashboard com tokens reutilizaveis para titulos, valores, corpo e acoes.
+Alinhado dashboard principal e dashboard-preview.html para usar a mesma hierarquia visual entre header, cards e blocos auxiliares.
+
+Frontend
+
+Orbitron ficou restrita aos titulos curtos, labels de destaque, cabecalhos de tabela e valores principais.
+Inter passou a conduzir mensagens executivas, descricoes, alertas em corpo, textos auxiliares, subtitulos longos e rotulos utilitarios.
+Blocos de patrimonio, cards principais, alerta/recomendacao, Esquilo IA, popup e tabelas passaram a seguir a mesma dupla tipografica.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Removido o excesso de Orbitron em textos de apoio, botoes e controles que antes pareciam pertencer a outra linguagem visual.
+Padronizados pesos, espacamentos e contrastes tipograficos para reduzir o descasamento entre titulos futuristas e textos genericos.
+
+Observacoes
+
+Nao houve alteracao de layout, comportamento, regras de negocio, backend ou estrutura de dados.
+As classes antigas de fonte foram preservadas apenas por compatibilidade, mas a padronizacao passa a usar os novos tokens tipograficos.
+
+Release Note - Sereal de Manga v1.0.6
+Estrutura
+
+Concluido o comportamento final dos blocos resumidos com expansao focada de um card por vez e recolhimento dos demais.
+Adicionada a modal utilitaria de indisponibilidade e finalizado o preview estatico com header, resumo, cards, alerta e Esquilo IA.
+
+Frontend
+
+Loading leve com shimmer passou a aparecer durante carregamento e refresh do dashboard, reforcando a sensacao de app vivo.
+Atalhos de grafico/analise dos cards agora exibem popup contextual em vez de navegar para fora da interface.
+Esquilo IA passou a responder com mensagem local em linguagem gamer, mantendo o card travado sem depender de backend.
+Atualizado dashboard-preview.html para refletir a Sprint 3 com expansao, popup, loading e blocos auxiliares mockados.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Carregamento do dashboard agora encerra corretamente o estado visual de loading em sucesso e falha.
+Fluxos legados de analise foram preservados por compatibilidade, mas redirecionados para placeholder local seguro.
+O card de fundos deixou de abrir links externos e passou a usar o mesmo feedback visual dos demais recursos em preparo.
+
+Observacoes
+
+Nao houve alteracao de payloads, calculos, regras de negocio ou estrutura backend.
+Microinteracoes desta sprint ficaram restritas a hover sutil, shimmer curto e popup utilitario, sem animacoes exageradas.
+
+Release Note - Sereal de Manga v1.0.5
+Estrutura
+
+Criado o bloco de resumo executivo entre header e cards para separar contexto superior da leitura operacional principal.
+Blocos resumidos passaram a operar em estado inicial compacto, com estrutura preparada para expansao completa na Sprint 3.
+
+Frontend
+
+Patrimonio consolidado foi reposicionado para um bloco proprio abaixo do header, acompanhado da mensagem executiva e da performance do periodo.
+Cards de Previdencia, Fundos de investimento e Acoes foram padronizados com resumo curto, icone principal e atalhos visuais de analise/expansao.
+Atualizado dashboard-preview.html para refletir o bloco executivo e os cards resumidos com dados mockados, mantendo independencia total do app.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+IDs dinamicos do patrimonio e da mensagem executiva foram reaproveitados no novo bloco sem alterar a logica de renderizacao existente.
+Os cards principais deixaram de abrir por padrao para reforcar a visao resumida da Sprint 2 e evitar antecipar o comportamento da Sprint 3.
+
+Observacoes
+
+Os icones de analise e expansao foram adicionados apenas como estrutura visual nesta sprint; comportamento e popups ficam para a Sprint 3.
+Nao houve alteracao de regras de negocio, payloads, backend ou calculos.
+
+Release Note - Sereal de Manga v1.0.4
+Estrutura
+
+Header principal foi convertido em faixa leve sem card, com linha principal de marca e linha secundaria de metadados.
+Sistema base de icones foi preparado por sprite SVG para uso incremental nas proximas sprints.
+
+Frontend
+
+Padronizada a base tipografica com duas familias explicitas: Orbitron para titulos/metadados e Inter para leitura geral.
+Header passou a exibir apenas logo solta, nome do produto, squad, nivel e controles de ocultar/atualizar.
+Atualizado dashboard-preview.html para refletir a nova estrutura do header da Sprint 1 sem dependencia de Apps Script.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Sincronizado o estado visual do botao de ghost mode com o estado ativo do body.
+Removido o container rigido do header para reduzir peso visual e separar melhor contexto da area de conteudo.
+
+Observacoes
+
+O bloco de patrimonio consolidado e a mensagem executiva foram propositalmente retirados do header e ficam reservados para a Sprint 2.
+Nao houve alteracao de regras de negocio, payloads, backend ou logica de calculo.
+
+Release Note - Sereal de Manga v1.0.3
+Estrutura
+
+Layout principal reorganizado para manter o header isolado e o bloco de cards logo abaixo dele, sem elementos intermediarios.
+Preview visual consolidado em dashboard-preview.html com header e cards principais para validacao fora do Apps Script.
+
+Frontend
+
+Cards de Previdencia, Investimentos e Acoes receberam tipografia alinhada ao header, com titulo no papel do subtitulo e valor no papel do patrimonio.
+Grid principal dos cards passou a responder em 1 coluna no mobile, 2 no tablet e 3 no desktop/notebook.
+Densidade dos cards foi reduzida com menos padding vertical, menor espaco interno e distribuicao mais compacta.
+Glow e hover dos cards foram refinados com bordas coloridas mais suaves, menos blur e elevacao sutil.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Ajustado o alinhamento optico entre icones, titulos e valores dos cards principais.
+Reduzido o espacamento entre header e cards para remover vazio sem perder separacao visual.
+Reposicionados os cards principais para ficarem imediatamente abaixo do header, mantendo os demais blocos da pagina depois deles.
+
+Observacoes
+
+Nao houve alteracao de payload, backend, calculos ou regras de negocio.
+Os blocos de acao recomendada e analise IA foram apenas reposicionados na pagina, sem mudanca de logica ou conteudo.
+O preview estatico usa dados mockados e nao depende de google.script.run.
+
+Release Note - Sereal de Manga v1.0.2
+Estrutura
+
+Header refinado visualmente sem mudar sua divisao principal em identidade/status e painel de metricas.
+Adotado apoio visual incremental com arquivo estatico de preview do topo para validacao rapida fora do Apps Script.
+
+Frontend
+
+Bloco de marca ganhou mais presenca com container proprio, aumento sutil da logo e promocao de "Esquilo Invest" ao papel de titulo principal do topo.
+Subtitulo foi rebaixado visualmente com ajuste de escala, contraste e hierarquia, mantendo leitura mas reduzindo dominancia.
+Painel de patrimonio recebeu mais largura util em notebook/desktop, padding refinado e alinhamento interno mais estavel entre label, valor e texto de apoio.
+Botao de ghost mode ficou menor, mais discreto e mais integrado ao topo como controle utilitario.
+Criado o arquivo preview-header.html com dados mockados e toggle local de ghost mode para validar o header sem dependencia de google.script.run.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Refinado o alinhamento optico entre o bloco de marca e o painel de patrimonio em telas largas e notebook.
+Suavizado novamente o blur do valor principal no ghost mode para melhorar acabamento sem perder a protecao visual.
+
+Observacoes
+
+Nao houve alteracao de payload, calculo, contratos JS ou regras de negocio.
+Nenhum card abaixo do header foi modificado nesta sprint.
+O preview estatico foi gerado apenas como apoio visual e nao substitui o dashboard principal.
+
+Release Note - Sereal de Manga v1.0.1
+Estrutura
+
+Header reorganizado em dois blocos explicitos: identidade/status e painel de metricas.
+Botao de ghost mode saiu da sobreposicao absoluta e passou a integrar o fluxo do topo para reduzir risco de quebra em telas menores.
+
+Frontend
+
+Layout do header passou a usar grid responsivo em 12 colunas a partir de notebook, reduzindo vazio central e equilibrando marca e metricas.
+Bloco de marca ganhou mais peso visual com ajuste controlado de icone, tipografia e container de status.
+Card de patrimonio consolidado virou destaque principal dentro de um painel unificado com score e squad/nivel, mantendo ids e contratos atuais.
+Criadas utilitarias locais do header: header-summary-shell, header-summary-card, header-summary-card--primary e header-ghost-value.
+
+Backend
+
+Nenhuma alteracao nesta entrega.
+
+Correcoes
+
+Ajustado o posicionamento do botao Modo fantasma para evitar sobreposicao no topo em breakpoints menores.
+Blur do valor principal do patrimonio foi suavizado no ghost mode para manter legibilidade sem expor o dado.
+
+Observacoes
+
+Nao houve mudanca de regra de negocio, calculo ou contratos JS do header.
+Nao foram alterados os cards abaixo do topo nesta sprint.
+A validacao desta entrega ficou restrita a revisao estrutural e responsiva do HTML/CSS no workspace, pois nao ha navegador ou ambiente headless disponivel para inspecao visual automatizada.
+
+Release Note - SEREAL DE MANGA
+Estrutura
+
+Frontend reorganizado em camadas claras: estado da aplicacao, helpers de DOM/formatadores, filtros, renderizadores por card e acoes/eventos.
+Backend reorganizado em blocos logicos: configuracao, orquestracao do dashboard, leitura de planilhas, normalizacao, calculos, builders de IA, providers e helpers.
+Criada uma orquestracao principal explicita no backend com buildDashboardContext_, collectDashboardDomainData_, buildDashboardInsights_ e buildDashboardPayload_.
+
+Frontend
+
+Dashboard refatorado para renderizacao isolada por bloco, com funcoes dedicadas para header, acao recomendada, analise IA, resumos laterais, alertas, ordens, tabela de acoes, investimentos e previdencia.
+HTML reorganizado com comentarios de inicio/fim por secao principal e data-block para facilitar manutencao futura.
+Filtros passaram a operar sobre estado centralizado, reduzindo acoplamento entre controles e renderizacao.
+Fluxo de atualizacao automatica e inicializacao consolidados em initApp() e startDashboardAutoRefresh().
+
+Backend
+
+Leitura de dados separada da montagem do payload final.
+Normalizacao repetida de investimentos/previdencia concentrada em helpers compartilhados (buildPassivePortfolioItems_, buildPassivePortfolioItem_, calculateRentData_).
+Builders de contexto para IA passaram a reaproveitar o mesmo contexto consolidado do dashboard, reduzindo duplicacao.
+Score, perfil, alertas, ordens e advice geral ficaram agrupados na camada analitica, sem mistura com helpers triviais.
+
+Correcoes
+
+Corrigido o fluxo legado de analise para nao falhar quando ai-btn nao existir no HTML.
+Padronizacao de nomenclatura dos blocos de renderizacao e dos helpers principais no frontend.
+Comentarios antigos insuficientes foram substituidos por comentarios objetivos de responsabilidade, entrada e saida nas funcoes principais.
+
+Observacoes
+
+Nao houve redesign, troca de framework, mudanca de endpoint ou mudanca intencional de regra de negocio.
+O payload principal consumido pelo frontend foi preservado.
+Nao encontrei um arquivo de release note anterior no workspace; esta nota foi tratada como incremental desta execucao.
+Nao foi implementada uma suite automatizada de testes nesta execucao; a verificacao ficou restrita a consistencia estrutural e compatibilidade aparente.

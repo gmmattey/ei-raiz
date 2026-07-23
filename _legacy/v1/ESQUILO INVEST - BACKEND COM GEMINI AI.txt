@@ -1,0 +1,1183 @@
+﻿/**
+ * ESQUILO INVEST - BACKEND COM GEMINI AI
+ * Refatoracao estrutural focada em manutencao, isolamento por responsabilidade
+ * e preservacao dos contratos ja consumidos pelo frontend.
+ */
+
+// -----------------------------------------------------------------------------
+// Configuracao central
+// -----------------------------------------------------------------------------
+
+const APP_CONFIG_ = {
+  templateName: 'Dashboard',
+  dashboardSummaryRange: 'B6:F6',
+  actionTable: {
+    headerRow: 6,
+    startRow: 7,
+    startCol: 2
+  },
+  portfolioTable: {
+    startRow: 7,
+    startCol: 2,
+    columnCount: 9
+  },
+  preOrdersTable: {
+    startRow: 7,
+    startCol: 2,
+    columnCount: 12
+  },
+  aportesTable: {
+    startRow: 7,
+    startCol: 2,
+    columnCount: 6
+  },
+  defaultOpenAIModel: 'gpt-4o-mini',
+  geminiModel: 'gemini-2.5-flash-preview-09-2025',
+  sheetNames: {
+    dashboard: 'Dashboard',
+    actions: 'Acoes',
+    preOrders: 'Pre-Ordens',
+    funds: 'Fundos',
+    previdencia: 'Previdencia',
+    recommendations: 'Recomendacoes',
+    contributions: 'Aportes'
+  }
+};
+
+const SCRIPT_PROPERTY_KEYS_ = {
+  geminiApiKey: 'GEMINI_API_KEY',
+  openAiApiKey: 'OPENAI_API_KEY',
+  openAiModel: 'OPENAI_MODEL'
+};
+
+const ALERT_PRIORITY_ = {
+  'Crítico': 0,
+  'Atenção': 1,
+  'Informativo': 2
+};
+
+// -----------------------------------------------------------------------------
+// Configuracao e chaves
+// -----------------------------------------------------------------------------
+
+function getScriptProperty_(key) {
+  return PropertiesService.getScriptProperties().getProperty(key) || '';
+}
+
+function setScriptProperty_(key, value) {
+  PropertiesService.getScriptProperties().setProperty(key, value);
+}
+
+function getGeminiKey_() {
+  return getScriptProperty_(SCRIPT_PROPERTY_KEYS_.geminiApiKey);
+}
+
+function setGeminiKey(key) {
+  if (!key) throw new Error('Chave GEMINI_API_KEY invalida.');
+  setScriptProperty_(SCRIPT_PROPERTY_KEYS_.geminiApiKey, String(key).trim());
+}
+
+function getOpenAIKey_() {
+  return getScriptProperty_(SCRIPT_PROPERTY_KEYS_.openAiApiKey);
+}
+
+function getOpenAIModel_() {
+  return getScriptProperty_(SCRIPT_PROPERTY_KEYS_.openAiModel) || APP_CONFIG_.defaultOpenAIModel;
+}
+
+// -----------------------------------------------------------------------------
+// Entradas principais da aplicacao
+// -----------------------------------------------------------------------------
+
+/**
+ * Entrega o template principal do dashboard no Apps Script.
+ * Entrada: nenhuma.
+ * Saida: HtmlOutput pronto para o cliente renderizar o Dashboard.
+ */
+function doGet() {
+  return HtmlService.createTemplateFromFile(APP_CONFIG_.templateName)
+    .evaluate()
+    .setTitle('Esquilo Invest - Squad Giammattey')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Orquestra a carga completa do dashboard.
+ * Entrada: nenhuma.
+ * Saida: payload compatível com o frontend atual, sem alterar os contratos existentes.
+ */
+function getDashboardData() {
+  const dashboardContext = buildDashboardContext_();
+  return buildDashboardPayload_(dashboardContext.domainData, dashboardContext.insights);
+}
+
+/**
+ * Contexto unico para calculos e payloads do dashboard.
+ * Reaproveitado por dashboard, leitura auxiliar e builders de IA.
+ */
+function buildDashboardContext_() {
+  const spreadsheetContext = getSpreadsheetContext_();
+  const domainData = collectDashboardDomainData_(spreadsheetContext);
+  const insights = buildDashboardInsights_(domainData, spreadsheetContext);
+
+  return {
+    spreadsheet: spreadsheetContext.spreadsheet,
+    sheets: spreadsheetContext.sheets,
+    domainData,
+    insights
+  };
+}
+
+function getSpreadsheetContext_() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+  return {
+    spreadsheet,
+    sheets: {
+      dashboard: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.dashboard),
+      actions: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.actions),
+      preOrders: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.preOrders),
+      funds: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.funds),
+      previdencia: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.previdencia),
+      recommendations: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.recommendations),
+      contributions: spreadsheet.getSheetByName(APP_CONFIG_.sheetNames.contributions)
+    }
+  };
+}
+
+/**
+ * Coleta os blocos de dados brutos consumidos pelo dashboard.
+ * Mantem leitura de planilha separada das transformacoes e recomendacoes.
+ */
+function collectDashboardDomainData_(spreadsheetContext) {
+  const sheets = spreadsheetContext.sheets;
+
+  return {
+    summary: getSummary_(sheets.dashboard),
+    actions: getActions_(sheets.actions),
+    fundosTop: getFundosTop_(sheets.funds),
+    investments: getInvestments_(sheets.funds, spreadsheetContext.spreadsheet),
+    previdencias: getPrevidencias_(sheets.previdencia, spreadsheetContext.spreadsheet),
+    previdenciaInfo: getPrevidenciaInfo_(sheets.previdencia),
+    tip: getTip_(sheets.recommendations)
+  };
+}
+
+/**
+ * Calcula blocos analiticos do dashboard sem misturar leitura de planilha com payload final.
+ */
+function buildDashboardInsights_(domainData, spreadsheetContext) {
+  const metrics = getPortfolioMetrics_(
+    domainData.summary,
+    domainData.actions,
+    domainData.investments,
+    domainData.previdencias,
+    spreadsheetContext.sheets.contributions
+  );
+  const alerts = getAlerts_(domainData.actions, domainData.summary);
+  const alert = getPrimaryAlert_(alerts);
+
+  return {
+    alerts,
+    alert,
+    orders: getOrders_(domainData.actions, spreadsheetContext.sheets.preOrders),
+    metrics,
+    score: getPortfolioScore_(metrics, domainData.actions),
+    profile: getProfile_(metrics),
+    generalAdvice: getGeneralAdvice_(metrics, alert)
+  };
+}
+
+function buildDashboardPayload_(domainData, insights) {
+  return {
+    summary: domainData.summary,
+    actions: domainData.actions,
+    alert: insights.alert,
+    alerts: insights.alerts,
+    orders: insights.orders,
+    fundosTop: domainData.fundosTop,
+    investments: domainData.investments,
+    previdencias: domainData.previdencias,
+    previdenciaInfo: domainData.previdenciaInfo,
+    tip: domainData.tip,
+    profile: insights.profile,
+    score: insights.score,
+    generalAdvice: insights.generalAdvice
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Leitura de planilhas e normalizacao de dados
+// -----------------------------------------------------------------------------
+
+/**
+ * Le o resumo principal do Dashboard.
+ * Entrada: aba Dashboard.
+ * Saida: totais formatados e suas contrapartes numericas para calculos posteriores.
+ */
+function getSummary_(sheet) {
+  if (!sheet) return {};
+
+  const values = sheet.getRange(APP_CONFIG_.dashboardSummaryRange).getValues()[0];
+  const acoesRaw = toNumber_(values[0]);
+  const fundosRaw = toNumber_(values[1]);
+  const previdenciaRaw = toNumber_(values[2]);
+  const totalRaw = toNumber_(values[4]);
+
+  return {
+    acoes: formatMoney_(values[0]),
+    fundos: formatMoney_(values[1]),
+    previdencia: formatMoney_(values[2]),
+    preOrdens: formatMoney_(values[3]),
+    total: formatMoney_(values[4]),
+    acoesRaw,
+    fundosRaw,
+    previdenciaRaw,
+    totalRaw
+  };
+}
+
+/**
+ * Mapeia a carteira de acoes compradas usando a linha de cabecalho da planilha.
+ * Entrada: aba Acoes.
+ * Saida: lista de acoes prontas para renderizacao e calculos de risco.
+ */
+function getActions_(sheet) {
+  const tableData = getActionTableData_(sheet);
+  if (!tableData.rows.length) return [];
+
+  const indexes = getActionColumnIndexes_(tableData.header);
+  const actions = [];
+
+  tableData.rows.forEach(function (row) {
+    const action = buildActionItem_(row, indexes);
+    if (action) actions.push(action);
+  });
+
+  return actions;
+}
+
+function getActionTableData_(sheet) {
+  if (!sheet) return { header: [], rows: [] };
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < APP_CONFIG_.actionTable.startRow) return { header: [], rows: [] };
+
+  const lastCol = sheet.getLastColumn();
+  const colCount = Math.max(1, lastCol - (APP_CONFIG_.actionTable.startCol - 1));
+
+  return {
+    header: sheet.getRange(APP_CONFIG_.actionTable.headerRow, APP_CONFIG_.actionTable.startCol, 1, colCount).getDisplayValues()[0],
+    rows: sheet.getRange(APP_CONFIG_.actionTable.startRow, APP_CONFIG_.actionTable.startCol, lastRow - APP_CONFIG_.actionTable.headerRow, colCount).getValues()
+  };
+}
+
+function getActionColumnIndexes_(header) {
+  return {
+    ativo: idxOrDefault_(getHeaderIndex_(header, ['Ativo', 'Sigla']), 1),
+    nome: getHeaderIndex_(header, ['Nome', 'Empresa', 'Nome do Ativo']),
+    observacao: getHeaderIndex_(header, ['Observação', 'Observacao']),
+    plataforma: idxOrDefault_(getHeaderIndex_(header, ['Plataforma', 'Instituição']), 2),
+    status: idxOrDefault_(getHeaderIndex_(header, ['Status']), 3),
+    quantidade: idxOrDefault_(getHeaderIndex_(header, ['Qtd', 'Cotas']), 5),
+    medio: idxOrDefault_(getHeaderIndex_(header, ['P. Médio (R$)', 'P. Médio', 'Preço Médio', 'Preço Medio']), 6),
+    cotacao: idxOrDefault_(getHeaderIndex_(header, ['Cotação Atual', 'Cotacao Atual']), 7),
+    valorInvestido: idxOrDefault_(getHeaderIndex_(header, ['Valor Investido']), 8),
+    valorAtual: idxOrDefault_(getHeaderIndex_(header, ['Valor Atual']), 9),
+    stop: idxOrDefault_(getHeaderIndex_(header, ['Stop -15%', 'Stop']), 10),
+    rentabilidade: getHeaderIndex_(header, ['Rent. %', 'Rendimento %', 'Rent %'])
+  };
+}
+
+function buildActionItem_(row, indexes) {
+  const ativo = row[indexes.ativo];
+  if (!ativo) return null;
+
+  const status = row[indexes.status];
+  if (status && String(status).toLowerCase() !== 'comprado') return null;
+
+  const nome = indexes.nome >= 0 ? row[indexes.nome] : (indexes.observacao >= 0 ? row[indexes.observacao] : '');
+  const plataforma = row[indexes.plataforma] || '';
+  const qtd = row[indexes.quantidade];
+  const medio = row[indexes.medio];
+  const cotacaoAtual = row[indexes.cotacao];
+  const valorInvestidoCell = row[indexes.valorInvestido];
+  const valorAtualCell = row[indexes.valorAtual];
+  const stopCell = row[indexes.stop];
+  const rentCell = indexes.rentabilidade >= 0 ? row[indexes.rentabilidade] : null;
+
+  const rentData = calculateRentData_(rentCell, valorInvestidoCell, valorAtualCell);
+  const currentPriceRaw = toNumber_(cotacaoAtual);
+  const stopRaw = toNumber_(stopCell);
+  const recommendation = getRecommendation_(rentData.rentNumeric, cotacaoAtual, stopRaw);
+  const hasValores = !isBlank_(valorInvestidoCell) && !isBlank_(valorAtualCell);
+  const rendimentoAbs = hasValores ? (rentData.currentRaw - rentData.investedRaw) : null;
+
+  return {
+    ticker: String(ativo),
+    name: nome ? String(nome) : '',
+    institution: String(plataforma || ''),
+    institutionIcon: getInstitutionIcon_(plataforma),
+    qty: formatQty_(qtd),
+    avgPrice: formatMoney_(medio),
+    currentPrice: formatMoney_(cotacaoAtual),
+    currentPriceRaw,
+    positionValue: formatMoney_(valorAtualCell),
+    rendimentoAbs: formatMoney_(rendimentoAbs),
+    rendimentoPct: formatPct_(rentData.rentPct),
+    recommendation,
+    chartUrl: getChartUrl_(ativo),
+    rent: rentData.rentNumeric,
+    stopRaw,
+    valorInvestidoRaw: rentData.investedRaw,
+    valorAtualRaw: rentData.currentRaw
+  };
+}
+
+/**
+ * Determina o melhor candidato de venda e a primeira pre-ordem pendente de compra.
+ * Entrada: acoes normalizadas e aba Pre-Ordens.
+ * Saida: bloco orders do dashboard atual.
+ */
+function getOrders_(actions, preSheet) {
+  let sell = null;
+  const sellCandidates = (actions || []).filter(function (action) {
+    return action.recommendation === 'Vender';
+  });
+
+  if (sellCandidates.length) {
+    sellCandidates.sort(function (a, b) {
+      return a.rent - b.rent;
+    });
+    const sellAction = sellCandidates[0];
+    sell = {
+      symbol: sellAction.ticker,
+      value: sellAction.positionValue
+    };
+  }
+
+  let buy = null;
+  if (preSheet) {
+    const lastRow = preSheet.getLastRow();
+    if (lastRow >= APP_CONFIG_.preOrdersTable.startRow) {
+      const rows = preSheet.getRange(
+        APP_CONFIG_.preOrdersTable.startRow,
+        APP_CONFIG_.preOrdersTable.startCol,
+        lastRow - APP_CONFIG_.preOrdersTable.startRow + 1,
+        APP_CONFIG_.preOrdersTable.columnCount
+      ).getValues();
+
+      for (let index = 0; index < rows.length; index++) {
+        const row = rows[index];
+        const ativo = row[1];
+        const status = row[10];
+        const valorPotencial = row[8];
+
+        if (ativo && String(status).toLowerCase() === 'aguardando') {
+          buy = {
+            symbol: String(ativo),
+            value: formatMoney_(valorPotencial)
+          };
+          break;
+        }
+      }
+    }
+  }
+
+  return { sell, buy };
+}
+
+function getFundosTop_(sheet) {
+  const rows = getPortfolioRows_(sheet, APP_CONFIG_.portfolioTable.columnCount);
+  const items = [];
+
+  rows.forEach(function (row) {
+    const name = row[0];
+    const status = row[3];
+    const currentValue = row[6];
+
+    if (shouldSkipPortfolioRow_(name, status)) return;
+    if (toNumber_(currentValue) === 0) return;
+
+    items.push({
+      name: String(name),
+      value: toNumber_(currentValue)
+    });
+  });
+
+  items.sort(function (a, b) {
+    return b.value - a.value;
+  });
+
+  return items.slice(0, 2).map(function (item) {
+    return {
+      name: item.name,
+      value: formatMoney_(item.value)
+    };
+  });
+}
+
+function getInvestments_(sheet, spreadsheet) {
+  return buildPassivePortfolioItems_(sheet, spreadsheet, 'valorInvestidoRaw');
+}
+
+function getPrevidencias_(sheet, spreadsheet) {
+  return buildPassivePortfolioItems_(sheet, spreadsheet, 'totalAportadoRaw');
+}
+
+function buildPassivePortfolioItems_(sheet, spreadsheet, rawInvestedField) {
+  const rows = getPortfolioRows_(sheet, APP_CONFIG_.portfolioTable.columnCount);
+  const items = [];
+
+  rows.forEach(function (row, index) {
+    const detailUrl = getSheetLink_(
+      spreadsheet,
+      sheet,
+      APP_CONFIG_.portfolioTable.startRow + index,
+      APP_CONFIG_.portfolioTable.startCol
+    );
+    const item = buildPassivePortfolioItem_(row, detailUrl, rawInvestedField);
+    if (item) items.push(item);
+  });
+
+  return items;
+}
+
+function buildPassivePortfolioItem_(row, detailUrl, rawInvestedField) {
+  const name = row[0];
+  const institution = row[1];
+  const status = row[3];
+  const investedCell = row[5];
+  const currentCell = row[6];
+  const rentCell = row[7];
+
+  if (shouldSkipPortfolioRow_(name, status)) return null;
+
+  const rentData = calculateRentData_(rentCell, investedCell, currentCell);
+  const item = {
+    name: String(name),
+    institution: String(institution || ''),
+    institutionIcon: getInstitutionIcon_(institution),
+    valorAtual: formatMoney_(currentCell),
+    rentPct: formatPct_(rentData.rentPct),
+    rentRaw: rentData.rentNumeric,
+    recommendation: getSoftRecommendation_(rentData.rentNumeric),
+    detailUrl,
+    valorAtualRaw: rentData.currentRaw
+  };
+
+  item[rawInvestedField] = rentData.investedRaw;
+  return item;
+}
+
+function getPrevidenciaInfo_(sheet) {
+  const rows = getPortfolioRows_(sheet, APP_CONFIG_.portfolioTable.columnCount);
+  if (!rows.length) return {};
+
+  const platformTotals = {};
+  let topPlan = { name: '', value: 0 };
+
+  rows.forEach(function (row) {
+    const plan = row[0];
+    const platform = row[1];
+    const currentValue = toNumber_(row[6]);
+
+    if (shouldSkipPortfolioRow_(plan, '')) return;
+    if (currentValue === 0) return;
+
+    if (platform) {
+      const key = String(platform);
+      platformTotals[key] = (platformTotals[key] || 0) + currentValue;
+    }
+
+    if (currentValue > topPlan.value) {
+      topPlan = { name: String(plan), value: currentValue };
+    }
+  });
+
+  let topPlatformName = '';
+  let topPlatformValue = 0;
+  Object.keys(platformTotals).forEach(function (platformName) {
+    if (platformTotals[platformName] > topPlatformValue) {
+      topPlatformValue = platformTotals[platformName];
+      topPlatformName = platformName;
+    }
+  });
+
+  return {
+    platform: topPlatformName,
+    platformValue: topPlatformValue ? formatMoney_(topPlatformValue) : 'Sem dados',
+    topPlan: topPlan.name,
+    topPlanValue: topPlan.name ? formatMoney_(topPlan.value) : 'Sem dados'
+  };
+}
+
+function getTip_(sheet) {
+  if (!sheet) return '';
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < APP_CONFIG_.portfolioTable.startRow) return '';
+
+  const values = sheet.getRange(APP_CONFIG_.portfolioTable.startRow, 4, lastRow - APP_CONFIG_.portfolioTable.startRow + 1, 1).getDisplayValues();
+  for (let index = 0; index < values.length; index++) {
+    const text = values[index][0];
+    if (text) return text;
+  }
+
+  return '';
+}
+
+function getPortfolioRows_(sheet, columnCount) {
+  if (!sheet) return [];
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < APP_CONFIG_.portfolioTable.startRow) return [];
+
+  return sheet.getRange(
+    APP_CONFIG_.portfolioTable.startRow,
+    APP_CONFIG_.portfolioTable.startCol,
+    lastRow - APP_CONFIG_.portfolioTable.startRow + 1,
+    columnCount
+  ).getValues();
+}
+
+function shouldSkipPortfolioRow_(name, status) {
+  if (!name) return true;
+  if (String(name).toUpperCase().indexOf('TOTAL') >= 0) return true;
+  if (status && String(status).toLowerCase() === 'inativo') return true;
+  return false;
+}
+
+function calculateRentData_(rentCell, investedCell, currentCell) {
+  const explicitRent = isBlank_(rentCell) ? null : Number(rentCell);
+  const investedRaw = toNumber_(investedCell);
+  const currentRaw = toNumber_(currentCell);
+  let rentPct = null;
+
+  if (explicitRent !== null && !isNaN(explicitRent)) {
+    rentPct = explicitRent;
+  } else if (!isBlank_(investedCell) && !isBlank_(currentCell) && investedRaw) {
+    rentPct = currentRaw / investedRaw - 1;
+  } else if (!isBlank_(investedCell) && !isBlank_(currentCell) && !investedRaw) {
+    rentPct = 0;
+  }
+
+  return {
+    investedRaw,
+    currentRaw,
+    rentPct,
+    rentNumeric: rentPct === null || isNaN(rentPct) ? 0 : rentPct
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Recomendacoes, alertas e calculos de portfolio
+// -----------------------------------------------------------------------------
+
+/**
+ * Consolida alertas de risco, concentracao e acompanhamento leve.
+ * Entrada: lista de acoes e resumo da carteira.
+ * Saida: lista ordenavel de alertas sem duplicidade.
+ */
+function getAlerts_(actions, summary) {
+  const alerts = [];
+  const seen = {};
+  const totalPortfolio = summary?.totalRaw || sumBy_(actions, 'valorAtualRaw');
+  let infoCount = 0;
+
+  function addAlert(type, message, asset, code) {
+    const key = type + '|' + (asset || '') + '|' + (code || message);
+    if (seen[key]) return;
+    seen[key] = true;
+    alerts.push({ type, message, asset });
+  }
+
+  (actions || []).forEach(function (action) {
+    const ticker = action.ticker;
+    const share = totalPortfolio ? action.valorAtualRaw / totalPortfolio : 0;
+    const belowStop = action.stopRaw && action.currentPriceRaw && action.currentPriceRaw <= action.stopRaw;
+    const drop15 = action.rent <= -0.15;
+    const drop5 = action.rent <= -0.05;
+
+    if (belowStop || drop15) {
+      let message = ticker + ' abaixo do stop.';
+      if (belowStop && drop15) message = ticker + ' abaixo do stop e queda acima de 15%.';
+      if (!belowStop && drop15) message = ticker + ' em queda de ' + formatPct_(action.rent) + '.';
+      addAlert('Crítico', message, ticker, 'price');
+    } else if (drop5) {
+      addAlert('Atenção', ticker + ' em queda de ' + formatPct_(action.rent) + '.', ticker, 'price');
+    }
+
+    if (share >= 0.4) {
+      addAlert('Crítico', ticker + ' concentração ' + formatPct_(share) + ' da carteira.', ticker, 'concentration');
+    } else if (share >= 0.25) {
+      addAlert('Atenção', ticker + ' concentração ' + formatPct_(share) + ' da carteira.', ticker, 'concentration');
+    }
+
+    if (!drop5 && !belowStop && Math.abs(action.rent) < 0.05 && infoCount < 3) {
+      addAlert('Informativo', ticker + ' variação leve (' + formatPct_(action.rent) + ').', ticker, 'variance');
+      infoCount++;
+    }
+  });
+
+  if (!alerts.some(function (alert) { return alert.type === 'Crítico'; })) {
+    addAlert('Informativo', 'Sem alertas críticos no momento.', null, 'state');
+  }
+
+  return alerts;
+}
+
+function getPrimaryAlert_(alerts) {
+  if (!alerts || !alerts.length) return null;
+
+  const sortedAlerts = alerts.slice().sort(function (a, b) {
+    return (ALERT_PRIORITY_[a.type] ?? 9) - (ALERT_PRIORITY_[b.type] ?? 9);
+  });
+  const firstAlert = sortedAlerts[0];
+
+  if (!firstAlert) return null;
+  return {
+    text: firstAlert.message,
+    symbol: firstAlert.asset || ''
+  };
+}
+
+/**
+ * Resume os indicadores centrais do portfolio usados por score, perfil e cards.
+ */
+function getPortfolioMetrics_(summary, actions, investments, previdencias, aportesSheet) {
+  const totalAtual = summary?.totalRaw || 0;
+  const totalAcoes = summary?.acoesRaw || 0;
+  const totalFundos = summary?.fundosRaw || 0;
+  const totalPrev = summary?.previdenciaRaw || 0;
+
+  const totalInvestido = sumBy_(actions, 'valorInvestidoRaw')
+    + sumBy_(investments, 'valorInvestidoRaw')
+    + sumBy_(previdencias, 'totalAportadoRaw');
+
+  const totalAtualCalc = sumBy_(actions, 'valorAtualRaw')
+    + sumBy_(investments, 'valorAtualRaw')
+    + sumBy_(previdencias, 'valorAtualRaw');
+
+  const performance = totalInvestido ? (totalAtualCalc / totalInvestido - 1) : 0;
+
+  const institutions = new Set();
+  (actions || []).forEach(function (item) { if (item.institution) institutions.add(item.institution); });
+  (investments || []).forEach(function (item) { if (item.institution) institutions.add(item.institution); });
+  (previdencias || []).forEach(function (item) { if (item.institution) institutions.add(item.institution); });
+
+  return {
+    totalAtual,
+    totalInvestido,
+    performance,
+    institutionsCount: institutions.size,
+    stopCount: (actions || []).filter(function (action) { return action.recommendation === 'Vender'; }).length,
+    aporteRatio: getAporteRatio_(aportesSheet),
+    equityShare: totalAtual ? totalAcoes / totalAtual : 0,
+    fundsShare: totalAtual ? totalFundos / totalAtual : 0,
+    previdenciaShare: totalAtual ? totalPrev / totalAtual : 0
+  };
+}
+
+function getPortfolioScore_(metrics, actions) {
+  const diversification = metrics?.institutionsCount || 0;
+  let diversificationScore = 5;
+  if (diversification >= 5) diversificationScore = 25;
+  else if (diversification >= 3) diversificationScore = 15;
+
+  const totalAtual = metrics?.totalAtual || 0;
+  let maxShare = 0;
+  (actions || []).forEach(function (action) {
+    if (!totalAtual) return;
+    const share = action.valorAtualRaw / totalAtual;
+    if (share > maxShare) maxShare = share;
+  });
+
+  let concentrationScore = 25;
+  if (maxShare > 0.4) concentrationScore = 0;
+  else if (maxShare > 0.25) concentrationScore = 10;
+
+  const performance = metrics?.performance || 0;
+  let performanceScore = 0;
+  if (performance >= 0.1) performanceScore = 20;
+  else if (performance >= 0) performanceScore = 10;
+
+  const aporte = metrics?.aporteRatio || 0;
+  let aporteScore = 5;
+  if (aporte >= 0.8) aporteScore = 15;
+  else if (aporte >= 0.5) aporteScore = 10;
+
+  const negatives = (actions || []).filter(function (action) {
+    return action.rent < 0;
+  }).length;
+  const negativeRatio = actions && actions.length ? negatives / actions.length : 0;
+  let healthScore = 15;
+  if (negativeRatio > 0.3) healthScore = 5;
+  else if (negativeRatio > 0) healthScore = 10;
+
+  const score = diversificationScore + concentrationScore + performanceScore + aporteScore + healthScore;
+
+  let status = 'Otimizado';
+  if (score <= 39) status = 'Crítico';
+  else if (score <= 59) status = 'Instável';
+  else if (score <= 79) status = 'Saudável';
+
+  return {
+    score,
+    status,
+    explanation: [
+      'Distribuição atual: ' + diversificationScore + '/25',
+      'Concentração: ' + concentrationScore + '/25',
+      'Performance: ' + performanceScore + '/20',
+      'Aportes: ' + aporteScore + '/15',
+      'Saúde: ' + healthScore + '/15'
+    ].join(' | '),
+    breakdown: {
+      diversificationScore,
+      concentrationScore,
+      performanceScore,
+      aporteScore,
+      healthScore
+    }
+  };
+}
+
+function getProfile_(metrics) {
+  const equity = metrics?.equityShare || 0;
+  const prevShare = metrics?.previdenciaShare || 0;
+  let squad = 'Squad Balanceado';
+
+  if (equity >= 0.4 || (metrics?.stopCount || 0) >= 1) squad = 'Squad Agressivo';
+  if (equity <= 0.2 && prevShare >= 0.45) squad = 'Squad Conservador';
+
+  let level = 1;
+  const total = metrics?.totalAtual || 0;
+  const aporte = metrics?.aporteRatio || 0;
+  const diversification = metrics?.institutionsCount || 0;
+  const performance = metrics?.performance || 0;
+
+  if (total >= 50000) level++;
+  if (total >= 100000) level++;
+  if (total >= 200000) level++;
+  if (aporte >= 0.5) level++;
+  if (aporte >= 0.8) level++;
+  if (diversification >= 3) level++;
+  if (diversification >= 5) level++;
+  if (performance >= 0.1) level++;
+  if ((metrics?.stopCount || 0) === 0) level++;
+
+  if (level > 10) level = 10;
+  if (level < 1) level = 1;
+
+  return { squad, level };
+}
+
+function getGeneralAdvice_(metrics, alert) {
+  if (!metrics) return '';
+
+  const totalDelta = metrics.totalAtual - metrics.totalInvestido;
+  const lines = [];
+  lines.push('Patrimônio monitorado: ' + formatMoney_(metrics.totalAtual) + ' | Performance: ' + formatPct_(metrics.performance) + ' (' + formatMoney_(totalDelta) + ').');
+  lines.push('Distribuição atual: ' + metrics.institutionsCount + ' instituições | Ações ' + formatPct_(metrics.equityShare) + ' / Fundos ' + formatPct_(metrics.fundsShare) + ' / Previdência ' + formatPct_(metrics.previdenciaShare) + '.');
+  lines.push('Risco em monitoramento: ' + metrics.stopCount + ' stop(s) em alerta' + (alert?.symbol ? ' - foco em ' + alert.symbol : '') + '.');
+  lines.push('Disciplina de aportes: consistência ' + formatPct_(metrics.aporteRatio) + ' nos últimos 12 meses.');
+  return lines.join('\n');
+}
+
+function getAporteRatio_(sheet) {
+  if (!sheet) return 0;
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < APP_CONFIG_.aportesTable.startRow) return 0;
+
+  const rows = sheet.getRange(
+    APP_CONFIG_.aportesTable.startRow,
+    APP_CONFIG_.aportesTable.startCol,
+    lastRow - APP_CONFIG_.aportesTable.startRow + 1,
+    APP_CONFIG_.aportesTable.columnCount
+  ).getDisplayValues();
+
+  let total = 0;
+  let done = 0;
+
+  rows.forEach(function (row) {
+    const mes = row[0];
+    const status = row[5];
+
+    if (!mes) return;
+    if (String(mes).toUpperCase().indexOf('TOTAL') >= 0) return;
+
+    total++;
+    if (status && String(status).toLowerCase().indexOf('pendente') === -1) {
+      done++;
+    }
+  });
+
+  return total ? done / total : 0;
+}
+
+function getRecommendation_(rentPct, atual, stop) {
+  if (rentPct <= -0.15 || (Number(atual) && Number(stop) && Number(atual) <= Number(stop))) return 'Vender';
+  if (rentPct < -0.05) return 'Revisar';
+  if (rentPct < 0.03) return 'Monitorar';
+  return 'Manter';
+}
+
+function getSoftRecommendation_(rentPct) {
+  if (rentPct < -0.02) return 'Revisar';
+  if (rentPct < 0.05) return 'Monitorar';
+  return 'Manter';
+}
+
+// -----------------------------------------------------------------------------
+// Builders de contexto para IA e inventario auxiliar
+// -----------------------------------------------------------------------------
+
+/**
+ * Extrai o conteudo textual de todas as abas para analises taticas mais amplas.
+ */
+function getInventoryLoot() {
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheets = spreadsheet.getSheets();
+    let lootData = 'DADOS COMPLETOS DA BASE DE DADOS (TODAS AS ABAS):\n\n';
+
+    sheets.forEach(function (sheet) {
+      lootData += '\n--- ABA: ' + sheet.getName() + ' ---\n';
+      const data = sheet.getDataRange().getDisplayValues();
+
+      data.forEach(function (row) {
+        if (row.join('').trim() !== '') {
+          lootData += row.join(' | ') + '\n';
+        }
+      });
+    });
+
+    return lootData;
+  } catch (error) {
+    return 'Erro ao extrair os dados da base: ' + error.toString();
+  }
+}
+
+function buildAIPortfolioSummary_() {
+  const dashboardContext = buildDashboardContext_();
+  return dashboardContext.insights.generalAdvice;
+}
+
+function buildStrategyContext_() {
+  const dashboardContext = buildDashboardContext_();
+  return {
+    summary: dashboardContext.domainData.summary,
+    metrics: dashboardContext.insights.metrics,
+    score: dashboardContext.insights.score,
+    alerts: dashboardContext.insights.alerts
+  };
+}
+
+function buildStrategyPrompt_(context) {
+  const summary = context.summary || {};
+  const metrics = context.metrics || {};
+  const alerts = context.alerts || [];
+  const score = context.score || {};
+
+  const alertText = alerts.length
+    ? alerts.map(function (alert) { return alert.type + ': ' + alert.message; }).join(' | ')
+    : 'Sem alertas';
+
+  return [
+    'Valor total: ' + (summary.total || 'Sem dados') + '.',
+    'Performance: ' + formatPct_(metrics.performance) + '.',
+    'Distribuição: Ações ' + formatPct_(metrics.equityShare) + ', Fundos ' + formatPct_(metrics.fundsShare) + ', Previdência ' + formatPct_(metrics.previdenciaShare) + '.',
+    'Alertas: ' + alertText + '.',
+    'Score: ' + (score.score ?? 'Sem dados') + ' (' + (score.status || 'Sem dados') + '). ' + (score.explanation || '')
+  ].join('\n');
+}
+
+// -----------------------------------------------------------------------------
+// Entradas de IA e providers
+// -----------------------------------------------------------------------------
+
+/**
+ * Gera analise estrategica estruturada usando o provider configurado para OpenAI.
+ */
+function getChatGPTAnalysis() {
+  const context = buildStrategyContext_();
+  const prompt = buildStrategyPrompt_(context);
+  const errorMessage = 'Erro ao obter análise. Tente novamente.';
+
+  const systemPrompt = [
+    'Você é o analista estratégico da carteira.',
+    'Responda em português, sem links, sem markdown.',
+    'Formato obrigatório:',
+    'Diagnóstico geral: ...',
+    'Ações prioritárias:',
+    '1) ...',
+    '2) ...',
+    '3) ...',
+    'Risco principal: ...',
+    'Oportunidade: ...',
+    'Regras:',
+    '- Cada ação deve começar exatamente com: Reduzir, Aumentar, Sair ou Manter.',
+    '- Use números do contexto sempre que possível.',
+    '- Não seja genérico e não apenas descreva os dados.'
+  ].join('\n');
+
+  try {
+    let response = callChatGPT_(systemPrompt, prompt);
+    if (!response || String(response).indexOf('Erro') === 0 || String(response).indexOf('Ocorreu um erro') === 0) {
+      return errorMessage;
+    }
+
+    let safeResponse = sanitizeAIResponse_(response);
+    if (!validateStrategyResponse_(safeResponse)) {
+      response = callChatGPT_(systemPrompt + '\nResponda estritamente no formato obrigatório.', prompt);
+      if (!response || String(response).indexOf('Erro') === 0 || String(response).indexOf('Ocorreu um erro') === 0) {
+        return errorMessage;
+      }
+      safeResponse = sanitizeAIResponse_(response);
+    }
+
+    if (!validateStrategyResponse_(safeResponse)) {
+      return errorMessage;
+    }
+
+    return safeResponse;
+  } catch (error) {
+    return errorMessage;
+  }
+}
+
+function callChatGPT_(systemPrompt, userPrompt) {
+  const apiKey = getOpenAIKey_();
+  if (!apiKey) return 'Erro: OPENAI_API_KEY não configurada.';
+
+  const url = 'https://api.openai.com/v1/chat/completions';
+  const payload = {
+    model: getOpenAIModel_(),
+    temperature: 0.4,
+    max_tokens: 600,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ]
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + apiKey },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  let response;
+  let retries = 0;
+  const maxRetries = 3;
+
+  while (retries < maxRetries) {
+    try {
+      response = UrlFetchApp.fetch(url, options);
+      if (response.getResponseCode() === 200) {
+        const json = JSON.parse(response.getContentText());
+        return json.choices?.[0]?.message?.content || 'Erro: resposta vazia da IA.';
+      }
+      Utilities.sleep(Math.pow(2, retries) * 1000);
+      retries++;
+    } catch (error) {
+      Utilities.sleep(Math.pow(2, retries) * 1000);
+      retries++;
+    }
+  }
+
+  return 'Ocorreu um erro ao contactar o serviço de análise. Tente novamente mais tarde.';
+}
+
+function sanitizeAIResponse_(text) {
+  if (!text) return '';
+  return String(text).replace(/https?:\/\/\S+/g, '').trim();
+}
+
+function validateStrategyResponse_(text) {
+  if (!text) return false;
+
+  const required = ['Diagnóstico geral', 'Ações prioritárias', 'Risco principal', 'Oportunidade'];
+  const lower = text.toLowerCase();
+  if (!required.every(function (label) { return lower.indexOf(label.toLowerCase()) !== -1; })) return false;
+
+  const lines = text.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+  const actionLines = lines.filter(function (line) { return /^\d+\)/.test(line); });
+  if (actionLines.length < 3) return false;
+
+  const verbs = ['reduzir', 'aumentar', 'sair', 'manter'];
+  return actionLines.slice(0, 3).every(function (line) {
+    const normalizedLine = line.replace(/^\d+\)\s*/, '').toLowerCase();
+    return verbs.some(function (verb) { return normalizedLine.indexOf(verb) === 0; });
+  });
+}
+
+/**
+ * Chamada tática via Gemini mantida para compatibilidade com o fluxo legado.
+ */
+function callGemini(prompt, systemPrompt) {
+  const apiKey = getGeminiKey_();
+  if (!apiKey) return 'Erro: GEMINI_API_KEY não configurada.';
+
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + APP_CONFIG_.geminiModel + ':generateContent?key=' + apiKey;
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    systemInstruction: { parts: [{ text: systemPrompt }] }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  let response;
+  let retries = 0;
+  const maxRetries = 5;
+
+  while (retries < maxRetries) {
+    try {
+      response = UrlFetchApp.fetch(url, options);
+      if (response.getResponseCode() === 200) {
+        const json = JSON.parse(response.getContentText());
+        return json.candidates?.[0]?.content?.parts?.[0]?.text || 'Erro: Resposta vazia da IA.';
+      }
+      Utilities.sleep(Math.pow(2, retries) * 1000);
+      retries++;
+    } catch (error) {
+      Utilities.sleep(Math.pow(2, retries) * 1000);
+      retries++;
+    }
+  }
+
+  return 'Ocorreu um erro ao contactar o serviço de análise. Tente novamente mais tarde.';
+}
+
+/**
+ * Fluxo legado de analise tatica solicitado pelo frontend.
+ * Entrada: ticker ou simbolo em monitoramento.
+ * Saida: texto livre gerado pelo Gemini com base no inventario completo.
+ */
+function getAIAnalysis(stopLossAtivo) {
+  const systemPrompt = 'Você é o analista estratégico do Esquilo Invest. Seu tom é direto, claro e focado em decisões práticas. Analise o inventário de ativos do usuário, comente sobre os stops atingidos e sugira movimentações táticas rápidas de curto prazo.';
+  const dadosCompletos = getInventoryLoot();
+  const summary = buildAIPortfolioSummary_();
+  const userPrompt = 'Resumo estratégico:\n' + summary + '\n\nInventário completo:\n' + dadosCompletos + '\n\nStop Loss recente: ' + stopLossAtivo + '. Qual é o próximo movimento?';
+  return callGemini(userPrompt, systemPrompt);
+}
+
+// -----------------------------------------------------------------------------
+// Helpers e formatadores compartilhados
+// -----------------------------------------------------------------------------
+
+function getInstitutionIcon_(name) {
+  const key = normalizeInstitution_(name);
+  if (key.indexOf('ion') >= 0) return 'https://raw.githubusercontent.com/serealdemanga/esquilo-invest/main/icons/ion.png';
+  if (key.indexOf('itau') >= 0) return 'https://raw.githubusercontent.com/serealdemanga/esquilo-invest/main/icons/itau.png';
+  if (key.indexOf('xp') >= 0) return 'https://raw.githubusercontent.com/serealdemanga/esquilo-invest/main/icons/xp.png';
+  return '';
+}
+
+function normalizeInstitution_(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function getChartUrl_(ticker) {
+  const cleanTicker = String(ticker || '').trim().toUpperCase();
+  if (!cleanTicker) return '';
+  if (cleanTicker.indexOf(':') >= 0) return 'https://www.google.com/finance/quote/' + encodeURIComponent(cleanTicker);
+  return 'https://www.google.com/finance/quote/' + encodeURIComponent(cleanTicker) + ':BVMF';
+}
+
+function getSheetLink_(spreadsheet, sheet, row, col) {
+  if (!spreadsheet || !sheet) return '';
+  const gid = sheet.getSheetId();
+  const a1 = columnToLetter_(col) + row;
+  return 'https://docs.google.com/spreadsheets/d/' + spreadsheet.getId() + '/edit#gid=' + gid + '&range=' + a1;
+}
+
+function columnToLetter_(col) {
+  let temp = col;
+  let letter = '';
+
+  while (temp > 0) {
+    const mod = (temp - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    temp = Math.floor((temp - mod) / 26);
+  }
+
+  return letter;
+}
+
+function getHeaderIndex_(header, names) {
+  if (!header) return -1;
+  const normalizedHeader = header.map(function (item) { return normalizeText_(item); });
+
+  for (let index = 0; index < names.length; index++) {
+    const headerIndex = normalizedHeader.indexOf(normalizeText_(names[index]));
+    if (headerIndex >= 0) return headerIndex;
+  }
+
+  return -1;
+}
+
+function idxOrDefault_(value, fallback) {
+  return value >= 0 ? value : fallback;
+}
+
+function normalizeText_(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function formatMoney_(value) {
+  if (value === null || value === undefined || value === '') return 'Sem dados';
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return 'Sem dados';
+  return 'R$ ' + numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatQty_(value) {
+  if (value === null || value === undefined || value === '') return 'Sem dados';
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return 'Sem dados';
+  if (Math.abs(numericValue - Math.round(numericValue)) < 0.0000001) return String(Math.round(numericValue));
+  return numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatPct_(value) {
+  if (value === null || value === undefined || value === '') return 'Sem dados';
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return 'Sem dados';
+  return (numericValue * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+}
+
+function isBlank_(value) {
+  return value === null || value === undefined || value === '';
+}
+
+function toNumber_(value) {
+  if (isBlank_(value)) return 0;
+  const numericValue = Number(value);
+  return isNaN(numericValue) ? 0 : numericValue;
+}
+
+function sumBy_(items, key) {
+  if (!items || !items.length) return 0;
+  return items.reduce(function (total, item) {
+    return total + (Number(item[key]) || 0);
+  }, 0);
+}

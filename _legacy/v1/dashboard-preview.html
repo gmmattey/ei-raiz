@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquilo Invest - Dashboard Preview</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- Metadados minimos para validar o icone de tela inicial no iOS fora do Apps Script. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon-180.png">
+    <meta name="apple-mobile-web-app-title" content="Esquilo Invest">
+    <meta name="theme-color" content="#05070a">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #05070a;
+            --card-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent);
+        }
+
+        .font-hud { font-family: 'Orbitron', sans-serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+        .glass { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        /* Replica a protecao visual dos valores sensiveis para validar o ghost mode no preview. */
+        .hide-value { transition: filter 0.3s ease; }
+        .ghost-active .hide-value { filter: blur(8px); pointer-events: none; user-select: none; }
+
+        /* Mantem o comportamento expansivel dos cards principais no preview local. */
+        .folder-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.3s ease; }
+        .folder-active .folder-content { max-height: 1400px; padding-top: 0; }
+        .folder-active .folder-arrow { transform: rotate(180deg); }
+
+        /* Orbitron = titulos curtos, labels de destaque e valores principais. Inter = corpo, descricoes e mensagens auxiliares. */
+        .font-display { font-family: 'Orbitron', sans-serif; }
+        .type-kicker {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .type-brand {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            line-height: 1;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        .type-meta-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.45;
+            letter-spacing: 0.04em;
+            color: rgba(241, 245, 249, 0.9);
+        }
+
+        .type-heading {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.08em;
+            color: #f8fafc;
+        }
+
+        .type-value-lg {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: #f8fafc;
+        }
+
+        .type-value-sm {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+
+        .type-body {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .type-body-strong {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+            color: #f8fafc;
+        }
+
+        .type-body-xs {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            line-height: 1.55;
+            color: #94a3b8;
+        }
+
+        .type-body-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .type-action {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .type-table-head {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        /* Replica o sistema base de icones para validacao visual do header. */
+        .app-icon-button {
+            display: inline-flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.32);
+            color: rgba(226, 232, 240, 0.76);
+            backdrop-filter: blur(10px);
+            transition: background 0.24s ease, border-color 0.24s ease, color 0.24s ease, transform 0.24s ease;
+        }
+
+        .app-icon-button:hover {
+            background: rgba(15, 23, 42, 0.5);
+            border-color: rgba(255, 255, 255, 0.14);
+            color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .app-icon-button--active {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.22);
+            color: #fbbf24;
+        }
+
+        .app-icon {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        /* Mantem o header como faixa leve, sem card, no preview. */
+        .dashboard-header-shell {
+            position: relative;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .dashboard-header-shell::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.28), rgba(255, 255, 255, 0));
+            opacity: 0.72;
+        }
+
+        .dashboard-header-mark {
+            filter: drop-shadow(0 18px 28px rgba(245, 158, 11, 0.16));
+        }
+
+        .dashboard-header-meta {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.7rem;
+            min-height: 1.5rem;
+        }
+
+        /* Replica o bloco executivo que separa patrimonio e recado rapido do header. */
+        .portfolio-brief-shell {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.92));
+            border: 1px solid rgba(245, 158, 11, 0.14);
+            box-shadow: 0 22px 42px rgba(2, 6, 23, 0.18);
+        }
+
+        /* Mantem o valor principal com bom peso visual sem voltar o bloco ao topo. */
+        .portfolio-brief-card {
+            background: rgba(2, 6, 23, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Destaca a mensagem executiva do momento da carteira com leitura curta. */
+        .portfolio-brief-message {
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.26), rgba(2, 6, 23, 0.18));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Padroniza os cards abaixo do header com densidade mais compacta e cantos retos. */
+        .dashboard-summary-card {
+            background: linear-gradient(180deg, rgba(11, 18, 32, 0.92), rgba(8, 15, 28, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0;
+            box-shadow: 0 14px 28px rgba(2, 6, 23, 0.14);
+            transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+        }
+
+        .dashboard-summary-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.18);
+        }
+
+        /* Controla o glow dos cards sem exagerar no brilho. */
+        .dashboard-summary-card--blue {
+            border-color: rgba(96, 165, 250, 0.18);
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.07);
+        }
+
+        .dashboard-summary-card--purple {
+            border-color: rgba(168, 85, 247, 0.18);
+            box-shadow: 0 14px 28px rgba(126, 34, 206, 0.07);
+        }
+
+        .dashboard-summary-card--green {
+            border-color: rgba(52, 211, 153, 0.18);
+            box-shadow: 0 14px 28px rgba(5, 150, 105, 0.07);
+        }
+
+        /* Organiza os icones para evitar desalinhamento optico entre os cards e reduzir volume visual. */
+        .dashboard-summary-card__icon {
+            display: inline-flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .dashboard-summary-card__icon--blue {
+            color: #93c5fd;
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(96, 165, 250, 0.18);
+        }
+
+        .dashboard-summary-card__icon--purple {
+            color: #d8b4fe;
+            background: rgba(168, 85, 247, 0.12);
+            border-color: rgba(192, 132, 252, 0.18);
+        }
+
+        .dashboard-summary-card__icon--green {
+            color: #86efac;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(52, 211, 153, 0.18);
+        }
+
+        /* Replica a hierarquia tipografica do header nos titulos e valores dos cards. */
+        .dashboard-summary-card__label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .dashboard-summary-card__title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: 0.06em;
+            color: rgba(241, 245, 249, 0.88);
+        }
+
+        .dashboard-summary-card__value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.65rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        /* Mantem a parte expansivel dos cards compacta e legivel com menos altura base. */
+        .dashboard-summary-card__body {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.7rem;
+        }
+
+        /* Resume o card antes da expansao completa para validar o estado da Sprint 2. */
+        .dashboard-summary-card__summary {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #94a3b8;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__summary {
+            max-width: 52rem;
+        }
+
+        .dashboard-summary-card__detail-shell {
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.85rem;
+        }
+
+        .dashboard-summary-card__detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .dashboard-summary-card__filter-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .dashboard-summary-card__filter-row .select-filter {
+            min-width: 8.75rem;
+        }
+
+        .dashboard-summary-card__actions {
+            display: none;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            padding-top: 0.2rem;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__actions {
+            display: flex;
+        }
+
+        .dashboard-summary-card__action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.7rem 0.95rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #e2e8f0;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-summary-card__action:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .dashboard-summary-card__action--secondary {
+            color: #cbd5e1;
+        }
+
+        .dashboard-summary-card__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .dashboard-summary-card__header > :first-child {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__header {
+            align-items: center;
+        }
+
+        /* Replica os atalhos de analise e expansao como parte da composicao visual. */
+        .dashboard-summary-card__tools {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .dashboard-summary-card__tool {
+            display: inline-flex;
+            width: 1.85rem;
+            height: 1.85rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: #94a3b8;
+            transition: background 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+        }
+
+        .dashboard-summary-card__tool:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+        }
+
+        .dashboard-summary-card__tool:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .dashboard-summary-card__close {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.55rem 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #cbd5e1;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-summary-card__close:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.16);
+            color: #f8fafc;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__tools {
+            display: none;
+        }
+
+        [data-summary-card].is-active .dashboard-summary-card__close {
+            display: inline-flex;
+        }
+
+        /* Remove o grid no estado expandido para garantir card unico em full width no preview. */
+        .summary-grid-expanded {
+            display: block !important;
+            width: 100%;
+        }
+
+        .summary-grid-expanded [data-summary-card].is-hidden {
+            display: none;
+        }
+
+        .summary-grid-expanded [data-summary-card].is-active {
+            display: block;
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            animation: summary-expand-in 0.22s ease;
+        }
+
+        [data-summary-card].is-active {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 28px 56px rgba(2, 6, 23, 0.24);
+        }
+
+        /* Distribui o modo expandido em colunas no tablet e desktop para aproveitar a largura total sem poluir a leitura. */
+        @media (min-width: 768px) {
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__body {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.85rem;
+                align-items: start;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__body > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__detail-shell {
+                height: 100%;
+            }
+
+            .summary-grid-expanded [data-summary-card].is-active .dashboard-summary-card__actions {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Empilha os pontos criticos do expandido no mobile para evitar compressao feia e overflow horizontal. */
+        @media (max-width: 767px) {
+            .dashboard-summary-card__header {
+                flex-wrap: wrap;
+            }
+
+            .dashboard-summary-card__header > :first-child {
+                flex-basis: calc(100% - 2.3rem);
+            }
+
+            .dashboard-summary-card__tools {
+                margin-left: auto;
+            }
+
+            [data-summary-card].is-active .dashboard-summary-card__header {
+                align-items: flex-start;
+            }
+
+            [data-summary-card].is-active .dashboard-summary-card__close {
+                width: 100%;
+            }
+
+            .dashboard-summary-card__value {
+                font-size: 1.45rem;
+            }
+
+            .dashboard-summary-card__detail-shell {
+                padding: 0.75rem;
+            }
+
+            .dashboard-summary-card__detail-row,
+            .dashboard-summary-card__filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .dashboard-summary-card__detail-row > * {
+                width: 100%;
+            }
+
+            .dashboard-summary-card__detail-row .type-value-sm,
+            .dashboard-summary-card__detail-row .hide-value {
+                text-align: left;
+            }
+
+            .dashboard-summary-card__filter-row .select-filter {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .dashboard-summary-card__actions {
+                flex-direction: column;
+            }
+
+            .dashboard-summary-card__action {
+                width: 100%;
+            }
+        }
+
+        /* Mantem a modal utilitaria de recursos em preparo consistente com o dashboard. */
+        .feature-popup-shell {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 15, 28, 0.96));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 26px 60px rgba(2, 6, 23, 0.38);
+        }
+
+        /* Simula um loading leve para validar shimmer e bloqueio visual do preview. */
+        .dashboard-loading [data-loading-block] {
+            position: relative;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .dashboard-loading [data-loading-block]::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .dashboard-loading [data-loading-block]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            animation: dashboard-shimmer 1.25s ease-in-out infinite;
+        }
+
+        @keyframes dashboard-shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes summary-expand-in {
+            from {
+                opacity: 0;
+                transform: scale(0.985);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .select-filter {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.25rem;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .select-filter:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.5);
+        }
+    </style>
+</head>
+<body class="ghost-active min-h-screen p-4 md:p-10" id="main-body">
+    <svg aria-hidden="true" focusable="false" class="absolute h-0 w-0 overflow-hidden">
+        <symbol id="icon-hide" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M10.58 10.58a2 2 0 1 0 2.84 2.84" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.11 11 7.5a11.8 11.8 0 0 1-3.04 4.36" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6.61 6.61A11.84 11.84 0 0 0 1 11.5C2.73 15.89 7 19 12 19c1.72 0 3.35-.37 4.82-1.03" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12a9 9 0 0 1-15.36 6.36" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M3 12A9 9 0 0 1 18.36 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M18 2v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6 22v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-actions" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M7 16V9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M12 16V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M17 16v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+        </symbol>
+        <symbol id="icon-funds" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 3 8l9 5 9-5-9-5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="m3 12 9 5 9-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="m3 16 9 5 9-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-previdencia" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 6 5.5v5.5c0 4.3 2.5 8.3 6 10 3.5-1.7 6-5.7 6-10V5.5L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="m9.5 12 1.7 1.7L14.8 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-expand" viewBox="0 0 24 24" fill="none">
+            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-chart" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="m6 15 4-4 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </symbol>
+        <symbol id="icon-ai" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M12 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="m5.64 5.64 2.83 2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="m15.53 15.53 2.83 2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M3 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M17 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="m5.64 18.36 2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="m15.53 8.47 2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"></circle>
+        </symbol>
+    </svg>
+    <main class="mx-auto max-w-7xl">
+        <!-- Dashboard Header: START -->
+        <header class="relative mb-6 lg:mb-7" data-block="dashboard-header-preview">
+            <div class="pointer-events-none absolute inset-x-0 -top-8 h-20 bg-[radial-gradient(circle_at_left,rgba(245,158,11,0.18),transparent_62%)] opacity-80"></div>
+            <div class="dashboard-header-shell relative">
+                <div class="relative flex items-start justify-between gap-4 sm:items-center">
+                    <!-- Header Brand Row: START -->
+                    <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+                        <img src="https://raw.githubusercontent.com/serealdemanga/esquilo-invest/refs/heads/main/icons/esquilo.png" alt="Esquilo Invest" class="dashboard-header-mark h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14">
+                        <h1 class="type-brand text-[1.45rem] sm:text-[1.75rem] md:text-[2rem]">Esquilo Invest</h1>
+                    </div>
+                    <!-- Header Brand Row: END -->
+
+                    <!-- Header Controls Row: START -->
+                    <div class="flex items-center gap-2">
+                        <button id="ghost-toggle" onclick="toggleGhostMode()" class="app-icon-button app-icon-button--active" title="Ocultar conteudo sensivel" aria-label="Ocultar conteudo sensivel">
+                            <svg id="ghost-icon" class="app-icon text-amber-300 transition" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-hide"></use>
+                            </svg>
+                        </button>
+                        <button onclick="refreshPreview()" class="app-icon-button" title="Atualizar preview" aria-label="Atualizar preview">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-refresh"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Header Controls Row: END -->
+                </div>
+
+                <!-- Header Meta Row: START -->
+                <div class="relative mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <div class="dashboard-header-meta">
+                        <span class="type-kicker">Squad</span>
+                        <span class="type-meta-value">Giammattey</span>
+                    </div>
+                    <div class="dashboard-header-meta">
+                        <span class="type-kicker">Nivel</span>
+                        <span class="type-meta-value">12</span>
+                    </div>
+                </div>
+                <!-- Header Meta Row: END -->
+            </div>
+        </header>
+        <!-- Dashboard Header: END -->
+
+        <!-- Portfolio Brief: START -->
+        <section class="mb-6 lg:mb-7" data-block="portfolio-brief-preview">
+            <div class="portfolio-brief-shell grid gap-4 rounded-[2rem] p-4 sm:p-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)] lg:items-stretch lg:gap-5 lg:p-6" data-loading-block>
+                <div class="portfolio-brief-card rounded-[1.5rem] p-4 sm:p-5">
+                    <div class="space-y-3">
+                        <p class="type-kicker text-amber-200/72">Patrimonio consolidado</p>
+                        <p class="hide-value type-value-lg text-[2.25rem] sm:text-[2.65rem] lg:text-[2.9rem]">R$ 4.286.930,14</p>
+                        <div class="flex flex-wrap items-center gap-2 type-body-label text-amber-100/72">
+                            <span>Performance do periodo</span>
+                            <span class="hide-value type-value-sm text-sm text-emerald-300 md:text-base">+6,42% no mes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="portfolio-brief-message rounded-[1.5rem] p-4 sm:p-5">
+                    <div class="space-y-3">
+                        <p class="type-kicker">Recado rapido</p>
+                        <p class="type-body-strong text-[1.3rem] leading-tight sm:text-[1.45rem]">Carteira saudavel para seguir no jogo.</p>
+                        <p class="type-body text-sm leading-6 text-slate-400">Snapshot do round para decidir rapido sem perder tempo no lobby da carteira.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Portfolio Brief: END -->
+
+        <!-- Expandable Summary Cards: START -->
+        <section class="grid grid-cols-1 gap-4 mb-9 md:grid-cols-2 lg:grid-cols-3 lg:gap-5 lg:mb-10" data-block="summary-folder-grid">
+            <!-- Previdencia Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--blue overflow-hidden rounded-none p-4" data-summary-card="previdencia" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--blue">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-previdencia"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Reserva de longo prazo</p>
+                            <p class="dashboard-summary-card__title">Previdencia</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Previdencia')" title="Grafico e analise" aria-label="Grafico e analise de previdencia">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de previdencia">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de previdencia">Fechar</button>
+                </div>
+                <p class="dashboard-summary-card__value hide-value mt-3 text-white">R$ 1.328.440,90</p>
+                <p class="dashboard-summary-card__summary mt-2.5">Reserva de previdencia organizada para leitura rapida do volume e da base principal.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-blue-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2">
+                                <span class="type-body-xs text-[11px] text-slate-300">Plataforma: Icatu</span>
+                                <span class="hide-value type-value-sm text-[11px] text-blue-300">R$ 1.328.440,90</span>
+                            </div>
+                            <p class="px-1 text-[10px] italic leading-5 text-slate-500">Plano com foco previdenciario e protecao de longo prazo.</p>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-blue-200/75">Conteudo detalhado</p>
+                            <div class="dashboard-summary-card__filter-row">
+                                <span class="dashboard-summary-card__label">Filtro</span>
+                                <select class="select-filter">
+                                    <option>Todas</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="rounded-none bg-white/3 px-3 py-2 text-[11px] tracking-[0.04em] text-slate-300">Prev Arrojado Global</div>
+                                <div class="rounded-none bg-white/3 px-3 py-2 text-[11px] tracking-[0.04em] text-slate-300">Prev Consistente RF</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Previdencia')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Previdencia Card: END -->
+
+            <!-- Investimentos Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--purple overflow-hidden rounded-none p-4" data-summary-card="investimentos" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--purple">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-funds"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Carteira passiva</p>
+                            <p class="dashboard-summary-card__title">Fundos de investimento</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Fundos de investimento')" title="Grafico e analise" aria-label="Grafico e analise de fundos de investimento">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de fundos de investimento">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de fundos de investimento">Fechar</button>
+                </div>
+                <p class="dashboard-summary-card__value hide-value mt-3 text-white">R$ 2.144.210,34</p>
+                <p class="dashboard-summary-card__summary mt-2.5">Bloco de fundos concentrado no essencial: valor total, base principal e atalhos prontos para a Sprint 3.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-purple-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2">
+                                <span class="type-body-xs text-[11px] text-slate-300">Instituicao: XP</span>
+                                <span class="hide-value type-value-sm text-[11px] text-purple-300">R$ 2.144.210,34</span>
+                            </div>
+                            <div class="rounded-none bg-white/3 px-3 py-2">
+                                <p class="dashboard-summary-card__label mb-2">Distribuicao</p>
+                                <div class="dashboard-summary-card__detail-row mb-1 text-[10px] tracking-[0.04em] text-slate-400">
+                                    <span>Credito privado</span>
+                                    <span class="hide-value text-slate-300">34%</span>
+                                </div>
+                                <div class="dashboard-summary-card__detail-row text-[10px] tracking-[0.04em] text-slate-400">
+                                    <span>Multimercado</span>
+                                    <span class="hide-value text-slate-300">21%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-purple-200/75">Conteudo detalhado</p>
+                            <div class="dashboard-summary-card__filter-row">
+                                <span class="dashboard-summary-card__label">Filtro</span>
+                                <select class="select-filter">
+                                    <option>Todas</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="rounded-none bg-white/3 px-3 py-2 text-[11px] tracking-[0.04em] text-slate-300">Fundo Estrategia Brasil</div>
+                                <div class="rounded-none bg-white/3 px-3 py-2 text-[11px] tracking-[0.04em] text-slate-300">Fundo Credito Premium</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Fundos de investimento')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Investimentos Card: END -->
+
+            <!-- Acoes Card: START -->
+            <div class="dashboard-summary-card dashboard-summary-card--green overflow-hidden rounded-none p-4" data-summary-card="acoes" data-loading-block>
+                <div class="dashboard-summary-card__header">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="dashboard-summary-card__icon dashboard-summary-card__icon--green">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-actions"></use>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 space-y-1">
+                            <p class="dashboard-summary-card__label">Operacao direta</p>
+                            <p class="dashboard-summary-card__title">Acoes</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-summary-card__tools">
+                        <button class="dashboard-summary-card__tool" type="button" onclick="showFeaturePopup('chart', 'Acoes')" title="Grafico e analise" aria-label="Grafico e analise de acoes">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-chart"></use>
+                            </svg>
+                        </button>
+                        <button class="dashboard-summary-card__tool folder-arrow" type="button" onclick="toggleSummaryCard(this)" data-summary-trigger aria-expanded="false" title="Expandir bloco" aria-label="Expandir bloco de acoes">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <use href="#icon-expand"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="dashboard-summary-card__close" type="button" onclick="toggleSummaryCard(this)" aria-label="Fechar bloco de acoes">Fechar</button>
+                </div>
+                <p class="dashboard-summary-card__value hide-value mt-3 text-emerald-100">R$ 814.278,90</p>
+                <p class="dashboard-summary-card__summary mt-2.5">Leitura resumida das posicoes em bolsa para saber rapido quanto esta exposto na corretora.</p>
+                <div class="folder-content">
+                    <div class="dashboard-summary-card__body space-y-2">
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-emerald-200/75">Detalhamento</p>
+                            <div class="dashboard-summary-card__detail-row rounded-none bg-white/4 px-3 py-2">
+                                <span class="type-body-xs text-[11px] text-slate-300">Corretora: XP</span>
+                                <span class="hide-value type-value-sm text-[11px] text-emerald-300">R$ 814.278,90</span>
+                            </div>
+                            <p class="px-1 text-[10px] leading-5 text-slate-500">Ativos operados diretamente via Home Broker.</p>
+                        </div>
+                        <div class="dashboard-summary-card__detail-shell space-y-2.5">
+                            <p class="type-kicker text-emerald-200/75">Conteudo detalhado</p>
+                            <p class="type-body-xs px-1 text-slate-400">Use o bloco expandido para revisar rapidamente o valor alocado e os sinais operacionais antes de abrir a tabela principal.</p>
+                        </div>
+                        <div class="dashboard-summary-card__actions">
+                            <button class="dashboard-summary-card__action" type="button" onclick="showFeaturePopup('chart', 'Acoes')">Grafico e analise</button>
+                            <button class="dashboard-summary-card__action dashboard-summary-card__action--secondary" type="button" onclick="toggleSummaryCard(this)">Voltar aos blocos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Acoes Card: END -->
+        </section>
+        <!-- Expandable Summary Cards: END -->
+
+        <!-- Recommended Action Card: START -->
+        <section class="glass p-6 rounded-3xl border-2 border-amber-500/70 bg-gradient-to-r from-amber-500/10 via-transparent to-red-500/10 mb-8" data-block="recommended-action-card" data-loading-block>
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-2">
+                    <p class="type-kicker text-amber-300">Alerta e recomendacao</p>
+                    <p class="type-heading text-2xl md:text-3xl text-white">REDUZIR EXPOSICAO</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="type-body text-sm text-slate-300">Mercado ainda pede leitura atenta nos ativos mais agressivos do round.</p>
+                    <p class="type-body-strong text-sm text-amber-200">Impacto: proteger caixa e melhorar margem de manobra.</p>
+                </div>
+            </div>
+        </section>
+        <!-- Recommended Action Card: END -->
+
+        <!-- AI Analysis Card: START -->
+        <section class="glass p-6 rounded-3xl bg-gradient-to-br from-violet-900/15 to-transparent mb-10" data-block="ai-analysis-card" data-loading-block>
+            <div class="flex flex-col items-start justify-between gap-4 mb-4 md:flex-row md:items-center">
+                <div class="flex items-center gap-3">
+                    <svg class="h-8 w-8 text-violet-300" viewBox="0 0 24 24" aria-hidden="true">
+                        <use href="#icon-ai"></use>
+                    </svg>
+                    <div>
+                        <h2 class="type-heading text-lg text-violet-400">Esquilo IA</h2>
+                        <p class="type-body-label text-slate-400">Suporte tatico em preparo</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="requestStrategyAnalysis()" id="strategy-btn" class="type-action bg-violet-600 text-white px-6 py-2.5 rounded-xl">
+                        Chamar Esquilo IA
+                    </button>
+                </div>
+            </div>
+            <div id="ai-response" class="type-body text-sm md:text-base text-slate-200 leading-relaxed min-h-[80px] p-5 bg-black/30 rounded-xl border border-white/5 whitespace-pre-wrap">
+                O hub da Esquilo IA fica aqui quando os modulos taticos estiverem online.
+            </div>
+        </section>
+        <!-- AI Analysis Card: END -->
+
+        <!-- Feature Popup: START -->
+        <div id="feature-popup" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+            <button class="absolute inset-0 bg-slate-950/78 backdrop-blur-sm" onclick="closeFeaturePopup()" aria-label="Fechar aviso"></button>
+            <div class="feature-popup-shell relative z-10 w-full max-w-md rounded-[1.8rem] p-6">
+                <div class="space-y-4">
+                    <p id="feature-popup-tag" class="type-kicker text-amber-200/72">Modo em preparo</p>
+                    <div class="space-y-2">
+                        <h3 id="feature-popup-title" class="type-heading text-2xl text-white">Feature em calibragem</h3>
+                        <p id="feature-popup-message" class="type-body text-sm leading-6 text-slate-300">Essa rota ainda nao esta ativa.</p>
+                    </div>
+                    <button onclick="closeFeaturePopup()" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 type-action text-slate-200 transition hover:bg-white/10">Voltar para o painel</button>
+                </div>
+            </div>
+        </div>
+        <!-- Feature Popup: END -->
+    </main>
+
+    <script>
+        /**
+         * Alterna o estado visual de ghost mode no preview local.
+         * Entrada: nenhuma. Usa o body principal e o icone do botao.
+         * Saida: atualiza apenas as classes visuais para validar blur ativo e inativo.
+         */
+        function toggleGhostMode() {
+            const body = document.getElementById('main-body');
+            const icon = document.getElementById('ghost-icon');
+            const button = document.getElementById('ghost-toggle');
+            if (!body) return;
+
+            const active = body.classList.toggle('ghost-active');
+            if (button) {
+                button.classList.toggle('app-icon-button--active', active);
+            }
+            if (icon) {
+                icon.classList.toggle('text-amber-300', active);
+                icon.classList.toggle('text-slate-300', !active);
+            }
+        }
+
+        /**
+         * Fecha todos os estados expandidos do grid resumido e restaura a visao inicial.
+         * Entrada: container do grid de resumo.
+         * Saida: atualiza apenas classes visuais do preview.
+         */
+        function resetSummaryGrid(grid) {
+            if (!grid) return;
+
+            grid.classList.remove('summary-grid-expanded');
+            grid.removeAttribute('data-summary-mode');
+            grid.removeAttribute('data-active-summary-card');
+
+            grid.querySelectorAll('[data-summary-card]').forEach(function (card) {
+                card.classList.remove('is-active', 'is-hidden', 'folder-active');
+            });
+
+            grid.querySelectorAll('[data-summary-trigger]').forEach(function (button) {
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        /**
+         * Expande um unico bloco resumido e recolhe os demais para validar o fluxo final.
+         * Entrada: botao de expansao clicado.
+         * Saida: aplica apenas estados visuais locais.
+         */
+        function toggleSummaryCard(trigger) {
+            const card = trigger?.closest('[data-summary-card]');
+            const grid = card?.closest('[data-block=\"summary-folder-grid\"]');
+            if (!card || !grid) return;
+
+            const shouldClose = card.classList.contains('is-active');
+            resetSummaryGrid(grid);
+            if (shouldClose) return;
+
+            grid.classList.add('summary-grid-expanded');
+            grid.setAttribute('data-summary-mode', 'expanded');
+            grid.setAttribute('data-active-summary-card', card.getAttribute('data-summary-card') || '');
+            grid.querySelectorAll('[data-summary-card]').forEach(function (item) {
+                const isActive = item === card;
+                item.classList.toggle('is-active', isActive);
+                item.classList.toggle('folder-active', isActive);
+                item.classList.toggle('is-hidden', !isActive);
+            });
+
+            trigger.setAttribute('aria-expanded', 'true');
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /**
+         * Mostra a modal utilitaria de funcionalidades ainda indisponiveis.
+         * Entrada: tipo do recurso e contexto opcional.
+         * Saida: exibe o overlay sem depender do dashboard real.
+         */
+        function showFeaturePopup(featureType, contextLabel) {
+            const popup = document.getElementById('feature-popup');
+            const tag = document.getElementById('feature-popup-tag');
+            const title = document.getElementById('feature-popup-title');
+            const message = document.getElementById('feature-popup-message');
+            if (!popup || !tag || !title || !message) return;
+
+            const safeContext = contextLabel || 'Esse modulo';
+            const popupConfig = featureType === 'ai'
+                ? {
+                    tag: 'Esquilo IA em pit stop',
+                    title: 'Esquilo IA ainda esta calibrando os gadgets.',
+                    message: 'O modo tatico do ' + safeContext + ' ainda nao foi liberado. Segura mais um round que ele volta para o lobby.'
+                }
+                : {
+                    tag: 'Analise em preparo',
+                    title: safeContext + ' ainda esta sem visor tatico.',
+                    message: 'O grafico e a analise detalhada desse bloco entram no proximo loadout. Por enquanto seguimos no resumo rapido.'
+                };
+
+            tag.textContent = popupConfig.tag;
+            title.textContent = popupConfig.title;
+            message.textContent = popupConfig.message;
+
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+        }
+
+        /**
+         * Fecha apenas a modal de feedback do preview.
+         * Entrada: nenhuma.
+         * Saida: remove o overlay visual.
+         */
+        function closeFeaturePopup() {
+            const popup = document.getElementById('feature-popup');
+            if (!popup) return;
+
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+        }
+
+        /**
+         * Exibe um retorno local para a Esquilo IA sem depender de backend.
+         * Entrada: nenhuma.
+         * Saida: atualiza o card de resposta e abre o popup utilitario.
+         */
+        function requestStrategyAnalysis() {
+            const responseContainer = document.getElementById('ai-response');
+            if (!responseContainer) return;
+
+            responseContainer.textContent = 'Esquilo IA ainda esta aquecendo os modulos taticos. Por enquanto seguimos no manual do squad e esse suporte entra no proximo loadout.';
+            showFeaturePopup('ai', 'Esquilo IA');
+        }
+
+        /**
+         * Simula uma atualizacao leve do preview sem depender do dashboard real.
+         * Entrada: nenhuma.
+         * Saida: aplica shimmer curto e destaque no container principal.
+         */
+        function refreshPreview() {
+            const body = document.getElementById('main-body');
+            if (!body) return;
+
+            body.classList.remove('ring-1', 'ring-amber-400/40', 'dashboard-loading');
+            window.requestAnimationFrame(function () {
+                body.classList.add('ring-1', 'ring-amber-400/40', 'dashboard-loading');
+                window.setTimeout(function () {
+                    body.classList.remove('ring-1', 'ring-amber-400/40');
+                }, 320);
+                window.setTimeout(function () {
+                    body.classList.remove('dashboard-loading');
+                }, 900);
+            });
+        }
+
+        /**
+         * Mantem compatibilidade com interacoes legadas de expansao fora do grid principal.
+         * Entrada: elemento clicado.
+         * Saida: alterna apenas a classe visual folder-active.
+         */
+        function toggleFolder(element) {
+            if (!element) return;
+            element.classList.toggle('folder-active');
+        }
+    </script>
+</body>
+</html>
