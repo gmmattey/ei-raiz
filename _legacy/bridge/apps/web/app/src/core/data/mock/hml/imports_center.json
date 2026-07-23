@@ -1,0 +1,51 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_imports_center",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "summary": {
+      "totalImports": 2,
+      "pendingImports": 1,
+      "completedImports": 1,
+      "failedImports": 0
+    },
+    "imports": [
+      {
+        "id": "imp_bal_2",
+        "origin": "B3_CSV",
+        "originLabel": "CSV da B3",
+        "status": "PREVIEW_READY",
+        "statusLabel": "Pronta para commit",
+        "fileName": "b3.csv",
+        "mimeType": "text/csv",
+        "totals": { "totalRows": 18, "validRows": 16, "invalidRows": 1, "duplicateRows": 1 },
+        "createdAt": "2026-03-31T01:00:00Z",
+        "updatedAt": "2026-03-31T01:05:00Z",
+        "snapshot": null,
+        "primaryAction": { "code": "resume_import", "title": "Retomar revisão", "target": "/imports/imp_bal_2/preview" },
+        "secondaryAction": null
+      },
+      {
+        "id": "imp_bal_1",
+        "origin": "CUSTOM_TEMPLATE",
+        "originLabel": "Template próprio",
+        "status": "COMMITTED",
+        "statusLabel": "Concluída",
+        "fileName": "template.xlsx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "totals": { "totalRows": 12, "validRows": 12, "invalidRows": 0, "duplicateRows": 0 },
+        "createdAt": "2026-03-01T00:00:00.000Z",
+        "updatedAt": "2026-03-01T00:02:00.000Z",
+        "snapshot": { "id": "snp_bal_0", "referenceDate": "2026-02-28", "target": "/history/snapshots" },
+        "primaryAction": { "code": "open_preview", "title": "Ver importação", "target": "/imports/imp_bal_1/preview" },
+        "secondaryAction": { "code": "open_snapshot", "title": "Ver snapshot", "target": "/history/snapshots" }
+      }
+    ]
+  }
+}
+

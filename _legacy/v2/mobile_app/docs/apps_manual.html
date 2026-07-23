@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual AppScript MVP Mobile</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    :root {
+      --ink: #102233;
+      --muted: #546879;
+      --line: #d7e2ea;
+      --white: #ffffff;
+      --paper: #f5f9fc;
+      --navy: #08131d;
+      --navy-2: #132536;
+      --amber: #ffb347;
+      --amber-soft: #fff2dc;
+      --cyan: #67d6ff;
+      --cyan-soft: #e5f9ff;
+      --green: #2f9f7f;
+      --green-soft: #e8f7f1;
+      --red: #c65454;
+      --red-soft: #fdeeee;
+      --shadow: 0 10px 28px rgba(9, 24, 38, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #dde7ef;
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body { line-height: 1.45; }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 16mm 15mm 16mm;
+      position: relative;
+      background:
+        radial-gradient(circle at top right, rgba(103, 214, 255, 0.08), transparent 24%),
+        linear-gradient(180deg, #f9fcff 0%, var(--paper) 100%);
+      break-after: page;
+    }
+
+    .page:last-child { break-after: auto; }
+
+    .cover {
+      background:
+        radial-gradient(circle at top left, rgba(255, 179, 71, 0.2), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(103, 214, 255, 0.14), transparent 28%),
+        linear-gradient(155deg, #04090f 0%, #0a1722 52%, #102131 100%);
+      color: #eef6fb;
+    }
+
+    .cover-grid {
+      min-height: 264mm;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .chip {
+      color: #eef6fb;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .chip.alt {
+      color: var(--amber);
+      border-color: rgba(255, 179, 71, 0.26);
+      background: rgba(255, 179, 71, 0.08);
+    }
+
+    .mark {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(145deg, rgba(255,179,71,0.16), rgba(103,214,255,0.12));
+    }
+
+    .cover-main { align-self: center; max-width: 154mm; }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .cover h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.08;
+    }
+    .cover p.sub {
+      margin: 16px 0 0;
+      max-width: 140mm;
+      font-size: 15px;
+      line-height: 1.58;
+      color: rgba(238,246,251,0.84);
+    }
+
+    .meta-grid, .mini-grid, .check-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .meta-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px; }
+    .mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
+    .check-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 10px; }
+
+    .meta, .card, .mini, .step, .check, .map {
+      border: 1px solid var(--line);
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .meta {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+      color: #f6fbff;
+    }
+    .meta small {
+      display: block;
+      margin-bottom: 6px;
+      color: rgba(238,246,251,0.62);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .meta strong { font-size: 14px; line-height: 1.35; }
+
+    .section-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .tag {
+      background: var(--white);
+      color: var(--cyan);
+      border: 1px solid rgba(16,34,51,0.08);
+      box-shadow: var(--shadow);
+    }
+    h2 { margin: 6px 0 0; font-size: 24px; line-height: 1.15; color: var(--navy); }
+    .subhead { margin: 6px 0 0; max-width: 148mm; color: var(--muted); font-size: 13px; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .summary .card { padding: 13px 14px; border-radius: 18px; }
+    .summary strong { display: block; margin-bottom: 5px; font-size: 12px; color: var(--navy); }
+    .summary span { font-size: 12px; color: var(--muted); }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      padding: 16px;
+      border-radius: 22px;
+    }
+    .card.dark {
+      background: linear-gradient(160deg, rgba(7,16,24,0.98), rgba(19,38,54,0.95));
+      border-color: rgba(255,255,255,0.08);
+      color: #eef6fb;
+    }
+    .card h3 { margin: 0 0 10px; font-size: 15px; }
+    .card p, .card li, .mini p, .step p, .map p, td, th, .check { font-size: 12px; }
+    .card p { margin: 0; }
+    .card.dark p, .card.dark li { color: rgba(238,246,251,0.82); }
+    ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    li + li { margin-top: 6px; }
+
+    .mini {
+      padding: 14px;
+      border-radius: 18px;
+    }
+    .mini h4, .map h4 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: var(--navy);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .mini p, .map p { margin: 0; color: var(--muted); }
+
+    .note {
+      margin-top: 12px;
+      padding: 14px 15px;
+      border-left: 4px solid var(--amber);
+      border-radius: 18px;
+      background: var(--amber-soft);
+      color: #5b4517;
+      font-size: 12.5px;
+    }
+    .note.info { border-left-color: var(--cyan); background: var(--cyan-soft); color: #12425a; }
+    .note.ok { border-left-color: var(--green); background: var(--green-soft); color: #1e5e4a; }
+    .note.warn { border-left-color: var(--red); background: var(--red-soft); color: #6d2d2d; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: #edf4f8;
+      color: var(--navy);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .req { color: #225645; background: var(--green-soft); border-color: rgba(47,159,127,0.24); }
+    .rec { color: #6a4e19; background: var(--amber-soft); border-color: rgba(255,179,71,0.24); }
+    .opt { color: #23546a; background: var(--cyan-soft); border-color: rgba(103,214,255,0.26); }
+    .out { color: #6b7784; background: #eef3f6; border-color: rgba(84,104,121,0.16); }
+
+    .code {
+      display: block;
+      margin-top: 7px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: var(--navy-2);
+      color: #ecf7fd;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 10.4px;
+      line-height: 1.42;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .code.light { background: #edf4f8; color: var(--navy); }
+
+    .steps, .maps {
+      display: grid;
+      gap: 10px;
+    }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .maps { grid-template-columns: 1fr 1fr; margin-top: 12px; }
+
+    .step, .map {
+      padding: 15px;
+      border-radius: 20px;
+      position: relative;
+    }
+    .step { padding-left: 56px; min-height: 148px; }
+    .step .n {
+      position: absolute;
+      left: 15px;
+      top: 15px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: linear-gradient(145deg, var(--amber), #ffd38a);
+      color: #3b2a0c;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .step h3 { margin: 0 0 8px; font-size: 14px; color: var(--navy); }
+    .map { min-height: 110px; }
+
+    .footer {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    code { font-family: Consolas, "Courier New", monospace; font-size: 0.95em; }
+  </style>
+</head>
+<body>
+  <section class="page cover">
+    <div class="cover-grid">
+      <div class="row">
+        <div class="chips">
+          <span class="chip">Pocket Ops</span>
+          <span class="chip alt">MVP Mobile</span>
+          <span class="chip">AppScript + Flutter</span>
+        </div>
+        <div class="mark">PO</div>
+      </div>
+      <div class="cover-main">
+        <p class="eyebrow">Manual operacional</p>
+        <h1>Manual de Instalação do Backend AppScript para o MVP Mobile</h1>
+        <p class="sub">
+          Guia prático para criar, copiar, configurar e publicar exatamente o backend em Google Apps Script
+          que o app Flutter entregue em <strong>mobile_app/</strong> espera consumir.
+        </p>
+        <div class="meta-grid">
+          <div class="meta"><small>Versão</small><strong>Pocket Ops v2.0.0</strong></div>
+          <div class="meta"><small>Escopo</small><strong>MVP Mobile + integração real</strong></div>
+          <div class="meta"><small>Data</small><strong>27/03/2026</strong></div>
+          <div class="meta"><small>Base</small><strong>Entrega já criada no repositório</strong></div>
+        </div>
+      </div>
+      <div class="row" style="align-items:flex-end;">
+        <div class="note" style="max-width:110mm; color:#fff5e6; border-left-color:var(--amber); background:rgba(255,179,71,0.08); border:1px solid rgba(255,179,71,0.16);">
+          Este documento não inventa camadas novas. Ele espelha somente os arquivos, endpoints,
+          parâmetros e ajustes realmente necessários para a integração Flutter + AppScript já entregue.
+        </div>
+        <div>Esquilo Invest • Instalação backend para operação local</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">1. Visão geral</span>
+        <h2>O que este manual cobre</h2>
+        <p class="subhead">
+          Este guia mostra como deixar o AppScript pronto para responder ao app Flutter em produção local,
+          sem alterar a regra de negócio e sem criar backend paralelo.
+        </p>
+      </div>
+      <div class="tag">Fluxo real entregue</div>
+    </div>
+
+    <div class="summary">
+      <div class="card"><strong>Papel do AppScript</strong><span>Servir HTML do dashboard atual e JSON para o app mobile no mesmo deploy.</span></div>
+      <div class="card"><strong>O que será configurado</strong><span>Arquivos .gs, um arquivo .html, Script Properties, Web App e URL final /exec.</span></div>
+      <div class="card"><strong>Resultado esperado</strong><span>Flutter consumindo <code>?format=json&amp;resource=...</code> com o contrato já entregue.</span></div>
+      <div class="card"><strong>Caminho mais seguro</strong><span>Atualizar o projeto AppScript existente do repositório, sem renomear arquivos.</span></div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h3>Resumo funcional da integração</h3>
+        <ul>
+          <li>O Flutter lê a URL base do backend por <strong>APP_SCRIPT_BASE_URL</strong>.</li>
+          <li>O token opcional é lido por <strong>APP_SCRIPT_API_TOKEN</strong>.</li>
+          <li>O AppScript responde JSON quando recebe <strong>format=json</strong>.</li>
+          <li>Os recursos mobile entregues são <strong>dashboard</strong>, <strong>ai-analysis</strong> e <strong>health</strong>.</li>
+          <li>O app mobile não recria lógica de negócio; ele consome o mesmo <strong>getDashboardData()</strong>.</li>
+        </ul>
+        <div class="note info">
+          Cenário recomendado: manter o projeto AppScript já existente e apenas aplicar os arquivos e ajustes
+          listados neste manual. Recriar do zero é possível, mas exige copiar os arquivos de suporte também.
+        </div>
+      </div>
+
+      <div class="card dark">
+        <h3>Resultado esperado ao final</h3>
+        <ul>
+          <li>A URL <strong>/exec?format=json&amp;resource=health</strong> responde com <strong>ok: true</strong>.</li>
+          <li>A URL <strong>/exec?format=json&amp;resource=dashboard</strong> devolve o payload usado na home mobile.</li>
+          <li>O Flutter deixa de mostrar o estado de configuração e passa a carregar patrimônio, score e radar.</li>
+          <li>A leitura da Esquilo IA fica disponível sob demanda quando as chaves da IA estiverem configuradas.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:16px;">
+      <div>
+        <span class="tag">2. Pré-requisitos</span>
+        <h2>O que precisa existir antes de começar</h2>
+      </div>
+      <div class="tag">Checklist de entrada</div>
+    </div>
+
+    <div class="mini-grid">
+      <div class="mini"><h4>Acessos</h4><p>Acesso de edição ao projeto Google Apps Script, à planilha operacional e permissão para implantar Web App.</p></div>
+      <div class="mini"><h4>Arquivos fonte</h4><p>Este repositório local com as pastas <strong>apps_script/</strong>, <strong>frontend/html/</strong> e <strong>mobile_app/</strong>.</p></div>
+      <div class="mini"><h4>Configuração Flutter</h4><p>Capacidade de executar o app com <strong>--dart-define=APP_SCRIPT_BASE_URL=...</strong>.</p></div>
+    </div>
+
+    <div class="mini-grid">
+      <div class="mini"><h4>Fonte de dados</h4><p>A planilha indicada em <strong>apps_script/utils/Config.gs</strong> ou a infraestrutura BigQuery já existente.</p></div>
+      <div class="mini"><h4>Permissões Google</h4><p>Conta Google com autorização para usar Apps Script, Spreadsheet e, se mantiver a arquitetura atual, BigQuery.</p></div>
+      <div class="mini"><h4>Chaves opcionais</h4><p><strong>MOBILE_APP_API_TOKEN</strong> para proteger o acesso externo e <strong>GEMINI_API_KEY</strong> para a Esquilo IA.</p></div>
+    </div>
+
+    <div class="note">
+      Se você quer apenas subir a home mobile e o radar da carteira, o bloco mais urgente é:
+      <strong>Config.gs + Backend_Core.gs + Mobile_Api.gs + deploy /exec</strong>.
+      Os demais arquivos entram para manter a solução entregue funcionando sem desvio de arquitetura.
+    </div>
+
+    <div class="footer"><span>Pocket Ops v2.0.0</span><span>Manual operacional do backend AppScript</span></div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">3. Estrutura dos arquivos</span>
+        <h2>Arquivos do AppScript que entram nesta instalação</h2>
+        <p class="subhead">
+          A tabela abaixo separa o que você precisa criar ou editar primeiro, o que precisa existir como suporte
+          e o que fica fora do escopo do MVP mobile atual.
+        </p>
+      </div>
+      <div class="tag">Formato exato</div>
+    </div>
+
+    <div class="card">
+      <h3>Arquivos para criar ou editar primeiro</h3>
+      <table>
+        <thead>
+          <tr><th>Nome no AppScript</th><th>Tipo</th><th>Origem no repositório</th><th>Finalidade</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Config.gs</strong></td><td>Script .gs</td><td><code>apps_script/utils/Config.gs</code></td><td>Configura versão, spreadsheetId, nomes de abas e chaves de Script Properties.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>Backend_Core.gs</strong></td><td>Script .gs</td><td><code>apps_script/backend/Backend_Core.gs</code></td><td>Serve o HTML atual e também redireciona chamadas mobile para o envelope JSON.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>Mobile_Api.gs</strong></td><td>Script .gs</td><td><code>apps_script/backend/Mobile_Api.gs</code></td><td>Expõe os recursos <strong>dashboard</strong>, <strong>ai-analysis</strong> e <strong>health</strong>.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>Dashboard.html</strong></td><td>HTML .html</td><td><code>frontend/html/Dashboard.html</code></td><td>Mantém o deploy web atual funcional quando a URL é aberta sem <strong>format=json</strong>.</td><td><span class="status rec">Recomendado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3>Arquivos de suporte para refletir exatamente a solução entregue</h3>
+      <table>
+        <thead>
+          <tr><th>Nome no AppScript</th><th>Tipo</th><th>Origem no repositório</th><th>Finalidade</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Sheet_Readers.gs</strong></td><td>Script .gs</td><td><code>apps_script/services/Sheet_Readers.gs</code></td><td>Fallback da planilha e normalização dos registros.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>Portfolio_Metrics.gs</strong></td><td>Script .gs</td><td><code>apps_script/services/Portfolio_Metrics.gs</code></td><td>Resumo consolidado, snapshots, alocação e métricas que a home mobile exibe.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>Decision_Engine.gs</strong></td><td>Script .gs</td><td><code>apps_script/services/Decision_Engine.gs</code></td><td>Score, radar, recomendações e leitura operacional da carteira.</td><td><span class="status req">Obrigatório</span></td></tr>
+          <tr><td><strong>BigQueryService.gs</strong></td><td>Script .gs</td><td><code>apps_script/services/BigQueryService.gs</code></td><td>Fonte principal de dados da arquitetura atual, com consulta às tabelas operacionais.</td><td><span class="status rec">Recomendado</span></td></tr>
+          <tr><td><strong>AI_Service.gs</strong></td><td>Script .gs</td><td><code>apps_script/services/AI_Service.gs</code></td><td>Entrega a leitura da Esquilo IA para o recurso <strong>ai-analysis</strong>.</td><td><span class="status opt">Só para IA</span></td></tr>
+          <tr><td><strong>Api_Keys.gs</strong></td><td>Script .gs</td><td><code>apps_script/integrations/Api_Keys.gs</code></td><td>Leitura das chaves da IA por Script Properties.</td><td><span class="status opt">Só para IA</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3>Arquivos fora do escopo do MVP mobile atual</h3>
+      <table>
+        <thead>
+          <tr><th>Nome</th><th>Tipo</th><th>Origem no repositório</th><th>Observação</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Operational_CRUD.gs</strong></td><td>Script .gs</td><td><code>apps_script/backend/Operational_CRUD.gs</code></td><td>Operações de cadastro/edição não são necessárias para a primeira entrega mobile.</td><td><span class="status out">Fora do escopo</span></td></tr>
+          <tr><td><strong>Export_Import.gs</strong></td><td>Script .gs</td><td><code>apps_script/backend/Export_Import.gs</code></td><td>Não é usado pelo fluxo atual do app Flutter entregue.</td><td><span class="status out">Fora do escopo</span></td></tr>
+          <tr><td><strong>BigQuery_Sync.gs</strong></td><td>Script .gs</td><td><code>apps_script/integrations/BigQuery_Sync.gs</code></td><td>Útil operacionalmente, mas não é requisito da integração mobile já criada.</td><td><span class="status out">Fora do escopo</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note ok">
+      Bibliotecas externas no AppScript: <strong>nenhuma</strong>. Arquivos HTML nesta instalação: <strong>somente Dashboard.html</strong>.
+      Serviço extra a habilitar: <strong>BigQuery API</strong> se você quiser manter a fonte principal de dados da arquitetura atual.
+    </div>
+
+    <div class="footer"><span>Arquivos reais do repositório</span><span>Sem renomear, sem duplicar backend</span></div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">4. Passo a passo</span>
+        <h2>Criação e cópia dos arquivos no AppScript</h2>
+        <p class="subhead">
+          Use os nomes exatos abaixo. No editor do Apps Script, clique em <strong>+</strong>,
+          escolha <strong>Script</strong> para arquivos <strong>.gs</strong> e <strong>HTML</strong> para <strong>Dashboard.html</strong>.
+        </p>
+      </div>
+      <div class="tag">Parte 1</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h3>Abrir o projeto AppScript correto</h3>
+        <p>Abra o projeto backend que já atende o dashboard web atual. O caminho mais seguro é atualizar esse projeto, não criar um projeto paralelo.</p>
+        <span class="code light">Objetivo: manter o mesmo backend para web + mobile.</span>
+      </div>
+
+      <div class="step">
+        <div class="n">2</div>
+        <h3>Criar ou editar <code>Config.gs</code></h3>
+        <p>Crie um arquivo do tipo Script chamado <strong>Config</strong> ou substitua o conteúdo do arquivo existente.</p>
+        <span class="code">Copiar de:
+apps_script/utils/Config.gs</span>
+      </div>
+
+      <div class="step">
+        <div class="n">3</div>
+        <h3>Criar ou editar <code>Backend_Core.gs</code></h3>
+        <p>Esse arquivo precisa conter o <strong>doGet(e)</strong> que detecta <strong>format=json</strong> antes de renderizar o HTML.</p>
+        <span class="code">Copiar de:
+apps_script/backend/Backend_Core.gs</span>
+      </div>
+
+      <div class="step">
+        <div class="n">4</div>
+        <h3>Criar <code>Mobile_Api.gs</code></h3>
+        <p>Crie um arquivo Script chamado <strong>Mobile_Api</strong> e cole o conteúdo integral do arquivo do repositório.</p>
+        <span class="code">Copiar de:
+apps_script/backend/Mobile_Api.gs</span>
+      </div>
+
+      <div class="step">
+        <div class="n">5</div>
+        <h3>Garantir os arquivos de suporte do dashboard</h3>
+        <p>Se você estiver recriando o projeto do zero, copie também os scripts que sustentam o payload da home mobile e do radar.</p>
+        <span class="code">Copiar de:
+apps_script/services/Sheet_Readers.gs
+apps_script/services/Portfolio_Metrics.gs
+apps_script/services/Decision_Engine.gs
+apps_script/services/BigQueryService.gs</span>
+      </div>
+
+      <div class="step">
+        <div class="n">6</div>
+        <h3>Garantir o bloco da Esquilo IA, se desejar</h3>
+        <p>Para o recurso <strong>ai-analysis</strong>, copie os arquivos da IA e das chaves. Sem isso, a home mobile continua possível, mas a leitura sob demanda não fica operacional.</p>
+        <span class="code">Copiar de:
+apps_script/services/AI_Service.gs
+apps_script/integrations/Api_Keys.gs</span>
+      </div>
+    </div>
+
+    <div class="note">
+      Não mude os nomes dos arquivos. O Apps Script agrupa tudo no mesmo namespace, então a forma mais segura
+      de refletir a solução entregue é usar exatamente os nomes já existentes no repositório.
+    </div>
+
+    <div class="footer"><span>Criação: Script (.gs)</span><span>Sem inventar novos nomes de arquivo</span></div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">5. Passo a passo</span>
+        <h2>Revisões, HTML e configurações obrigatórias</h2>
+        <p class="subhead">
+          Esta etapa fecha o projeto AppScript para publicação real: HTML, propriedades, serviço avançado e revisão dos IDs.
+        </p>
+      </div>
+      <div class="tag">Parte 2</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n">7</div>
+        <h3>Criar <code>Dashboard.html</code> se quiser preservar o web atual</h3>
+        <p>Crie um arquivo do tipo HTML chamado <strong>Dashboard</strong> e cole o conteúdo do dashboard web existente.</p>
+        <span class="code">Copiar de:
+frontend/html/Dashboard.html</span>
+      </div>
+
+      <div class="step">
+        <div class="n">8</div>
+        <h3>Revisar <code>APP_CONFIG_</code> em <code>Config.gs</code></h3>
+        <p>Confirme <strong>spreadsheetId</strong>, <strong>spreadsheetUrl</strong> e os nomes de abas em <strong>sheetNames</strong>. O mobile depende desse mesmo payload.</p>
+        <span class="code light">Campos mais críticos:
+spreadsheetId
+spreadsheetUrl
+sheetNames.actions
+sheetNames.funds
+sheetNames.previdencia
+sheetNames.preOrders
+sheetNames.aportes
+sheetNames.config
+sheetNames.dashboardVisual
+sheetNames.exportAuxiliar</span>
+      </div>
+
+      <div class="step">
+        <div class="n">9</div>
+        <h3>Configurar Script Properties</h3>
+        <p>Adicione as propriedades necessárias no projeto Apps Script. Use o painel equivalente de propriedades do script no editor atual.</p>
+        <span class="code light">MOBILE_APP_API_TOKEN = opcional, mas recomendado
+GEMINI_API_KEY = necessário para ai-analysis via Gemini
+OPENAI_API_KEY = opcional, fallback da IA
+OPENAI_MODEL = opcional
+EXTERNAL_MARKET_DATA_ENABLED = opcional</span>
+      </div>
+
+      <div class="step">
+        <div class="n">10</div>
+        <h3>Habilitar BigQuery API se quiser manter a arquitetura atual</h3>
+        <p>O arquivo <strong>BigQueryService.gs</strong> usa o serviço avançado <strong>BigQuery</strong>. Se ele não estiver habilitado, o backend tende a cair no fallback de planilha onde isso já está tratado.</p>
+        <span class="code light">Serviço extra:
+Apps Script Advanced Service: BigQuery API
+Também habilitar a BigQuery API no projeto Google Cloud associado, se necessário.</span>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:18px;">
+      <div>
+        <span class="tag">6. Mapeamento</span>
+        <h2>De/para dos tipos de arquivo</h2>
+      </div>
+      <div class="tag">Mapa rápido</div>
+    </div>
+
+    <div class="maps">
+      <div class="map"><h4><code>Config.gs</code>, <code>Backend_Core.gs</code>, <code>Mobile_Api.gs</code></h4><p>Criar como <strong>Script (.gs)</strong> no Apps Script e colar o conteúdo dos arquivos correspondentes do repositório.</p></div>
+      <div class="map"><h4><code>Dashboard.html</code></h4><p>Criar como <strong>HTML</strong>, com nome <strong>Dashboard</strong>, usando o conteúdo de <code>frontend/html/Dashboard.html</code>.</p></div>
+      <div class="map"><h4><code>AI_Service.gs</code> e <code>Api_Keys.gs</code></h4><p>Criar como <strong>Script (.gs)</strong> apenas se quiser manter o recurso <strong>ai-analysis</strong> ativo.</p></div>
+      <div class="map"><h4><code>BigQuery API</code></h4><p>Não é arquivo. É um <strong>serviço avançado</strong> do Apps Script que precisa ser habilitado para o caminho principal via BigQuery.</p></div>
+      <div class="map"><h4>Bibliotecas</h4><p><strong>Nenhuma.</strong> A integração entregue não depende de biblioteca Apps Script externa.</p></div>
+      <div class="map"><h4>Script Properties</h4><p>Entram como <strong>configuração manual</strong> do projeto, não como arquivo separado.</p></div>
+    </div>
+
+    <div class="cols" style="margin-top:12px;">
+      <div class="card">
+        <h3>Configurações necessárias depois de colar os arquivos</h3>
+        <ul>
+          <li>Revisar <strong>spreadsheetId</strong> e <strong>spreadsheetUrl</strong> em <code>Config.gs</code>.</li>
+          <li>Revisar os nomes de abas em <strong>APP_CONFIG_.sheetNames</strong>.</li>
+          <li>Definir <strong>MOBILE_APP_API_TOKEN</strong> se quiser proteger o acesso externo ao Web App.</li>
+          <li>Definir <strong>GEMINI_API_KEY</strong> para a aba de Insights com leitura remota.</li>
+          <li>Conferir se <strong>releaseName</strong> e <strong>versionNumber</strong> permanecem como <strong>Pocket Ops / 2.0.0</strong>.</li>
+        </ul>
+      </div>
+      <div class="card dark">
+        <h3>Observação importante</h3>
+        <p>
+          O Flutter atual não exige que você edite um arquivo fixo com a URL do backend.
+          Ele lê a URL no build/execução por <strong>--dart-define</strong>. Isso reduz retrabalho e evita hardcode.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer"><span>HTML: somente Dashboard</span><span>Bibliotecas: nenhuma</span></div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">7. Publicação</span>
+        <h2>Como publicar como Web App</h2>
+        <p class="subhead">
+          O app Flutter consome a URL final do deploy <strong>/exec</strong>. Sem essa URL publicada, o mobile não conecta.
+        </p>
+      </div>
+      <div class="tag">Deploy</div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Abrir a publicação</h3><p>No Apps Script, use o fluxo atual do editor: <strong>Deploy &gt; New deployment</strong> e escolha <strong>Web app</strong>.</p></div>
+      <div class="step"><div class="n">2</div><h3>Executar como</h3><p>Escolha executar como a conta proprietária do script. Assim o backend acessa a planilha e demais recursos com a mesma credencial do projeto.</p></div>
+      <div class="step"><div class="n">3</div><h3>Acesso para o Flutter</h3><p>Para teste real no app Flutter, o deploy precisa ser acessível pelo dispositivo. Na prática, o caminho mais simples é acesso externo + <strong>MOBILE_APP_API_TOKEN</strong>.</p></div>
+      <div class="step"><div class="n">4</div><h3>Copiar a URL final</h3><p>Depois de implantar, copie a URL do tipo <strong>.../exec</strong>. É essa URL que entra no Flutter. Não use a URL <strong>/dev</strong> para o app.</p><span class="code light">Exemplo:
+https://script.google.com/macros/s/SEU_DEPLOY/exec</span></div>
+    </div>
+
+    <div class="note warn">
+      Se a URL publicada não puder ser acessada pelo celular, o Flutter vai falhar mesmo que o código esteja correto.
+      Na integração entregue, a URL precisa responder a requisições HTTP feitas pelo app fora do navegador logado.
+    </div>
+
+    <div class="section-head" style="margin-top:18px;">
+      <div><span class="tag">8. Teste dos endpoints</span><h2>Validação do backend online</h2></div>
+      <div class="tag">Smoke test</div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Endpoint</th><th>Exemplo de URL</th><th>O que deve retornar</th><th>Como saber se deu certo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>health</strong></td><td><code>.../exec?format=json&amp;resource=health</code></td><td><strong>ok: true</strong>, releaseName, versionNumber e updatedAt</td><td>É o teste mais rápido para validar deploy, formato JSON e URL.</td></tr>
+          <tr><td><strong>dashboard</strong></td><td><code>.../exec?format=json&amp;resource=dashboard</code></td><td>Envelope com <strong>data.summary</strong>, <strong>score</strong>, <strong>categorySnapshots</strong>, <strong>updatedAt</strong></td><td>Se vier <strong>ok: true</strong> e o payload tiver a estrutura do dashboard, a home mobile já consegue abrir.</td></tr>
+          <tr><td><strong>ai-analysis</strong></td><td><code>.../exec?format=json&amp;resource=ai-analysis</code></td><td><strong>data.analysis</strong> com texto da Esquilo IA</td><td>Se retornar erro de chave, o deploy está vivo, mas a IA ainda não está configurada.</td></tr>
+        </tbody>
+      </table>
+      <div class="note info">
+        Se você configurou <strong>MOBILE_APP_API_TOKEN</strong>, acrescente <strong>&amp;token=SEU_TOKEN</strong> às URLs acima.
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:18px;">
+      <div><span class="tag">9. Conexão com o Flutter</span><h2>Onde a URL entra no app mobile</h2></div>
+      <div class="tag">mobile_app/</div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h3>Arquivo que consome a configuração</h3>
+        <p>O app lê a URL e o token em:</p>
+        <span class="code">mobile_app/lib/core/config/app_environment.dart</span>
+        <p style="margin-top:10px;">As variáveis usadas são:</p>
+        <span class="code light">APP_SCRIPT_BASE_URL
+APP_SCRIPT_API_TOKEN</span>
+      </div>
+
+      <div class="card">
+        <h3>Como rodar com a URL publicada</h3>
+        <span class="code">flutter run --dart-define=APP_SCRIPT_BASE_URL=https://script.google.com/macros/s/SEU_DEPLOY/exec</span>
+        <span class="code" style="margin-top:8px;">flutter run --dart-define=APP_SCRIPT_BASE_URL=https://script.google.com/macros/s/SEU_DEPLOY/exec --dart-define=APP_SCRIPT_API_TOKEN=seu_token</span>
+      </div>
+    </div>
+
+    <div class="note ok">
+      Validação no Flutter: a home deixa o estado de configuração, o cabeçalho mostra o backend ativo,
+      e os blocos de patrimônio, score, alocação, radar e missão passam a renderizar.
+    </div>
+
+    <div class="footer"><span>Use a URL /exec</span><span>APP_SCRIPT_BASE_URL via --dart-define</span></div>
+  </section>
+
+  <section class="page">
+    <div class="section-head">
+      <div>
+        <span class="tag">10. Troubleshooting</span>
+        <h2>Problemas comuns</h2>
+        <p class="subhead">
+          Abaixo estão os erros mais prováveis ao subir a integração atual, com a leitura direta do que revisar primeiro.
+        </p>
+      </div>
+      <div class="tag">Operação</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Sintoma</th><th>Causa provável</th><th>O que revisar</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Erro <strong>Token mobile inválido</strong></td><td>O token passado pelo Flutter ou pela URL não bate com <strong>MOBILE_APP_API_TOKEN</strong>.</td><td>Revisar Script Properties e o valor usado em <strong>APP_SCRIPT_API_TOKEN</strong>.</td></tr>
+        <tr><td>Erro <strong>Recurso mobile não suportado</strong></td><td>O parâmetro <strong>resource</strong> foi enviado com valor diferente de <strong>dashboard</strong>, <strong>ai-analysis</strong> ou <strong>health</strong>.</td><td>Revisar a URL chamada ou o serviço Flutter.</td></tr>
+        <tr><td>HTTP 403 / acesso negado</td><td>Deploy sem acesso adequado para o celular ou URL errada.</td><td>Revisar a publicação do Web App e confirmar a URL <strong>/exec</strong>.</td></tr>
+        <tr><td>JSON inválido ou HTML no lugar do JSON</td><td>Faltou <strong>format=json</strong> na URL.</td><td>Confirmar os parâmetros usados pelo Flutter ou pelo teste manual.</td></tr>
+        <tr><td>Planilha não localizada</td><td><strong>spreadsheetId</strong> incorreto ou conta sem permissão.</td><td>Revisar <code>Config.gs</code> e o acesso da conta proprietária do script.</td></tr>
+        <tr><td>Abas não encontradas</td><td>Nomes em <strong>sheetNames</strong> diferentes do que existe na planilha.</td><td>Revisar cada chave dentro de <strong>APP_CONFIG_.sheetNames</strong>.</td></tr>
+        <tr><td>Erro da Esquilo IA</td><td>Chave Gemini/OpenAI ausente, inválida ou resposta fora do formato esperado.</td><td>Revisar <strong>GEMINI_API_KEY</strong>, <strong>OPENAI_API_KEY</strong>, <strong>Api_Keys.gs</strong> e <strong>AI_Service.gs</strong>.</td></tr>
+        <tr><td>Erro ao abrir o dashboard web</td><td><strong>Dashboard.html</strong> não foi criado, mas <strong>doGet()</strong> tenta renderizá-lo quando não há <strong>format=json</strong>.</td><td>Criar o arquivo HTML com o conteúdo de <code>frontend/html/Dashboard.html</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-head" style="margin-top:18px;">
+      <div>
+        <span class="tag">11. Checklist final</span>
+        <h2>Confirmação rápida antes de testar no celular</h2>
+      </div>
+      <div class="tag">Go live local</div>
+    </div>
+
+    <div class="check-grid">
+      <div class="check">Config.gs criado ou atualizado com spreadsheetId e sheetNames corretos.</div>
+      <div class="check">Backend_Core.gs atualizado com o desvio para format=json.</div>
+      <div class="check">Mobile_Api.gs criado com os recursos dashboard, ai-analysis e health.</div>
+      <div class="check">Arquivos de suporte do payload copiados para o mesmo projeto Apps Script.</div>
+      <div class="check">Dashboard.html criado se o deploy web atual precisa continuar funcionando.</div>
+      <div class="check">Script Properties configuradas, principalmente MOBILE_APP_API_TOKEN e GEMINI_API_KEY.</div>
+      <div class="check">BigQuery API habilitada, se você quiser manter a fonte principal da arquitetura atual.</div>
+      <div class="check">Web App publicado e URL /exec copiada.</div>
+      <div class="check">Teste de health retornando ok: true.</div>
+      <div class="check">Teste de dashboard retornando summary, score e categorySnapshots.</div>
+      <div class="check">Flutter executado com APP_SCRIPT_BASE_URL apontando para a URL /exec.</div>
+      <div class="check">App mobile carregando a home sem ficar preso no estado de configuração.</div>
+    </div>
+
+    <div class="section-head" style="margin-top:18px;">
+      <div>
+        <span class="tag">12. Conclusão</span>
+        <h2>O que criar ou editar primeiro</h2>
+      </div>
+      <div class="tag">Resumo prático</div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h3>Obrigatório para subir o MVP</h3>
+        <ul>
+          <li><strong>Config.gs</strong></li>
+          <li><strong>Backend_Core.gs</strong></li>
+          <li><strong>Mobile_Api.gs</strong></li>
+          <li><strong>Deploy Web App com URL /exec</strong></li>
+          <li><strong>APP_SCRIPT_BASE_URL</strong> no Flutter</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Pode ficar para depois</h3>
+        <ul>
+          <li>Ativação da Esquilo IA, se você quiser testar apenas a home primeiro.</li>
+          <li>Rotinas fora do escopo mobile como CRUD completo, exportação e sincronização adicional.</li>
+          <li>Aprimoramentos de segurança e endurecimento operacional além do token mobile já previsto.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      Ordem sugerida de execução: <strong>Config.gs → Backend_Core.gs → Mobile_Api.gs → propriedades → deploy → testes de health/dashboard → Flutter</strong>.
+      Isso já coloca o MVP mobile em condição real de conexão.
+    </div>
+
+    <div class="footer"><span>Documento baseado exclusivamente na entrega atual</span><span>Flutter + AppScript sem backend paralelo</span></div>
+  </section>
+
+</body>
+</html>

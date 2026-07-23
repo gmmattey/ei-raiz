@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg aria-labelledby="title desc" role="img" version="1.1" viewBox="0 0 713.25 200.31" xmlns="http://www.w3.org/2000/svg">
+  <title id="title">Esquilo Invest logo horizontal</title>
+  <desc id="desc">Logo horizontal do Esquilo Invest com símbolo de esquilo estilizado em laranja e wordmark em grafite.</desc>
+  <defs>
+    <style>
+      .brand {
+        font-family: "Sora", "Inter", "Segoe UI", Arial, sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+    </style>
+  </defs>
+  <g transform="translate(-12,-3)">
+    <path d="m118 78c0-34-26-58-60-58-27 0-46 16-46 38 17-8 33-10 46-8 14 3 22 13 22 29 0 17-9 28-22 39-10 8-16 20-16 34 0 25 18 44 42 50-19-5-33-21-33-42 0-12 5-22 14-29 15-12 27-27 27-50 0-13-4-24-12-33 15 6 26 18 38 30z" fill="#f56a2a"/>
+    <path d="m97 202c-20-11-30-30-30-53 0-20 9-38 25-54l48-48c8-8 12-18 12-29 0-9 6-15 15-15 8 0 13 6 14 14 1 11 6 20 16 27 18 12 31 30 31 53 0 25-11 44-30 57-14 10-29 15-46 17v12c0 11 7 19 18 19z" fill="#f56a2a"/>
+    <g fill="#fff">
+      <path d="m127 202c-3-8-4-16-4-25 0-30 22-52 51-52 8 0 16 2 23 6-9-14-24-23-41-23-28 0-50 21-50 49 0 17 8 33 21 45z"/>
+      <path d="m142 121c11 7 22 11 35 11 6 0 10 4 10 9s-4 8-10 8c-17 0-32-6-45-16-5-4-6-10-2-14s8-3 12 2z"/>
+      <path d="m171 23c0 8-3 16-9 22-5-6-8-15-8-24 0-7 4-11 9-11s8 5 8 13z"/>
+    </g>
+    <circle cx="186" cy="88" r="8" fill="#0b1218"/>
+    <path d="m223 97c8 1 13 7 13 14 0 6-4 10-11 12 1-7 0-17-2-26z" fill="#0b1218"/>
+    <path d="m118 202c4-13 13-22 25-26-8 7-11 15-11 26z" fill="#f56a2a"/>
+    <g transform="translate(305,92)" fill="#0b1218" font-size="112px">
+      <text class="brand"><tspan font-family="Sora" font-weight="700">Esquilo</tspan></text>
+      <text class="brand" y="110"><tspan font-family="Inter" font-weight="500">invest</tspan></text>
+    </g>
+  </g>
+</svg>

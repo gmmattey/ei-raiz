@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_history_snapshots",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "summary": { "totalSnapshots": 2, "latestReferenceDate": "2026-03-31" },
+    "snapshots": [
+      {
+        "id": "snp_bal_1",
+        "referenceDate": "2026-03-31",
+        "totalEquity": 21276.84,
+        "totalInvested": 20742.58,
+        "totalProfitLoss": 534.26,
+        "totalProfitLossPct": 2.58,
+        "createdAt": "2026-03-31T01:00:00Z",
+        "analysisBadge": {
+          "status": "atencao_moderada",
+          "primaryProblem": "Concentracao relativamente alta em previdencia.",
+          "primaryAction": "Diluir concentracao aos poucos."
+        }
+      },
+      {
+        "id": "snp_bal_0",
+        "referenceDate": "2026-02-28",
+        "totalEquity": 20350.0,
+        "totalInvested": 20100.0,
+        "totalProfitLoss": 250.0,
+        "totalProfitLossPct": 1.24,
+        "createdAt": "2026-02-28T01:00:00Z",
+        "analysisBadge": null
+      }
+    ]
+  }
+}
+

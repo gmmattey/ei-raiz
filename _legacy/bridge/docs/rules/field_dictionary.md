@@ -1,0 +1,8 @@
+# FIELD DICTIONARY
+
+user_id
+portfolio_value
+monthly_contribution
+risk_profile
+maturity_score
+portfolio_score

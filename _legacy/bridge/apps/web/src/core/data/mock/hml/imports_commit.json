@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "meta": { "requestId": "req_hml_imports_commit", "timestamp": "2026-03-31T01:00:00Z", "version": "v1" },
+  "data": {
+    "importId": "imp_hml_1",
+    "status": "COMMITTED",
+    "createdSnapshotId": "snp_bal_1",
+    "affectedPositions": 3,
+    "nextStep": "/history"
+  }
+}
+

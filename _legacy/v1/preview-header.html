@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquilo Invest - Preview Header</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- Metadados minimos para validar o icone de tela inicial no iOS fora do Apps Script. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon-180.png">
+    <meta name="apple-mobile-web-app-title" content="Esquilo Invest">
+    <meta name="theme-color" content="#05070a">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #05070a;
+            --card-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent);
+        }
+
+        .font-hud { font-family: 'Orbitron', sans-serif; }
+        .glass { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        /* Replica o comportamento de protecao visual dos valores sensiveis no preview local. */
+        .hide-value { transition: filter 0.3s ease; }
+        .ghost-active .hide-value { filter: blur(8px); pointer-events: none; user-select: none; }
+
+        /* Reproduz o agrupamento visual do painel de metricas do header real. */
+        .header-summary-shell {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.76), rgba(8, 15, 31, 0.68));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 48px rgba(2, 6, 23, 0.22);
+        }
+
+        /* Mantem o acabamento dos cards de apoio e do patrimonio no preview. */
+        .header-summary-card {
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.4), rgba(2, 6, 23, 0.28));
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        /* Destaca a marca sem exagerar no volume visual do topo. */
+        .header-brand-shell {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.22));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        /* Mantem o card de status alinhado com a linguagem visual do dashboard. */
+        .header-status-shell {
+            background: rgba(2, 6, 23, 0.26);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .header-summary-card--primary {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.92));
+            border-color: rgba(245, 158, 11, 0.26);
+            box-shadow: 0 18px 40px rgba(5, 7, 10, 0.24);
+        }
+
+        /* Deixa o controle de ghost mode discreto e utilitario no preview. */
+        .header-ghost-button {
+            background: rgba(2, 6, 23, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: rgba(226, 232, 240, 0.76);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-ghost-button:hover {
+            background: rgba(2, 6, 23, 0.3);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #f8fafc;
+        }
+
+        /* Replica o blur refinado do valor principal no modo fantasma. */
+        .ghost-active .header-ghost-value { filter: blur(5px); }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-10" id="main-body">
+    <main class="mx-auto max-w-7xl">
+        <!-- Header Preview Block: START -->
+        <header class="relative mb-8" data-block="dashboard-header-preview">
+            <div class="glass relative overflow-hidden rounded-3xl border border-white/10 p-5 sm:p-6 md:p-8 lg:p-10">
+                <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_38%)]"></div>
+
+                <!-- Header Utility Row: START -->
+                <div class="relative z-10 flex justify-end">
+                    <button onclick="toggleGhostMode()" class="header-ghost-button inline-flex items-center gap-2 rounded-xl px-2.5 py-2 text-[9px] font-bold uppercase font-hud tracking-[0.16em] transition sm:px-3" title="Esconder valores" aria-label="Esconder valores">
+                        <svg id="ghost-icon" class="h-4 w-4 text-slate-300 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M7 21v-2a2 2 0 0 0-2-2V11a7 7 0 1 1 14 0v6a2 2 0 0 0-2 2v2l-2-1-2 1-2-1-2 1z"></path>
+                            <circle cx="9" cy="11" r="1"></circle>
+                            <circle cx="15" cy="11" r="1"></circle>
+                        </svg>
+                        <span class="hidden md:inline">Modo fantasma</span>
+                    </button>
+                </div>
+                <!-- Header Utility Row: END -->
+
+                <div class="relative mt-4 grid gap-5 lg:grid-cols-12 lg:items-start lg:gap-7 xl:gap-9">
+                    <!-- Header Identity Block: START -->
+                    <div class="min-w-0 space-y-4 lg:col-span-6 xl:col-span-7 xl:space-y-5">
+                        <div class="header-brand-shell rounded-[1.8rem] p-4 sm:p-5 md:p-6">
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                                <div class="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[1.55rem] border border-amber-300/40 bg-amber-500/14 shadow-[0_22px_50px_rgba(245,158,11,0.14)] sm:h-20 sm:w-20">
+                                    <img src="https://raw.githubusercontent.com/serealdemanga/esquilo-invest/refs/heads/main/icons/esquilo.png" alt="Esquilo" class="h-11 w-11 sm:h-12 sm:w-12">
+                                </div>
+                                <div class="min-w-0 space-y-1.5">
+                                    <p class="text-[10px] uppercase font-hud tracking-[0.24em] text-slate-500">Dashboard patrimonial</p>
+                                    <h1 class="text-[2rem] font-hud font-extrabold leading-none text-white sm:text-[2.35rem] md:text-[2.65rem]">Esquilo Invest</h1>
+                                    <p class="text-sm font-medium tracking-[0.08em] text-amber-100/82 md:text-[15px]">Painel estrategico do Squad Giammattey</p>
+                                    <p class="max-w-2xl text-[13px] leading-5 text-slate-500 md:text-sm">Visao consolidada da carteira para decisoes rapidas e acompanhamento continuo.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="header-status-shell rounded-2xl p-4 sm:p-5">
+                            <div class="space-y-3">
+                                <p class="text-[1.65rem] font-hud font-bold leading-tight text-white md:text-[2rem]">Carteira em analise</p>
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-[9px] uppercase font-hud tracking-[0.18em] text-slate-400 sm:text-[10px]">
+                                    <span>Performance do periodo</span>
+                                    <span class="hide-value text-sm font-bold text-emerald-300 md:text-base">+6,42% no mes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Header Identity Block: END -->
+
+                    <!-- Header Metrics Block: START -->
+                    <div class="w-full lg:col-span-6 lg:ml-auto lg:max-w-none xl:col-span-5 xl:max-w-[36rem]">
+                        <div class="header-summary-shell grid gap-3.5 rounded-[1.9rem] p-3.5 sm:grid-cols-2 sm:p-4 lg:p-5">
+                            <div class="header-summary-card header-summary-card--primary rounded-[1.4rem] p-5 sm:col-span-2 sm:p-6">
+                                <div class="flex h-full flex-col justify-between gap-4">
+                                    <div class="space-y-2">
+                                        <p class="text-[9px] uppercase font-hud tracking-[0.22em] text-amber-100/78 sm:text-[10px]">Patrimonio consolidado</p>
+                                        <p class="hide-value header-ghost-value text-[2.15rem] font-hud font-bold leading-none text-white md:text-[2.65rem]">R$ 4.286.930,14</p>
+                                    </div>
+                                    <p class="text-[11px] uppercase font-hud tracking-[0.18em] text-amber-200/72">Visao geral da carteira</p>
+                                </div>
+                            </div>
+
+                            <div class="header-summary-card rounded-[1.35rem] p-4 sm:p-5">
+                                <p class="mb-2 text-[10px] uppercase font-hud tracking-[0.2em] text-slate-400">Score e status</p>
+                                <div class="flex flex-wrap items-end gap-2.5">
+                                    <span class="text-2xl font-hud font-bold text-amber-400 md:text-[2rem]">89</span>
+                                    <span class="pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">Posicao forte</span>
+                                </div>
+                            </div>
+
+                            <div class="header-summary-card rounded-[1.35rem] p-4 sm:p-5">
+                                <p class="mb-2 text-[10px] uppercase font-hud tracking-[0.2em] text-slate-400">Squad e nivel</p>
+                                <div class="flex flex-wrap items-center gap-2 text-[10px] uppercase font-hud tracking-[0.18em] text-slate-400">
+                                    <span>Squad</span>
+                                    <span class="font-bold text-amber-400">Giammattey</span>
+                                    <span>Nivel</span>
+                                    <span class="font-bold text-emerald-300">12</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Header Metrics Block: END -->
+                </div>
+            </div>
+        </header>
+        <!-- Header Preview Block: END -->
+    </main>
+
+    <script>
+        /**
+         * Alterna o estado visual de ghost mode no preview local.
+         * Entrada: nenhuma. Usa o body principal e o icone do botao.
+         * Saida: apenas atualiza classes visuais para validar blur ativo/inativo.
+         */
+        function toggleGhostMode() {
+            const body = document.getElementById('main-body');
+            const icon = document.getElementById('ghost-icon');
+            if (!body) return;
+
+            const active = body.classList.toggle('ghost-active');
+            if (icon) {
+                icon.classList.toggle('text-amber-300', active);
+                icon.classList.toggle('text-slate-300', !active);
+            }
+        }
+    </script>
+</body>
+</html>

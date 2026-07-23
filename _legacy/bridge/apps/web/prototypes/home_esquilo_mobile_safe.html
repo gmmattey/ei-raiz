@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esquilo Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  background: #061018;
+  color: #EFF5F7;
+}
+.container {
+  width: min(1200px, calc(100% - 32px));
+  margin: 24px auto;
+}
+.card {
+  background: #0C1823;
+  border-radius: 16px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.row {
+  display: flex;
+  gap: 20px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: default;
+  display: inline-block;
+}
+.btn-primary {
+  background: #56D5DE;
+  color: #061018;
+}
+.btn-secondary {
+  border: 1px solid #56D5DE;
+  color: #EFF5F7;
+}
+.hero {
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: Sora, sans-serif;
+  font-size: 34px;
+  margin: 0 0 8px 0;
+}
+.hero p {
+  color: #9DB1BC;
+  margin: 0 0 20px 0;
+}
+.metric {
+  flex: 1;
+}
+.metric small {
+  display: block;
+  color: #9DB1BC;
+  margin-bottom: 8px;
+}
+.metric strong {
+  font-size: 26px;
+}
+.alert {
+  background: rgba(255,107,107,0.1);
+  margin-bottom: 16px;
+}
+.action {
+  background: rgba(247,185,85,0.1);
+  margin-bottom: 20px;
+}
+.dist {
+  margin-bottom: 20px;
+}
+.bar {
+  height: 10px;
+  background: #1a2a35;
+  border-radius: 10px;
+  margin: 5px 0 14px 0;
+  overflow: hidden;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: #56D5DE;
+  border-radius: 10px;
+}
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.list-item:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 900px) {
+  .row {
+    flex-direction: column;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .hero h1 {
+    font-size: 28px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header card">
+    <div><strong>Esquilo</strong> — Home</div>
+    <div>
+      <span class="btn btn-secondary">Atualizar</span>
+      <span class="btn btn-primary">Importar</span>
+    </div>
+  </div>
+
+  <div class="card hero">
+    <h1>Você tem R$ 21.276 investidos</h1>
+    <p>E agora finalmente entende o que isso significa</p>
+
+    <div class="row">
+      <div class="card metric">
+        <small>Patrimônio</small>
+        <strong>R$ 21.276</strong>
+      </div>
+      <div class="card metric">
+        <small>Score</small>
+        <strong>72 / 100</strong>
+      </div>
+      <div class="card metric">
+        <small>Disponível</small>
+        <strong>R$ 500</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card alert">
+    Você está concentrado demais em previdência.
+  </div>
+
+  <div class="card action">
+    Use os próximos aportes para equilibrar sua carteira.
+  </div>
+
+  <div class="card dist">
+    <div>Previdência 72%</div>
+    <div class="bar"><span style="width:72%"></span></div>
+
+    <div>Fundos 24%</div>
+    <div class="bar"><span style="width:24%"></span></div>
+
+    <div>Ações 3%</div>
+    <div class="bar"><span style="width:3%"></span></div>
+  </div>
+
+  <div class="card">
+    <div class="list-item">
+      <span>ITSA4</span>
+      <span>+4.9%</span>
+    </div>
+    <div class="list-item">
+      <span>CMIN3</span>
+      <span>-9.2%</span>
+    </div>
+    <div class="list-item">
+      <span>FUNDO</span>
+      <span>+4.0%</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

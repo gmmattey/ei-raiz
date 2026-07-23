@@ -1,0 +1,952 @@
+openapi: 3.1.0
+info:
+  title: Esquilo Invest API
+  version: 1.0.0
+  description: |
+    Contratos esperados da nova API do Esquilo Invest em Cloudflare Workers + D1.
+servers:
+  - url: https://api.example.com
+    description: Production placeholder
+  - url: http://127.0.0.1:8787
+    description: Local Wrangler
+tags:
+  - name: Health
+  - name: Dashboard
+  - name: Portfolio
+  - name: Profile
+  - name: Analysis
+  - name: History
+  - name: Imports
+
+paths:
+  /v1/health:
+    get:
+      tags: [Health]
+      summary: Verifica saúde da API
+      operationId: getHealth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthEnvelope'
+
+  /v1/dashboard/home:
+    get:
+      tags: [Dashboard]
+      summary: Lê payload da Home
+      operationId: getDashboardHome
+      parameters:
+        - in: query
+          name: portfolioId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payload da Home
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeEnvelope'
+
+  /v1/portfolio:
+    get:
+      tags: [Portfolio]
+      summary: Lê carteira consolidada
+      operationId: getPortfolio
+      parameters:
+        - in: query
+          name: portfolioId
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: platformId
+          schema:
+            type: string
+        - in: query
+          name: attentionOnly
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Payload da Carteira
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioEnvelope'
+
+  /v1/portfolio/{portfolioId}/holdings/{holdingId}:
+    get:
+      tags: [Portfolio]
+      summary: Lê detalhe de um ativo
+      operationId: getHoldingDetail
+      parameters:
+        - in: path
+          name: portfolioId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: holdingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payload do detalhe do ativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingDetailEnvelope'
+
+  /v1/profile/context:
+    get:
+      tags: [Profile]
+      summary: Lê contexto do usuário
+      operationId: getProfileContext
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEnvelope'
+    put:
+      tags: [Profile]
+      summary: Atualiza contexto do usuário
+      operationId: putProfileContext
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileContextInput'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEnvelope'
+
+  /v1/analysis:
+    get:
+      tags: [Analysis]
+      summary: Lê análise mais recente da carteira
+      operationId: getAnalysis
+      parameters:
+        - in: query
+          name: portfolioId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Análise da carteira
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisEnvelope'
+
+  /v1/history/snapshots:
+    get:
+      tags: [History]
+      summary: Lê snapshots e timeline
+      operationId: getSnapshots
+      parameters:
+        - in: query
+          name: portfolioId
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Histórico da carteira
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryEnvelope'
+
+  /v1/imports/start:
+    post:
+      tags: [Imports]
+      summary: Inicia importação
+      operationId: postImportStart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportStartInput'
+      responses:
+        '200':
+          description: Importação iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportStartEnvelope'
+
+  /v1/imports/{importId}/preview:
+    get:
+      tags: [Imports]
+      summary: Lê preview da importação
+      operationId: getImportPreview
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Preview da importação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreviewEnvelope'
+
+  /v1/imports/{importId}/engine-status:
+    get:
+      tags: [Imports]
+      summary: Lê status operacional do motor de extração
+      operationId: getImportEngineStatus
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status operacional da importação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportEngineStatusEnvelope'
+
+  /v1/imports/{importId}/detail:
+    get:
+      tags: [Imports]
+      summary: Lê detalhe operacional do processamento
+      operationId: getImportDetail
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalhe operacional da importação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportDetailEnvelope'
+
+  /v1/imports/{importId}/commit:
+    post:
+      tags: [Imports]
+      summary: Confirma importação
+      operationId: postImportCommit
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportCommitInput'
+      responses:
+        '200':
+          description: Importação confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportCommitEnvelope'
+
+components:
+  schemas:
+    EnvelopeBase:
+      type: object
+      required: [ok, meta]
+      properties:
+        ok:
+          type: boolean
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp, version]
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        sourceWarning:
+          type: string
+
+    ErrorEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          required: [error]
+          properties:
+            error:
+              $ref: '#/components/schemas/ErrorPayload'
+
+    ErrorPayload:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    HealthEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: '#/components/schemas/HealthData'
+
+    HealthData:
+      type: object
+      required: [status, appEnv, apiVersion]
+      properties:
+        status:
+          type: string
+          example: ok
+        appEnv:
+          type: string
+        apiVersion:
+          type: string
+        services:
+          type: object
+          properties:
+            d1:
+              type: string
+            externalReferences:
+              type: string
+              description: |
+                Complementary external references health. Must never block core flows.
+              enum: [disabled, degraded, ok]
+
+    HomeEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HomeData'
+
+    HomeData:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+        hero:
+          $ref: '#/components/schemas/HomeHero'
+        primaryProblem:
+          $ref: '#/components/schemas/PrimaryProblem'
+        primaryAction:
+          $ref: '#/components/schemas/PrimaryAction'
+        score:
+          $ref: '#/components/schemas/ScoreData'
+        distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionItem'
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightItem'
+        updatedAt:
+          type: string
+          format: date-time
+
+    HomeHero:
+      type: object
+      properties:
+        totalEquity:
+          type: number
+        totalInvested:
+          type: number
+        totalProfitLoss:
+          type: number
+        totalProfitLossPct:
+          type: number
+        statusLabel:
+          type: string
+
+    PrimaryProblem:
+      type: object
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        severity:
+          type: string
+
+    PrimaryAction:
+      type: object
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        ctaLabel:
+          type: string
+        target:
+          type: string
+
+    ScoreData:
+      type: object
+      properties:
+        value:
+          type: number
+        status:
+          type: string
+        explanation:
+          type: string
+
+    DistributionItem:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        value:
+          type: number
+        sharePct:
+          type: number
+        performancePct:
+          type: number
+        sourceType:
+          type: string
+
+    InsightItem:
+      type: object
+      properties:
+        kind:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+
+    PortfolioEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PortfolioData'
+
+    PortfolioData:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+        summary:
+          $ref: '#/components/schemas/HomeHero'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioGroup'
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSuggestion'
+
+    PortfolioGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        totalValue:
+          type: number
+        sharePct:
+          type: number
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoldingSummary'
+
+    HoldingSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        assetId:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        categoryKey:
+          type: string
+        platformId:
+          type: string
+        platformName:
+          type: string
+        quantity:
+          type: number
+        averagePrice:
+          type: number
+        currentPrice:
+          type: number
+        currentValue:
+          type: number
+        investedAmount:
+          type: number
+        performancePct:
+          type: number
+        allocationPct:
+          type: number
+        recommendation:
+          type: string
+        statusLabel:
+          type: string
+
+    OrderSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        orderKind:
+          type: string
+        assetCode:
+          type: string
+        suggestedAmount:
+          type: number
+        reason:
+          type: string
+        priority:
+          type: string
+
+    HoldingDetailEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HoldingDetailData'
+
+    HoldingDetailData:
+      type: object
+      properties:
+        holding:
+          $ref: '#/components/schemas/HoldingSummary'
+        ranking:
+          $ref: '#/components/schemas/HoldingRanking'
+        categoryContext:
+          $ref: '#/components/schemas/CategoryContext'
+        externalLink:
+          type: string
+        benchmarkComparison:
+          type: object
+          nullable: true
+          properties:
+            benchmark:
+              type: string
+              enum: [CDI]
+            fromDate:
+              type: string
+              example: '2026-01-01'
+            toDate:
+              type: string
+              example: '2026-04-01'
+            benchmarkAccumulatedPct:
+              type: number
+              nullable: true
+            holdingPerformancePct:
+              type: number
+              nullable: true
+            deltaPct:
+              type: number
+              nullable: true
+            status:
+              type: string
+              enum: [disabled, degraded, ok]
+            label:
+              type: string
+
+    HoldingRanking:
+      type: object
+      properties:
+        score:
+          type: number
+        status:
+          type: string
+        motives:
+          type: array
+          items:
+            type: string
+        opportunityScore:
+          type: number
+
+    CategoryContext:
+      type: object
+      properties:
+        categoryKey:
+          type: string
+        categoryLabel:
+          type: string
+        categoryRisk:
+          type: string
+        categoryRecommendation:
+          type: string
+        primaryMessage:
+          type: string
+
+    ProfileEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProfileData'
+
+    ProfileData:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        context:
+          $ref: '#/components/schemas/ProfileContextInput'
+        backendHealth:
+          $ref: '#/components/schemas/HealthData'
+        displayPreferences:
+          type: object
+          additionalProperties: true
+
+    ProfileContextInput:
+      type: object
+      properties:
+        financialGoal:
+          type: string
+        monthlyIncomeRange:
+          type: string
+        monthlyInvestmentTarget:
+          type: number
+        availableToInvest:
+          type: number
+        riskProfile:
+          type: string
+        investmentHorizon:
+          type: string
+        platformsUsed:
+          type: array
+          items:
+            type: string
+        displayPreferences:
+          type: object
+          additionalProperties: true
+
+    AnalysisEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AnalysisData'
+
+    AnalysisData:
+      type: object
+      properties:
+        analysisId:
+          type: string
+        portfolioId:
+          type: string
+        snapshotId:
+          type: string
+        score:
+          $ref: '#/components/schemas/ScoreData'
+        primaryProblem:
+          $ref: '#/components/schemas/PrimaryProblem'
+        primaryAction:
+          $ref: '#/components/schemas/PrimaryAction'
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightItem'
+        generatedAt:
+          type: string
+          format: date-time
+
+    HistoryEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HistoryData'
+
+    HistoryData:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotSummary'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationalEvent'
+
+    SnapshotSummary:
+      type: object
+      properties:
+        snapshotId:
+          type: string
+        referenceDate:
+          type: string
+          format: date
+        totalEquity:
+          type: number
+        totalInvested:
+          type: number
+        totalProfitLoss:
+          type: number
+        totalProfitLossPct:
+          type: number
+
+    OperationalEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        eventType:
+          type: string
+        eventStatus:
+          type: string
+        message:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+
+    ImportStartInput:
+      type: object
+      required: [userId, portfolioId, origin, fileName]
+      properties:
+        userId:
+          type: string
+        portfolioId:
+          type: string
+        origin:
+          type: string
+        sourcePlatformId:
+          type: string
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        checksumSha256:
+          type: string
+        fileStorageKey:
+          type: string
+
+    ImportStartEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportStartData'
+
+    ImportStartData:
+      type: object
+      properties:
+        importId:
+          type: string
+        status:
+          type: string
+        nextStep:
+          type: string
+
+    ImportPreviewEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportPreviewData'
+
+    ImportEngineStatusEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportEngineStatusData'
+
+    ImportDetailEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportDetailData'
+
+    ImportPreviewData:
+      type: object
+      properties:
+        importId:
+          type: string
+        status:
+          type: string
+        totals:
+          type: object
+          properties:
+            totalRows:
+              type: integer
+            validRows:
+              type: integer
+            invalidRows:
+              type: integer
+            duplicateRows:
+              type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportPreviewRow'
+
+    ImportEngineStatusData:
+      type: object
+      properties:
+        importId:
+          type: string
+        origin:
+          type: string
+        importStatus:
+          type: string
+        document:
+          type: object
+          properties:
+            parserMode:
+              type: string
+              nullable: true
+            confidence:
+              type: number
+              nullable: true
+            importable:
+              type: boolean
+        engineStatus:
+          type: object
+          properties:
+            code:
+              type: string
+            label:
+              type: string
+            body:
+              type: string
+            readyForReview:
+              type: boolean
+            readyToCommit:
+              type: boolean
+
+    ImportDetailData:
+      type: object
+      properties:
+        importId:
+          type: string
+        issueSummary:
+          type: object
+          properties:
+            errorRows:
+              type: integer
+            conflictRows:
+              type: integer
+            lowConfidenceRows:
+              type: integer
+            nonImportableRows:
+              type: integer
+        decisionSummary:
+          type: object
+          properties:
+            manualRows:
+              type: integer
+            fallbackRows:
+              type: integer
+            aiRows:
+              type: integer
+            systemRows:
+              type: integer
+
+    ImportPreviewRow:
+      type: object
+      properties:
+        rowNumber:
+          type: integer
+        status:
+          type: string
+        normalized:
+          type: object
+          additionalProperties: true
+        validationErrors:
+          type: array
+          items:
+            type: string
+        dedupKey:
+          type: string
+
+    ImportCommitInput:
+      type: object
+      properties:
+        createSnapshot:
+          type: boolean
+          default: true
+        notes:
+          type: string
+
+    ImportCommitEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                importId:
+                  type: string
+                status:
+                  type: string
+                createdSnapshotId:
+                  type: string
+                affectedPositions:
+                  type: integer

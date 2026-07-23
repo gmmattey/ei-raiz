@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_start",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "importId": "imp_seed_1",
+    "status": "pending_preview",
+    "nextStep": "/v1/imports/imp_seed_1/preview",
+    "totals": { "totalRows": 6, "validRows": 5, "invalidRows": 1, "duplicateRows": 0 },
+    "document": null,
+    "importable": true
+  }
+}
+

@@ -1,0 +1,25 @@
+:root {
+  /* BrandBook: cores */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f0eb;
+  --bg-surface: #efe7dc;
+  --bg-inverse: #0b1218;
+
+  --text-primary: #0b1218;
+  --text-secondary: #4a5a6a;
+  --text-disabled: #bcc8d4;
+
+  --brand-primary: #f56a2a;
+
+  --state-success: #6fcf97;
+  --state-warning: #f2b544;
+  --state-error: #e85c5c;
+
+  --border-default: #e2ddd8;
+
+  /* Shape */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+}
+

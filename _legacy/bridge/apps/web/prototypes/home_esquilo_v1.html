@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Esquilo Invest — Home v1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #061018;
+      --bg-soft: #0c1823;
+      --panel: rgba(12, 24, 35, 0.94);
+      --panel-soft: rgba(17, 30, 43, 0.92);
+      --line: rgba(128, 159, 176, 0.18);
+      --text: #eff5f7;
+      --muted: #9db1bc;
+      --cyan: #56d5de;
+      --cyan-soft: rgba(86, 213, 222, 0.12);
+      --amber: #f7b955;
+      --amber-soft: rgba(247, 185, 85, 0.14);
+      --green: #7ed9a3;
+      --green-soft: rgba(126, 217, 163, 0.14);
+      --red: #ff6b6b;
+      --red-soft: rgba(255, 107, 107, 0.12);
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(86, 213, 222, 0.10), transparent 28%),
+        radial-gradient(circle at top right, rgba(247, 185, 85, 0.10), transparent 24%),
+        linear-gradient(180deg, #041018 0%, #07131c 44%, #0b1823 100%);
+      color: var(--text);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-xl);
+      background: rgba(7, 17, 26, 0.82);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(160deg, rgba(247,185,85,0.22), rgba(86,213,222,0.14));
+      border: 1px solid rgba(255,255,255,0.08);
+      font-family: 'Sora', sans-serif;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .brand-copy small {
+      display: block;
+      color: var(--cyan);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .brand-copy strong {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: var(--bg);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(86, 213, 222, 0.34);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.45fr 0.95fr;
+      gap: 20px;
+    }
+
+    .left,
+    .right {
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .card-inner {
+      padding: 22px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--cyan-soft);
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .hero h1 {
+      margin: 14px 0 10px;
+      font-family: 'Sora', sans-serif;
+      font-size: 34px;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 90%;
+    }
+
+    .hero-metrics {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--panel-soft);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .metric label,
+    .section-sub {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric .delta {
+      margin-top: 8px;
+      display: inline-flex;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: var(--amber-soft);
+      color: #ffd692;
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .problem-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .problem-box,
+    .action-box {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .problem-box {
+      background: var(--red-soft);
+    }
+
+    .action-box {
+      background: var(--amber-soft);
+    }
+
+    .problem-box strong,
+    .action-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .problem-box p,
+    .action-box p {
+      margin: 0;
+      color: var(--text);
+      opacity: 0.92;
+      line-height: 1.55;
+    }
+
+    .distribution-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .distribution-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .distribution-item header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .insights {
+      display: grid;
+      gap: 12px;
+    }
+
+    .insight {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--panel-soft);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .insight strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .insight p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .portfolio-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .holding {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--panel-soft);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .holding-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .holding-code {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .holding-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .holding-sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .holding-value {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .holding-value strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    .perf {
+      display: inline-flex;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .perf.pos { background: var(--green-soft); color: var(--green); }
+    .perf.neg { background: var(--red-soft); color: var(--red); }
+
+    .footer-note {
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px dashed rgba(247,185,85,0.22);
+      background: rgba(247,185,85,0.06);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .mini-tag {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: 1fr; }
+      .hero-metrics { grid-template-columns: 1fr; }
+      .hero p { max-width: 100%; }
+    }
+
+    @media (max-width: 720px) {
+      .app-shell { padding: 16px; }
+      .topbar { padding: 16px; align-items: stretch; flex-direction: column; }
+      .top-actions { width: 100%; }
+      .top-actions .btn { flex: 1; }
+      .hero h1 { font-size: 28px; }
+      .metric strong { font-size: 24px; }
+      .section-head { flex-direction: column; }
+      .holding { grid-template-columns: 1fr; }
+      .holding-value { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <main class="page">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">E</div>
+          <div class="brand-copy">
+            <small>Esquilo Invest</small>
+            <strong>Home / Visão da Carteira</strong>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-secondary">Atualizar dados</button>
+          <button class="btn btn-primary">Importar extrato</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="left">
+          <section class="card hero">
+            <div class="card-inner">
+              <span class="eyebrow">Resumo do momento</span>
+              <h1>Você finalmente entende quanto tem, onde está e o que vale revisar agora.</h1>
+              <p>
+                Esta Home não tenta impressionar com gráfico inútil. Ela mostra o que importa: patrimônio total,
+                principal problema, próxima ação e distribuição da carteira em linguagem que dá para usar.
+              </p>
+
+              <div class="hero-metrics">
+                <article class="metric">
+                  <label>Patrimônio total</label>
+                  <strong>R$ 21.276,84</strong>
+                  <span class="delta">+2,58% no consolidado</span>
+                </article>
+                <article class="metric">
+                  <label>Score da carteira</label>
+                  <strong>72 / 100</strong>
+                  <span class="mini-tag">atenção moderada</span>
+                </article>
+                <article class="metric">
+                  <label>Disponível para aportar</label>
+                  <strong>R$ 500,00</strong>
+                  <span class="mini-tag">perfil moderado</span>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>Problema principal e ação do momento</h2>
+                  <p>A Home do Esquilo precisa dizer claramente o que está pegando e o que fazer agora.</p>
+                </div>
+                <div class="score-pill">Recomendação principal</div>
+              </div>
+
+              <div class="problem-card">
+                <div class="problem-box">
+                  <strong>Você está concentrado demais em previdência.</strong>
+                  <p>
+                    Hoje a maior parte da sua carteira está num único bloco. Isso não significa que a previdência está errada.
+                    Significa que ela está pesando demais e reduzindo seu equilíbrio geral.
+                  </p>
+                </div>
+                <div class="action-box">
+                  <strong>Dilua a concentração aos poucos.</strong>
+                  <p>
+                    Use os próximos aportes para fortalecer outras categorias, em vez de aumentar ainda mais o que já domina a carteira.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>Distribuição da carteira</h2>
+                  <p>Sem pizza barulhenta. Só leitura rápida do peso de cada bloco.</p>
+                </div>
+              </div>
+
+              <div class="distribution-list">
+                <div class="distribution-item">
+                  <div>
+                    <header><span>Previdência</span><span>72,15%</span></header>
+                    <div class="bar"><span style="width:72.15%; background: var(--amber);"></span></div>
+                  </div>
+                  <strong style="font-variant-numeric: tabular-nums;">R$ 15.350,00</strong>
+                </div>
+                <div class="distribution-item">
+                  <div>
+                    <header><span>Fundos</span><span>24,44%</span></header>
+                    <div class="bar"><span style="width:24.44%; background: var(--cyan);"></span></div>
+                  </div>
+                  <strong style="font-variant-numeric: tabular-nums;">R$ 5.200,00</strong>
+                </div>
+                <div class="distribution-item">
+                  <div>
+                    <header><span>Ações</span><span>3,41%</span></header>
+                    <div class="bar"><span style="width:3.41%; background: var(--green);"></span></div>
+                  </div>
+                  <strong style="font-variant-numeric: tabular-nums;">R$ 726,84</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="right">
+          <section class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>Insights rápidos</h2>
+                  <p>Curto, claro e sem professoralismo.</p>
+                </div>
+              </div>
+              <div class="insights">
+                <article class="insight">
+                  <strong>Previdência pesa demais</strong>
+                  <p>Sua proteção virou um bloco grande demais dentro da carteira.</p>
+                </article>
+                <article class="insight">
+                  <strong>Ações ainda têm pouco peso</strong>
+                  <p>Há espaço para crescimento ganhar mais relevância ao longo do tempo.</p>
+                </article>
+                <article class="insight">
+                  <strong>Você não precisa inventar moda agora</strong>
+                  <p>Com seu valor disponível, o foco deve ser consistência e equilíbrio, não dispersão.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>Posições em destaque</h2>
+                  <p>Referência de como a lista pode aparecer sem parecer tabela fria.</p>
+                </div>
+              </div>
+
+              <div class="portfolio-list">
+                <article class="holding">
+                  <div>
+                    <div class="holding-top">
+                      <span class="holding-code">ITSA4</span>
+                      <span class="holding-name">Itaúsa</span>
+                    </div>
+                    <div class="holding-sub">XP Investimentos • Ações</div>
+                  </div>
+                  <div class="holding-value">
+                    <strong>R$ 392,04</strong>
+                    <span class="perf pos">+4,92%</span>
+                  </div>
+                </article>
+
+                <article class="holding">
+                  <div>
+                    <div class="holding-top">
+                      <span class="holding-code">CMIN3</span>
+                      <span class="holding-name">CSN Mineração</span>
+                    </div>
+                    <div class="holding-sub">XP Investimentos • Ações</div>
+                  </div>
+                  <div class="holding-value">
+                    <strong>R$ 334,80</strong>
+                    <span class="perf neg">-9,24%</span>
+                  </div>
+                </article>
+
+                <article class="holding">
+                  <div>
+                    <div class="holding-top">
+                      <span class="holding-code">FUND</span>
+                      <span class="holding-name">Fundo Multimercado Demo</span>
+                    </div>
+                    <div class="holding-sub">XP Investimentos • Fundos</div>
+                  </div>
+                  <div class="holding-value">
+                    <strong>R$ 5.200,00</strong>
+                    <span class="perf pos">+4,00%</span>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="footer-note">
+            Esta Home foi desenhada como referência inicial de produto. Ela segue o princípio central do Esquilo:
+            mostrar o que o usuário tem, dizer se faz sentido e apontar a próxima ação sem falar como corretora.
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

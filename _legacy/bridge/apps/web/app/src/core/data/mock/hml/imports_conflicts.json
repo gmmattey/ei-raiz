@@ -1,0 +1,91 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_conflicts",
+    "timestamp": "2026-04-03T12:00:00.000Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "importId": "imp_mock",
+    "origin": "B3_CSV",
+    "summary": {
+      "totalConflicts": 2,
+      "unresolvedConflicts": 2,
+      "resolvedConflicts": 0
+    },
+    "conflicts": [
+      {
+        "rowId": "imr_conf_1",
+        "rowNumber": 12,
+        "resolutionStatus": "PENDING",
+        "errorMessage": "Possível duplicidade com ativo já existente na carteira.",
+        "incoming": {
+          "sourceKind": "ACOES",
+          "code": "PETR4",
+          "name": "Petrobras PN",
+          "quantity": 100,
+          "investedAmount": 3200,
+          "currentAmount": 3510,
+          "categoryLabel": "Ações"
+        },
+        "duplicateCandidates": [
+          {
+            "assetId": "ast_1",
+            "assetCode": "PETR4",
+            "assetName": "Petrobras PN",
+            "quantity": 80,
+            "investedAmount": 2500,
+            "currentAmount": 2800
+          }
+        ],
+        "allowedActions": [
+          { "code": "keep_current", "label": "Manter atual" },
+          { "code": "replace_existing", "label": "Substituir existente" },
+          { "code": "consolidate", "label": "Consolidar posições" },
+          { "code": "ignore_import", "label": "Ignorar entrada" }
+        ],
+        "target": {
+          "preview": "/imports/imp_mock/preview",
+          "resolve": "/v1/imports/imp_mock/rows/imr_conf_1/duplicate-resolution"
+        }
+      },
+      {
+        "rowId": "imr_conf_2",
+        "rowNumber": 48,
+        "resolutionStatus": "PENDING",
+        "errorMessage": "Possível duplicidade com ativo já existente na carteira.",
+        "incoming": {
+          "sourceKind": "FUNDOS",
+          "code": "",
+          "name": "XP Selection Multimercado",
+          "quantity": 1,
+          "investedAmount": 42022.73,
+          "currentAmount": 43810.2,
+          "categoryLabel": "Fundos"
+        },
+        "duplicateCandidates": [
+          {
+            "assetId": "ast_22",
+            "assetCode": "",
+            "assetName": "XP Selection Multimercado",
+            "quantity": 1,
+            "investedAmount": 40000,
+            "currentAmount": 41790
+          }
+        ],
+        "allowedActions": [
+          { "code": "keep_current", "label": "Manter atual" },
+          { "code": "replace_existing", "label": "Substituir existente" },
+          { "code": "consolidate", "label": "Consolidar posições" },
+          { "code": "ignore_import", "label": "Ignorar entrada" }
+        ],
+        "target": {
+          "preview": "/imports/imp_mock/preview",
+          "resolve": "/v1/imports/imp_mock/rows/imr_conf_2/duplicate-resolution"
+        }
+      }
+    ]
+  }
+}
+

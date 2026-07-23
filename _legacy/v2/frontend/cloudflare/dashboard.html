@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Esquilo Invest</title>
+
+    <meta name="esquilo-api-base-url" content="https://script.google.com/macros/s/AKfycbya0mKpePyZV79S3ta0hJf0fhhwWfeUFwfopMOsZRSuqT7EF8LiTz6dV2suOuJNWve-/exec">
+    <meta name="esquilo-api-token" content="esquilo-invest-mobile-debug-2026">
+    <meta name="esquilo-api-timeout-ms" content="20000">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="./styles/dashboard.css">
+</head>
+<body>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://github.com/serealdemanga/esquilo-invest/blob/main/icons/esquilo.png?raw=true" alt="Esquilo Invest">
+            <span class="logo-text">Esquilo Invest</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> <span class="nav-text">Visão Geral</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-wallet"></i> <span class="nav-text">Meus Ativos</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-chart-pie"></i> <span class="nav-text">Alocação</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-file-invoice-dollar"></i> <span class="nav-text">Extratos</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar" id="userInitials" title="Giammattey">GM</div>
+                <div class="user-info">
+                    <span class="user-name" id="userName">Giammattey</span>
+                    <span class="user-plan" id="userPlan">Plano Gratuito</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="topbar">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="btn-icon" id="btnToggleSidebar" style="border: none; margin-right: 8px;">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </button>
+                <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h2 class="page-title">Visão Geral</h2>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn-icon" id="btnNotifications"><i class="fa-regular fa-bell"></i></button>
+                <button class="btn-sync" id="btnSyncData">
+                    <i class="fa-solid fa-arrows-rotate"></i> Sincronizar
+                </button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="dashboard-grid-top">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-sack-dollar"></i> Patrimônio Consolidado</span>
+                        <button class="btn-icon" id="btnToggleVision" style="width: 32px; height: 32px; border: none;"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                    <div class="card-body">
+                        <div class="balance-amount" id="patrimonioTotal">R$ 0,00</div>
+                        <div>
+                            <span class="balance-badge badge-loading" id="rendimentoMes">Carregando...</span>
+                            <span style="font-size: 13px; color: var(--text-muted); margin-left: 8px;">vs mês passado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card ai-card">
+                    <i class="fa-solid fa-brain ai-icon-bg"></i>
+                    <div class="card-header" style="margin-bottom: 12px; position: relative; z-index: 2;">
+                        <span class="card-title" style="color: var(--brand-orange);"><i class="fa-solid fa-wand-magic-sparkles"></i> Leitura da IA Esquilo</span>
+                        <span style="font-size: 12px; color: var(--text-muted); background: #FFF; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-light);">Atualizado hoje</span>
+                    </div>
+                    <div class="card-body" style="position: relative; z-index: 2;">
+                        <div class="ai-message" id="iaMensagem">Carregando leitura da carteira...</div>
+                        <button class="ai-action-btn" id="btnIaAction">Ver como fazer isso <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid-bottom">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-chart-pie"></i> Onde está seu dinheiro</span>
+                    </div>
+                    <div class="card-body chart-container">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-list-check"></i> Top Ativos</span>
+                        <a href="#" style="font-size: 14px; font-weight: 500; color: var(--brand-orange);">Ver todos</a>
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="assets-table">
+                            <thead>
+                                <tr>
+                                    <th>Ativo</th>
+                                    <th>Categoria</th>
+                                    <th>Valor (R$)</th>
+                                    <th>% da Carteira</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaAtivosBody">
+                                <tr>
+                                    <td colspan="4">Carregando ativos...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./scripts/dashboard.js"></script>
+</body>
+</html>

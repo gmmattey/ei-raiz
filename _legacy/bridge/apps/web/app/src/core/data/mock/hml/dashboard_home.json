@@ -1,0 +1,75 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_home",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "hero": {
+      "totalEquity": 21276.84,
+      "totalInvested": 20742.58,
+      "totalProfitLoss": 534.26,
+      "totalProfitLossPct": 2.58,
+      "statusLabel": "Analise concluida"
+    },
+    "score": { "value": 72, "status": "atencao_moderada", "explanation": "Boa base, mas com concentracao excessiva em previdencia." },
+    "primaryProblem": {
+      "code": "concentracao",
+      "title": "Concentracao em Previdencia",
+      "body": "Sua carteira ainda esta concentrada demais em previdencia.",
+      "severity": "warning"
+    },
+    "primaryAction": {
+      "code": "diluir_concentracao",
+      "title": "Diluir concentracao aos poucos",
+      "body": "Use novos aportes para abrir mais equilibrio fora da previdencia.",
+      "ctaLabel": "Ver carteira",
+      "target": "/portfolio"
+    },
+    "distribution": [
+      {
+        "key": "PENSION",
+        "label": "Previdencia",
+        "value": 15350.0,
+        "sharePct": 72.15,
+        "performancePct": 0,
+        "sourceType": "PENSION"
+      },
+      {
+        "key": "FUND",
+        "label": "Fundos",
+        "value": 5200.0,
+        "sharePct": 24.44,
+        "performancePct": 0,
+        "sourceType": "FUND"
+      },
+      {
+        "key": "STOCK",
+        "label": "Acoes",
+        "value": 726.84,
+        "sharePct": 3.41,
+        "performancePct": 0,
+        "sourceType": "STOCK"
+      }
+    ],
+    "insights": [
+      {
+        "kind": "concentration",
+        "title": "Previdência pesa demais",
+        "body": "Sua proteção virou bloco grande demais dentro da carteira.",
+        "severity": "warning"
+      },
+      {
+        "kind": "balance",
+        "title": "Ações ainda têm pouco peso",
+        "body": "Há espaço para crescimento ganhar mais relevância ao longo do tempo.",
+        "severity": "info"
+      }
+    ],
+    "updatedAt": "2026-03-31T01:00:00Z",
+    "sourceWarning": null
+  }
+}

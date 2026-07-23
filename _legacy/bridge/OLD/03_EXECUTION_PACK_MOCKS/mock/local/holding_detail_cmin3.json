@@ -1,0 +1,46 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-holding-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "holding": {
+      "id": "position_03",
+      "assetId": "asset_cmin3",
+      "code": "CMIN3",
+      "name": "CSN Mineração",
+      "categoryKey": "STOCK",
+      "platformId": "platform_ion",
+      "platformName": "ION Itaú",
+      "quantity": 62,
+      "averagePrice": 5.95,
+      "currentPrice": 5.22,
+      "currentValue": 323.64,
+      "investedAmount": 368.9,
+      "performancePct": -12.27,
+      "allocationPct": 2.83,
+      "recommendation": "Revisar",
+      "statusLabel": "Em atenção"
+    },
+    "ranking": {
+      "score": 41,
+      "status": "Em atenção",
+      "motives": [
+        "Perda relevante no período recente.",
+        "Tese mais cíclica e mais sensível a preço de minério.",
+        "Peso pequeno na carteira, mas exige decisão consciente."
+      ],
+      "opportunityScore": 52
+    },
+    "categoryContext": {
+      "categoryKey": "STOCK",
+      "categoryLabel": "Ações",
+      "categoryRisk": "Moderado para alto",
+      "categoryRecommendation": "Selecionar melhor as teses",
+      "primaryMessage": "A categoria ainda é pequena na carteira, então cada ativo ruim pesa mais na percepção do bloco."
+    },
+    "externalLink": "https://example.com/ativos/CMIN3"
+  }
+}

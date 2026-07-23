@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_mock_history_imports",
+    "timestamp": "2026-04-03T12:00:00.000Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_123",
+    "summary": {
+      "totalImports": 3,
+      "pendingImports": 1,
+      "completedImports": 2,
+      "failedImports": 0
+    },
+    "imports": [
+      {
+        "id": "imp_102",
+        "origin": "B3_CSV",
+        "originLabel": "CSV da B3",
+        "status": "PREVIEW_READY",
+        "statusLabel": "Pronta para commit",
+        "fileName": "b3_2026-03.csv",
+        "mimeType": "text/csv",
+        "totals": { "totalRows": 82, "validRows": 79, "invalidRows": 1, "duplicateRows": 2 },
+        "createdAt": "2026-04-03T10:12:00.000Z",
+        "updatedAt": "2026-04-03T10:18:00.000Z",
+        "snapshot": null,
+        "primaryAction": { "code": "resume_import", "title": "Retomar revisão", "target": "/imports/imp_102/preview" },
+        "secondaryAction": null
+      },
+      {
+        "id": "imp_101",
+        "origin": "MANUAL_ENTRY",
+        "originLabel": "Manual",
+        "status": "COMMITTED",
+        "statusLabel": "Concluída",
+        "fileName": null,
+        "mimeType": null,
+        "totals": { "totalRows": 6, "validRows": 6, "invalidRows": 0, "duplicateRows": 0 },
+        "createdAt": "2026-04-02T09:20:00.000Z",
+        "updatedAt": "2026-04-02T09:22:00.000Z",
+        "snapshot": { "id": "snp_101", "referenceDate": "2026-04-02", "target": "/history/snapshots" },
+        "primaryAction": { "code": "open_preview", "title": "Ver importação", "target": "/imports/imp_101/preview" },
+        "secondaryAction": { "code": "open_snapshot", "title": "Ver snapshot", "target": "/history/snapshots" }
+      },
+      {
+        "id": "imp_100",
+        "origin": "DOCUMENT_AI_PARSE",
+        "originLabel": "Documento assistido",
+        "status": "COMMITTED",
+        "statusLabel": "Concluída",
+        "fileName": "nota_corretagem.pdf",
+        "mimeType": "application/pdf",
+        "totals": { "totalRows": 14, "validRows": 12, "invalidRows": 1, "duplicateRows": 1 },
+        "createdAt": "2026-04-01T18:02:00.000Z",
+        "updatedAt": "2026-04-01T18:15:00.000Z",
+        "snapshot": { "id": "snp_100", "referenceDate": "2026-04-01", "target": "/history/snapshots" },
+        "primaryAction": { "code": "open_preview", "title": "Ver importação", "target": "/imports/imp_100/preview" },
+        "secondaryAction": { "code": "open_snapshot", "title": "Ver snapshot", "target": "/history/snapshots" }
+      }
+    ]
+  }
+}
+

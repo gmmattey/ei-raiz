@@ -1,0 +1,35 @@
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Dependencies / builds
+node_modules/
+dist/
+build/
+.turbo/
+.vite/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Cloudflare / wrangler
+.wrangler/
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local tooling scratch
+tooling/_tmp/
+tooling/branding_deck_build/
+
+# Arquivos gerados por acidente (ex: git branch > tatus)
+tatus

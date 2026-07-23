@@ -1,0 +1,15 @@
+openapi: 3.0.0
+info:
+  title: Esquilo Invest API
+  version: 1.0.0
+
+paths:
+  /score:
+    get:
+      summary: Retorna score
+  /goal/simulate:
+    post:
+      summary: Simula meta
+  /alerts:
+    get:
+      summary: Lista alertas

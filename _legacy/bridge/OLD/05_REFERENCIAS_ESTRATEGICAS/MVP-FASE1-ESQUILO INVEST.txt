@@ -1,0 +1,278 @@
+ESQUILO INVEST — MVP DEFINIÇÃO + BACKLOG E2E
+
+---
+
+1. VISÃO DO PRODUTO
+
+O Esquilo Invest é um aplicativo que consolida investimentos de diferentes plataformas, traduz os dados financeiros para linguagem simples e orienta o usuário sobre o que fazer com sua carteira de forma prática e realista.
+
+O objetivo não é competir com corretoras, mas resolver a desorganização, a falta de clareza e a dificuldade de decisão do usuário comum.
+
+---
+
+2. PROBLEMA PRINCIPAL
+
+Usuários possuem investimentos espalhados em múltiplas plataformas e não conseguem:
+
+- saber quanto têm no total
+- entender se estão indo bem ou mal
+- interpretar gráficos e termos financeiros
+- confiar nas recomendações dos apps
+- saber qual ação tomar
+
+Isso gera:
+- confusão
+- ansiedade
+- inação
+- decisões ruins
+
+---
+
+3. PROPOSTA DE VALOR
+
+“Um único lugar para entender quanto você tem, se sua carteira faz sentido e o que fazer agora — em linguagem normal.”
+
+---
+
+4. PILARES DO PRODUTO
+
+1. Consolidar  
+2. Traduzir  
+3. Orientar  
+
+Se uma funcionalidade não fortalece um desses pilares, ela não entra no MVP.
+
+---
+
+5. PERSONA PRINCIPAL
+
+- já investe (XP, Itaú, Onze, etc.)
+- não tem controle consolidado
+- entende pouco ou médio de finanças
+- não acompanha frequentemente
+- sente que está “fazendo no escuro”
+- quer clareza sem precisar estudar economia
+
+---
+
+6. JORNADA E2E DO MVP
+
+6.1 Entrada
+Usuário percebe desorganização e busca entender sua situação.
+
+6.2 Onboarding
+- onde investe
+- renda aproximada
+- objetivo
+- comportamento de risco (indireto)
+
+6.3 Importação
+- upload de CSV/extrato
+- leitura automática
+- preview
+- confirmação
+
+6.4 Consolidação
+- patrimônio total
+- distribuição
+- rentabilidade consolidada
+
+6.5 Tradução
+- explicação simples da carteira
+- identificação de problemas
+
+6.6 Orientação
+- uma ação principal
+- motivo claro
+- alinhado à realidade do usuário
+
+6.7 Acompanhamento
+- atualização via CSV
+- mudança de status
+- histórico simples
+
+---
+
+7. ESCOPO DO MVP
+
+INCLUI:
+- onboarding simples
+- importação CSV
+- consolidação multi-plataforma
+- visão total do patrimônio
+- leitura simples da carteira
+- recomendação principal
+- atualização fácil
+
+NÃO INCLUI:
+- integração direta com bancos
+- compra/venda no app
+- IA avançada
+- simulações complexas
+- social/gamificação
+
+---
+
+8. BACKLOG POR SPRINT
+
+---
+
+SPRINT 1 — ONBOARDING E PERFIL
+
+Feature: Onboarding inicial
+
+User Story:
+Como usuário, quero informar minha realidade financeira para receber recomendações adequadas.
+
+Critérios:
+- seleção de plataformas usadas
+- renda aproximada
+- objetivo financeiro
+- perfil inferido (sem termo técnico)
+- fluxo rápido (<2 min)
+
+---
+
+SPRINT 2 — IMPORTAÇÃO DE DADOS
+
+Feature: Upload de CSV
+
+User Story:
+Como usuário, quero importar meus investimentos automaticamente para não preencher manualmente.
+
+Critérios:
+- upload de arquivo
+- reconhecimento de padrão
+- preview dos dados
+- confirmação antes de salvar
+- erro amigável se falhar
+
+---
+
+Feature: Normalização de dados
+
+Critérios:
+- padronizar ativos
+- evitar duplicações
+- consolidar valores por ativo
+
+---
+
+SPRINT 3 — CONSOLIDAÇÃO
+
+Feature: Visão total da carteira
+
+User Story:
+Quero ver quanto tenho no total e onde está.
+
+Critérios:
+- patrimônio total
+- distribuição por categoria
+- lista de ativos consolidada
+
+---
+
+Feature: Rentabilidade consolidada
+
+Critérios:
+- valor investido vs atual
+- ganho/perda total
+- leitura simples (ganhando/perdendo)
+
+---
+
+SPRINT 4 — TRADUÇÃO
+
+Feature: Leitura simplificada da carteira
+
+User Story:
+Quero entender minha carteira sem linguagem técnica.
+
+Critérios:
+- explicação clara
+- identificar concentração
+- identificar risco
+- evitar termos complexos
+
+---
+
+SPRINT 5 — ORIENTAÇÃO
+
+Feature: Recomendação principal
+
+User Story:
+Quero saber o que fazer agora.
+
+Critérios:
+- apenas uma ação principal
+- baseada no maior problema
+- texto direto
+- motivo visível
+
+---
+
+Feature: Validação com realidade
+
+Critérios:
+- considerar renda
+- considerar valor disponível
+- evitar sugestões inviáveis
+
+---
+
+SPRINT 6 — ACOMPANHAMENTO
+
+Feature: Atualização da carteira
+
+User Story:
+Quero atualizar meus dados facilmente.
+
+Critérios:
+- novo upload substitui dados
+- histórico básico mantido
+- sem duplicação
+
+---
+
+Feature: Histórico simples
+
+Critérios:
+- snapshots da carteira
+- evolução básica
+- sem complexidade excessiva
+
+---
+
+9. REGRAS GERAIS DO PRODUTO
+
+- nunca mostrar erro técnico
+- nunca recomendar algo inviável financeiramente
+- nunca usar linguagem complexa sem tradução
+- sempre ter no máximo uma ação principal
+- sempre priorizar clareza sobre profundidade
+
+---
+
+10. MÉTRICAS DE SUCESSO DO MVP
+
+- usuário entende quanto tem (sim/não)
+- usuário entende se está bem ou mal (sim/não)
+- usuário entende o que fazer (sim/não)
+- frequência de retorno após primeira análise
+- taxa de atualização de carteira
+
+---
+
+11. POSICIONAMENTO FINAL
+
+O Esquilo não é uma corretora.  
+Não é um banco.  
+Não é um dashboard.
+
+É:
+
+“um sistema que organiza, traduz e orienta sua vida de investimentos.”
+
+---
+
+FIM DO DOCUMENTO

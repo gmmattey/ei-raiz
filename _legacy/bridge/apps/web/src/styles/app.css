@@ -1,0 +1,116 @@
+.app {
+  min-height: 100%;
+}
+
+.container {
+  width: min(1040px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  box-shadow: var(--shadow-1);
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.05);
+}
+
+.btnGhost {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--c-ink);
+  border: 1px solid rgba(11, 18, 24, 0.14);
+}
+
+.card {
+  border-radius: var(--radius-2);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(11, 18, 24, 0.08);
+  box-shadow: var(--shadow-1);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(245, 240, 235, 0.9);
+  border: 1px solid rgba(11, 18, 24, 0.08);
+}
+
+.pillDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--c-accent);
+}
+
+.splashMain {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+}
+
+.splashHero {
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.splashAside {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  .splashMain {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shellHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shellNav {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shellNavItem {
+  appearance: none;
+  border: 1px solid rgba(11, 18, 24, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.shellNavItem:hover {
+  filter: brightness(1.02);
+}
+
+.shellNavItemActive {
+  border-color: rgba(11, 18, 24, 0.28);
+  background: rgba(11, 18, 24, 0.06);
+}

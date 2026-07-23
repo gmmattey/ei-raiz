@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_analysis",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "analysisId": "anl_bal_1",
+    "portfolioId": "pfl_seed_balanced",
+    "snapshotId": "snp_bal_1",
+    "score": {
+      "value": 72,
+      "status": "atencao_moderada",
+      "explanation": "Carteira funcional, mas com concentracao relevante."
+    },
+    "primaryProblem": {
+      "code": "concentracao",
+      "title": "Concentracao em Previdencia",
+      "body": "A previdencia virou um bloco grande demais dentro da carteira.",
+      "severity": "warning"
+    },
+    "primaryAction": {
+      "code": "diluir_concentracao",
+      "title": "Diluir concentracao aos poucos",
+      "body": "Use novos aportes para equilibrar fora da previdencia.",
+      "ctaLabel": "Ver carteira",
+      "target": "/portfolio"
+    },
+    "portfolioDecision": "Priorizar aportes fora da previdencia ate reduzir concentracao.",
+    "actionPlan": [
+      "Definir percentual alvo por classe",
+      "Direcionar novos aportes para a classe sub-representada",
+      "Reavaliar em 30 dias"
+    ],
+    "summary": "Carteira funcional, mas com concentracao relevante.",
+    "insights": [
+      {
+        "kind": "concentration",
+        "title": "Previdencia pesa demais",
+        "body": "Sua previdencia virou o maior bloco da carteira.",
+        "priority": 1,
+        "severity": "critical",
+        "ctaLabel": "Ver carteira",
+        "target": "/portfolio"
+      }
+    ],
+    "generatedAt": "2026-03-31T01:00:00Z"
+  }
+}
+
