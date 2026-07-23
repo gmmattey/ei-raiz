@@ -1,0 +1,14 @@
+{
+  "name": "Quanto",
+  "short_name": "Quanto",
+  "description": "Quanto voce tem, de fato.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#111318",
+  "background_color": "#F7F9FA",
+  "icons": [
+    { "src": "./icons/quanto-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/quanto-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

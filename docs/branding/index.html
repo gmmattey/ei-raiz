@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Quanto — System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --bg:       #F7F9FA;
+  --surface:  #FFFFFF;
+  --surface-2:#F0F2F5;
+  --surface-3:#E5E8EC;
+  --fg:       #111318;
+  --fg-2:     #4A5261;
+  --fg-3:     #9199A8;
+  --border:   #E4E7EC;
+  --border-2: #CDD2DA;
+  --positive: #16A34A;
+  --positive-bg:#ECFDF5;
+  --negative: #DC2626;
+  --negative-bg:#FEF2F2;
+  --warn:     #D97706;
+  --warn-bg:  #FFFBEB;
+  --info:     #2563EB;
+  --info-bg:  #EFF6FF;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
+
+  --font-display: 'DM Sans', -apple-system, sans-serif;
+  --font-body:    'Roboto', system-ui, sans-serif;
+  --font-mono:    'DM Mono', ui-monospace, monospace;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+}
+
+/* ─── RESET ──────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--fg);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+
+.sidebar{
+  width:220px;
+  flex-shrink:0;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:var(--sp-6) 0;
+}
+.sidebar-logo{
+  padding:0 var(--sp-5) var(--sp-6);
+  border-bottom:1px solid var(--border);
+  margin-bottom:var(--sp-4);
+}
+.sidebar-logo .wordmark{
+  font-family:var(--font-display);
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  color:var(--fg);
+}
+.sidebar-logo .tag{
+  font-size:11px;
+  color:var(--fg-3);
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  margin-top:2px;
+}
+.nav-group{padding:0 var(--sp-3) var(--sp-2)}
+.nav-group-label{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--fg-3);
+  padding:var(--sp-2) var(--sp-2);
+}
+.nav-link{
+  display:block;
+  padding:7px var(--sp-2);
+  border-radius:var(--radius-sm);
+  font-size:13.5px;
+  color:var(--fg-2);
+  text-decoration:none;
+  transition:background .12s, color .12s;
+}
+.nav-link:hover{background:var(--surface-2);color:var(--fg)}
+.nav-link.active{background:var(--fg);color:#fff;font-weight:500}
+
+.content{flex:1;padding:var(--sp-10) var(--sp-10);max-width:900px}
+
+/* ─── SECTION ────────────────────────────────────────────── */
+.section{margin-bottom:72px;scroll-margin-top:32px}
+.section-header{margin-bottom:var(--sp-8)}
+.section-number{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--fg-3);
+  letter-spacing:0.06em;
+  margin-bottom:var(--sp-2);
+}
+.section-title{
+  font-family:var(--font-display);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.025em;
+  line-height:1.1;
+  color:var(--fg);
+}
+.section-desc{
+  margin-top:var(--sp-2);
+  font-size:14px;
+  color:var(--fg-2);
+  max-width:56ch;
+  line-height:1.6;
+}
+.subsection{margin-bottom:var(--sp-8)}
+.subsection-title{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--fg-3);
+  margin-bottom:var(--sp-4);
+  padding-bottom:var(--sp-2);
+  border-bottom:1px solid var(--border);
+}
+
+/* ─── CANVAS (preview box) ───────────────────────────────── */
+.canvas{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--sp-6);
+  margin-bottom:var(--sp-4);
+}
+.canvas.bg{background:var(--bg)}
+.canvas.dark{background:var(--fg)}
+.row{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:var(--sp-3)}
+
+/* ─── SWATCH ─────────────────────────────────────────────── */
+.swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--sp-3)}
+.swatch{border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border)}
+.swatch-color{height:56px}
+.swatch-info{padding:10px 12px;background:var(--surface)}
+.swatch-name{font-size:11px;font-weight:600;color:var(--fg);letter-spacing:0.01em}
+.swatch-token{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:2px}
+.swatch-hex{font-family:var(--font-mono);font-size:10px;color:var(--fg-2);margin-top:1px}
+
+/* ─── TIPO ───────────────────────────────────────────────── */
+.type-row{
+  display:flex;
+  align-items:baseline;
+  gap:var(--sp-5);
+  padding:var(--sp-4) 0;
+  border-bottom:1px solid var(--border);
+}
+.type-row:last-child{border-bottom:none}
+.type-meta{width:160px;flex-shrink:0}
+.type-meta .role{font-size:12px;font-weight:600;color:var(--fg);letter-spacing:0.01em}
+.type-meta .spec{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:3px;line-height:1.5}
+.type-sample{flex:1}
+
+/* ─── SPACING ────────────────────────────────────────────── */
+.sp-grid{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sp-row{display:flex;align-items:center;gap:var(--sp-4)}
+.sp-bar{background:var(--fg);border-radius:2px;height:20px;flex-shrink:0}
+.sp-label{font-family:var(--font-mono);font-size:11px;color:var(--fg-2)}
+.sp-token{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-left:auto}
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:var(--sp-2);
+  font-family:var(--font-body);
+  font-size:15px;
+  font-weight:500;
+  letter-spacing:0.02em;
+  border:none;cursor:pointer;
+  border-radius:var(--radius-pill);
+  padding:13px 24px;
+  transition:opacity .12s, transform .1s;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--fg);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{background:var(--surface-2);color:var(--fg);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--surface-3)}
+.btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-positive{background:var(--positive-bg);color:var(--positive)}
+.btn-negative{background:var(--negative-bg);color:var(--negative)}
+.btn-sm{padding:9px 16px;font-size:13px}
+.btn-lg{padding:16px 28px;font-size:17px}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.btn-icon{width:48px;height:48px;padding:0;border-radius:var(--radius-pill)}
+.btn-icon-sm{width:36px;height:36px;padding:0;border-radius:var(--radius-pill)}
+
+/* ─── INPUTS ─────────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:6px;width:100%}
+.field-label{font-size:12px;font-weight:500;color:var(--fg-2);letter-spacing:0.01em}
+.input{
+  width:100%;
+  font-family:var(--font-body);
+  font-size:15px;
+  color:var(--fg);
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:13px 14px;
+  outline:none;
+  transition:border-color .14s, box-shadow .14s;
+}
+.input::placeholder{color:var(--fg-3)}
+.input:focus{border-color:var(--fg);box-shadow:0 0 0 3px rgba(17,19,24,.12)}
+.input.error{border-color:var(--negative)}
+.input.success{border-color:var(--positive)}
+.input-amount{
+  font-family:var(--font-display);
+  font-size:28px;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  font-variant-numeric:tabular-nums;
+  border:none;
+  border-bottom:2px solid var(--border);
+  border-radius:0;
+  padding:8px 0;
+  background:transparent;
+}
+.input-amount:focus{border-bottom-color:var(--fg);box-shadow:none}
+.input-hint{font-size:12px;color:var(--fg-3)}
+.input-hint.error{color:var(--negative)}
+.input-group{position:relative}
+.input-group .prefix{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:15px;color:var(--fg-3);pointer-events:none;
+}
+.input-group .input{padding-left:38px}
+.input-group .suffix{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:13px;color:var(--fg-3);pointer-events:none;
+}
+
+/* ─── CARDS ──────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border);
+  padding:var(--sp-5);
+  box-shadow:var(--shadow-xs);
+}
+.card-balance{
+  background:var(--fg);
+  color:#fff;
+  border-radius:var(--radius-xl);
+  padding:var(--sp-6);
+  position:relative;
+  overflow:hidden;
+}
+.card-balance::before{
+  content:'';position:absolute;right:-20px;top:-20px;
+  width:140px;height:140px;
+  border-radius:50%;
+  background:rgba(255,255,255,.05);
+}
+.card-balance .label{font-size:12px;font-weight:500;opacity:.6;letter-spacing:0.02em;margin-bottom:var(--sp-2)}
+.card-balance .amount{
+  font-family:var(--font-display);
+  font-size:36px;font-weight:700;
+  letter-spacing:-0.03em;
+  font-variant-numeric:tabular-nums;
+  line-height:1.1;
+}
+.card-balance .sub{font-size:12px;opacity:.5;margin-top:var(--sp-2)}
+.card-balance-actions{display:flex;gap:var(--sp-3);margin-top:var(--sp-5)}
+.card-balance-btn{
+  flex:1;background:rgba(255,255,255,.12);color:#fff;
+  border:none;border-radius:var(--radius-pill);
+  padding:10px;font-size:12px;font-weight:500;
+  letter-spacing:0.02em;cursor:pointer;
+  transition:background .12s;
+}
+.card-balance-btn:hover{background:rgba(255,255,255,.2)}
+
+.card-tx{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:var(--sp-3) 0;
+  border-bottom:1px solid var(--border);
+}
+.card-tx:last-child{border-bottom:none}
+.tx-icon{
+  width:44px;height:44px;border-radius:var(--radius-md);
+  background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.tx-info{flex:1}
+.tx-name{font-size:14px;font-weight:500;color:var(--fg)}
+.tx-date{font-size:12px;color:var(--fg-3);margin-top:1px}
+.tx-amount{font-family:var(--font-display);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.tx-amount.pos{color:var(--positive)}
+.tx-amount.neg{color:var(--negative)}
+
+.card-invest{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:var(--sp-4) var(--sp-5);
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+}
+.invest-ticker{
+  font-family:var(--font-mono);
+  font-size:12px;font-weight:500;
+  background:var(--surface-2);
+  border-radius:var(--radius-sm);
+  padding:4px 8px;
+  color:var(--fg-2);
+  flex-shrink:0;
+}
+.invest-name{font-size:14px;font-weight:500;color:var(--fg)}
+.invest-price{margin-left:auto;text-align:right}
+.invest-value{font-family:var(--font-display);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg)}
+.invest-change{font-size:11px;font-weight:500;margin-top:1px}
+.invest-change.pos{color:var(--positive)}
+.invest-change.neg{color:var(--negative)}
+
+/* ─── CHIPS & BADGES ─────────────────────────────────────── */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:500;
+  padding:5px 12px;
+  border-radius:var(--radius-pill);
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--fg-2);
+  cursor:pointer;
+  transition:background .12s, border-color .12s;
+  white-space:nowrap;
+}
+.chip:hover{background:var(--surface-2)}
+.chip.selected{background:var(--fg);color:#fff;border-color:var(--fg)}
+.chip.positive{background:var(--positive-bg);color:var(--positive);border-color:transparent}
+.chip.negative{background:var(--negative-bg);color:var(--negative);border-color:transparent}
+.chip.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+
+.badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);
+  font-size:11px;font-weight:500;
+  min-width:20px;height:20px;padding:0 6px;
+  border-radius:var(--radius-pill);
+}
+.badge-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.badge.primary{background:var(--fg);color:#fff}
+.badge.positive{background:var(--positive);color:#fff}
+.badge.negative{background:var(--negative);color:#fff}
+.badge.warn{background:var(--warn);color:#fff}
+.badge.neutral{background:var(--surface-3);color:var(--fg-2)}
+
+/* ─── NAVEGAÇÃO ──────────────────────────────────────────── */
+.phone-frame{
+  width:280px;
+  background:#fff;
+  border-radius:36px;
+  border:2px solid #1C1C1E;
+  box-shadow:0 20px 48px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08);
+  overflow:hidden;
+  position:relative;
+  margin:0 auto;
+}
+.phone-status{
+  background:#111318;
+  padding:10px 20px 6px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.phone-time{color:#fff;font-size:13px;font-weight:600;font-family:var(--font-display)}
+.phone-icons{display:flex;gap:6px;align-items:center}
+.phone-body{background:var(--bg);min-height:380px}
+.phone-appbar{
+  background:var(--surface);
+  padding:14px 20px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.appbar-title{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-0.02em;color:var(--fg)}
+.appbar-actions{display:flex;gap:var(--sp-2)}
+.appbar-btn{
+  width:36px;height:36px;border-radius:var(--radius-pill);
+  background:var(--surface-2);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--fg);
+}
+.phone-content{padding:16px}
+.phone-nav{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding:8px 0 12px;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:3px;cursor:pointer;padding:4px 0;
+}
+.nav-item svg{width:22px;height:22px;stroke:var(--fg-3);stroke-width:1.8;fill:none}
+.nav-item span{font-size:10px;font-weight:500;color:var(--fg-3);letter-spacing:0.01em}
+.nav-item.active svg{stroke:var(--fg)}
+.nav-item.active span{color:var(--fg);font-weight:600}
+.nav-indicator{
+  width:4px;height:4px;border-radius:50%;background:var(--fg);
+  margin:0 auto 2px;
+  opacity:0;
+}
+.nav-item.active .nav-indicator{opacity:1}
+
+/* ─── ICON GRID ──────────────────────────────────────────── */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:var(--sp-3)}
+.icon-cell{
+  display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);
+  padding:var(--sp-3);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  cursor:default;
+  transition:background .1s;
+}
+.icon-cell:hover{background:var(--surface-2)}
+.icon-cell svg{width:24px;height:24px;stroke:var(--fg);stroke-width:1.7;fill:none}
+.icon-cell span{font-size:10px;color:var(--fg-3);text-align:center;font-family:var(--font-mono)}
+
+/* ─── DIVIDER ────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:var(--sp-5) 0}
+
+/* ─── RADIUS DEMO ────────────────────────────────────────── */
+.radius-row{display:flex;gap:var(--sp-4);flex-wrap:wrap;align-items:flex-end}
+.radius-box{
+  background:var(--surface-2);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;
+  width:80px;height:80px;
+}
+.radius-label{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);text-align:center}
+
+/* ─── ELEVATION ──────────────────────────────────────────── */
+.elevation-row{display:flex;gap:var(--sp-5);flex-wrap:wrap;align-items:flex-end}
+.elevation-box{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  width:100px;height:80px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;
+}
+.elevation-label{font-family:var(--font-mono);font-size:10px;color:var(--fg-3)}
+
+/* ─── PROGRESS / CHART BAR ───────────────────────────────── */
+.chart-bar-wrap{display:flex;flex-direction:column;gap:var(--sp-3)}
+.chart-bar-row{display:flex;align-items:center;gap:var(--sp-3)}
+.chart-bar-label{font-size:13px;color:var(--fg-2);width:70px;flex-shrink:0}
+.chart-bar-track{flex:1;height:8px;background:var(--surface-2);border-radius:var(--radius-pill);overflow:hidden}
+.chart-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--fg)}
+.chart-bar-fill.pos{background:var(--positive)}
+.chart-bar-fill.neg{background:var(--negative)}
+.chart-bar-value{font-family:var(--font-mono);font-size:12px;color:var(--fg-2);width:52px;text-align:right;flex-shrink:0}
+
+/* ─── SKELETON ───────────────────────────────────────────── */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{
+  background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);
+  background-size:800px 100%;
+  animation:shimmer 1.4s infinite;
+  border-radius:var(--radius-sm);
+}
+
+/* ─── TOKEN TABLE ────────────────────────────────────────── */
+.token-table{width:100%;border-collapse:collapse;font-size:13px}
+.token-table th{
+  text-align:left;padding:8px 12px;
+  font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--fg-3);border-bottom:1px solid var(--border);
+}
+.token-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.token-table tr:last-child td{border-bottom:none}
+.token-table .t-token{font-family:var(--font-mono);font-size:12px;color:var(--fg-2)}
+.token-table .t-value{font-family:var(--font-mono);font-size:11px;color:var(--fg-3)}
+.token-dot{width:16px;height:16px;border-radius:4px;display:inline-block;border:1px solid rgba(0,0,0,.1)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Quanto</div>
+    <div class="tag">System Design v1.0</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Fundação</div>
+    <a href="#cores" class="nav-link active">Cores</a>
+    <a href="#tipografia" class="nav-link">Tipografia</a>
+    <a href="#espacamento" class="nav-link">Espaçamento</a>
+    <a href="#elevacao" class="nav-link">Elevação & Raio</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Componentes</div>
+    <a href="#botoes" class="nav-link">Botões</a>
+    <a href="#inputs" class="nav-link">Inputs</a>
+    <a href="#cards" class="nav-link">Cards</a>
+    <a href="#chips" class="nav-link">Chips & Badges</a>
+    <a href="#feedback" class="nav-link">Feedback</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Padrões</div>
+    <a href="#navegacao" class="nav-link">Navegação</a>
+    <a href="#iconografia" class="nav-link">Iconografia</a>
+    <a href="#dados" class="nav-link">Visualização de Dados</a>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<main class="content">
+
+<!-- ─── 1. CORES ──────────────────────────────────────────── -->
+<section class="section" id="cores" data-od-id="cores">
+  <div class="section-header">
+    <div class="section-number">01 / FUNDAÇÃO</div>
+    <h1 class="section-title">Cores</h1>
+    <p class="section-desc">Paleta monocromática com sinalização semântica financeira. Cor como sinal — nunca como decoração.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Neutrals — 80% do canvas</div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F7F9FA"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background</div>
+          <div class="swatch-token">--bg</div>
+          <div class="swatch-hex">#F7F9FA</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FFFFFF;border-bottom:1px solid #E4E7EC"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Surface</div>
+          <div class="swatch-token">--surface</div>
+          <div class="swatch-hex">#FFFFFF</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F0F2F5"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Surface 2</div>
+          <div class="swatch-token">--surface-2</div>
+          <div class="swatch-hex">#F0F2F5</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#E5E8EC"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Surface 3</div>
+          <div class="swatch-token">--surface-3</div>
+          <div class="swatch-hex">#E5E8EC</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#E4E7EC"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Border</div>
+          <div class="swatch-token">--border</div>
+          <div class="swatch-hex">#E4E7EC</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#CDD2DA"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Border Strong</div>
+          <div class="swatch-token">--border-2</div>
+          <div class="swatch-hex">#CDD2DA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Texto</div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#111318"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Primário</div>
+          <div class="swatch-token">--fg</div>
+          <div class="swatch-hex">#111318</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#4A5261"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Secundário</div>
+          <div class="swatch-token">--fg-2</div>
+          <div class="swatch-hex">#4A5261</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#9199A8"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Muted</div>
+          <div class="swatch-token">--fg-3</div>
+          <div class="swatch-hex">#9199A8</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Sinalização Financeira — uso restrito</div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#16A34A"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Positivo</div>
+          <div class="swatch-token">--positive</div>
+          <div class="swatch-hex">#16A34A</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#ECFDF5"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Positivo BG</div>
+          <div class="swatch-token">--positive-bg</div>
+          <div class="swatch-hex">#ECFDF5</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#DC2626"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Negativo</div>
+          <div class="swatch-token">--negative</div>
+          <div class="swatch-hex">#DC2626</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FEF2F2"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Negativo BG</div>
+          <div class="swatch-token">--negative-bg</div>
+          <div class="swatch-hex">#FEF2F2</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#D97706"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Alerta</div>
+          <div class="swatch-token">--warn</div>
+          <div class="swatch-hex">#D97706</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2563EB"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Info</div>
+          <div class="swatch-token">--info</div>
+          <div class="swatch-hex">#2563EB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 2. TIPOGRAFIA ──────────────────────────────────────── -->
+<section class="section" id="tipografia" data-od-id="tipografia">
+  <div class="section-header">
+    <div class="section-number">02 / FUNDAÇÃO</div>
+    <h1 class="section-title">Tipografia</h1>
+    <p class="section-desc">3 famílias com papéis distintos. Nunca mais de 2 por tela. Tracking negativo em display, tabular-nums em todos os valores.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Escala de Tipo</div>
+    <div class="canvas">
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">Display / Saldo</div>
+          <div class="spec">DM Sans 700<br>36–48px / lh 1.05<br>tracking −0.03em</div>
+        </div>
+        <div class="type-sample" style="font-family:var(--font-display);font-size:40px;font-weight:700;letter-spacing:-0.03em;line-height:1.05;font-variant-numeric:tabular-nums">R$ 12.480,00</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">H1 — Título</div>
+          <div class="spec">DM Sans 700<br>28px / lh 1.1<br>tracking −0.025em</div>
+        </div>
+        <div class="type-sample" style="font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-0.025em;line-height:1.1">Minha Carteira</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">H2 — Seção</div>
+          <div class="spec">DM Sans 600<br>22px / lh 1.2<br>tracking −0.015em</div>
+        </div>
+        <div class="type-sample" style="font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:-0.015em;line-height:1.2">Transações Recentes</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">H3 — Subtítulo</div>
+          <div class="spec">DM Sans 600<br>17px / lh 1.3<br>tracking −0.01em</div>
+        </div>
+        <div class="type-sample" style="font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-0.01em;line-height:1.3">Renda Fixa</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">Body</div>
+          <div class="spec">Roboto 400<br>15px / lh 1.55<br>tracking 0</div>
+        </div>
+        <div class="type-sample" style="font-size:15px;font-weight:400;line-height:1.55;color:var(--fg-2)">Gerencie seus gastos, investimentos e planejamento financeiro em um só lugar.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">Label / UI</div>
+          <div class="spec">Roboto 500<br>13px / lh 1.4<br>tracking 0.01em</div>
+        </div>
+        <div class="type-sample" style="font-size:13px;font-weight:500;letter-spacing:0.01em;color:var(--fg-2)">Saldo disponível</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">Caption</div>
+          <div class="spec">Roboto 400<br>11px / lh 1.5<br>tracking 0.015em</div>
+        </div>
+        <div class="type-sample" style="font-size:11px;letter-spacing:0.015em;color:var(--fg-3)">Atualizado hoje às 14:32</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">
+          <div class="role">Mono / Valor</div>
+          <div class="spec">DM Mono 500<br>13–15px<br>tabular-nums</div>
+        </div>
+        <div class="type-sample" style="font-family:var(--font-mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--fg)">+R$ 1.240,50 · PETR4 · 00:00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Pesos — sistema de 3 níveis</div>
+    <div class="canvas">
+      <div class="row">
+        <div style="flex:1;padding:var(--sp-4);background:var(--surface-2);border-radius:var(--radius-md);text-align:center">
+          <div style="font-size:24px;font-weight:400;font-family:var(--font-display)">Regular</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--fg-3);margin-top:6px">400 — Leitura</div>
+        </div>
+        <div style="flex:1;padding:var(--sp-4);background:var(--surface-2);border-radius:var(--radius-md);text-align:center">
+          <div style="font-size:24px;font-weight:500;font-family:var(--font-display)">Medium</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--fg-3);margin-top:6px">500 — UI / Labels</div>
+        </div>
+        <div style="flex:1;padding:var(--sp-4);background:var(--surface-2);border-radius:var(--radius-md);text-align:center">
+          <div style="font-size:24px;font-weight:700;font-family:var(--font-display)">Bold</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--fg-3);margin-top:6px">700 — Títulos / CTAs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 3. ESPAÇAMENTO ─────────────────────────────────────── -->
+<section class="section" id="espacamento" data-od-id="espacamento">
+  <div class="section-header">
+    <div class="section-number">03 / FUNDAÇÃO</div>
+    <h1 class="section-title">Espaçamento</h1>
+    <p class="section-desc">Grid de 8px (4dp Android). Todos os valores são múltiplos de 4.</p>
+  </div>
+  <div class="canvas">
+    <div class="sp-grid">
+      <div class="sp-row"><div class="sp-bar" style="width:4px"></div><div class="sp-label">4px</div><div class="sp-token">--sp-1 / 1dp</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:8px"></div><div class="sp-label">8px</div><div class="sp-token">--sp-2 / 2dp</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:12px"></div><div class="sp-label">12px</div><div class="sp-token">--sp-3 / 3dp</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:16px"></div><div class="sp-label">16px</div><div class="sp-token">--sp-4 — padding interno leve</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:20px"></div><div class="sp-label">20px</div><div class="sp-token">--sp-5 — padding de card</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:24px"></div><div class="sp-label">24px</div><div class="sp-token">--sp-6 — padding de seção</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:32px"></div><div class="sp-label">32px</div><div class="sp-token">--sp-8 — gap entre seções</div></div>
+      <div class="sp-row"><div class="sp-bar" style="width:40px"></div><div class="sp-label">40px</div><div class="sp-token">--sp-10 — espaço de respiração</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 4. ELEVAÇÃO & RAIO ──────────────────────────────────── -->
+<section class="section" id="elevacao" data-od-id="elevacao">
+  <div class="section-header">
+    <div class="section-number">04 / FUNDAÇÃO</div>
+    <h1 class="section-title">Elevação & Raio de Borda</h1>
+    <p class="section-desc">Sombras leves que separam hierarquias sem poluir. Bordas arredondadas de médias a pill para CTAs.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Elevação</div>
+    <div class="canvas bg">
+      <div class="elevation-row">
+        <div>
+          <div class="elevation-box" style="box-shadow:none;border:1px solid var(--border)">
+            <div class="elevation-label">Flat</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:8px;text-align:center">border only</div>
+        </div>
+        <div>
+          <div class="elevation-box" style="box-shadow:var(--shadow-xs)">
+            <div class="elevation-label">XS</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:8px;text-align:center">--shadow-xs</div>
+        </div>
+        <div>
+          <div class="elevation-box" style="box-shadow:var(--shadow-sm)">
+            <div class="elevation-label">SM</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:8px;text-align:center">--shadow-sm</div>
+        </div>
+        <div>
+          <div class="elevation-box" style="box-shadow:var(--shadow-md)">
+            <div class="elevation-label">MD</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3);margin-top:8px;text-align:center">--shadow-md</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Raio de Borda</div>
+    <div class="canvas bg">
+      <div class="radius-row">
+        <div>
+          <div class="radius-box" style="border-radius:4px"><div class="radius-label">4px<br>XS</div></div>
+        </div>
+        <div>
+          <div class="radius-box" style="border-radius:8px"><div class="radius-label">8px<br>SM</div></div>
+        </div>
+        <div>
+          <div class="radius-box" style="border-radius:12px"><div class="radius-label">12px<br>MD</div></div>
+        </div>
+        <div>
+          <div class="radius-box" style="border-radius:16px"><div class="radius-label">16px<br>LG</div></div>
+        </div>
+        <div>
+          <div class="radius-box" style="border-radius:20px"><div class="radius-label">20px<br>XL</div></div>
+        </div>
+        <div>
+          <div class="radius-box" style="border-radius:999px"><div class="radius-label">Pill<br>CTAs</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 5. BOTÕES ──────────────────────────────────────────── -->
+<section class="section" id="botoes" data-od-id="botoes">
+  <div class="section-header">
+    <div class="section-number">05 / COMPONENTES</div>
+    <h1 class="section-title">Botões</h1>
+    <p class="section-desc">Target mínimo de 48dp (Android). Pill para todos os botões de ação. Near-black como CTA primário.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Variantes</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center">
+        <button class="btn btn-primary">Transferir</button>
+        <button class="btn btn-secondary">Ver extrato</button>
+        <button class="btn btn-ghost">Cancelar</button>
+        <button class="btn btn-positive">Investir</button>
+        <button class="btn btn-negative">Resgatar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Tamanhos</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center">
+        <button class="btn btn-primary btn-sm">Pequeno</button>
+        <button class="btn btn-primary">Médio</button>
+        <button class="btn btn-primary btn-lg">Grande</button>
+        <button class="btn btn-primary" style="width:100%">Largura total</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Estados</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center">
+        <button class="btn btn-primary">Normal</button>
+        <button class="btn btn-primary" style="opacity:.7">Hover</button>
+        <button class="btn btn-primary" style="transform:translateY(1px)">Pressed</button>
+        <button class="btn btn-primary" disabled>Desabilitado</button>
+        <button class="btn btn-primary" style="opacity:.8">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+          Carregando
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Botões de Ícone</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center">
+        <button class="btn btn-primary btn-icon" aria-label="Adicionar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="btn btn-secondary btn-icon" aria-label="Notificações">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" aria-label="Buscar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon btn-icon-sm" aria-label="Fechar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 6. INPUTS ─────────────────────────────────────────── -->
+<section class="section" id="inputs" data-od-id="inputs">
+  <div class="section-header">
+    <div class="section-number">06 / COMPONENTES</div>
+    <h1 class="section-title">Inputs</h1>
+    <p class="section-desc">Campos com altura mínima de 48dp. Input de valor com tipografia display para reforçar a ação principal.</p>
+  </div>
+
+  <div class="canvas">
+    <div class="col" style="gap:var(--sp-5)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+        <div class="field">
+          <label class="field-label">Nome completo</label>
+          <input class="input" type="text" placeholder="Ex: Ana Souza"/>
+        </div>
+        <div class="field">
+          <label class="field-label">CPF</label>
+          <input class="input" type="text" placeholder="000.000.000-00"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Sucesso</label>
+          <input class="input success" type="text" value="Conta verificada"/>
+          <span class="input-hint" style="color:var(--positive)">Agência validada com sucesso.</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Erro</label>
+          <input class="input error" type="text" value="0000"/>
+          <span class="input-hint error">Saldo insuficiente para esta operação.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Buscar transação</label>
+        <div class="input-group">
+          <svg class="prefix" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input" type="search" placeholder="Pesquisar por nome ou valor"/>
+          <span class="suffix">⌘K</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Valor da transferência</label>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--fg-3)">R$</span>
+          <input class="input input-amount" type="text" placeholder="0,00" style="flex:1"/>
+        </div>
+        <span class="input-hint">Saldo disponível: R$ 12.480,00</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 7. CARDS ──────────────────────────────────────────── -->
+<section class="section" id="cards" data-od-id="cards">
+  <div class="section-header">
+    <div class="section-number">07 / COMPONENTES</div>
+    <h1 class="section-title">Cards</h1>
+    <p class="section-desc">Três padrões de card: saldo (near-black), transação (lista), investimento (linha densa).</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Card de Saldo</div>
+    <div style="max-width:340px">
+      <div class="card-balance">
+        <div class="label">SALDO TOTAL</div>
+        <div class="amount">R$ 12.480,00</div>
+        <div class="sub">+R$ 340,20 esta semana (2,8%)</div>
+        <div class="card-balance-actions">
+          <button class="card-balance-btn">Transferir</button>
+          <button class="card-balance-btn">Depositar</button>
+          <button class="card-balance-btn">Pagar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Card de Transações</div>
+    <div class="card" style="max-width:380px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600">Transações recentes</div>
+        <a href="#" style="font-size:12px;color:var(--fg-3);text-decoration:none">Ver todas</a>
+      </div>
+      <div class="card-tx">
+        <div class="tx-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div class="tx-info">
+          <div class="tx-name">Mercado Extra</div>
+          <div class="tx-date">Hoje, 10:24</div>
+        </div>
+        <div class="tx-amount neg">−R$ 187,50</div>
+      </div>
+      <div class="card-tx">
+        <div class="tx-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="tx-info">
+          <div class="tx-name">Dividendos PETR4</div>
+          <div class="tx-date">Ontem, 18:00</div>
+        </div>
+        <div class="tx-amount pos">+R$ 420,00</div>
+      </div>
+      <div class="card-tx">
+        <div class="tx-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div class="tx-info">
+          <div class="tx-name">Netflix</div>
+          <div class="tx-date">22 jun, 09:00</div>
+        </div>
+        <div class="tx-amount neg">−R$ 44,90</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Cards de Investimento</div>
+    <div class="col" style="max-width:380px">
+      <div class="card-invest">
+        <div class="invest-ticker">PETR4</div>
+        <div class="invest-name">Petrobras PN</div>
+        <div class="invest-price">
+          <div class="invest-value">R$ 38,24</div>
+          <div class="invest-change pos">+1,42%</div>
+        </div>
+      </div>
+      <div class="card-invest">
+        <div class="invest-ticker">MGLU3</div>
+        <div class="invest-name">Magazine Luiza</div>
+        <div class="invest-price">
+          <div class="invest-value">R$ 9,87</div>
+          <div class="invest-change neg">−3,21%</div>
+        </div>
+      </div>
+      <div class="card-invest">
+        <div class="invest-ticker">CDI</div>
+        <div class="invest-name">CDB Itaú 105% CDI</div>
+        <div class="invest-price">
+          <div class="invest-value">R$ 5.000,00</div>
+          <div class="invest-change pos">+0,04% hoje</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 8. CHIPS & BADGES ──────────────────────────────────── -->
+<section class="section" id="chips" data-od-id="chips">
+  <div class="section-header">
+    <div class="section-number">08 / COMPONENTES</div>
+    <h1 class="section-title">Chips & Badges</h1>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">Chips de filtro</div>
+    <div class="canvas">
+      <div class="row">
+        <div class="chip selected">Todos</div>
+        <div class="chip">Entradas</div>
+        <div class="chip">Saídas</div>
+        <div class="chip">Investimentos</div>
+        <div class="chip">Cartão</div>
+      </div>
+    </div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">Chips de status</div>
+    <div class="canvas">
+      <div class="row">
+        <div class="chip positive">Rentável</div>
+        <div class="chip negative">Prejuízo</div>
+        <div class="chip warn">Atenção</div>
+        <div class="chip">Neutro</div>
+      </div>
+    </div>
+  </div>
+  <div class="subsection">
+    <div class="subsection-title">Badges</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center">
+        <span class="badge primary">3</span>
+        <span class="badge positive">+12%</span>
+        <span class="badge negative">−5%</span>
+        <span class="badge warn">!</span>
+        <span class="badge neutral">novo</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-2)">
+          <span class="badge-dot" style="background:var(--positive)"></span>Mercado aberto
+        </span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-2)">
+          <span class="badge-dot" style="background:var(--negative)"></span>Mercado fechado
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 9. FEEDBACK ───────────────────────────────────────── -->
+<section class="section" id="feedback" data-od-id="feedback">
+  <div class="section-header">
+    <div class="section-number">09 / COMPONENTES</div>
+    <h1 class="section-title">Feedback & Estados</h1>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Banners inline</div>
+    <div class="canvas">
+      <div class="col">
+        <div style="display:flex;gap:var(--sp-3);padding:var(--sp-4);background:var(--positive-bg);border-radius:var(--radius-md);border:1px solid #BBF7D0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>
+          <div><div style="font-size:14px;font-weight:500;color:var(--positive)">Transferência realizada</div><div style="font-size:13px;color:var(--positive);opacity:.8;margin-top:2px">R$ 500,00 enviado para João Pedro.</div></div>
+        </div>
+        <div style="display:flex;gap:var(--sp-3);padding:var(--sp-4);background:var(--negative-bg);border-radius:var(--radius-md);border:1px solid #FECACA">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--negative)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><div style="font-size:14px;font-weight:500;color:var(--negative)">Saldo insuficiente</div><div style="font-size:13px;color:var(--negative);opacity:.8;margin-top:2px">Adicione fundos para continuar.</div></div>
+        </div>
+        <div style="display:flex;gap:var(--sp-3);padding:var(--sp-4);background:var(--warn-bg);border-radius:var(--radius-md);border:1px solid #FDE68A">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div><div style="font-size:14px;font-weight:500;color:var(--warn)">Limite próximo</div><div style="font-size:13px;color:var(--warn);opacity:.8;margin-top:2px">Você usou 87% do limite do cartão.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Skeleton Loading</div>
+    <div class="canvas">
+      <div style="display:flex;gap:var(--sp-3);align-items:center">
+        <div class="skeleton" style="width:44px;height:44px;border-radius:var(--radius-md)"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="skeleton" style="height:14px;width:60%"></div>
+          <div class="skeleton" style="height:12px;width:40%"></div>
+        </div>
+        <div class="skeleton" style="height:16px;width:72px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 10. NAVEGAÇÃO ─────────────────────────────────────── -->
+<section class="section" id="navegacao" data-od-id="navegacao">
+  <div class="section-header">
+    <div class="section-number">10 / PADRÕES</div>
+    <h1 class="section-title">Navegação Android</h1>
+    <p class="section-desc">Bottom navigation com 5 itens. App bar com título e ações. Indicador dot no item ativo.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Frame do app (Android)</div>
+    <div class="phone-frame">
+      <div class="phone-status">
+        <div class="phone-time">09:41</div>
+        <div class="phone-icons">
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="3" width="3" height="7" rx="1" fill="white" opacity=".4"/><rect x="4" y="2" width="3" height="8" rx="1" fill="white" opacity=".7"/><rect x="8" y="0" width="3" height="10" rx="1" fill="white"/><rect x="12" y="1" width="2" height="8" rx="1" fill="white" opacity=".3"/></svg>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2.5C5.5 1 3.5 1 2 2.5M12 2.5C9 -0.5 5 -0.5 2 2.5" stroke="white" stroke-opacity=".4" stroke-linecap="round"/><path d="M9.5 5C8.3 3.8 5.7 3.8 4.5 5" stroke="white" stroke-linecap="round"/><circle cx="7" cy="7.5" r="1.5" fill="white"/></svg>
+          <svg width="22" height="10" viewBox="0 0 22 10" fill="none"><rect x=".5" y=".5" width="18" height="9" rx="2.5" stroke="white" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="14" height="7" rx="2" fill="white"/><path d="M20 3.5v3a1.5 1.5 0 000-3z" fill="white" opacity=".4"/></svg>
+        </div>
+      </div>
+      <div class="phone-appbar">
+        <div class="appbar-title">Quanto</div>
+        <div class="appbar-actions">
+          <button class="appbar-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </button>
+          <button class="appbar-btn" style="overflow:hidden;background:#E4E7EC">
+            <div style="font-size:12px;font-weight:700;color:var(--fg)">AS</div>
+          </button>
+        </div>
+      </div>
+      <div class="phone-body" style="padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="card-balance" style="padding:20px">
+          <div style="font-size:10px;font-weight:500;opacity:.6;letter-spacing:0.06em;margin-bottom:8px">PATRIMÔNIO TOTAL</div>
+          <div style="font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">R$ 12.480,00</div>
+          <div style="font-size:10px;opacity:.5;margin-top:4px">+2,8% esta semana</div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="card-balance-btn" style="font-size:10px;padding:8px">Enviar</button>
+            <button class="card-balance-btn" style="font-size:10px;padding:8px">Receber</button>
+            <button class="card-balance-btn" style="font-size:10px;padding:8px">Investir</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--font-display);font-size:13px;font-weight:600">Movimentações</div>
+          <a href="#" style="font-size:10px;color:var(--fg-3);text-decoration:none">Ver todas</a>
+        </div>
+        <div style="background:var(--surface);border-radius:12px;padding:10px 12px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+            </div>
+            <div style="flex:1"><div style="font-size:12px;font-weight:500">Dividendos PETR4</div><div style="font-size:10px;color:var(--fg-3)">Hoje</div></div>
+            <div style="font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--positive);font-variant-numeric:tabular-nums">+R$ 420</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+            <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </div>
+            <div style="flex:1"><div style="font-size:12px;font-weight:500">Mercado Extra</div><div style="font-size:10px;color:var(--fg-3)">Ontem</div></div>
+            <div style="font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--negative);font-variant-numeric:tabular-nums">−R$ 187</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-nav">
+        <div class="nav-item active">
+          <div class="nav-indicator"></div>
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Início</span>
+        </div>
+        <div class="nav-item">
+          <div class="nav-indicator"></div>
+          <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span>Investir</span>
+        </div>
+        <div class="nav-item">
+          <div class="nav-indicator"></div>
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Mover</span>
+        </div>
+        <div class="nav-item">
+          <div class="nav-indicator"></div>
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <span>Cartão</span>
+        </div>
+        <div class="nav-item">
+          <div class="nav-indicator"></div>
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Perfil</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 11. ICONOGRAFIA ───────────────────────────────────── -->
+<section class="section" id="iconografia" data-od-id="iconografia">
+  <div class="section-header">
+    <div class="section-number">11 / PADRÕES</div>
+    <h1 class="section-title">Iconografia</h1>
+    <p class="section-desc">Monoline SVG, stroke 1.7–1.8px, currentColor. Tamanhos: 16px / 20px / 24px. Sem ícones filled exceto no estado ativo da nav.</p>
+  </div>
+  <div class="canvas">
+    <div class="icon-grid">
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>início</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>cartão</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        <span>saldo</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span>investir</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>mercado</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span>atividade</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>histórico</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>alertas</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>busca</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        <span>pix</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>pagamento</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>perfil</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>configurar</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>segurança</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>validado</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>adicionar</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        <span>transferir</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>receber</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection" style="margin-top:var(--sp-6)">
+    <div class="subsection-title">Tamanhos de ícone</div>
+    <div class="canvas">
+      <div class="row" style="align-items:center;gap:var(--sp-8)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg)" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3)">16px — inline</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--fg)" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3)">20px — UI</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fg)" stroke-width="1.7"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3)">24px — nav</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--fg)" stroke-width="1.6"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--fg-3)">32px — empty state</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 12. DADOS ─────────────────────────────────────────── -->
+<section class="section" id="dados" data-od-id="dados">
+  <div class="section-header">
+    <div class="section-number">12 / PADRÕES</div>
+    <h1 class="section-title">Visualização de Dados</h1>
+    <p class="section-desc">Barras horizontais para distribuição de carteira. Sparklines para variação histórica. Verde/vermelho como único uso de cor.</p>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Composição de carteira</div>
+    <div class="canvas">
+      <div class="chart-bar-wrap">
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Renda Fixa</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:52%"></div></div>
+          <div class="chart-bar-value">52%</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Ações</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill pos" style="width:28%"></div></div>
+          <div class="chart-bar-value">28%</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">FIIs</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill pos" style="width:14%"></div></div>
+          <div class="chart-bar-value">14%</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Caixa</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:6%;background:var(--fg-3)"></div></div>
+          <div class="chart-bar-value">6%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">Sparkline — variação 7 dias</div>
+    <div class="canvas">
+      <div class="row">
+        <div style="flex:1;background:var(--positive-bg);border-radius:var(--radius-md);padding:var(--sp-4)">
+          <div style="font-size:12px;font-weight:500;color:var(--positive);margin-bottom:var(--sp-3)">PETR4 +1,42%</div>
+          <svg width="100%" height="48" viewBox="0 0 200 48" preserveAspectRatio="none">
+            <polyline points="0,38 28,30 56,34 84,22 112,18 140,14 168,10 200,6" fill="none" stroke="#16A34A" stroke-width="2" stroke-linejoin="round"/>
+            <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16A34A" stop-opacity=".15"/><stop offset="100%" stop-color="#16A34A" stop-opacity="0"/></linearGradient>
+            <polygon points="0,38 28,30 56,34 84,22 112,18 140,14 168,10 200,6 200,48 0,48" fill="url(#g1)"/>
+          </svg>
+        </div>
+        <div style="flex:1;background:var(--negative-bg);border-radius:var(--radius-md);padding:var(--sp-4)">
+          <div style="font-size:12px;font-weight:500;color:var(--negative);margin-bottom:var(--sp-3)">MGLU3 −3,21%</div>
+          <svg width="100%" height="48" viewBox="0 0 200 48" preserveAspectRatio="none">
+            <polyline points="0,8 28,14 56,10 84,18 112,24 140,28 168,36 200,42" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+            <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC2626" stop-opacity=".15"/><stop offset="100%" stop-color="#DC2626" stop-opacity="0"/></linearGradient>
+            <polygon points="0,8 28,14 56,10 84,18 112,24 140,28 168,36 200,42 200,48 0,48" fill="url(#g2)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
+<script>
+// Active nav link on scroll
+(function(){
+  var links = document.querySelectorAll('.nav-link');
+  var sections = Array.from(links).map(function(l){
+    return document.querySelector(l.getAttribute('href'));
+  });
+  function update(){
+    var y = window.scrollY + 80;
+    var cur = 0;
+    sections.forEach(function(s,i){ if(s && s.offsetTop <= y) cur = i; });
+    links.forEach(function(l,i){ l.classList.toggle('active', i === cur); });
+  }
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+
+  // Chip toggle demo
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      var siblings = c.closest('.row').querySelectorAll('.chip:not(.positive):not(.negative):not(.warn)');
+      siblings.forEach(function(s){ s.classList.remove('selected'); });
+      if(!c.classList.contains('positive')&&!c.classList.contains('negative')&&!c.classList.contains('warn'))
+        c.classList.add('selected');
+    });
+  });
+})();
+</script>
+</body>
+</html>

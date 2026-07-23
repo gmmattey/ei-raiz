@@ -1,0 +1,2320 @@
+{
+  "phases": [
+    {
+      "id": "planning",
+      "name": "Planejamento",
+      "order": 0
+    },
+    {
+      "id": "base",
+      "name": "Base Tecnica",
+      "order": 1
+    },
+    {
+      "id": "api",
+      "name": "API & Dados",
+      "order": 2
+    },
+    {
+      "id": "ui",
+      "name": "Interface",
+      "order": 3
+    },
+    {
+      "id": "import",
+      "name": "Importacao",
+      "order": 4
+    },
+    {
+      "id": "pwa",
+      "name": "App & Offline",
+      "order": 5
+    },
+    {
+      "id": "access",
+      "name": "Acesso",
+      "order": 6
+    },
+    {
+      "id": "quality",
+      "name": "Qualidade",
+      "order": 7
+    }
+  ],
+  "tasks": [
+    {
+      "id": "SPEC-001",
+      "title": "Spec funcional v1",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "renata",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec funcional completa com 98 RNs",
+      "created_at": "2026-06-10T10:00:00Z",
+      "completed_at": "2026-06-11T18:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "SPEC-002",
+      "title": "Spec tecnica v4",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec tecnica derivada da funcional v1.3",
+      "created_at": "2026-06-10T12:00:00Z",
+      "completed_at": "2026-06-12T10:00:00Z",
+      "depends_on": [
+        "SPEC-001"
+      ]
+    },
+    {
+      "id": "SPEC-003",
+      "title": "Spec painel Fleet",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "renata",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec funcional do painel Fleet com 10 secoes",
+      "created_at": "2026-06-13T10:00:00Z",
+      "completed_at": "2026-06-14T09:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "DESIGN-001",
+      "title": "Mockup v5 interativo",
+      "type": "design",
+      "phase": "planning",
+      "owner": "beatriz",
+      "status": "done",
+      "priority": "p0",
+      "description": "Mockup interativo alinhado com spec v1.3",
+      "created_at": "2026-06-11T08:00:00Z",
+      "completed_at": "2026-06-12T16:00:00Z",
+      "depends_on": [
+        "SPEC-001"
+      ]
+    },
+    {
+      "id": "DESIGN-002",
+      "title": "Design system Fleet",
+      "type": "design",
+      "phase": "planning",
+      "owner": "beatriz",
+      "status": "done",
+      "priority": "p0",
+      "description": "Typography, cores, icones, espacamento, superficies",
+      "created_at": "2026-06-14T08:00:00Z",
+      "completed_at": "2026-06-14T09:30:00Z",
+      "depends_on": [
+        "SPEC-003"
+      ]
+    },
+    {
+      "id": "SETUP-001",
+      "title": "Schema D1 v4",
+      "type": "infra",
+      "phase": "base",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p0",
+      "description": "4 tabelas + 4 views SQL",
+      "created_at": "2026-06-11T14:00:00Z",
+      "completed_at": "2026-06-11T18:00:00Z",
+      "depends_on": [
+        "SPEC-002"
+      ]
+    },
+    {
+      "id": "SETUP-002",
+      "title": "Wrangler + D1 binding",
+      "type": "infra",
+      "phase": "base",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p0",
+      "description": "Worker config + D1 binding + toml",
+      "created_at": "2026-06-11T10:00:00Z",
+      "completed_at": "2026-06-11T14:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "SETUP-003",
+      "title": "OpenAPI spec",
+      "type": "spec",
+      "phase": "base",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p1",
+      "description": "api-spec.yaml com 7 endpoints",
+      "created_at": "2026-06-12T08:00:00Z",
+      "completed_at": "2026-06-12T12:00:00Z",
+      "depends_on": [
+        "SPEC-002"
+      ]
+    },
+    {
+      "id": "FEAT-001",
+      "title": "CRUD completo de ativos",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "POST/PUT/DELETE /api/assets com soft delete",
+      "created_at": "2026-06-12T10:00:00Z",
+      "completed_at": "2026-06-13T14:00:00Z",
+      "depends_on": [
+        "SETUP-001"
+      ]
+    },
+    {
+      "id": "FEAT-002",
+      "title": "Portfolio summary endpoint",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "GET /api/portfolio com frescor e alocacao",
+      "created_at": "2026-06-12T14:00:00Z",
+      "completed_at": "2026-06-13T16:00:00Z",
+      "depends_on": [
+        "FEAT-001"
+      ]
+    },
+    {
+      "id": "FEAT-003",
+      "title": "Cotacoes BRAPI + cache",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Cron job cotacoes + cache D1 15min",
+      "created_at": "2026-06-13T08:00:00Z",
+      "completed_at": "2026-06-13T18:00:00Z",
+      "depends_on": [
+        "FEAT-001"
+      ]
+    },
+    {
+      "id": "FEAT-004",
+      "title": "Snapshot mensal",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p1",
+      "description": "Cron dia 1 + GET /api/history",
+      "created_at": "2026-06-13T10:00:00Z",
+      "completed_at": "2026-06-13T20:00:00Z",
+      "depends_on": [
+        "FEAT-002"
+      ]
+    },
+    {
+      "id": "FEAT-005",
+      "title": "Tela Hoje",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Numero-tese, ganho, frescor, alocacao donut + barra",
+      "created_at": "2026-06-13T14:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-002"
+      ]
+    },
+    {
+      "id": "FEAT-006",
+      "title": "Tela Carteira",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Lista agrupada, badges, FAB, sheet edicao",
+      "created_at": "2026-06-13T14:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-002"
+      ]
+    },
+    {
+      "id": "FEAT-007",
+      "title": "Tela Historico",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "backlog",
+      "priority": "p1",
+      "description": "Grafico SVG + lista mensal",
+      "created_at": "2026-06-13T14:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-004"
+      ]
+    },
+    {
+      "id": "FEAT-008",
+      "title": "Import XLSX wizard",
+      "type": "feature",
+      "phase": "import",
+      "owner": "carlos",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Upload → parse → revisao → confirmar",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-001"
+      ]
+    },
+    {
+      "id": "FEAT-009",
+      "title": "Ocultar valores",
+      "type": "feature",
+      "phase": "pwa",
+      "owner": "marina",
+      "status": "backlog",
+      "priority": "p1",
+      "description": "Toggle privacidade — nenhum numero visivel",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "FEAT-010",
+      "title": "Dark mode",
+      "type": "feature",
+      "phase": "pwa",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Dark mode para novos elementos CSS (benchmarks, detalhe, aportes, bens, análise). 46 cores hardcoded convertidas para CSS variables.",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": "2026-06-15T12:00:00Z",
+      "depends_on": [
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "FEAT-011",
+      "title": "Service Worker + offline",
+      "type": "feature",
+      "phase": "pwa",
+      "owner": "marina",
+      "status": "backlog",
+      "priority": "p1",
+      "description": "Cache ultimo estado, manifest.json",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "INFRA-001",
+      "title": "Auth email+senha (estilo Esquilo)",
+      "type": "infra",
+      "phase": "access",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Login email+senha com PBKDF2-SHA256 (100K iter) + JWT HS256 8h. Substituiu Cloudflare Access. src/auth.ts + endpoints /api/auth/register e /api/auth/login. Deploy OK.",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": "2026-06-14T17:00:00Z",
+      "depends_on": [
+        "SETUP-002"
+      ]
+    },
+    {
+      "id": "SPEC-006",
+      "title": "Spec Benchmarks Macroeconômicos (CDI/SELIC/IPCA)",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Spec completa para integração de CDI, SELIC e IPCA via BRAPI /api/v2/macro/latest. Nova tabela macro_cache, campo benchmarks no GET /api/portfolio, exibição em Hoje/Carteira/Histórico. 16 RNs, checklist de implementação, stretch goals. docs/SPEC_MACRO_BENCHMARKS.md",
+      "created_at": "2026-06-14T22:30:00Z",
+      "completed_at": "2026-06-14T22:30:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "INFRA-002",
+      "title": "Migration macro_cache",
+      "type": "infra",
+      "phase": "base",
+      "owner": "claude",
+      "status": "review",
+      "priority": "p1",
+      "description": "SQL criado em migrations/006_macro_cache.sql. AGUARDA execução manual: wrangler d1 execute quanto-db --remote --file=migrations/006_macro_cache.sql",
+      "created_at": "2026-06-14T22:30:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "SPEC-006"
+      ]
+    },
+    {
+      "id": "FEAT-016",
+      "title": "Benchmarks macro — CDI/SELIC/IPCA",
+      "type": "feature",
+      "phase": "api",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "refreshMacroIndicators() no cron diário + campo benchmarks no GET /api/portfolio + barra de contexto em Hoje (#benchmarks-bar), caption SELIC no Histórico (#hist-selic-cap). Backend + frontend completos. Produção depende de INFRA-002 (D1 migration).",
+      "created_at": "2026-06-14T22:30:00Z",
+      "completed_at": "2026-06-15T10:00:00Z",
+      "depends_on": [
+        "INFRA-002",
+        "FEAT-005",
+        "FEAT-006"
+      ]
+    },
+    {
+      "id": "SPEC-005",
+      "title": "Spec AI Features (Workers AI)",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p2",
+      "description": "Spec das 3 features de IA: Smart Labels, Smart Import e Análise Contextual. Binding Workers AI, modelos, endpoints, prompts, UX e disclaimer. docs/SPEC_AI_FEATURES.md",
+      "created_at": "2026-06-14T22:00:00Z",
+      "completed_at": "2026-06-14T22:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "FEAT-013",
+      "title": "Smart Labels — display_name automático",
+      "type": "feature",
+      "phase": "api",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Gerar display_name amigável para ativos em background (Llama 1B). Nomes crus de fundos CVM → nome legível. Spec: docs/SPEC_AI_FEATURES.md",
+      "created_at": "2026-06-14T22:00:00Z",
+      "completed_at": "2026-06-15T12:00:00Z",
+      "depends_on": [
+        "SPEC-005",
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "FEAT-014",
+      "title": "Smart Import — detecção de colunas e auto-classify",
+      "type": "feature",
+      "phase": "import",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "No wizard XLSX: detectar colunas automaticamente, fuzzy match fundos CVM e sugerir classe do ativo (Llama 3B). Spec: docs/SPEC_AI_FEATURES.md",
+      "created_at": "2026-06-14T22:00:00Z",
+      "completed_at": "2026-06-15T12:00:00Z",
+      "depends_on": [
+        "SPEC-005",
+        "FEAT-008"
+      ]
+    },
+    {
+      "id": "FEAT-015",
+      "title": "Análise contextual — botão Analisar",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p2",
+      "description": "Backend: POST /api/ai/analyze (Workers AI, Qwen3 30B). Frontend: botão ✦ Analisar em Hoje e Detalhe do Ativo, sheet-analyze com skeleton loader, observações por tom, disclaimer. Spec: docs/SPEC_AI_FEATURES.md",
+      "created_at": "2026-06-14T22:00:00Z",
+      "completed_at": "2026-06-15T12:00:00Z",
+      "depends_on": [
+        "SPEC-005",
+        "FEAT-005",
+        "FEAT-006"
+      ]
+    },
+    {
+      "id": "QA-001",
+      "title": "Testes de aceitacao",
+      "type": "qa",
+      "phase": "quality",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "8 fluxos criticos + checklist por tela",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": "2026-06-16T16:40:00Z",
+      "depends_on": [
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "QA-002",
+      "title": "Teste import XLSX",
+      "type": "qa",
+      "phase": "quality",
+      "owner": "pedro",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Upload planilha real + edge cases",
+      "created_at": "2026-06-13T16:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "FEAT-008"
+      ]
+    },
+    {
+      "id": "QA-003",
+      "title": "Cobertura QA gap 1-3",
+      "type": "qa",
+      "phase": "quality",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p1",
+      "description": "Cobrir endpoints faltantes, IA mockada, viewport desktop e atualizar docs de QA/test plan para o fluxo atual.",
+      "created_at": "2026-06-16T17:25:00Z",
+      "completed_at": "2026-06-16T17:45:00Z",
+      "depends_on": [
+        "QA-001"
+      ]
+    },
+    {
+      "id": "BUG-001",
+      "title": "Fix donut chart zero division",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "review",
+      "priority": "p1",
+      "description": "Donut quebra quando nao ha ativos",
+      "created_at": "2026-06-14T08:00:00Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "BUG-002",
+      "title": "Adicionar recuperacao de senha via CPF+nascimento",
+      "type": "bug",
+      "phase": "access",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Sem recuperacao de senha — usuario que esquecia a senha ficava bloqueado. Solucao: endpoint POST /api/auth/recover valida email+CPF+data de nascimento e redefine a senha. Schema: +cpf e +birth_date na tabela users. Frontend: form de recuperacao na tela de login, campos CPF+nascimento no cadastro.",
+      "created_at": "2026-06-14T18:00:00Z",
+      "completed_at": "2026-06-14T18:30:00Z",
+      "depends_on": [
+        "INFRA-001"
+      ]
+    },
+    {
+      "id": "BUG-005",
+      "title": "Navbar espremida no PWA do iOS",
+      "type": "bug",
+      "phase": "pwa",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Tabbar com height fixo de 52px sem env(safe-area-inset-bottom). No iOS PWA com home indicator (iPhone X+), o indicador sobrepoe os botoes. Fix: removido height fixo, adicionado padding-bottom: env(safe-area-inset-bottom, 0px), min-height dos itens 44->56px, icones 20->22px, gap 2->4px. Screen height calc atualizado para descontar safe area.",
+      "created_at": "2026-06-14T19:00:00Z",
+      "completed_at": "2026-06-14T19:15:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "BUG-004",
+      "title": "CPF e nascimento opcionais impediam recuperacao de senha",
+      "type": "bug",
+      "phase": "access",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Campos CPF e data de nascimento eram opcionais no cadastro, tornando a recuperacao de senha impossivel para quem nao preenchesse. Fix: validacao obrigatoria no frontend (doRegister) e backend (POST /api/auth/register) com mensagem explicativa. Hint 'para recuperar a senha' adicionado nos labels.",
+      "created_at": "2026-06-14T18:50:00Z",
+      "completed_at": "2026-06-14T19:00:00Z",
+      "depends_on": [
+        "BUG-002"
+      ]
+    },
+    {
+      "id": "BUG-003",
+      "title": "Template XLSX nao baixa — Safari perde navegacao",
+      "type": "bug",
+      "phase": "import",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Arquivo public/template-quanto.xlsx nao existia (404). No Safari, link sem target=_blank navega a pagina inteira e o usuario perdia o app. Fix: copiou planilha de teste para public/template-quanto.xlsx e adicionou target='_blank' rel='noopener' no link.",
+      "created_at": "2026-06-14T18:30:00Z",
+      "completed_at": "2026-06-14T18:45:00Z",
+      "depends_on": [
+        "FEAT-008"
+      ]
+    },
+    {
+      "id": "SPEC-004",
+      "title": "Spec pipeline CVM",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec funcional+tecnica+arquitetural do pipeline CVM para cotacoes automaticas de fundos (RN-99 a RN-115)",
+      "created_at": "2026-06-14T14:00:00Z",
+      "completed_at": "2026-06-14T15:00:00Z",
+      "depends_on": [
+        "SPEC-002"
+      ]
+    },
+    {
+      "id": "FEAT-012",
+      "title": "Pipeline CVM — cotacoes de fundos",
+      "type": "feature",
+      "phase": "api",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Cron diario CVM + stream-parse ZIP + cache quotes + busca fundos + schema migration. Spec: docs/SPEC_CVM_PIPELINE.md",
+      "created_at": "2026-06-14T15:00:00Z",
+      "completed_at": "2026-06-14T16:30:00Z",
+      "depends_on": [
+        "SPEC-004",
+        "FEAT-003"
+      ]
+    },
+    {
+      "id": "BUG-009",
+      "title": "Campos de formulario sem mascara, inputmode e validacao",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Campos de valor, CPF, ticker e nome sem mascaras de digitacao. Fix: maskCurrency (blur → X.XXX,XX), maskQty (digits+virgula), maskTicker (uppercase, alphanum, maxlength 8), maskCpf (mascara progressiva XXX.XXX.XXX-XX, maxlength 14), maskTitleCase (nome usuario, preposicoes PT minusculas), maskNameNormalize (nomes de ativos/instituicoes). Placeholders adicionados em sh-edit-name, sh-edit-ticker, sh-edit-qty.",
+      "created_at": "2026-06-14T21:00:00Z",
+      "completed_at": "2026-06-14T21:20:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "BUG-008",
+      "title": "Cadastro de fundo CVM pedia cotas que usuario nao sabe",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Formulario pedia 'quantidade de cotas' para fundos CVM, mas usuarios so sabem o saldo em R$. Fix: campo trocado por 'Saldo atual'; backend calcula qty = saldo / cota (quotes_cache) no momento do cadastro. Fallback para saldo manual se cota nao estiver no cache. Busca de fundo aceita agora nome OU CNPJ (busca por ambos no banco). Campo de busca renomeado para 'Nome do fundo ou CNPJ'.",
+      "created_at": "2026-06-14T20:30:00Z",
+      "completed_at": "2026-06-14T20:45:00Z",
+      "depends_on": [
+        "BUG-007"
+      ]
+    },
+    {
+      "id": "BUG-007",
+      "title": "Adicionar ativo com toggle de modo confuso",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Sheet de novo ativo exibia toggle 'Automático/Manual' que o usuario nao entendia. Fix: modo removido — a classe determina os campos. ACAO→ticker+qtd (BRAPI), FUNDO→busca CVM, demais→saldo manual. Funções setAddMode/setAddModeCvm substituidas por setAddFieldsByClass(cls). Link 'Nao encontrou?' removido.",
+      "created_at": "2026-06-14T20:00:00Z",
+      "completed_at": "2026-06-14T20:15:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "BUG-006",
+      "title": "Telas com dados zerados quando carteira esta vazia",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Hoje e Carteira exibiam numero-tese zerado e donut vazio ao inves de guiar o usuario. Fix: empty states com icone, titulo, descricao e atalhos para importar ou cadastrar. Elementos de dados (hero, donut, frescor, alocacao) ocultados via display:none quando assets.length === 0. Novos estilos .empty-icon, .empty-title, .empty-desc.",
+      "created_at": "2026-06-14T19:30:00Z",
+      "completed_at": "2026-06-14T19:45:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "SPEC-007",
+      "title": "Spec Tela de Detalhe do Ativo",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Spec completa da Tela de Detalhe (5a tela, acesso via tap na Carteira). 3 variações por tipo (ACAO/FII, FUNDO CVM, Manual). 2 novos endpoints: GET /api/assets/:id/detail e GET /api/assets/:id/history (proxy BRAPI). 17 RNs, layout ASCII, gráfico SVG, integração com FEAT-015 e FEAT-018. docs/SPEC_ASSET_DETAIL.md",
+      "created_at": "2026-06-14T23:00:00Z",
+      "completed_at": "2026-06-14T23:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "SPEC-008",
+      "title": "Spec Aportes Adicionais",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Spec completa de aportes por ativo para ACAO, FII, FUNDO, RF e TESOURO. Nova tabela asset_contributions, 3 endpoints (POST/GET/DELETE), recálculo automático de assets.invested, Sheet E (Registrar Aporte), 13 RNs, migration SQL, impacto em features existentes. docs/SPEC_APORTES.md",
+      "created_at": "2026-06-14T23:00:00Z",
+      "completed_at": "2026-06-14T23:00:00Z",
+      "depends_on": [
+        "SPEC-007"
+      ]
+    },
+    {
+      "id": "INFRA-003",
+      "title": "Migration asset_contributions",
+      "type": "infra",
+      "phase": "base",
+      "owner": "claude",
+      "status": "review",
+      "priority": "p1",
+      "description": "SQL criado em migrations/004_asset_contributions.sql. AGUARDA execução manual: wrangler d1 execute quanto-db --remote --file=migrations/004_asset_contributions.sql",
+      "created_at": "2026-06-14T23:00:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "SPEC-008"
+      ]
+    },
+    {
+      "id": "FEAT-017",
+      "title": "Tela de Detalhe do Ativo",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Tela de detalhe acessada ao tocar em ativo na Carteira. 3 variações: ACAO/FII (gráfico BRAPI), FUNDO CVM (dados do fundo), Manual (saldo + frescor). 2 endpoints novos + gráfico SVG com seletor de período. Integra botões Analisar (FEAT-015) e Aporte (FEAT-018). Backend + frontend completos. #screen-detail em index.html, openDetail/loadDetail/renderDetail/loadChart/renderPriceChart em app.js.",
+      "created_at": "2026-06-14T23:00:00Z",
+      "completed_at": "2026-06-15T10:00:00Z",
+      "depends_on": [
+        "SPEC-007",
+        "FEAT-006"
+      ]
+    },
+    {
+      "id": "FEAT-018",
+      "title": "Aportes Adicionais por Ativo",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Registro de aportes individuais para ACAO, FII, FUNDO, RF, TESOURO. Sheet E (Registrar Aporte) com valor+data+nota. 3 endpoints REST. assets.invested recalculado automaticamente como SUM dos aportes. Lista de aportes na Tela Detalhe com deleção individual. Backend + frontend completos. Produção depende de INFRA-003 (D1 migration).",
+      "created_at": "2026-06-14T23:00:00Z",
+      "completed_at": "2026-06-15T10:00:00Z",
+      "depends_on": [
+        "SPEC-008",
+        "INFRA-003",
+        "FEAT-017"
+      ]
+    },
+    {
+      "id": "SPEC-009",
+      "title": "Spec Bens e Garantias (FGTS, Imóvel, Veículo)",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "Spec completa do modo Bens e Garantias — separado do portfólio de investimentos. 3 tipos: FGTS, Imóvel, Veículo. Nova tabela goods, 4 endpoints REST, Tela Bens (5a aba), Sheet F de cadastro, patrimônio bruto na Tela Hoje, 13 RNs, limiares de frescor por tipo, migration SQL. docs/SPEC_BENS_GARANTIAS.md",
+      "created_at": "2026-06-14T23:30:00Z",
+      "completed_at": "2026-06-14T23:30:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "INFRA-004",
+      "title": "Migration goods (Bens e Garantias)",
+      "type": "infra",
+      "phase": "base",
+      "owner": "claude",
+      "status": "review",
+      "priority": "p1",
+      "description": "SQL criado em migrations/005_goods.sql. AGUARDA execução manual: wrangler d1 execute quanto-db --remote --file=migrations/005_goods.sql",
+      "created_at": "2026-06-14T23:30:00Z",
+      "completed_at": null,
+      "depends_on": [
+        "SPEC-009"
+      ]
+    },
+    {
+      "id": "FEAT-019",
+      "title": "API Bens e Garantias",
+      "type": "feature",
+      "phase": "api",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "4 endpoints REST implementados em src/index.ts: GET/POST/PUT/DELETE /api/goods com validações por tipo. GET /api/portfolio inclui goodsSummary + grossWealth. Produção depende de INFRA-004 (D1 migration).",
+      "created_at": "2026-06-14T23:30:00Z",
+      "completed_at": "2026-06-15T00:30:00Z",
+      "depends_on": [
+        "INFRA-004"
+      ]
+    },
+    {
+      "id": "FEAT-020",
+      "title": "Tela Bens e Garantias",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p1",
+      "description": "5a aba na navbar. Tela Bens (#tela-bens) com total + 3 seções (FGTS, Imóveis, Veículos). FAB abre Sheet F (#sheet-bem) com seleção de tipo e campos dinâmicos. Patrimônio bruto na Tela Hoje (#gross-wealth-wrap). Frontend completo: loadGoods/renderGoods/updateGrossWealth/openSheetBem/saveBem etc. em app.js. Produção depende de INFRA-004.",
+      "created_at": "2026-06-14T23:30:00Z",
+      "completed_at": "2026-06-15T10:00:00Z",
+      "depends_on": [
+        "FEAT-019",
+        "FEAT-005"
+      ]
+    },
+    {
+      "id": "SPEC-010",
+      "title": "Spec Implementação do Design (Wireframes v1)",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec funcional de implementação derivada do handoff de design (docs/wireframes/). Cobre: tokens (cores, tipografia, animações), shell position:fixed, 4 telas (Hoje, Carteira, Histórico, Importar), 4 sheets (A-D), 3 estados especiais (Vazio, Offline, Ocultar valores), 25 RNs de UI, checklist de implementação e mapeamento com specs de backlog (SPEC-007/008/009). docs/SPEC_DESIGN_IMPLEMENTATION.md",
+      "created_at": "2026-06-14T23:50:00Z",
+      "completed_at": "2026-06-14T23:50:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "FEAT-021",
+      "title": "Redesign Visual — implementação do design system",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Implementar o design system completo definido no handoff (docs/wireframes/). Shell position:fixed, hero petróleo imersivo, animações qFade/qDonut/qDraw/qPulse/qFill, tab bar 64px+safe-area, tokens CSS atualizados, sheets com backdrop blur, estado vazio/offline/ocultar valores. Spec: docs/SPEC_DESIGN_IMPLEMENTATION.md",
+      "created_at": "2026-06-14T23:50:00Z",
+      "completed_at": "2026-06-15T13:00:00Z",
+      "depends_on": [
+        "SPEC-010",
+        "FEAT-005",
+        "FEAT-006",
+        "FEAT-007",
+        "FEAT-008"
+      ]
+    },
+    {
+      "id": "SPEC-011",
+      "title": "Spec Product Polish v1",
+      "type": "spec",
+      "phase": "quality",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec de polish de produto: CSS faltante Bens/Detalhe, sheet drag-to-dismiss, btnLoading, busca Carteira, timestamp KPI, skeleton loading, saldo na Sheet B. docs/SPEC_PRODUCT_POLISH.md",
+      "created_at": "2026-06-15T14:00:00Z",
+      "completed_at": "2026-06-15T14:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "FEAT-022",
+      "title": "Product Polish — Fase 1+2",
+      "type": "feature",
+      "phase": "quality",
+      "owner": "claude",
+      "status": "done",
+      "priority": "p0",
+      "description": "Fase 1 (P0): CSS Bens (5 classes faltantes), CSS Detalhe (~20 classes), sheet drag-to-dismiss (touch/mouse, velocity), btnLoading helper (9 botões). Fase 2 (P1): busca local na Carteira (debounce 150ms), timestamp 'atualizado há X min' no hero, saldo read-only na Sheet B com 'Atualizar saldo', skeleton hero, fade nas tabs. SW cache bumped v2→v3.",
+      "created_at": "2026-06-15T14:00:00Z",
+      "completed_at": "2026-06-15T16:00:00Z",
+      "depends_on": [
+        "SPEC-011",
+        "FEAT-021"
+      ]
+    },
+    {
+      "id": "FEAT-023",
+      "title": "Auditoria de código — mapeamento do que está implementado e funcional vs. o que tem bugs ou não faz sentido",
+      "type": "feature",
+      "phase": "quality",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p1",
+      "description": "Leitura completa de src/ (index.ts, auth.ts, cvm.ts, ai.ts), public/ (index.html, app.js, sw.js), schema.sql, migrations/ e fleet.json. Relatório com bugs confirmados, dead code, infra pendente e features fora de escopo.",
+      "created_at": "2026-06-16T04:32:16.089Z",
+      "completed_at": "2026-06-16T05:30:00Z",
+      "depends_on": [],
+      "last_session_id": "sess_c5460bc5"
+    },
+    {
+      "id": "FEAT-025",
+      "title": "Teste launch-pending",
+      "type": "feature",
+      "phase": null,
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p1",
+      "description": "Smoke test do mecanismo launch-pending do Fleet. Agente lancado via sessao pendente, recebeu a task, verificou o fleet.json e concluiu com sucesso.",
+      "created_at": "2026-06-16T04:46:52.054Z",
+      "completed_at": "2026-06-16T04:52:00.000Z",
+      "depends_on": [],
+      "last_session_id": "sess_78f07eb6"
+    },
+    {
+      "id": "CHR-001",
+      "title": "Handover: Thiago (Tech Lead) → Carlos (Tech Lead role) + Renata (PO)",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p1",
+      "description": "Thiago transfere responsabilidades de Tech Lead para Carlos + Renata:\\n- Decisões arquiteturais → Carlos (com validação de Renata em críticos)\\n- Code review técnico → Carlos (segurança, performance, simplicidade)\\n- Validação Cloudflare free tier → Carlos (expertise de limites)\\n\\nThiago transiciona para Scrum Master.\\n\\n**Entregue:** docs/HANDOVER_TECH_LEAD.md com 12 seções cobrindo: arquitetura, limites Cloudflare, decisões tomadas e rationale, migrations pendentes, checklist de code review, bugs abertos, padrões de erro, estrutura de arquivos, secrets, decisões pendentes e guia para Renata.",
+      "created_at": "2026-06-17T03:54:32.074Z",
+      "completed_at": "2026-06-17T12:00:00Z",
+      "depends_on": [],
+      "last_session_id": "sess_11f08cfe"
+    },
+    {
+      "id": "CHR-002",
+      "title": "Handover: Beatriz (CVM/Import) → Gabriel (Data Engineer)",
+      "type": "chore",
+      "owner": "beatriz",
+      "status": "done",
+      "priority": "p1",
+      "description": "Beatriz transfere responsabilidades de dados para Gabriel:\\n- Import XLSX wizard (3 etapas: upload → revisão → confirmar)\\n- Parser XLSX (identificação de colunas, fuzzy match fundos CVM)\\n- Pipeline CVM (stream-parse ZIP, cache, busca por nome/CNPJ)\\n- Smart Import (AI detecção de colunas + sugestão de classe)\\n- Normalização de dados (edge cases, malformados, duplicatas)\\n- Busca de fundos CVM (autocomplete, validação)\\n\\nBeatriz foca 100% em UI/UX Design a partir de próxima sprint.\\n\\n**Itens do handover:**\\n1. Gabriel estuda SPEC_CVM_PIPELINE.md e src/cvm.ts\\n2. Gabriel roda importações de teste com arquivos reais\\n3. Beatriz mostra edge cases encontrados em produção\\n4. Gabriel assume evolução do wizard import\\n5. Gabriel trabalha com Carlos para integração de endpoints\\n6. Beatriz valida UX do wizard mas sem ownership de dados",
+      "created_at": "2026-06-17T03:54:32.119Z",
+      "completed_at": "2026-06-17T12:30:00Z",
+      "depends_on": [],
+      "last_session_id": "sess_7a48156a"
+    },
+    {
+      "id": "CHR-003",
+      "title": "Handover: Thiago → Scrum Master (facilitação ágil)",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p1",
+      "description": "Thiago transiciona para Scrum Master do Quanto:\\n- Facilita daily standups (10 min, manhã)\\n- Organiza sprint planning (segundas)\\n- Coordena sprint review/demo (sextas)\\n- Facilita retrospectiva (30 min, sextas)\\n- Remove impedimentos e escalona bloqueios\\n- Protege foco do time contra distrações\\n- Mantém ritmo de sprints (1 semana)\\n- Onboard de novos agentes\\n\\n**Preparação:**\\n1. Thiago estuda CLAUDE.md para escopo/anti-escopo\\n2. Thiago lê fleet.json para estado atual\\n3. Thiago define cadência de cerimônias (horários, duração)\\n4. Thiago cria agenda das próximas 2 sprints\\n5. Renata valida priorização para sprint 1\\n6. Thiago facilita primeira daily standup na nova role",
+      "created_at": "2026-06-17T03:54:32.164Z",
+      "completed_at": "2026-06-17T14:00:00Z",
+      "depends_on": [],
+      "last_session_id": "sess_9484a19e"
+    },
+    {
+      "id": "CHR-004",
+      "title": "CHR-001.1: Carlos estuda handover de Tech Lead de Thiago",
+      "type": "chore",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Thiago preparou docs/HANDOVER_THIAGO_TECH_LEAD_TO_CARLOS.md com 15 seções: rationale de cada decisão arquitetural, limites Cloudflare, 8 padrões de código, bugs abertos com fixes, checklist de PR, pipeline CVM, crons, Workers AI, tabelas, e 5 decisões pendentes. Carlos pode assumir code review técnico com autoridade.",
+      "created_at": "2026-06-17T04:41:04.521Z",
+      "completed_at": "2026-06-17T12:30:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "CHR-005",
+      "title": "CHR-002.1: Gabriel estuda handover de CVM/Import de Beatriz",
+      "type": "chore",
+      "owner": "gabriel",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Gabriel recebe documento de handover de Beatriz e estuda:\n- Pipeline CVM completo\n- Import XLSX (formato, parsing, validações)\n- Edge cases de negócio\n- Schema D1 para dados\n\nApós estudo: fazer perguntas com Beatriz e confirmar quando está pronto para assumir dados/eng.",
+      "created_at": "2026-06-17T04:41:04.567Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-006",
+      "title": "CHR-003.1: Renata valida distribuição final de responsabilidades",
+      "type": "chore",
+      "owner": "renata",
+      "status": "done",
+      "priority": "p0",
+      "description": "Após handovers de Thiago e Beatriz serem entregues, Renata valida:\n- Carlos pronto para Tech Lead (tem tudo que precisa de Thiago?)\n- Gabriel pronto para Data/Eng (tem tudo que precisa de Beatriz?)\n- Thiago pronto para SM (entendeu novo role?)\n- Nenhum overlap de responsabilidades\n- Documentação atualizada (CLAUDE.md, responsabilidades)\n\nGera relatório de validação e aprova transição.",
+      "created_at": "2026-06-17T04:41:19.924Z",
+      "completed_at": "2026-06-17T14:00:00Z",
+      "depends_on": []
+    },
+    {
+      "id": "CHR-007",
+      "title": "CHR-001.2: Thiago & Carlos alinhamento técnico final",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "todo",
+      "priority": "p0",
+      "description": "After Carlos estuda handover (CHR-001.1), Thiago e Carlos fazem:\n- Sync 1h: Q&A sobre decisões, limites Cloudflare, padrões\n- Code review session: Thiago mostra exemplos reais\n- Thiago responde dúvidas pendentes\n- Carlos confirma quando está pronto (ready to approve PRs técnicamente)",
+      "created_at": "2026-06-17T04:41:19.975Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-008",
+      "title": "CHR-002.2: Beatriz & Gabriel alinhamento CVM/Import final",
+      "type": "chore",
+      "owner": "beatriz",
+      "status": "todo",
+      "priority": "p0",
+      "description": "After Gabriel estuda handover (CHR-002.1), Beatriz e Gabriel fazem:\n- Sync 1h: Q&A sobre pipeline CVM, edge cases, validações\n- Walkthrough código: Beatriz explica parsing XLSX, normalização\n- Gabriel testa import com exemplos reais (com dados verdadeiros se possível)\n- Beatriz responde dúvidas pendentes\n- Gabriel confirma quando está pronto (ready to implement/maintain)",
+      "created_at": "2026-06-17T04:41:20.022Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-009",
+      "title": "CHR-FINAL: Atualizar CLAUDE.md com nova squad operacional",
+      "type": "chore",
+      "owner": "renata",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Após todos os handovers serem concluídos (CHR-001, CHR-002, CHR-003):\n- Atualizar CLAUDE.md com responsibilities finais\n- Remover referências a Tech Lead de Thiago\n- Confirmar Carlos como Tech Lead\n- Confirmar Thiago como SM\n- Confirmar Gabriel como Data/Eng\n- Confirmar Beatriz como Designer puro\n\nMark tasks CHR-001, CHR-002, CHR-003 como DONE.",
+      "created_at": "2026-06-17T04:41:20.071Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "SPEC-012",
+      "title": "Spec fluxo de ações ponta a ponta (entrada → acompanhamento → venda)",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p0",
+      "description": "Spec criada em docs/SPEC_FLUXO_ACOES.md. Fecha o contrato único do fluxo de ações/FIIs no Quanto: cadastro manual, import XLSX, hidratação BRAPI, visualização/detalhe, aportes, lifecycle e venda com histórico preservado. Anti-escopo protegido: sem IR, dividendos, preço médio fiscal ou recomendação.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-17T11:24:42.5716151Z",
+      "depends_on": []
+    },
+    {
+      "id": "BUG-010",
+      "title": "Enum e classificação de AÇÃO/FII estão inconsistentes no código",
+      "type": "bug",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Hoje o app exibe 'Ação/FII', regras de aportes/detalhe aceitam FII, mas VALID_CLASSES não inclui FII e o import colapsa tudo em ACAO. Corrigir o contrato de classe ponta a ponta (backend, frontend, import, docs e testes) para eliminar ambiguidades antes de mexer no fluxo de venda.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-17T13:41:27.1704016Z",
+      "depends_on": [
+        "SPEC-012"
+      ]
+    },
+    {
+      "id": "BUG-011",
+      "title": "Import XLSX de ações não preserva lifecycle nem contrato do ativo automático",
+      "type": "bug",
+      "phase": "import",
+      "owner": "beatriz",
+      "status": "done",
+      "priority": "p0",
+      "description": "O parser de planilha mapeia 'Ações/FIIs' para ACAO, ignora colunas de lifecycle/status e o backend de import força status='active'. Revisar parsing, payload do wizard e persistência para que a entrada por planilha preserve o estado correto da posição e tenha diagnóstico por linha.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-17T14:08:09.7403874Z",
+      "depends_on": [
+        "SPEC-012",
+        "BUG-010"
+      ]
+    },
+    {
+      "id": "BUG-012",
+      "title": "Hidratação de cotação BRAPI diverge entre cadastro manual, import e leitura",
+      "type": "bug",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "POST /api/assets faz eager fetch de BRAPI, POST /api/import não faz e ainda omite quote_source. Unificar o contrato de hidratação de cotações, frescor e estados 'indisponível/stale' para que ações recém-cadastradas ou importadas se comportem igual em Hoje, Carteira e Detalhe.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-17T14:36:35.9884706Z",
+      "depends_on": [
+        "SPEC-012",
+        "BUG-010"
+      ]
+    },
+    {
+      "id": "INFRA-005",
+      "title": "Migration para eventos de lifecycle e saída de ações",
+      "type": "infra",
+      "phase": "base",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Criar a base mínima para registrar eventos de saída/venda de ações sem depender de soft delete: tabela(s), índices e estratégia de compatibilidade com statuses atuais (active/redeeming/archived) e com asset_contributions. Objetivo: preservar histórico e permitir venda concluída sem apagar a trilha do ativo.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-18T00:49:02.9745548Z",
+      "depends_on": [
+        "SPEC-012"
+      ]
+    },
+    {
+      "id": "FEAT-027",
+      "title": "Modelo de venda/saída de ações com histórico preservado",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Implementar o fluxo mínimo de saída de ações: iniciar saída, concluir venda/encerramento, manter datas e valores relevantes, impedir que 'archived' seja usado como venda e preservar aporte/posição para consulta posterior. Sem cálculo fiscal, dividendos ou recomendações.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-18T00:49:02.9745548Z",
+      "depends_on": [
+        "SPEC-012",
+        "BUG-010",
+        "INFRA-005"
+      ]
+    },
+    {
+      "id": "FEAT-028",
+      "title": "UX de ações: cadastro, detalhe, atualização real e saída",
+      "type": "feature",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "done",
+      "priority": "p0",
+      "description": "Ajustar o fluxo visual de ações para ficar coerente do início ao fim: sheet de cadastro, revisão de estados de cotação, detalhe com mensagem consistente para preço indisponível/stale, CTA explícito para saída/venda e preservação de timeline/estado após encerramento da posição.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": "2026-06-18T00:49:02.9745548Z",
+      "depends_on": [
+        "SPEC-012",
+        "BUG-010",
+        "BUG-012",
+        "FEAT-027"
+      ]
+    },
+    {
+      "id": "FEAT-029",
+      "title": "Wizard XLSX de ações com revisão de entrada e status da posição",
+      "type": "feature",
+      "phase": "import",
+      "owner": "beatriz",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Evoluir o wizard de importação para ações/FIIs com validação e revisão por linha: ticker, quantidade, valor aplicado, status/lifecycle, normalização de instituição e indicação clara do que será criado como posição ativa, em saída ou inválida antes do POST final.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": null,
+      "depends_on": [
+        "SPEC-012",
+        "BUG-010",
+        "BUG-011"
+      ]
+    },
+    {
+      "id": "QA-004",
+      "title": "QA ponta a ponta do fluxo de ações",
+      "type": "qa",
+      "phase": "quality",
+      "owner": "pedro",
+      "status": "in_progress",
+      "priority": "p0",
+      "description": "Cobrir o fluxo de ações do Quanto em API e E2E: cadastro manual, import XLSX, hidratação de cotação, detalhe, aportes, mudança para saída/venda, conclusão da venda, preservação de histórico e invariantes de visibilidade multiusuário. Atualizar docs/TEST_PLAN.md e os artefatos de teste junto com a implementação.",
+      "created_at": "2026-06-17T11:18:21.7500064Z",
+      "completed_at": null,
+      "depends_on": [
+        "BUG-010",
+        "BUG-011",
+        "BUG-012",
+        "INFRA-005",
+        "FEAT-027",
+        "FEAT-028",
+        "FEAT-029"
+      ]
+    },
+    {
+      "id": "BUG-013",
+      "title": "Home e detalhe de ação não exibem resumo patrimonial mínimo",
+      "type": "bug",
+      "phase": "ui",
+      "owner": "marina",
+      "status": "done",
+      "priority": "p0",
+      "description": "Corrigir a experiência atual em que a ação aparece, mas o usuário não consegue enxergar valor atual, valor aplicado, lucro/perda, percentual e referência de compra de forma confiável. O foco é fazer a Home, Carteira e Detalhe explicarem a posição com cotação disponível ou indisponível sem saldo zero enganoso.",
+      "created_at": "2026-06-17T11:44:29.4906311Z",
+      "completed_at": "2026-06-17T14:36:35.9884706Z",
+      "depends_on": [
+        "SPEC-012",
+        "BUG-012",
+        "FEAT-028"
+      ]
+    },
+    {
+      "id": "BUG-014",
+      "title": "Produção não está materializando cotações BRAPI para ticker real fora da whitelist",
+      "type": "bug",
+      "phase": "ops",
+      "owner": "carlos",
+      "status": "in_progress",
+      "priority": "p0",
+      "description": "Diagnóstico operacional de 2026-06-17: banco remoto tem 1 ativo BRAPI ativo (CPLE3), 0 linhas em quotes_cache e nenhum secret remoto listado no Worker. A documentação pública da BRAPI libera sem token apenas PETR4, MGLU3, VALE3 e ITUB4; CPLE3 sem token retorna MISSING_TOKEN. Investigar bindings reais em produção, garantir token/backoff/observabilidade e provar atualização ponta a ponta.",
+      "created_at": "2026-06-17T12:13:54.0631246Z",
+      "completed_at": null,
+      "depends_on": [
+        "BUG-012"
+      ]
+    },
+    {
+      "id": "BUG-015",
+      "title": "Deriva de schema em produção quebra cadastro e recuperação de senha",
+      "type": "bug",
+      "phase": "ops",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "A tabela users em produção estava sem as colunas cpf e birth_date, o que fazia POST /api/auth/register e POST /api/auth/recover falharem com erro interno. Corrigido com migration 008_users_recovery_fields.sql aplicada no D1 remoto e deploy com guard de schema para falha explícita se o drift reaparecer.",
+      "created_at": "2026-06-17T13:17:44.8258417Z",
+      "completed_at": "2026-06-17T13:17:44.8258417Z",
+      "depends_on": []
+    },
+    {
+      "id": "SPEC-014",
+      "title": "Estratégia multi-provider para cotações de ações e FIIs",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "thiago",
+      "status": "backlog",
+      "priority": "p0",
+      "description": "Definir arquitetura de providers de cotação com primário, fallback, estados de saúde, limites de frescor, normalização de símbolo e critérios de troca para ações/FIIs. A spec deve decidir quando manter BRAPI como primário com token, quando usar provedor alternativo, e como evitar fallback silencioso que mascare falhas operacionais.",
+      "created_at": "2026-06-17T12:13:54.0631246Z",
+      "completed_at": null,
+      "depends_on": [
+        "BUG-014"
+      ]
+    },
+    {
+      "id": "SPEC-013",
+      "title": "Spec de compras por lote/data para ações e FIIs",
+      "type": "spec",
+      "phase": "planning",
+      "owner": "thiago",
+      "status": "done",
+      "priority": "p0",
+      "description": "Detalhar o modelo de múltiplas compras da mesma ação/FII em datas diferentes, com quantidade e valor por compra, referência temporal para lucro/perda e impacto em Home, Detalhe, aportes e venda. Essa spec separa o modelo agregado atual de invested/contributions do novo modelo de lotes de posição.",
+      "created_at": "2026-06-17T11:44:29.4906311Z",
+      "completed_at": "2026-06-17T19:28:04.6140349Z",
+      "depends_on": [
+        "SPEC-012"
+      ]
+    },
+    {
+      "id": "INFRA-006",
+      "title": "Migration para lotes de posição e eventos de compra",
+      "type": "infra",
+      "phase": "base",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Criar a base de dados para registrar compras separadas por data/quantidade/valor da mesma ação ou FII, preservando compatibilidade de leitura com assets e asset_contributions. A migration deve viabilizar referência por lote para cálculo de posição, datas de compra e venda futura por posição.",
+      "created_at": "2026-06-17T11:44:29.4906311Z",
+      "completed_at": "2026-06-17T19:28:04.6140349Z",
+      "depends_on": [
+        "SPEC-013"
+      ]
+    },
+    {
+      "id": "FEAT-030",
+      "title": "Histórico de compras por lote para ações e FIIs",
+      "type": "feature",
+      "phase": "api",
+      "owner": "carlos",
+      "status": "done",
+      "priority": "p0",
+      "description": "Implementar o modelo de compras separadas da mesma ação/FII por data, quantidade e valor. O ativo passa a conseguir mostrar histórico real de compras, referência de entrada por lote e base para lucro/perda mais explicável ao usuário, sem entrar ainda em cálculo fiscal.",
+      "created_at": "2026-06-17T11:44:29.4906311Z",
+      "completed_at": "2026-06-17T19:28:04.6140349Z",
+      "depends_on": [
+        "SPEC-013",
+        "INFRA-006"
+      ]
+    },
+    {
+      "id": "QA-005",
+      "title": "QA de múltiplas compras da mesma ação",
+      "type": "qa",
+      "phase": "quality",
+      "owner": "pedro",
+      "status": "done",
+      "priority": "p0",
+      "description": "Cobrir API e E2E para a mesma ação/FII com compras em datas diferentes: visualização da referência de compra, separação por lote, impacto em lucro/perda e comportamento ao fazer novo aporte/compra na mesma posição.",
+      "created_at": "2026-06-17T11:44:29.4906311Z",
+      "completed_at": "2026-06-17T19:28:04.6140349Z",
+      "depends_on": [
+        "SPEC-013",
+        "INFRA-006",
+        "FEAT-030"
+      ]
+    },
+    {
+      "id": "CHR-010",
+      "title": "CHR-001.1: Thiago documenta decisões Tech Lead para Carlos",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Thiago prepara documentação completa de Tech Lead para handover a Carlos. Inclui: decisões arquiteturais (Hono, D1, PWA), limites Cloudflare free tier, padrões de code review, débitos técnicos, standards técnicos. Entrega em .md para Carlos estudar.",
+      "created_at": "2026-06-18T02:45:33.668Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-011",
+      "title": "CHR-002.1: Beatriz documenta pipeline CVM/Import para Gabriel",
+      "type": "chore",
+      "owner": "beatriz",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Beatriz prepara documentação completa do pipeline CVM e import XLSX para Gabriel. Inclui: SPEC_CVM_PIPELINE.md atualizado, schema de normalização, edge cases (fundos múltiplas classes), parsing XLSX, regras de negócio, checklist QA. Entrega pronta para estudo.",
+      "created_at": "2026-06-18T02:45:33.728Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-012",
+      "title": "CHR-003.1: Renata coordena transição Thiago para SM role",
+      "type": "chore",
+      "owner": "renata",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Renata coordena o fechamento de Tech Lead para Thiago e abertura de SM role. Define: cerimônias ágeis (daily, planning, retro), ferramentas (Kanban, etc), responsabilidades SM (remover impedimentos, facilitar). Alinha com time.",
+      "created_at": "2026-06-18T02:45:33.773Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-013",
+      "title": "CHR-001.2: Carlos estuda e valida Tech Lead de Thiago",
+      "type": "chore",
+      "owner": "carlos",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Carlos recebe documentação de Thiago, estuda decisões arquiteturais, valida padrões técnicos, formula perguntas. Sync síncrono com Thiago para esclarecer gaps. Objetivo: Carlos pronto para tomar decisões técnicas.",
+      "created_at": "2026-06-18T02:45:33.818Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-014",
+      "title": "CHR-002.2: Gabriel estuda pipeline CVM/Import de Beatriz",
+      "type": "chore",
+      "owner": "gabriel",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Gabriel recebe documentação de Beatriz, estuda pipeline CVM, normalização, edge cases, regras XLSX. Executa exemplo end-to-end. Sync síncrono com Beatriz para dúvidas. Objetivo: Gabriel pronto para desenvolver pipeline.",
+      "created_at": "2026-06-18T02:45:33.864Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-015",
+      "title": "CHR-003.2: Thiago alinha SM role com team (daily, planning, retro)",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Thiago recebe definição de SM role de Renata, implementa cerimônias ágeis: daily standups, sprint planning, retro. Documenta novos ritmos. Primeira semana rodando cerimônias. Objetivo: Squad com SM facilitador operacional.",
+      "created_at": "2026-06-18T02:45:33.910Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-016",
+      "title": "CHR-001.3: Thiago responde perguntas de Carlos e valida compreensão",
+      "type": "chore",
+      "owner": "thiago",
+      "status": "todo",
+      "priority": "p1",
+      "description": "Thiago disponível para Q&A com Carlos sobre decisões Tech Lead. Valida se Carlos compreendeu padrões, limites Cloudflare, code review. Objetivo: Zero dúvidas críticas.",
+      "created_at": "2026-06-18T02:45:33.957Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-017",
+      "title": "CHR-002.3: Beatriz responde perguntas de Gabriel e valida compreensão",
+      "type": "chore",
+      "owner": "beatriz",
+      "status": "todo",
+      "priority": "p1",
+      "description": "Beatriz disponível para Q&A com Gabriel sobre pipeline CVM, normalização, edge cases, regras XLSX. Valida se Gabriel compreendeu fluxo completo. Objetivo: Zero dúvidas críticas.",
+      "created_at": "2026-06-18T02:45:34.002Z",
+      "completed_at": null,
+      "depends_on": []
+    },
+    {
+      "id": "CHR-018",
+      "title": "CHR-FINAL: Atualizar CLAUDE.md com nova squad operacional (7 agentes)",
+      "type": "chore",
+      "owner": "renata",
+      "status": "todo",
+      "priority": "p0",
+      "description": "Após conclusão dos handovers (CHR-001, CHR-002, CHR-003), Renata atualiza CLAUDE.md refletindo nova squad: Renata (PO), Thiago (SM), Carlos (Dev Backend + Tech Lead), Marina (Dev Frontend), Beatriz (UI/UX), Gabriel (Data Engineer), Pedro (QA). Confirma documentação 100% atualizada.",
+      "created_at": "2026-06-18T02:45:34.061Z",
+      "completed_at": null,
+      "depends_on": []
+    }
+  ],
+  "activity": [
+    {
+      "type": "task_created",
+      "taskId": "CHR-018",
+      "title": "CHR-FINAL: Atualizar CLAUDE.md com nova squad operacional (7 agentes)",
+      "owner": "renata",
+      "timestamp": "2026-06-18T02:45:34.061Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-017",
+      "title": "CHR-002.3: Beatriz responde perguntas de Gabriel e valida compreensão",
+      "owner": "beatriz",
+      "timestamp": "2026-06-18T02:45:34.002Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-016",
+      "title": "CHR-001.3: Thiago responde perguntas de Carlos e valida compreensão",
+      "owner": "thiago",
+      "timestamp": "2026-06-18T02:45:33.957Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-015",
+      "title": "CHR-003.2: Thiago alinha SM role com team (daily, planning, retro)",
+      "owner": "thiago",
+      "timestamp": "2026-06-18T02:45:33.910Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-014",
+      "title": "CHR-002.2: Gabriel estuda pipeline CVM/Import de Beatriz",
+      "owner": "gabriel",
+      "timestamp": "2026-06-18T02:45:33.864Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-013",
+      "title": "CHR-001.2: Carlos estuda e valida Tech Lead de Thiago",
+      "owner": "carlos",
+      "timestamp": "2026-06-18T02:45:33.818Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-012",
+      "title": "CHR-003.1: Renata coordena transição Thiago para SM role",
+      "owner": "renata",
+      "timestamp": "2026-06-18T02:45:33.773Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-011",
+      "title": "CHR-002.1: Beatriz documenta pipeline CVM/Import para Gabriel",
+      "owner": "beatriz",
+      "timestamp": "2026-06-18T02:45:33.728Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-010",
+      "title": "CHR-001.1: Thiago documenta decisões Tech Lead para Carlos",
+      "owner": "thiago",
+      "timestamp": "2026-06-18T02:45:33.668Z"
+    },
+    {
+      "timestamp": "2026-06-18T00:49:02.9745548Z",
+      "member": "pedro",
+      "action": "QA-004 avancou para in_progress. A tranche de venda/saida de ACAO/FII ficou coberta em API, validation e E2E: iniciar saida, cancelar saida, concluir venda, preservar detalhe historico, bloquear novos aportes em ativo sold e esconder a posicao vendida da carteira aberta. docs/TEST_PLAN.md foi alinhado no contrato de autenticacao e no caso SH-T12. QA-004 continua aberto ate FEAT-029 fechar a revisao completa do wizard de import."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "QA-004",
+      "from": "backlog",
+      "to": "in_progress",
+      "owner": "pedro",
+      "timestamp": "2026-06-18T00:49:02.9745548Z"
+    },
+    {
+      "timestamp": "2026-06-18T00:49:02.9745548Z",
+      "member": "marina",
+      "action": "FEAT-028 concluido. Home/Carteira/Detalhe e sheets de ACAO/FII agora sustentam o lifecycle de saida: CTA para iniciar saida, cancelamento, sheet dedicado para venda, estado visual sold, ocultacao de acoes de edicao apos a venda e preservacao do detalhe historico com valor bruto/data da venda."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-028",
+      "from": "backlog",
+      "to": "done",
+      "owner": "marina",
+      "timestamp": "2026-06-18T00:49:02.9745548Z"
+    },
+    {
+      "timestamp": "2026-06-18T00:49:02.9745548Z",
+      "member": "carlos",
+      "action": "FEAT-027 concluido. O backend ganhou endpoints dedicados para iniciar saida, cancelar saida e concluir venda total de ACAO/FII, com validacao de data/valor, preservacao do historico, protecao contra uso de archived como atalho de venda e leitura historica do ativo vendido no detalhe."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-027",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-18T00:49:02.9745548Z"
+    },
+    {
+      "timestamp": "2026-06-18T00:49:02.9745548Z",
+      "member": "carlos",
+      "action": "INFRA-005 concluido. schema.sql e migration 011 passaram a sustentar status sold e a tabela asset_lifecycle_events para registrar redeeming_started, redeeming_canceled e sale_completed, preservando compatibilidade com assets e asset_contributions."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "INFRA-005",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-18T00:49:02.9745548Z"
+    },
+    {
+      "timestamp": "2026-06-17T19:28:04.6140349Z",
+      "member": "pedro",
+      "action": "QA-005 concluído. O fluxo de compras por lote para ACAO/FII ficou coberto por API, validação e E2E: cadastro manual com data de compra, import XLSX com purchase_date, aporte com quantidade obrigatória para ativos BRAPI e detalhe exibindo quantidade, preço unitário e observação por compra. Suites verdes: npm run test:api, tests/validation.spec.ts e tests/e2e.spec.ts."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "QA-005",
+      "from": "backlog",
+      "to": "done",
+      "owner": "pedro",
+      "timestamp": "2026-06-17T19:28:04.6140349Z"
+    },
+    {
+      "timestamp": "2026-06-17T19:28:04.6140349Z",
+      "member": "carlos",
+      "action": "FEAT-030 concluído. A posição de ACAO/FII passou a registrar compras por lote no asset_contributions com qty + contributed_at, exigindo quantidade em novos aportes de ativos automáticos, recalculando qty/invested agregados no assets e expondo unitPrice/qty no detalhe e nas APIs de contribuições."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-030",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T19:28:04.6140349Z"
+    },
+    {
+      "timestamp": "2026-06-17T19:28:04.6140349Z",
+      "member": "carlos",
+      "action": "INFRA-006 concluído. Migration 010 adicionou qty em asset_contributions e foi aplicada no D1 remoto antes do deploy da versão d8df367f-b88c-4ad9-8e39-51faa18f6e08."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "INFRA-006",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T19:28:04.6140349Z"
+    },
+    {
+      "timestamp": "2026-06-17T19:28:04.6140349Z",
+      "member": "thiago",
+      "action": "SPEC-013 concluído. A decisão técnica foi formalizada em docs/SPEC_ACOES_LOTES.md: nesta etapa, o ledger de compras de ACAO/FII usa asset_contributions como histórico de lotes, sem tabela asset_lots nova, mantendo assets como agregado operacional da posição."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "SPEC-013",
+      "from": "backlog",
+      "to": "done",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T19:28:04.6140349Z"
+    },
+    {
+      "timestamp": "2026-06-17T14:36:35.9884706Z",
+      "member": "carlos",
+      "action": "BUG-012 concluído. Cadastro manual, import, carteira e detalhe passaram a compartilhar o mesmo contrato de hidratação BRAPI: eager fetch no create/import, refresh na leitura quando stale ou ausente, quote_source persistido e estado explícito quando a cotação ainda não materializou. A validação ficou coberta por API, E2E e prova operacional da BRAPI em produção, com deploy remoto ativo na versão 035281fb-372f-46d5-9fc8-285c04e79ed4."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-012",
+      "from": "in_progress",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T14:36:35.9884706Z"
+    },
+    {
+      "timestamp": "2026-06-17T14:36:35.9884706Z",
+      "member": "marina",
+      "action": "BUG-013 concluído. Home passou a comunicar o estado do provider mesmo sem cotação materializada; a Carteira ficou mais explicativa por linha com instituição, aplicado, referência de compra, timestamp BRAPI e hints quando falta cotação ou valor aplicado; o Detalhe ganhou chip de status, nota explícita para indisponibilidade/resgate e referência da cotação. Regressão local passou em API e E2E, e a validação renderizada no Browser confirmou a leitura de valor aplicado, preço médio, compra registrada e referência BRAPI. Deploy remoto ativo na versão 035281fb-372f-46d5-9fc8-285c04e79ed4."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-013",
+      "from": "in_progress",
+      "to": "done",
+      "owner": "marina",
+      "timestamp": "2026-06-17T14:36:35.9884706Z"
+    },
+    {
+      "timestamp": "2026-06-17T14:08:09.7403874Z",
+      "member": "beatriz",
+      "action": "BUG-011 concluído. O wizard XLSX passou a ler Situação/Status, normalizar active/redeeming, exibir diagnóstico por linha e breakdown por situação; o backend de import agora valida status fora do contrato, persiste active/redeeming corretamente e mantém o lifecycle importado no agrupamento da carteira. Regressão validada com API, validação e E2E; deploy remoto ativo na versão 9f0ddaa1-91f9-4f4e-b64f-712a82173a57."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-011",
+      "from": "in_progress",
+      "to": "done",
+      "owner": "beatriz",
+      "timestamp": "2026-06-17T14:08:09.7403874Z"
+    },
+    {
+      "timestamp": "2026-06-17T13:51:43.6708487Z",
+      "member": "beatriz",
+      "action": "BUG-011 assumido para execução. O foco desta rodada é preservar status/lifecycle no import XLSX de ações e FIIs, adicionar diagnóstico por linha no wizard e alinhar o backend para aceitar apenas active/redeeming no fluxo de import."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-011",
+      "from": "backlog",
+      "to": "in_progress",
+      "owner": "beatriz",
+      "timestamp": "2026-06-17T13:51:43.6708487Z"
+    },
+    {
+      "timestamp": "2026-06-17T13:41:27.1704016Z",
+      "member": "carlos",
+      "action": "BUG-010 concluído. FII voltou a ser classe própria no contrato do app: VALID_CLASSES, schema.sql e migration 009 passaram a aceitar FII; UI separou chips de Ação e FII; import passou a aceitar classe explícita e heurística mínima para FII; cobertura automatizada foi ampliada com API, validação e E2E; deploy remoto ativo na versão 698737ce-98cd-45ef-8046-fde57954c9a1."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-010",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T13:41:27.1704016Z"
+    },
+    {
+      "timestamp": "2026-06-17T13:17:44.8258417Z",
+      "member": "carlos",
+      "action": "BUG-014 avançou para execução operacional. Secret BRAPI_TOKEN configurado no Worker, quotes_cache remoto passou a materializar CPLE3, API de carteira ganhou quoteProvider com status/tickers/cobertura, frontend passou a renderizar datas em America/Sao_Paulo e o deploy ativo foi atualizado para a versão bdd86558-a195-4f70-ace3-06e3b9490280."
+    },
+    {
+      "timestamp": "2026-06-17T13:17:44.8258417Z",
+      "member": "carlos",
+      "action": "BUG-015 concluído. A deriva de schema da tabela users em produção foi corrigida com a migration 008_users_recovery_fields.sql aplicada no D1 remoto; cadastro remoto voltou a funcionar e o backend agora responde 503 explícito se os campos de recuperação não existirem."
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-015",
+      "title": "Deriva de schema em produção quebra cadastro e recuperação de senha",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T13:17:44.8258417Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-015",
+      "from": "backlog",
+      "to": "done",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T13:17:44.8258417Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-014",
+      "from": "backlog",
+      "to": "in_progress",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T13:17:44.8258417Z"
+    },
+    {
+      "timestamp": "2026-06-17T12:13:54.0631246Z",
+      "member": "renata",
+      "action": "Investigação operacional da BRAPI registrada. Evidência remota: 1 ativo BRAPI ativo (CPLE3), 0 registros em quotes_cache, 0 snapshots e nenhum secret remoto listado pelo Worker. Teste direto na BRAPI confirmou que CPLE3 sem token retorna 401 MISSING_TOKEN, enquanto PETR4/VALE3 funcionam sem token por estarem na whitelist de teste. Novas tasks abertas: BUG-014 para correção operacional e SPEC-014 para estratégia multi-provider."
+    },
+    {
+      "type": "task_created",
+      "taskId": "SPEC-014",
+      "title": "Estratégia multi-provider para cotações de ações e FIIs",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T12:13:54.0631246Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-014",
+      "title": "Produção não está materializando cotações BRAPI para ticker real fora da whitelist",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T12:13:54.0631246Z"
+    },
+    {
+      "timestamp": "2026-06-17T11:59:23.7491416Z",
+      "member": "carlos",
+      "action": "Execução iniciada para BUG-012 e BUG-013. Backend unificado para refresco BRAPI em cadastro/import/leitura, carteira passou a expor referência de compra e contagem de aportes, Home/Carteira/Detalhe começaram a mostrar valor aplicado, cotação indisponível sem saldo falso zero e ganho em valor absoluto."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-013",
+      "from": "backlog",
+      "to": "in_progress",
+      "owner": "marina",
+      "timestamp": "2026-06-17T11:59:23.7491416Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "BUG-012",
+      "from": "backlog",
+      "to": "in_progress",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:59:23.7491416Z"
+    },
+    {
+      "timestamp": "2026-06-17T11:44:29.4906311Z",
+      "member": "renata",
+      "action": "Feedback adicional do fluxo de ações incorporado ao backlog. O problema foi dividido em duas trilhas: correção imediata de UX/informação mínima na Home/Carteira/Detalhe (BUG-013) e requisito estrutural novo de múltiplas compras da mesma ação por data/quantidade/valor, agora formalizado em SPEC-013, INFRA-006, FEAT-030 e QA-005."
+    },
+    {
+      "type": "task_created",
+      "taskId": "QA-005",
+      "title": "QA de múltiplas compras da mesma ação",
+      "owner": "pedro",
+      "timestamp": "2026-06-17T11:44:29.4906311Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-030",
+      "title": "Histórico de compras por lote para ações e FIIs",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:44:29.4906311Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "INFRA-006",
+      "title": "Migration para lotes de posição e eventos de compra",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:44:29.4906311Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "SPEC-013",
+      "title": "Spec de compras por lote/data para ações e FIIs",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T11:44:29.4906311Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-013",
+      "title": "Home e detalhe de ação não exibem resumo patrimonial mínimo",
+      "owner": "marina",
+      "timestamp": "2026-06-17T11:44:29.4906311Z"
+    },
+    {
+      "timestamp": "2026-06-17T11:24:42.5716151Z",
+      "member": "thiago",
+      "action": "SPEC-012 concluída — docs/SPEC_FLUXO_ACOES.md criado com contrato ponta a ponta para ações/FIIs: diagnóstico do estado atual, separação ACAO/FII, unificação de cadastro e import, regras de cotação BRAPI, lifecycle active/redeeming/sold/archived, fluxo de venda total com histórico preservado, proposta de asset_lifecycle_events, impactos em API/frontend/backend e checklist de QA."
+    },
+    {
+      "type": "task_moved",
+      "taskId": "SPEC-012",
+      "from": "backlog",
+      "to": "done",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T11:24:42.5716151Z"
+    },
+    {
+      "timestamp": "2026-06-17T11:18:21.7500064Z",
+      "member": "renata",
+      "action": "Investigação do fluxo inicial de ações concluída e backlog criado. Achados principais: classe AÇÃO/FII inconsistente entre UI/specs/backend, import XLSX não preserva lifecycle/status e fluxo de saída/venda ainda está colapsado em redeeming/archived sem histórico próprio. Novas tasks abertas: SPEC-012, BUG-010/011/012, INFRA-005, FEAT-027/028/029 e QA-004."
+    },
+    {
+      "type": "task_created",
+      "taskId": "QA-004",
+      "title": "QA ponta a ponta do fluxo de ações",
+      "owner": "pedro",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-029",
+      "title": "Wizard XLSX de ações com revisão de entrada e status da posição",
+      "owner": "beatriz",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-028",
+      "title": "UX de ações: cadastro, detalhe, atualização real e saída",
+      "owner": "marina",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-027",
+      "title": "Modelo de venda/saída de ações com histórico preservado",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "INFRA-005",
+      "title": "Migration para eventos de lifecycle e saída de ações",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-012",
+      "title": "Hidratação de cotação BRAPI diverge entre cadastro manual, import e leitura",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-011",
+      "title": "Import XLSX de ações não preserva lifecycle nem contrato do ativo automático",
+      "owner": "beatriz",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "BUG-010",
+      "title": "Enum e classificação de AÇÃO/FII estão inconsistentes no código",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "SPEC-012",
+      "title": "Spec fluxo de ações ponta a ponta (entrada → acompanhamento → venda)",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T11:18:21.7500064Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_2f40eb39",
+      "agentFile": "carlos",
+      "taskId": null,
+      "costUsd": 0.05925710000000001,
+      "timestamp": "2026-06-17T04:49:14.104Z"
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_2f40eb39",
+      "agentFile": "carlos",
+      "taskId": null,
+      "timestamp": "2026-06-17T04:49:06.331Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_7a48156a",
+      "agentFile": "beatriz",
+      "taskId": "CHR-002",
+      "costUsd": 1.2135021,
+      "timestamp": "2026-06-17T04:45:27.223Z"
+    },
+    {
+      "timestamp": "2026-06-17T12:30:00Z",
+      "member": "beatriz",
+      "action": "CHR-002 concluída — docs/HANDOVER_BEATRIZ_CVM_IMPORT_TO_GABRIEL.md criado com 12 seções: pipeline CVM (2 crons, stream-parse ZIP, decodeLatin1, parseZipHeader), schema D1 (cvm_funds_cache + quote_source), import XLSX (SheetJS, 7 abas, parsing numérico, Smart Import AI), 9 edge cases documentados (fallback manual, VL_QUOTA=0, fundo extinto, duplicatas), 3 tarefas P0/P1/P2 pendentes para Gabriel (T-CVM-01 reconciliação pós-cron, T-IMP-01 CNPJ no import, T-IMP-02 deduplicação), decisões arquiteturais com rationale. Gabriel pode assumir imediatamente."
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_11f08cfe",
+      "agentFile": "thiago",
+      "taskId": "CHR-001",
+      "costUsd": 0.8718935000000001,
+      "timestamp": "2026-06-17T04:44:49.195Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_9484a19e",
+      "agentFile": "renata",
+      "taskId": "CHR-003",
+      "costUsd": 0.7322518999999998,
+      "timestamp": "2026-06-17T04:44:43.418Z"
+    },
+    {
+      "timestamp": "2026-06-17T14:00:00Z",
+      "member": "renata",
+      "action": "CHR-006 concluída — validação de distribuição de responsabilidades: handover de Thiago para Carlos aprovado (12 seções, completo), CHR-003 concluída com docs/HANDOVER_THIAGO_TECH_LEAD_TO_SM.md criado (papel SM, cerimônias ágeis, checklist semana 1, comunicado interno). Responsabilidades sem overlap: Carlos=TL, Thiago=SM, Renata=PO. Gap menor identificado: Gabriel ainda não é agente ativo — Beatriz mantém ownership de dados temporariamente."
+    },
+    {
+      "timestamp": "2026-06-17T14:00:00Z",
+      "member": "renata",
+      "action": "CHR-003 concluída — docs/HANDOVER_THIAGO_TECH_LEAD_TO_SM.md criado: papel SM definido (o que faz/não faz), 4 cerimônias ágeis adaptadas para time assíncrono de agentes, como remover impedimentos, ferramentas (fleet.json), checklist semana 1, sprint 1 proposto (migrations + FEAT-005/006), distribuição final de responsabilidades e comunicado interno para o time."
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-009",
+      "title": "CHR-FINAL: Atualizar CLAUDE.md com nova squad operacional",
+      "owner": "renata",
+      "timestamp": "2026-06-17T04:41:20.071Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-008",
+      "title": "CHR-002.2: Beatriz & Gabriel alinhamento CVM/Import final",
+      "owner": "beatriz",
+      "timestamp": "2026-06-17T04:41:20.022Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-007",
+      "title": "CHR-001.2: Thiago & Carlos alinhamento técnico final",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T04:41:19.975Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-006",
+      "title": "CHR-003.1: Renata valida distribuição final de responsabilidades",
+      "owner": "renata",
+      "timestamp": "2026-06-17T04:41:19.924Z"
+    },
+    {
+      "timestamp": "2026-06-17T12:30:00Z",
+      "member": "thiago",
+      "action": "CHR-004 concluída — docs/HANDOVER_THIAGO_TECH_LEAD_TO_CARLOS.md criado: 15 seções detalhadas cobrindo decisões arquiteturais com rationale (Hono/D1/PWA/Vanilla JS/Cloudflare free tier), estrutura de código, 8 padrões exigidos em PRs, 3 migrations pendentes em prod com comandos, 6 bugs confirmados com fixes, checklist P0/P1/P2 de code review, limites Cloudflare com riscos, secrets críticos, pipeline CVM, crons, Workers AI, tabelas+views+índices e 5 decisões pendentes para Carlos conduzir."
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-005",
+      "title": "CHR-002.1: Gabriel estuda handover de CVM/Import de Beatriz",
+      "owner": "gabriel",
+      "timestamp": "2026-06-17T04:41:04.567Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-004",
+      "title": "CHR-001.1: Carlos estuda handover de Tech Lead de Thiago",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T04:41:04.521Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_a7da7212",
+      "agentFile": "thiago",
+      "taskId": null,
+      "costUsd": 0.0463542,
+      "timestamp": "2026-06-17T04:38:06.658Z"
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_a7da7212",
+      "agentFile": "thiago",
+      "taskId": null,
+      "timestamp": "2026-06-17T04:38:03.724Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_481eb4e6",
+      "agentFile": "backend-dev",
+      "taskId": null,
+      "costUsd": 0.10350989999999999,
+      "timestamp": "2026-06-17T04:36:25.004Z"
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_481eb4e6",
+      "agentFile": "backend-dev",
+      "taskId": null,
+      "timestamp": "2026-06-17T04:35:57.834Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_7346d26e",
+      "agentFile": "thiago",
+      "taskId": "CHR-001",
+      "costUsd": 0.660343,
+      "timestamp": "2026-06-17T04:25:26.071Z"
+    },
+    {
+      "timestamp": "2026-06-17T12:00:00Z",
+      "member": "thiago",
+      "action": "CHR-001 concluída — docs/HANDOVER_TECH_LEAD.md criado com 12 seções: arquitetura (1 Worker Hono), limites Cloudflare free tier (10ms/100k/D1 5M/500 crons), 9 decisões documentadas com rationale, 3 migrations pendentes de produção (INFRA-002/003/004), checklist de code review por categoria (segurança/performance/consistência/TypeScript), 6 bugs abertos da auditoria FEAT-023, padrões de resposta de erro, mapa de arquivos, secrets críticos (JWT_SECRET hardcoded — AÇÃO REQUERIDA) e próximas 5 decisões pendentes para Carlos."
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-003",
+      "title": "Handover: Thiago → Scrum Master (facilitação ágil)",
+      "owner": "thiago",
+      "timestamp": "2026-06-17T03:54:32.164Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-002",
+      "title": "Handover: Beatriz (CVM/Import) → Gabriel (Data Engineer)",
+      "owner": "gabriel",
+      "timestamp": "2026-06-17T03:54:32.119Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "CHR-001",
+      "title": "Handover: Thiago (Tech Lead) → Carlos (Tech Lead role) + Renata (PO)",
+      "owner": "carlos",
+      "timestamp": "2026-06-17T03:54:32.074Z"
+    },
+    {
+      "timestamp": "2026-06-16T17:45:00Z",
+      "member": "carlos",
+      "action": "QA-003 concluida: suite Playwright ampliada com coverage de contributions/history/goods/IA mock, config com mobile+desktop, docs TEST_PLAN alinhado ao auth Bearer e typecheck/test passando."
+    },
+    {
+      "timestamp": "2026-06-16T17:25:00Z",
+      "member": "carlos",
+      "action": "Iniciada a cobertura QA dos gaps 1-3: novos testes para contributions/history/goods, IA com mock local, viewport desktop e alinhamento do TEST_PLAN ao auth Bearer."
+    },
+    {
+      "timestamp": "2026-06-16T17:05:00Z",
+      "member": "carlos",
+      "action": "CLAUDE.md reforcado: cada implementacao ou bug corrigido agora deve atualizar a base/planilha de testes em docs/TEST_PLAN.md e, quando aplicavel, a planilha XLSX de referencia."
+    },
+    {
+      "timestamp": "2026-06-16T16:55:00Z",
+      "member": "carlos",
+      "action": "Entregues os artefatos de QA: relatorio em docs/QA_REPORT_2026-06-16.md, workflow GitHub Actions para typecheck + Playwright e CLAUDE.md atualizado com definicao de pronto para QA."
+    },
+    {
+      "timestamp": "2026-06-16T16:40:00Z",
+      "member": "carlos",
+      "action": "QA automatizada concluída com Playwright: 10/10 testes passando cobrindo auth, API, CVM, importação XLSX, bens, snapshots, ocultar valores, navegação e E2E."
+    },
+    {
+      "timestamp": "2026-06-16T15:30:00Z",
+      "member": "carlos",
+      "action": "Iniciada automacao de QA com Playwright para cobrir autenticacao, API, CVM, importacao XLSX, bens, snapshots e E2E no navegador."
+    },
+    {
+      "timestamp": "2026-06-16T12:21:00Z",
+      "member": "carlos",
+      "action": "Workflow de agentes revisado e formalizado — 6 agents atualizados (.claude/agents/), 3 skills corrigidas (board-update/deploy/write-spec apontam para fleet.json), AGENTS.md reescrito como doc de operação. Principais correções: auth atualizada (email+senha JWT, não Cloudflare Access), Beatriz expandida para import/CVM/dados, Renata com anti-escopo atual, todos os agentes apontam para fleet.json."
+    },
+    {
+      "timestamp": "2026-06-16T14:00:00Z",
+      "member": "claude",
+      "action": "feat: cadastro de acao/FII agora gera aporte inicial automatico — invested no cadastro vira primeira contribuicao; import XLSX segue a mesma logica"
+    },
+    {
+      "timestamp": "2026-06-16T13:30:00Z",
+      "member": "claude",
+      "action": "fix: tela de detalhe ACAO/FII corrigida — valor atual, rendimento, data de referencia e fonte de cotacao agora exibidos corretamente; BRAPI refrescado proativamente"
+    },
+    {
+      "timestamp": "2026-06-16T12:00:00Z",
+      "member": "claude",
+      "action": "fix: busca de fundos corrigida (data.results); cotacao ausente retorna null em vez de zero — sem perda falsa de patrimonio"
+    },
+    {
+      "timestamp": "2026-06-16T06:05:00Z",
+      "member": "carlos",
+      "action": "Auditoria funcional reforcada — mapeamento do codigo atual para separar features realmente funcionais, dependentes de migrations e codigos/stubs mortos ou meramente visuais."
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_78f07eb6",
+      "agentFile": "carlos",
+      "taskId": "FEAT-025",
+      "costUsd": 0.7167193999999999,
+      "timestamp": "2026-06-16T04:48:51.298Z"
+    },
+    {
+      "timestamp": "2026-06-16T04:52:00.000Z",
+      "member": "carlos",
+      "action": "FEAT-025 concluida — teste de launch-pending do Fleet executado com sucesso. Agente recebeu a sessao pendente, verificou fleet.json e confirmou o mecanismo funcionando."
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_7b6bd961",
+      "agentFile": "carlos",
+      "taskId": "FEAT-026",
+      "costUsd": 0.23284019999999997,
+      "timestamp": "2026-06-16T04:47:22.924Z"
+    },
+    {
+      "timestamp": "2026-06-16T04:50:00.000Z",
+      "member": "carlos",
+      "action": "FEAT-026 concluída — teste de launch-pending 2 do Fleet executado com sucesso. Agente recebeu a sessão pendente, acessou fleet.json e confirmou o mecanismo funcionando."
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_7b6bd961",
+      "taskId": "FEAT-026",
+      "agentFile": "carlos",
+      "timestamp": "2026-06-16T04:46:54.216Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-026",
+      "title": "Teste launch-pending 2",
+      "owner": "carlos",
+      "timestamp": "2026-06-16T04:46:54.171Z"
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_78f07eb6",
+      "taskId": "FEAT-025",
+      "agentFile": "carlos",
+      "timestamp": "2026-06-16T04:46:52.101Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-025",
+      "title": "Teste launch-pending",
+      "owner": "carlos",
+      "timestamp": "2026-06-16T04:46:52.054Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_c5460bc5",
+      "agentFile": "carlos",
+      "taskId": "FEAT-023",
+      "costUsd": 1.6108570000000002,
+      "timestamp": "2026-06-16T04:45:28.043Z"
+    },
+    {
+      "type": "session_completed",
+      "sessionId": "sess_4c0a80f6",
+      "agentFile": "carlos.md",
+      "taskId": "FEAT-024",
+      "costUsd": 0.3004894,
+      "timestamp": "2026-06-16T04:44:54.191Z"
+    },
+    {
+      "timestamp": "2026-06-16T04:45:00.000Z",
+      "member": "carlos",
+      "action": "FEAT-024 concluída — teste de auto-launch do Fleet executado com sucesso. Agente recebeu a tarefa, acessou fleet.json, e confirmou o mecanismo funcionando."
+    },
+    {
+      "timestamp": "2026-06-16T05:30:00Z",
+      "member": "carlos",
+      "action": "FEAT-023 concluída — auditoria completa do código: 6 bugs confirmados (display_name ausente no portfolio, TABS swipe errado, FII inválido em contributions, schema.sql desatualizado, JWT hardcoded, BRAPI sem token), 1 arquivo dead code (src/ai.ts), 3 migrations pendentes em prod (INFRA-002/003/004), 4 features fora do escopo original do CLAUDE.md (Bens, Detalhe, Aportes, AI)."
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_4c0a80f6",
+      "taskId": "FEAT-024",
+      "agentFile": "carlos.md",
+      "timestamp": "2026-06-16T04:44:10.027Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-024",
+      "title": "Teste auto-launch",
+      "owner": "carlos.md",
+      "timestamp": "2026-06-16T04:44:09.982Z"
+    },
+    {
+      "type": "session_started",
+      "sessionId": "sess_c5460bc5",
+      "taskId": "FEAT-023",
+      "agentFile": "carlos",
+      "timestamp": "2026-06-16T04:40:53.840Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-005",
+      "from": "in_progress",
+      "to": "backlog",
+      "owner": "marina",
+      "timestamp": "2026-06-16T04:37:01.365Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-008",
+      "from": "todo",
+      "to": "backlog",
+      "owner": "carlos",
+      "timestamp": "2026-06-16T04:36:34.803Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-007",
+      "from": "todo",
+      "to": "backlog",
+      "owner": "marina",
+      "timestamp": "2026-06-16T04:36:24.387Z"
+    },
+    {
+      "type": "task_moved",
+      "taskId": "FEAT-006",
+      "from": "todo",
+      "to": "backlog",
+      "owner": "marina",
+      "timestamp": "2026-06-16T04:36:12.956Z"
+    },
+    {
+      "type": "task_created",
+      "taskId": "FEAT-023",
+      "title": "Mapear o código e verificar o que tem de fato implementado e está funcional e faz sentido para o projeto e o que está implementado mas não funciona e/ou não faz sentido para o projeto.",
+      "owner": null,
+      "timestamp": "2026-06-16T04:32:16.089Z"
+    },
+    {
+      "timestamp": "2026-06-15T16:00:00Z",
+      "member": "claude",
+      "action": "FEAT-022 concluída — Product Polish Fase 1+2: CSS Bens (5 classes), CSS Detalhe (~20 classes), sheet drag-to-dismiss, btnLoading (9 botões), busca Carteira (debounce 150ms), timestamp hero, saldo Sheet B, skeleton hero, fade tabs, SW v3."
+    },
+    {
+      "timestamp": "2026-06-15T13:00:00Z",
+      "member": "claude",
+      "action": "FEAT-021 concluída — redesign visual completo: shell position:fixed, hero petróleo 48px Archivo, gain chip, donut animado qDonut, chart SVG com qDraw 1.2s e gradiente verde, staggered qFade nos cards, tab bar 64px+safe-area, badges redesenhados, sheets com backdrop blur 26px radius, FAB 56px, tokens CSS atualizados, dark mode completo. display_name column adicionada ao schema.sql e D1 local."
+    },
+    {
+      "timestamp": "2026-06-15T12:00:00Z",
+      "member": "claude",
+      "action": "FEAT-010/013/014/015 concluídos. Dark mode: 46 cores hardcoded → CSS vars. Smart Labels: generateDisplayName() fire-and-forget em POST/PUT assets, display_name no frontend. Smart Import: POST /api/import/analyze (Llama 3B, auto-classify), badges IA no wizard. Análise: sheet-analyze com openAnalyze(), botão em Hoje + Detalhe. TypeScript: 0 erros."
+    },
+    {
+      "timestamp": "2026-06-15T10:30:00Z",
+      "member": "claude",
+      "action": "AUTOPILOT concluído. CSS hist-selic-cap adicionado, shape da API goods verificado, fleet.json atualizado (FEAT-016/017/018/019/020 done, INFRA-002/003/004 review, FEAT-015 in_progress). TypeScript typecheck: 0 erros. AUTOPILOT_REPORT.md gerado."
+    },
+    {
+      "timestamp": "2026-06-14T03:00:00Z",
+      "member": "autopilot",
+      "action": "Implementadas: benchmarks macro, detalhe ativo, aportes, bens, design CSS, AI features"
+    },
+    {
+      "timestamp": "2026-06-15T10:00:00Z",
+      "member": "claude",
+      "action": "Frontend JS implementado em app.js: renderBenchmarks() (CDI/SELIC/IPCA), openDetail/closeDetail/loadDetail/renderDetail/loadChart/renderPriceChart (tela detalhe com gráfico SVG e seletor de período), openSheetAporte/saveAporte/deleteContribution (Sheet E de aportes), loadGoods/renderGoods/updateGrossWealth/openSheetBem/saveBem e afins (Bens e Garantias). switchTab() agora inclui aba 'bens'. Row click na Carteira abre openDetail() em vez de Sheet B. Sintaxe validada com node --check."
+    },
+    {
+      "timestamp": "2026-06-15T00:30:00Z",
+      "member": "claude",
+      "action": "9 mudanças em src/index.ts: AI binding, refreshMacroIndicators(), scheduled() paralelo, benchmarks+goods+grossWealth em GET /api/portfolio, 3 endpoints contributions (POST/GET/DELETE), PUT ignora invested se há aportes, GET /api/assets/:id/detail, GET /api/assets/:id/history, 4 endpoints /api/goods, POST /api/ai/analyze. TypeScript ok, 1818 linhas."
+    },
+    {
+      "timestamp": "2026-06-14T23:50:00Z",
+      "member": "claude",
+      "action": "SPEC-010 criada — spec de implementação do design system (wireframes v1): tokens, shell, 4 telas, 4 sheets, 3 estados especiais, 25 RNs de UI, checklist completo. FEAT-021 (redesign visual) adicionada ao backlog. docs/SPEC_DESIGN_IMPLEMENTATION.md"
+    },
+    {
+      "timestamp": "2026-06-14T23:30:00Z",
+      "member": "claude",
+      "action": "SPEC-009 criada — spec Bens e Garantias (FGTS, Imóvel, Veículo): tabela goods, 4 endpoints, Tela Bens (5a aba), patrimônio bruto em Hoje, 13 RNs. INFRA-004, FEAT-019 e FEAT-020 no backlog. docs/SPEC_BENS_GARANTIAS.md"
+    },
+    {
+      "timestamp": "2026-06-14T23:00:00Z",
+      "member": "claude",
+      "action": "SPEC-007 e SPEC-008 criadas — specs completas de Tela de Detalhe do Ativo e Aportes Adicionais. INFRA-003, FEAT-017 e FEAT-018 adicionadas ao backlog. docs/SPEC_ASSET_DETAIL.md e docs/SPEC_APORTES.md"
+    },
+    {
+      "timestamp": "2026-06-14T22:30:00Z",
+      "member": "claude",
+      "action": "SPEC-006 criada — spec completa de benchmarks macro (CDI/SELIC/IPCA): schema macro_cache, refreshMacroIndicators(), campo benchmarks no GET /api/portfolio, UI em 3 telas, 16 RNs, checklist. INFRA-002 e FEAT-016 adicionadas ao backlog."
+    },
+    {
+      "timestamp": "2026-06-14T22:00:00Z",
+      "member": "claude",
+      "action": "SPEC-005 criada — spec de IA com 3 features (Smart Labels, Smart Import, Análise Contextual). FEAT-013/014/015 adicionadas ao backlog. docs/SPEC_AI_FEATURES.md"
+    },
+    {
+      "timestamp": "2026-06-14T21:20:00Z",
+      "member": "claude",
+      "action": "BUG-009 resolvido — mascaras aplicadas em todos os campos: valor (X.XXX,XX), CPF (XXX.XXX.XXX-XX), ticker (uppercase/alphanum/max8), qty (digits+virgula), nome (title case PT / normalize)."
+    },
+    {
+      "timestamp": "2026-06-14T20:45:00Z",
+      "member": "claude",
+      "action": "BUG-008 resolvido — fundo CVM agora pede saldo em R$ (nao cotas); backend calcula qty automaticamente. Busca aceita nome ou CNPJ."
+    },
+    {
+      "timestamp": "2026-06-14T20:15:00Z",
+      "member": "claude",
+      "action": "BUG-007 resolvido — toggle Automatico/Manual removido do sheet de novo ativo; classe determina os campos automaticamente (ACAO→BRAPI, FUNDO→CVM, resto→manual)."
+    },
+    {
+      "timestamp": "2026-06-14T19:45:00Z",
+      "member": "claude",
+      "action": "BUG-006 resolvido — empty states em Hoje e Carteira: icone + titulo + botoes de atalho; elementos de dados ocultados quando carteira esta vazia."
+    },
+    {
+      "timestamp": "2026-06-14T19:15:00Z",
+      "member": "claude",
+      "action": "BUG-005 resolvido — tabbar iOS PWA corrigida: env(safe-area-inset-bottom), min-height 56px, icones 22px, screen height recalculado."
+    },
+    {
+      "timestamp": "2026-06-14T19:00:00Z",
+      "member": "claude",
+      "action": "BUG-004 resolvido — CPF e nascimento agora obrigatorios no cadastro. Validacao no frontend e backend com hint explicativo nos campos."
+    },
+    {
+      "timestamp": "2026-06-14T18:45:00Z",
+      "member": "claude",
+      "action": "BUG-003 resolvido — template XLSX criado em public/template-quanto.xlsx e link corrigido com target=_blank para nao quebrar navegacao no Safari."
+    },
+    {
+      "timestamp": "2026-06-14T18:30:00Z",
+      "member": "claude",
+      "action": "BUG-002 resolvido — recuperacao de senha via CPF+data de nascimento. Novo endpoint POST /api/auth/recover, +cpf +birth_date no schema e no registro, form de recuperacao no frontend."
+    },
+    {
+      "timestamp": "2026-06-14T17:00:00Z",
+      "member": "claude",
+      "action": "Auth email+senha implementado e deployed — src/auth.ts (PBKDF2+JWT), login/register endpoints, login screen UI, Bearer token middleware. Cloudflare Access removido."
+    },
+    {
+      "timestamp": "2026-06-14T16:30:00Z",
+      "member": "claude",
+      "action": "Pipeline CVM implementado — src/cvm.ts (450 linhas), schema v5, 4 crons, busca fundos, UI modo CVM. Build OK."
+    },
+    {
+      "timestamp": "2026-06-14T15:00:00Z",
+      "member": "claude",
+      "action": "Spec CVM pipeline aprovada — analise tecnica + funcional + arquitetural com 17 RNs"
+    },
+    {
+      "timestamp": "2026-06-14T09:30:00Z",
+      "member": "beatriz",
+      "action": "Design system Fleet aprovado — tipografia, cores, icones"
+    },
+    {
+      "timestamp": "2026-06-14T09:00:00Z",
+      "member": "renata",
+      "action": "Spec Fleet atualizada com design system"
+    },
+    {
+      "timestamp": "2026-06-14T08:30:00Z",
+      "member": "marina",
+      "action": "Iniciou Tela Hoje — numero-tese + donut chart"
+    },
+    {
+      "timestamp": "2026-06-14T08:00:00Z",
+      "member": "marina",
+      "action": "Bug report: donut chart zero division"
+    },
+    {
+      "timestamp": "2026-06-13T20:00:00Z",
+      "member": "carlos",
+      "action": "Backend API completo — 7 endpoints + 2 cron jobs"
+    },
+    {
+      "timestamp": "2026-06-13T18:00:00Z",
+      "member": "carlos",
+      "action": "Cotacoes BRAPI integrado com cache D1"
+    },
+    {
+      "timestamp": "2026-06-13T16:00:00Z",
+      "member": "thiago",
+      "action": "OpenAPI spec finalizada"
+    },
+    {
+      "timestamp": "2026-06-13T14:00:00Z",
+      "member": "carlos",
+      "action": "CRUD assets com soft delete funcionando"
+    },
+    {
+      "timestamp": "2026-06-12T16:00:00Z",
+      "member": "beatriz",
+      "action": "Mockup v5 entregue com donut + barra empilhada"
+    },
+    {
+      "timestamp": "2026-06-12T12:00:00Z",
+      "member": "thiago",
+      "action": "Schema v4 aplicado no D1"
+    },
+    {
+      "timestamp": "2026-06-11T18:00:00Z",
+      "member": "renata",
+      "action": "Spec funcional v1 com 98 RNs finalizada"
+    }
+  ]
+}

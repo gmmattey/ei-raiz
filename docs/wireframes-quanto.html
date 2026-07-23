@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto — Wireframes iOS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1c1c1e;
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    padding: 48px 32px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 {
+    color: #fff; font-size: 11px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase;
+    margin-bottom: 40px; opacity: .35;
+  }
+  .grid { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; }
+
+  /* ─── PHONE SHELL ─── */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .phone-label {
+    color: #fff; font-size: 11px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; opacity: .35;
+  }
+  .phone {
+    width: 320px;
+    background: #f2f2f7;
+    border-radius: 50px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 9px #2c2c2e,
+      0 0 0 11px #3a3a3c,
+      0 40px 80px rgba(0,0,0,.7);
+    position: relative;
+  }
+  .phone-island {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 88px; height: 26px;
+    background: #1c1c1e; border-radius: 20px;
+    z-index: 20;
+  }
+  .phone-inner {
+    height: 660px;
+    overflow-y: auto;
+    padding-bottom: 84px;
+    scrollbar-width: none;
+  }
+  .phone-inner::-webkit-scrollbar { display: none; }
+
+  /* ─── STATUS BAR ─── */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 22px 4px;
+    font-size: 12px; font-weight: 700;
+    color: #000;
+  }
+  .status-right { display: flex; align-items: center; gap: 5px; }
+  .status-right svg { width: 14px; height: 14px; fill: #000; }
+
+  /* ─── LARGE TITLE ─── */
+  .nav-large-title {
+    padding: 4px 20px 8px;
+  }
+  .nav-large-title h1 {
+    font-size: 34px; font-weight: 700; letter-spacing: -.5px;
+    color: #000; opacity: 1; text-transform: none; letter-spacing: -.02em;
+  }
+  .nav-large-title .subtitle {
+    font-size: 13px; color: #8e8e93; margin-top: 2px; font-weight: 400;
+  }
+
+  /* ─── INSET GROUPED LIST ─── */
+  .list-section { padding: 0 16px; margin-bottom: 8px; }
+  .list-header {
+    font-size: 13px; font-weight: 400; color: #6c6c70;
+    padding: 6px 4px 6px; text-transform: uppercase; letter-spacing: .03em;
+    font-size: 12px;
+  }
+  .list-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .list-row {
+    display: flex; align-items: center; min-height: 44px;
+    padding: 10px 16px;
+    position: relative;
+  }
+  .list-row + .list-row::before {
+    content: ''; position: absolute; top: 0; left: 16px; right: 0;
+    height: .5px; background: #c6c6c8;
+  }
+  .list-row-icon {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 12px; flex-shrink: 0;
+  }
+  .list-row-icon svg { width: 17px; height: 17px; }
+  .list-row-content { flex: 1; }
+  .list-row-label { font-size: 17px; color: #000; }
+  .list-row-sub { font-size: 13px; color: #8e8e93; margin-top: 1px; }
+  .list-row-right { display: flex; align-items: center; gap: 5px; }
+  .list-row-value { font-size: 17px; color: #000; font-weight: 600; }
+  .list-row-value.pos { color: #34c759; }
+  .list-row-value.neg { color: #ff3b30; }
+  .list-row-detail { font-size: 15px; color: #8e8e93; }
+  .chevron { color: #c7c7cc; }
+  .chevron svg { width: 7px; height: 12px; fill: none; stroke: #c7c7cc; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── HERO CARD ─── */
+  .hero {
+    margin: 6px 16px 0;
+    background: linear-gradient(160deg, #16242F 0%, #0d1820 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: #fff;
+  }
+  .hero-eyebrow {
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5);
+    letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .hero-value {
+    font-size: 40px; font-weight: 700; letter-spacing: -.03em; line-height: 1;
+    margin: 2px 0 8px;
+  }
+  .hero-caption { font-size: 13px; color: rgba(255,255,255,.6); }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 12px; padding: 5px 10px;
+    background: rgba(255,255,255,.1);
+    border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  .hero-badge.pos { background: rgba(52,199,89,.2); color: #4cd964; }
+  .hero-badge.neg { background: rgba(255,59,48,.2); color: #ff6259; }
+
+  /* ─── METRIC CARD ─── */
+  .metric-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .metric-eyebrow {
+    font-size: 13px; font-weight: 600; color: #8e8e93;
+    margin-bottom: 4px;
+  }
+  .metric-value {
+    font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: #000;
+  }
+  .metric-value.pos { color: #34c759; }
+  .metric-value.neg { color: #ff3b30; }
+  .metric-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .metric-sub.pos { color: #34c759; font-weight: 600; }
+
+  /* ─── GRID 2 COL ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ─── ALLOC ─── */
+  .alloc-row {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 40px; padding: 6px 0;
+    border-bottom: .5px solid #e5e5ea;
+  }
+  .alloc-row:last-child { border-bottom: none; }
+  .alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alloc-label { font-size: 15px; color: #000; flex: 1; }
+  .alloc-bar-wrap { flex: 1.5; height: 3px; background: #e5e5ea; border-radius: 3px; }
+  .alloc-bar { height: 3px; border-radius: 3px; }
+  .alloc-pct { font-size: 14px; font-weight: 600; color: #8e8e93; width: 38px; text-align: right; }
+
+  /* ─── SEGMENT CONTROL ─── */
+  .segment {
+    display: flex; background: rgba(118,118,128,.12);
+    border-radius: 9px; padding: 2px; margin-bottom: 12px;
+  }
+  .seg-opt {
+    flex: 1; text-align: center; padding: 6px;
+    font-size: 13px; font-weight: 600; color: #8e8e93;
+    border-radius: 7px;
+  }
+  .seg-opt.active {
+    background: #fff; color: #000;
+    box-shadow: 0 1px 4px rgba(0,0,0,.14);
+  }
+
+  /* ─── SEARCH BAR ─── */
+  .search-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(118,118,128,.12);
+    border-radius: 10px; padding: 8px 12px;
+    margin: 8px 16px;
+  }
+  .search-bar svg { width: 14px; height: 14px; fill: #8e8e93; flex-shrink: 0; }
+  .search-text { font-size: 15px; color: #8e8e93; }
+
+  /* ─── HISTORY BARS ─── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 64px; }
+  .bar { flex: 1; background: #e5e5ea; border-radius: 3px 3px 0 0; }
+  .bar.hi { background: #000; }
+  .bar-labels { display: flex; gap: 3px; margin-top: 5px; }
+  .bar-label { flex: 1; text-align: center; font-size: 9px; color: #8e8e93; font-weight: 500; }
+  .bar-label.hi { color: #000; font-weight: 700; }
+
+  /* ─── STEPS ─── */
+  .steps-row { display: flex; align-items: center; gap: 0; margin: 0 16px 16px; }
+  .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .step-item + .step-item::before {
+    content: ''; position: absolute; top: 13px; right: 50%; left: -50%;
+    height: 1.5px; background: #e5e5ea; z-index: 0;
+  }
+  .step-item.done + .step-item::before,
+  .step-item.active + .step-item::before { background: #000; }
+  .step-circle {
+    width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #e5e5ea;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #8e8e93;
+    background: #f2f2f7; position: relative; z-index: 1;
+  }
+  .step-item.done .step-circle { background: #000; border-color: #000; color: #fff; }
+  .step-item.active .step-circle { background: #fff; border-color: #000; color: #000; }
+  .step-name { font-size: 10px; font-weight: 600; color: #8e8e93; margin-top: 5px; }
+  .step-item.active .step-name,
+  .step-item.done .step-name { color: #000; }
+
+  /* ─── IMPORT ITEM ─── */
+  .import-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px;
+    border-radius: 6px; flex-shrink: 0; letter-spacing: .02em;
+  }
+  .import-badge.ok { background: rgba(52,199,89,.15); color: #248a3d; }
+  .import-badge.warn { background: rgba(255,159,10,.15); color: #b25000; }
+  .import-badge.err { background: rgba(255,59,48,.15); color: #d70015; }
+
+  /* ─── UPLOAD DROP ─── */
+  .upload-zone {
+    margin: 0 16px;
+    background: #fff; border-radius: 12px;
+    padding: 32px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    border: 1.5px dashed #c6c6c8;
+  }
+  .upload-icon-wrap {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: #f2f2f7; display: flex; align-items: center; justify-content: center;
+  }
+  .upload-icon-wrap svg { width: 26px; height: 26px; stroke: #8e8e93; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .upload-title { font-size: 15px; font-weight: 600; color: #000; }
+  .upload-sub { font-size: 13px; color: #8e8e93; text-align: center; }
+  .upload-link { font-size: 13px; font-weight: 600; color: #000; }
+
+  /* ─── BUTTON ─── */
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    height: 50px; border-radius: 14px;
+    font-size: 17px; font-weight: 600;
+  }
+  .btn-filled { background: #000; color: #fff; }
+  .btn-gray { background: rgba(118,118,128,.12); color: #000; }
+  .btn-destructive { background: rgba(255,59,48,.12); color: #ff3b30; }
+  .btn-sm {
+    height: 36px; border-radius: 10px; font-size: 15px;
+    padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600;
+  }
+
+  /* ─── CHART LINE ─── */
+  .chart-area {
+    margin: 4px 0 8px;
+    height: 72px; position: relative; overflow: hidden;
+  }
+  .chart-area svg { width: 100%; height: 100%; }
+
+  /* ─── FRESHNESS ─── */
+  .fresh-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .fresh-dot.ok { background: #34c759; }
+  .fresh-dot.warn { background: #ff9f0a; }
+  .fresh-age-ok { font-size: 15px; color: #8e8e93; }
+  .fresh-age-warn { font-size: 15px; color: #ff9f0a; font-weight: 600; }
+
+  /* ─── KPI ROW ─── */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5px; background: #e5e5ea; border-radius: 12px; overflow: hidden; }
+  .kpi-cell { background: #fff; padding: 12px 14px; }
+  .kpi-label { font-size: 12px; color: #8e8e93; font-weight: 500; margin-bottom: 3px; }
+  .kpi-val { font-size: 16px; font-weight: 700; color: #000; letter-spacing: -.01em; }
+  .kpi-val.pos { color: #34c759; }
+
+  /* ─── DETAIL HEADER ─── */
+  .detail-header {
+    background: linear-gradient(160deg, #16242F 0%, #0d1820 100%);
+    margin: 6px 16px 0; border-radius: 16px; padding: 20px; color: #fff;
+  }
+  .detail-back {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 15px; color: rgba(255,255,255,.5); margin-bottom: 14px; font-weight: 500;
+  }
+  .detail-back svg { width: 9px; height: 16px; stroke: rgba(255,255,255,.5); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .detail-asset-row { display: flex; align-items: center; gap: 12px; }
+  .detail-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: #fff;
+  }
+  .detail-name { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .detail-sub { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 1px; }
+  .detail-value { font-size: 38px; font-weight: 700; letter-spacing: -.03em; margin: 12px 0 4px; }
+  .detail-delta { font-size: 13px; color: rgba(255,255,255,.65); font-weight: 500; }
+
+  /* ─── ASSET AVATAR ─── */
+  .asset-avatar {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: #f2f2f7; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 800; color: #16242F;
+    flex-shrink: 0; margin-right: 12px;
+  }
+
+  /* ─── TAB BAR ─── */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(249,249,249,.94);
+    backdrop-filter: blur(20px);
+    border-top: .5px solid rgba(0,0,0,.2);
+    display: flex; padding: 8px 4px max(16px, env(safe-area-inset-bottom));
+    z-index: 20;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 4px 2px;
+    font-size: 10px; font-weight: 500; color: #8e8e93; letter-spacing: -.01em;
+  }
+  .tab-item.active { color: #000; }
+  .tab-item svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tab-item.active svg { stroke-width: 2; }
+
+  /* ─── LOGIN ─── */
+  .login-wrap { padding: 20px 20px 0; }
+  .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; margin-top: 8px; }
+  .login-mark {
+    width: 48px; height: 48px; border-radius: 12px; background: #16242F;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-mark svg { width: 28px; height: 28px; fill: #fff; }
+  .login-wordmark { font-size: 22px; font-weight: 700; color: #000; letter-spacing: -.02em; }
+  .login-tagline { font-size: 13px; color: #8e8e93; margin-top: 1px; }
+  .form-title { font-size: 28px; font-weight: 700; color: #000; margin-bottom: 6px; letter-spacing: -.02em; }
+  .form-sub { font-size: 15px; color: #8e8e93; margin-bottom: 28px; }
+  .field-group { background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+  .field-row {
+    display: flex; align-items: center; min-height: 44px;
+    padding: 12px 16px; position: relative;
+  }
+  .field-row + .field-row::before {
+    content: ''; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: #c6c6c8;
+  }
+  .field-label { font-size: 15px; color: #000; width: 80px; flex-shrink: 0; font-weight: 400; }
+  .field-input { font-size: 15px; color: #8e8e93; }
+  .login-action { font-size: 15px; color: #000; font-weight: 600; text-align: center; padding: 10px; }
+  .login-links { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 16px; }
+  .login-link { font-size: 15px; color: #000; font-weight: 500; padding: 8px; }
+
+  /* ─── SECTION HEADING ─── */
+  .section-heading {
+    color: #fff; font-size: 11px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase;
+    opacity: .35; margin: 64px 0 40px; width: 100%;
+  }
+
+  /* ─── SHEET BACKDROP ─── */
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 30;
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: all; }
+
+  /* ─── SHEET ─── */
+  .sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    z-index: 40;
+    transform: translateY(100%);
+    transition: transform .35s cubic-bezier(.32,1,.3,1);
+    max-height: calc(100% - 56px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sheet.open { transform: translateY(0); }
+
+  /* Grabber */
+  .sheet-grabber-area {
+    padding: 8px 0 2px; display: flex; justify-content: center;
+    cursor: ns-resize; flex-shrink: 0; user-select: none;
+  }
+  .sheet-grabber {
+    width: 36px; height: 5px; border-radius: 3px; background: #d1d1d6;
+  }
+
+  /* Sheet header */
+  .sheet-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 2px 16px 12px; flex-shrink: 0;
+  }
+  .sheet-title {
+    font-size: 17px; font-weight: 600; color: #000;
+  }
+  .sheet-btn-text {
+    font-size: 17px; font-weight: 600; color: #000; cursor: pointer;
+    padding: 4px 0;
+  }
+  .sheet-btn-text.cancel { font-weight: 400; color: #8e8e93; }
+
+  /* Sheet scrollable body */
+  .sheet-body {
+    overflow-y: auto; flex: 1;
+    padding-bottom: 24px;
+  }
+  .sheet-body::-webkit-scrollbar { display: none; }
+  .sheet-body { scrollbar-width: none; }
+
+  /* Form fields inside sheet */
+  .sheet-field-group { background: #f2f2f7; border-radius: 12px; overflow: hidden; margin: 0 16px 16px; }
+  .sheet-field {
+    display: flex; align-items: center; min-height: 44px;
+    padding: 10px 16px; background: #fff; position: relative;
+  }
+  .sheet-field + .sheet-field::before {
+    content: ''; position: absolute; top: 0; left: 16px; right: 0;
+    height: .5px; background: #c6c6c8;
+  }
+  .sheet-field-label { font-size: 15px; color: #000; width: 90px; flex-shrink: 0; }
+  .sheet-field-value { font-size: 15px; color: #8e8e93; flex: 1; text-align: right; }
+  .sheet-field-value.filled { color: #000; }
+
+  /* Picker row */
+  .sheet-picker-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px; background: #fff; min-height: 44px; position: relative;
+  }
+  .sheet-picker-row + .sheet-picker-row::before {
+    content: ''; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: #c6c6c8;
+  }
+  .sheet-picker-label { font-size: 15px; color: #000; }
+  .sheet-picker-check { color: #000; }
+  .sheet-picker-check svg { width: 18px; height: 18px; stroke: #000; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+  /* Action list inside sheet */
+  .sheet-action-group { margin: 0 16px 10px; background: #fff; border-radius: 14px; overflow: hidden; }
+  .sheet-action {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 57px; font-size: 20px; font-weight: 400; color: #000;
+    position: relative; cursor: pointer;
+  }
+  .sheet-action + .sheet-action::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: .5px; background: #c6c6c8;
+  }
+  .sheet-action.destructive { color: #ff3b30; }
+  .sheet-action-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; margin-right: 14px; flex-shrink: 0; }
+  .sheet-action-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sheet-action-label { font-size: 17px; font-weight: 400; flex: 1; }
+  .sheet-action-cancel {
+    display: flex; align-items: center; justify-content: center;
+    height: 57px; font-size: 20px; font-weight: 600; color: #000;
+    background: #fff; border-radius: 14px; margin: 0 16px;
+    cursor: pointer;
+  }
+
+  /* Summary rows in confirm sheet */
+  .sheet-summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; font-size: 15px; position: relative;
+  }
+  .sheet-summary-row + .sheet-summary-row::before {
+    content: ''; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: #c6c6c8;
+  }
+  .sheet-summary-label { color: #8e8e93; }
+  .sheet-summary-value { font-weight: 600; color: #000; }
+  .sheet-summary-value.pos { color: #34c759; }
+  .sheet-summary-value.neg { color: #ff3b30; }
+  .sheet-summary-value.warn { color: #ff9f0a; }
+
+  /* Warning block */
+  .sheet-warning {
+    margin: 0 16px 16px; background: rgba(255,59,48,.08);
+    border-radius: 12px; padding: 14px 16px;
+    font-size: 14px; color: #ff3b30; line-height: 1.45;
+  }
+
+  /* Big number input mock */
+  .sheet-amount-display {
+    text-align: center; padding: 16px 0 8px;
+    font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: #000;
+  }
+  .sheet-amount-label {
+    text-align: center; font-size: 13px; color: #8e8e93; margin-bottom: 16px;
+  }
+  .sheet-numpad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: #c6c6c8; border-top: .5px solid #c6c6c8;
+  }
+  .numpad-key {
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    height: 48px; font-size: 22px; font-weight: 400; color: #000;
+  }
+  .numpad-key.action { background: #f2f2f7; font-size: 17px; font-weight: 600; }
+  .numpad-key.confirm { background: #000; color: #fff; font-size: 15px; font-weight: 700; }
+
+  /* Tappable hint */
+  [data-sheet] { cursor: pointer; }
+  [data-sheet]:active { opacity: .7; }
+</style>
+</head>
+<body>
+
+<h1>Quanto — Wireframes · Apple Design</h1>
+<div class="grid">
+
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Login</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-right">
+          <svg viewBox="0 0 24 24"><path d="M1 6l5.5 5.5L12 6l5.5 5.5L23 6"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        </div>
+      </div>
+
+      <div class="login-wrap">
+        <div class="login-brand">
+          <div class="login-mark">
+            <svg viewBox="0 0 28 28"><path d="M14 3a11 11 0 1 0 8 18.9" stroke="#fff" stroke-width="2.8" stroke-linecap="round" fill="none"/><rect x="18" y="16" width="3" height="5" rx="1" fill="#fff"/><rect x="22" y="13" width="3" height="8" rx="1" fill="#fff"/></svg>
+          </div>
+          <div>
+            <div class="login-wordmark">Quanto.</div>
+            <div class="login-tagline">Quanto você tem, de fato.</div>
+          </div>
+        </div>
+
+        <div class="form-title">Entrar</div>
+        <div class="form-sub">Acesse sua carteira consolidada.</div>
+
+        <div class="field-group">
+          <div class="field-row">
+            <div class="field-label">Email</div>
+            <div class="field-input">seu@email.com</div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Senha</div>
+            <div class="field-input">••••••••</div>
+          </div>
+        </div>
+
+        <div class="btn btn-filled">Entrar</div>
+
+        <div class="login-links">
+          <div class="login-link">Criar conta</div>
+          <div class="login-link" style="color:#8e8e93;font-weight:400">Esqueci minha senha</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ HOJE ════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Hoje</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span><div class="status-right"><svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0"/></svg></div></div>
+
+      <div class="nav-large-title">
+        <h1>Hoje</h1>
+        <div class="subtitle">Bom dia, Luiz</div>
+      </div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-eyebrow">Patrimônio total</div>
+        <div class="hero-value">R$ 753,01</div>
+        <div class="hero-caption">Patrimônio bruto com bens: R$ 130.753,01</div>
+        <div class="hero-badge pos">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+          +R$ 18,71 · +2,5% sobre o aplicado
+        </div>
+      </div>
+
+      <!-- Alocação -->
+      <div class="list-section" style="margin-top:20px">
+        <div class="list-header">Alocação</div>
+        <div class="list-card" style="padding:12px 16px">
+          <div class="segment">
+            <div class="seg-opt active">Instituição</div>
+            <div class="seg-opt">Classe</div>
+          </div>
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#5e5ce6"></div>
+            <div class="alloc-label">XP</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:60%;background:#5e5ce6"></div></div>
+            <div class="alloc-pct">60%</div>
+          </div>
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#ff9f0a"></div>
+            <div class="alloc-label">Itaú</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:30%;background:#ff9f0a"></div></div>
+            <div class="alloc-pct">30%</div>
+          </div>
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#34c759"></div>
+            <div class="alloc-label">Onze</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:10%;background:#34c759"></div></div>
+            <div class="alloc-pct">10%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saldos manuais -->
+      <div class="list-section">
+        <div class="list-header">Saldos manuais</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">XP</div></div>
+            <div class="list-row-right"><span class="fresh-dot ok"></span><span class="fresh-age-ok">há 2h</span></div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">Itaú / ION</div></div>
+            <div class="list-row-right"><span class="fresh-dot warn"></span><span class="fresh-age-warn">há 5 dias</span></div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">Onze</div></div>
+            <div class="list-row-right"><span class="fresh-dot ok"></span><span class="fresh-age-ok">há 1 dia</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top ativos -->
+      <div class="list-section">
+        <div class="list-header" style="display:flex;justify-content:space-between">
+          <span>Top ativos</span>
+          <span style="color:#000;font-weight:600;text-transform:none;letter-spacing:0;font-size:13px">Ver carteira</span>
+        </div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="asset-avatar">CO</div>
+            <div class="list-row-content">
+              <div class="list-row-label">COPEL3</div>
+              <div class="list-row-sub">Ação · XP</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 407,68</div>
+              <div class="list-row-value pos" style="font-size:13px">+7,4%</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+          <div class="list-row">
+            <div class="asset-avatar">IT</div>
+            <div class="list-row-content">
+              <div class="list-row-label">ITAUSA</div>
+              <div class="list-row-sub">Ação · XP</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 345,33</div>
+              <div class="list-row-value neg" style="font-size:13px">-2,7%</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Hoje
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        Carteira
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Histórico
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Importar
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>
+        Bens
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CARTEIRA ════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Carteira</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+
+      <div class="nav-large-title" style="display:flex;justify-content:space-between;align-items:flex-end;padding-right:20px">
+        <div>
+          <h1>Carteira</h1>
+          <div class="subtitle">2 ativos · R$ 753,01</div>
+        </div>
+        <div data-sheet="cart-add" style="width:32px;height:32px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-text">Nome, ticker ou instituição</div>
+      </div>
+
+      <!-- Chips -->
+      <div style="display:flex;gap:6px;padding:6px 16px 0;overflow-x:auto">
+        <div style="padding:5px 14px;border-radius:20px;background:#000;color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Todos</div>
+        <div style="padding:5px 14px;border-radius:20px;background:rgba(118,118,128,.12);color:#8e8e93;font-size:13px;font-weight:600;white-space:nowrap">XP</div>
+        <div style="padding:5px 14px;border-radius:20px;background:rgba(118,118,128,.12);color:#8e8e93;font-size:13px;font-weight:600;white-space:nowrap">Ação</div>
+        <div style="padding:5px 14px;border-radius:20px;background:rgba(118,118,128,.12);color:#8e8e93;font-size:13px;font-weight:600;white-space:nowrap">FII</div>
+      </div>
+
+      <div class="list-section" style="margin-top:16px">
+        <div class="list-header">XP</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="asset-avatar">CO</div>
+            <div class="list-row-content">
+              <div class="list-row-label">COPEL3</div>
+              <div class="list-row-sub">Ação · 10 cotas · R$ 40,77</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 407,68</div>
+              <div class="list-row-value pos" style="font-size:13px">+7,4%</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+          <div class="list-row">
+            <div class="asset-avatar">IT</div>
+            <div class="list-row-content">
+              <div class="list-row-label">ITAUSA</div>
+              <div class="list-row-sub">Ação · 25 cotas · R$ 13,81</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 345,33</div>
+              <div class="list-row-value neg" style="font-size:13px">-2,7%</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-section">
+        <div class="list-header">Onze</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="asset-avatar" style="background:#e5f9ee;color:#248a3d">PR</div>
+            <div class="list-row-content">
+              <div class="list-row-label">Previdência XP</div>
+              <div class="list-row-sub">Previdência · saldo manual</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 5.200,00</div>
+              <div style="font-size:13px;color:#8e8e93">—</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>Bens</div>
+    </div>
+
+    <!-- Sheet: Adicionar ativo -->
+    <div class="sheet-backdrop"></div>
+    <div class="sheet" id="cart-add">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel" onclick="closeSheet(this)">Cancelar</span>
+        <span class="sheet-title">Novo ativo</span>
+        <span class="sheet-btn-text" onclick="closeSheet(this)">Adicionar</span>
+      </div>
+      <div class="sheet-body">
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Ticker</span><span class="sheet-field-value">COPEL3</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Instituição</span><span class="sheet-field-value filled">XP</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Classe</span><span class="sheet-field-value filled">Ação</span></div>
+        </div>
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Valor atual</span><span class="sheet-field-value">R$ 0,00</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Quantidade</span><span class="sheet-field-value">0</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Aplicado</span><span class="sheet-field-value">R$ 0,00</span></div>
+        </div>
+        <div style="padding:0 16px"><div class="btn btn-filled">Adicionar ativo</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ HISTÓRICO ═══════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Histórico</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title"><h1>Histórico</h1></div>
+
+      <!-- Metric hero -->
+      <div style="padding:0 16px">
+        <div class="metric-card">
+          <div class="metric-eyebrow">Jun 2026</div>
+          <div class="metric-value">R$ 753,01</div>
+          <div class="metric-sub pos">+R$ 120,00 vs. maio</div>
+
+          <div class="bar-chart" style="margin-top:20px">
+            <div class="bar" style="height:30%"></div>
+            <div class="bar" style="height:38%"></div>
+            <div class="bar" style="height:35%"></div>
+            <div class="bar" style="height:48%"></div>
+            <div class="bar" style="height:52%"></div>
+            <div class="bar" style="height:46%"></div>
+            <div class="bar" style="height:62%"></div>
+            <div class="bar" style="height:70%"></div>
+            <div class="bar" style="height:65%"></div>
+            <div class="bar" style="height:78%"></div>
+            <div class="bar" style="height:86%"></div>
+            <div class="bar hi" style="height:100%"></div>
+          </div>
+          <div class="bar-labels">
+            <div class="bar-label">J</div><div class="bar-label">A</div>
+            <div class="bar-label">S</div><div class="bar-label">O</div>
+            <div class="bar-label">N</div><div class="bar-label">D</div>
+            <div class="bar-label">J</div><div class="bar-label">F</div>
+            <div class="bar-label">M</div><div class="bar-label">A</div>
+            <div class="bar-label">M</div><div class="bar-label hi">J</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-section" style="margin-top:20px">
+        <div class="list-header">Mês a mês</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="list-row-content">
+              <div class="list-row-label">Jun 2026</div>
+              <div class="list-row-sub">snapshot atual</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 753,01</div>
+              <div class="list-row-value pos" style="font-size:13px">+19,0%</div>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">Mai 2026</div></div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 633,01</div>
+              <div class="list-row-value pos" style="font-size:13px">+8,2%</div>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">Abr 2026</div></div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 584,77</div>
+              <div class="list-row-value neg" style="font-size:13px">-1,3%</div>
+            </div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-content"><div class="list-row-label">Mar 2026</div></div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 592,40</div>
+              <div class="list-row-value pos" style="font-size:13px">+4,1%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>Bens</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ IMPORTAR ═══════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Importar</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title"><h1>Importar</h1></div>
+
+      <!-- Steps -->
+      <div class="steps-row">
+        <div class="step-item done">
+          <div class="step-circle">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="step-name">Upload</div>
+        </div>
+        <div class="step-item active">
+          <div class="step-circle">2</div>
+          <div class="step-name">Revisão</div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle">3</div>
+          <div class="step-name">Confirmar</div>
+        </div>
+      </div>
+
+      <!-- Arquivo -->
+      <div class="list-section">
+        <div class="list-card" style="padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:15px;font-weight:600;color:#000">carteira-xp-jun.xlsx</div>
+            <div style="font-size:13px;color:#8e8e93">84 KB</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <div style="padding:4px 10px;border-radius:7px;background:rgba(52,199,89,.15);color:#248a3d;font-size:12px;font-weight:700">5 OK</div>
+            <div style="padding:4px 10px;border-radius:7px;background:rgba(255,159,10,.15);color:#b25000;font-size:12px;font-weight:700">2 atenção</div>
+            <div style="padding:4px 10px;border-radius:7px;background:rgba(255,59,48,.15);color:#d70015;font-size:12px;font-weight:700">1 erro</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itens -->
+      <div class="list-section">
+        <div class="list-header">Itens para importar</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="import-badge ok" style="margin-right:12px">OK</div>
+            <div class="list-row-content"><div class="list-row-label">COPEL3</div><div class="list-row-sub">Ação · XP</div></div>
+            <div class="list-row-value">R$ 407,68</div>
+          </div>
+          <div class="list-row">
+            <div class="import-badge ok" style="margin-right:12px">OK</div>
+            <div class="list-row-content"><div class="list-row-label">ITSA4</div><div class="list-row-sub">Ação · XP</div></div>
+            <div class="list-row-value">R$ 345,33</div>
+          </div>
+          <div class="list-row">
+            <div class="import-badge warn" style="margin-right:12px">!</div>
+            <div class="list-row-content"><div class="list-row-label">Fundo XP Ativo</div><div class="list-row-sub">Fundo não encontrado na CVM</div></div>
+            <div class="list-row-value">R$ 1.200</div>
+          </div>
+          <div class="list-row">
+            <div class="import-badge err" style="margin-right:12px">✕</div>
+            <div class="list-row-content"><div class="list-row-label">Ativo sem nome</div><div class="list-row-sub">Dados insuficientes</div></div>
+            <div class="list-row-value" style="color:#8e8e93">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="btn btn-gray">Cancelar</div>
+        <div data-sheet="imp-confirm" class="btn btn-filled">Confirmar 5</div>
+      </div>
+
+      <!-- Upload zone (estado inicial) -->
+      <div class="list-section" style="margin-top:20px">
+        <div class="list-header">Selecionar arquivo</div>
+        <div class="upload-zone">
+          <div class="upload-icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="upload-title">Planilha XLSX ou XLS</div>
+          <div class="upload-sub">Toque para selecionar o arquivo da sua corretora</div>
+          <div class="upload-link">Baixar template →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Histórico</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>Bens</div>
+    </div>
+    <!-- Sheet: Confirmar importação -->
+    <div class="sheet-backdrop"></div>
+    <div class="sheet" id="imp-confirm">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel" onclick="closeSheet(this)">Voltar</span>
+        <span class="sheet-title">Confirmar</span>
+        <span></span>
+      </div>
+      <div class="sheet-body">
+        <div class="list-card" style="margin:0 16px 16px">
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Total de itens</span><span class="sheet-summary-value">8</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Prontos</span><span class="sheet-summary-value pos">5 OK</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Atenção</span><span class="sheet-summary-value warn">2</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Ignorados</span><span class="sheet-summary-value neg">1</span></div>
+        </div>
+        <div class="sheet-warning">Os 2 itens com atenção serão importados como "Outros" e podem ser editados depois.</div>
+        <div style="padding:12px 16px 0">
+          <div class="btn btn-filled" style="margin-bottom:10px" onclick="closeSheet(this)">Importar 7 ativos</div>
+          <div class="btn btn-gray" onclick="closeSheet(this)">Cancelar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ BENS ════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Bens</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title" style="display:flex;justify-content:space-between;align-items:flex-end;padding-right:20px">
+        <div>
+          <h1>Bens</h1>
+          <div class="subtitle">Patrimônio bruto</div>
+        </div>
+        <div data-sheet="bens-add" style="width:32px;height:32px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;margin-bottom:6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-eyebrow">Total de bens</div>
+        <div class="hero-value">R$ 130.000</div>
+        <div class="hero-caption">Combinado com investimentos: R$ 130.753,01</div>
+      </div>
+
+      <!-- Distribuição -->
+      <div class="list-section" style="margin-top:20px">
+        <div class="list-header">Distribuição</div>
+        <div class="list-card" style="padding:12px 16px">
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#34c759"></div>
+            <div class="alloc-label">Imóvel</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:85%;background:#34c759"></div></div>
+            <div class="alloc-pct">85%</div>
+          </div>
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#ff9f0a"></div>
+            <div class="alloc-label">FGTS</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:10%;background:#ff9f0a"></div></div>
+            <div class="alloc-pct">10%</div>
+          </div>
+          <div class="alloc-row">
+            <div class="alloc-dot" style="background:#5e5ce6"></div>
+            <div class="alloc-label">Veículo</div>
+            <div class="alloc-bar-wrap"><div class="alloc-bar" style="width:5%;background:#5e5ce6"></div></div>
+            <div class="alloc-pct">5%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-section">
+        <div class="list-header">Seus bens</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="list-row-icon" style="background:#e5f9ee;margin-right:12px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#248a3d" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="list-row-content">
+              <div class="list-row-label">Apartamento</div>
+              <div class="list-row-sub">Imóvel · São Paulo</div>
+            </div>
+            <div class="list-row-right" style="flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="list-row-value">R$ 110.000</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-icon" style="background:#fff3e0;margin-right:12px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#b25000" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+            </div>
+            <div class="list-row-content">
+              <div class="list-row-label">FGTS</div>
+              <div class="list-row-sub">Empresa XYZ</div>
+            </div>
+            <div class="list-row-right">
+              <div class="list-row-value">R$ 13.000</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+          <div class="list-row">
+            <div class="list-row-icon" style="background:#f0eeff;margin-right:12px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#5e5ce6" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div class="list-row-content">
+              <div class="list-row-label">Carro</div>
+              <div class="list-row-sub">Veículo · 2020</div>
+            </div>
+            <div class="list-row-right">
+              <div class="list-row-value">R$ 7.000</div>
+            </div>
+            <div class="chevron" style="margin-left:8px"><svg viewBox="0 0 7 12"><polyline points="1 1 6 6 1 11"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>Bens</div>
+    </div>
+    <!-- Sheet: Adicionar bem -->
+    <div class="sheet-backdrop"></div>
+    <div class="sheet" id="bens-add">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel" onclick="closeSheet(this)">Cancelar</span>
+        <span class="sheet-title">Novo bem</span>
+        <span class="sheet-btn-text" onclick="closeSheet(this)">Salvar</span>
+      </div>
+      <div class="sheet-body">
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Nome</span><span class="sheet-field-value">Apartamento</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Categoria</span><span class="sheet-field-value filled">Imóvel</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Valor</span><span class="sheet-field-value">R$ 0,00</span></div>
+        </div>
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Notas</span><span class="sheet-field-value">Opcional</span></div>
+        </div>
+        <div style="padding:0 16px"><div class="btn btn-filled" onclick="closeSheet(this)">Adicionar bem</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DETALHE ═════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Detalhe do ativo</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+
+      <div class="detail-header">
+        <div class="detail-back">
+          <svg viewBox="0 0 9 16"><polyline points="8 1 1 8 8 15"/></svg>
+          Carteira
+        </div>
+        <div class="detail-asset-row">
+          <div class="detail-avatar">CO</div>
+          <div>
+            <div class="detail-name">COPEL3</div>
+            <div class="detail-sub">Ação · XP · 10 cotas</div>
+          </div>
+        </div>
+        <div class="detail-value">R$ 407,68</div>
+        <div class="detail-delta">+R$ 28,10 · +7,4% sobre o aplicado</div>
+      </div>
+
+      <!-- Gráfico -->
+      <div class="list-section" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="list-header" style="padding:0">Evolução</div>
+          <div style="display:flex;gap:2px">
+            <div style="padding:4px 10px;border-radius:7px;background:#000;color:#fff;font-size:12px;font-weight:700">6M</div>
+            <div style="padding:4px 10px;border-radius:7px;color:#8e8e93;font-size:12px;font-weight:700">1A</div>
+            <div style="padding:4px 10px;border-radius:7px;color:#8e8e93;font-size:12px;font-weight:700">Tudo</div>
+          </div>
+        </div>
+        <div class="list-card" style="padding:14px 16px">
+          <div class="chart-area">
+            <svg viewBox="0 0 280 72" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#16242F" stop-opacity=".15"/>
+                  <stop offset="100%" stop-color="#16242F" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,55 C30,50 50,58 70,42 C90,28 110,35 140,22 C170,10 200,18 230,8 C250,3 265,5 280,2 L280,72 L0,72 Z" fill="url(#g)"/>
+              <path d="M0,55 C30,50 50,58 70,42 C90,28 110,35 140,22 C170,10 200,18 230,8 C250,3 265,5 280,2" fill="none" stroke="#16242F" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="280" cy="2" r="4" fill="#16242F"/>
+            </svg>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:10px;color:#8e8e93">Jan</span>
+            <span style="font-size:10px;color:#8e8e93">Fev</span>
+            <span style="font-size:10px;color:#8e8e93">Mar</span>
+            <span style="font-size:10px;color:#8e8e93">Abr</span>
+            <span style="font-size:10px;color:#8e8e93">Mai</span>
+            <span style="font-size:10px;color:#000;font-weight:700">Jun</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="list-section">
+        <div class="kpi-grid">
+          <div class="kpi-cell"><div class="kpi-label">Aplicado</div><div class="kpi-val">R$ 379,58</div></div>
+          <div class="kpi-cell"><div class="kpi-label">Lucro</div><div class="kpi-val pos">+R$ 28,10</div></div>
+          <div class="kpi-cell"><div class="kpi-label">Cotação</div><div class="kpi-val">R$ 40,77</div></div>
+          <div class="kpi-cell"><div class="kpi-label">Atualizado</div><div class="kpi-val" style="font-size:13px">21/06 02:55</div></div>
+        </div>
+      </div>
+
+      <!-- Aportes -->
+      <div class="list-section">
+        <div class="list-header">Aportes</div>
+        <div class="list-card">
+          <div class="list-row">
+            <div class="list-row-content">
+              <div class="list-row-label">Compra inicial</div>
+              <div class="list-row-sub">15/01/2026</div>
+            </div>
+            <div class="list-row-value">R$ 379,58</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div data-sheet="det-saldo" class="btn btn-gray" style="height:44px;font-size:15px;border-radius:12px">Atualizar saldo</div>
+        <div data-sheet="det-resgate" class="btn btn-destructive" style="height:44px;font-size:15px;border-radius:12px">Iniciar resgate</div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="16"/></svg>Bens</div>
+    </div>
+
+    <!-- Sheet: Atualizar saldo -->
+    <div class="sheet-backdrop"></div>
+    <div class="sheet" id="det-saldo">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel" onclick="closeSheet(this)">Cancelar</span>
+        <span class="sheet-title">Atualizar saldo</span>
+        <span class="sheet-btn-text" onclick="closeSheet(this)">Salvar</span>
+      </div>
+      <div class="sheet-body">
+        <div style="text-align:center;padding:4px 0 6px;font-size:13px;color:#8e8e93">Valor atual: R$ 407,68</div>
+        <div class="sheet-amount-display">R$ 407,68</div>
+        <div class="sheet-amount-label">Novo saldo</div>
+        <div class="sheet-numpad">
+          <div class="numpad-key">1</div><div class="numpad-key">2</div><div class="numpad-key">3</div>
+          <div class="numpad-key">4</div><div class="numpad-key">5</div><div class="numpad-key">6</div>
+          <div class="numpad-key">7</div><div class="numpad-key">8</div><div class="numpad-key">9</div>
+          <div class="numpad-key action">⌫</div><div class="numpad-key">0</div><div class="numpad-key action">,</div>
+        </div>
+        <div style="padding:12px 16px 0"><div class="btn btn-filled" onclick="closeSheet(this)">Salvar saldo</div></div>
+      </div>
+    </div>
+
+    <!-- Sheet: Iniciar resgate (action sheet iOS style) -->
+    <div class="sheet" id="det-resgate" style="background:transparent;box-shadow:none">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)" style="padding:0"></div>
+      <div class="sheet-body" style="padding-bottom:10px">
+        <div class="sheet-action-group" style="border-radius:14px">
+          <div style="padding:14px 16px;border-bottom:.5px solid #c6c6c8">
+            <div style="font-size:13px;font-weight:600;color:#8e8e93;text-align:center;margin-bottom:4px">Iniciar resgate</div>
+            <div style="font-size:13px;color:#8e8e93;text-align:center;line-height:1.4">O ativo ficará marcado como em saída até a venda ser concluída.</div>
+          </div>
+          <div class="sheet-action destructive"><span class="sheet-action-label" style="text-align:center">Confirmar resgate</span></div>
+        </div>
+        <div class="sheet-action-cancel" onclick="closeSheet(this)">Cancelar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /grid -->
+
+<!-- ══════════════════════ SHEETS — ESTADOS DE REFERÊNCIA ══════════════════════ -->
+<div class="section-heading">Sheets — estados de referência</div>
+<div class="grid">
+
+<!-- Sheet: Novo ativo (aberto) -->
+<div class="phone-wrap">
+  <div class="phone-label">Sheet · Novo ativo</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title"><h1>Carteira</h1></div>
+      <div class="search-bar" style="margin:8px 16px">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#8e8e93"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="search-text">Nome, ticker ou instituição</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Bens</div>
+    </div>
+    <div class="sheet-backdrop open"></div>
+    <div class="sheet open">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel">Cancelar</span>
+        <span class="sheet-title">Novo ativo</span>
+        <span class="sheet-btn-text">Adicionar</span>
+      </div>
+      <div class="sheet-body">
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Ticker</span><span class="sheet-field-value filled">COPEL3</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Instituição</span><span class="sheet-field-value filled">XP</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Classe</span><span class="sheet-field-value filled">Ação</span></div>
+        </div>
+        <div class="sheet-field-group">
+          <div class="sheet-field"><span class="sheet-field-label">Valor atual</span><span class="sheet-field-value">R$ 0,00</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Quantidade</span><span class="sheet-field-value">—</span></div>
+          <div class="sheet-field"><span class="sheet-field-label">Aplicado</span><span class="sheet-field-value">R$ 0,00</span></div>
+        </div>
+        <div style="padding:0 16px"><div class="btn btn-filled">Adicionar ativo</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Atualizar saldo (aberto) -->
+<div class="phone-wrap">
+  <div class="phone-label">Sheet · Atualizar saldo</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="detail-header" style="margin:6px 16px 0">
+        <div class="detail-asset-row">
+          <div class="detail-avatar">CO</div>
+          <div><div class="detail-name">COPEL3</div><div class="detail-sub">Ação · XP · 10 cotas</div></div>
+        </div>
+        <div class="detail-value">R$ 407,68</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Bens</div>
+    </div>
+    <div class="sheet-backdrop open"></div>
+    <div class="sheet open">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel">Cancelar</span>
+        <span class="sheet-title">Atualizar saldo</span>
+        <span class="sheet-btn-text">Salvar</span>
+      </div>
+      <div class="sheet-body">
+        <div style="text-align:center;padding:4px 0 6px;font-size:13px;color:#8e8e93">Valor atual: R$ 407,68</div>
+        <div class="sheet-amount-display">R$ 432,00</div>
+        <div class="sheet-amount-label">Novo saldo</div>
+        <div class="sheet-numpad">
+          <div class="numpad-key">1</div><div class="numpad-key">2</div><div class="numpad-key">3</div>
+          <div class="numpad-key">4</div><div class="numpad-key">5</div><div class="numpad-key">6</div>
+          <div class="numpad-key">7</div><div class="numpad-key">8</div><div class="numpad-key">9</div>
+          <div class="numpad-key action">⌫</div><div class="numpad-key">0</div><div class="numpad-key action">,</div>
+        </div>
+        <div style="padding:12px 16px 0"><div class="btn btn-filled">Salvar saldo</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Action sheet (resgate) -->
+<div class="phone-wrap">
+  <div class="phone-label">Sheet · Confirmação</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="detail-header" style="margin:6px 16px 0">
+        <div class="detail-asset-row">
+          <div class="detail-avatar">IT</div>
+          <div><div class="detail-name">ITAUSA</div><div class="detail-sub">Ação · XP</div></div>
+        </div>
+        <div class="detail-value">R$ 345,33</div>
+        <div class="detail-delta">-R$ 9,17 · -2,7% sobre o aplicado</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Bens</div>
+    </div>
+    <div class="sheet-backdrop open"></div>
+    <div class="sheet open" style="background:transparent;box-shadow:none">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)" style="padding:0"></div>
+      <div class="sheet-body" style="padding-bottom:10px">
+        <div class="sheet-action-group">
+          <div style="padding:14px 16px;border-bottom:.5px solid #c6c6c8;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:#8e8e93;margin-bottom:4px">Iniciar resgate — ITAUSA</div>
+            <div style="font-size:13px;color:#8e8e93;line-height:1.4">O ativo ficará em saída até a venda ser concluída.</div>
+          </div>
+          <div class="sheet-action destructive">Confirmar resgate</div>
+        </div>
+        <div class="sheet-action-cancel">Cancelar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Filtros (aberto) -->
+<div class="phone-wrap">
+  <div class="phone-label">Sheet · Filtros</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title"><h1>Carteira</h1></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Histórico</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Bens</div>
+    </div>
+    <div class="sheet-backdrop open"></div>
+    <div class="sheet open">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel">Limpar</span>
+        <span class="sheet-title">Filtrar</span>
+        <span class="sheet-btn-text">Aplicar</span>
+      </div>
+      <div class="sheet-body">
+        <div style="padding:0 16px 12px">
+          <div class="segment">
+            <div class="seg-opt active">Instituição</div>
+            <div class="seg-opt">Classe</div>
+          </div>
+        </div>
+        <div style="padding:0 16px;margin-bottom:8px;font-size:12px;font-weight:600;color:#6c6c70;text-transform:uppercase;letter-spacing:.04em">Instituição</div>
+        <div class="list-card" style="margin:0 16px 16px">
+          <div class="sheet-picker-row">
+            <span class="sheet-picker-label">XP</span>
+            <span class="sheet-picker-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <div class="sheet-picker-row">
+            <span class="sheet-picker-label">Itaú / ION</span>
+          </div>
+          <div class="sheet-picker-row">
+            <span class="sheet-picker-label">Onze</span>
+            <span class="sheet-picker-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+        </div>
+        <div style="padding:0 16px;margin-bottom:8px;font-size:12px;font-weight:600;color:#6c6c70;text-transform:uppercase;letter-spacing:.04em">Classe</div>
+        <div class="list-card" style="margin:0 16px 16px">
+          <div class="sheet-picker-row">
+            <span class="sheet-picker-label">Ação</span>
+            <span class="sheet-picker-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <div class="sheet-picker-row"><span class="sheet-picker-label">FII</span></div>
+          <div class="sheet-picker-row"><span class="sheet-picker-label">Fundo</span></div>
+          <div class="sheet-picker-row"><span class="sheet-picker-label">Previdência</span></div>
+          <div class="sheet-picker-row"><span class="sheet-picker-label">Renda Fixa</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Confirmar importação -->
+<div class="phone-wrap">
+  <div class="phone-label">Sheet · Confirmar import</div>
+  <div class="phone">
+    <div class="phone-island"></div>
+    <div class="phone-inner">
+      <div class="status-bar"><span>9:41</span></div>
+      <div class="nav-large-title"><h1>Importar</h1></div>
+      <div class="steps-row">
+        <div class="step-item done"><div class="step-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="step-name">Upload</div></div>
+        <div class="step-item done"><div class="step-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="step-name">Revisão</div></div>
+        <div class="step-item active"><div class="step-circle">3</div><div class="step-name">Confirmar</div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoje</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Carteira</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Histórico</div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar</div>
+      <div class="tab-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Bens</div>
+    </div>
+    <div class="sheet-backdrop open"></div>
+    <div class="sheet open">
+      <div class="sheet-grabber-area" onmousedown="sheetDragStart(event,this)" ontouchstart="sheetDragStart(event,this)"><div class="sheet-grabber"></div></div>
+      <div class="sheet-title-row">
+        <span class="sheet-btn-text cancel">Voltar</span>
+        <span class="sheet-title">Confirmar</span>
+        <span></span>
+      </div>
+      <div class="sheet-body">
+        <div class="list-card" style="margin:0 16px 16px">
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Total de itens</span><span class="sheet-summary-value">8</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Prontos para importar</span><span class="sheet-summary-value pos">5 OK</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Atenção</span><span class="sheet-summary-value warn">2</span></div>
+          <div class="sheet-summary-row"><span class="sheet-summary-label">Ignorados (erro)</span><span class="sheet-summary-value neg">1</span></div>
+        </div>
+        <div class="sheet-warning">Os 2 itens com atenção serão importados com a classe "Outros" e podem ser editados depois.</div>
+        <div style="padding:0 16px">
+          <div class="btn btn-filled" style="margin-bottom:10px">Importar 7 ativos</div>
+          <div class="btn btn-gray">Cancelar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /grid sheets -->
+
+<script>
+// ─── Sheet engine ───────────────────────────────────────────
+let drag = null
+
+function openSheet(phone, id) {
+  const sheet = phone.querySelector('#' + id)
+  const backdrop = phone.querySelector('.sheet-backdrop')
+  if (!sheet || !backdrop) return
+  backdrop.classList.add('open')
+  sheet.classList.add('open')
+}
+
+function closeSheet(el) {
+  const phone = el.closest('.phone')
+  if (!phone) return
+  phone.querySelectorAll('.sheet.open').forEach(s => {
+    s.classList.remove('open')
+    s.style.height = ''
+  })
+  phone.querySelectorAll('.sheet-backdrop.open').forEach(b => b.classList.remove('open'))
+}
+
+function sheetDragStart(e, grabberEl) {
+  const sheet = grabberEl.closest('.sheet')
+  const phone = sheet.closest('.phone')
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  drag = { sheet, phone, startY: clientY, startH: sheet.offsetHeight }
+  sheet.style.transition = 'none'
+  if (e.preventDefault) e.preventDefault()
+}
+
+function sheetDragMove(e) {
+  if (!drag) return
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  const dy = clientY - drag.startY
+  const maxH = drag.phone.offsetHeight - 56
+  const newH = Math.max(80, Math.min(drag.startH - dy, maxH))
+  drag.sheet.style.height = newH + 'px'
+}
+
+function sheetDragEnd(e) {
+  if (!drag) return
+  const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY
+  const dy = clientY - drag.startY
+  drag.sheet.style.transition = ''
+  if (dy > 100) {
+    closeSheet(drag.sheet)
+    setTimeout(() => { if (drag) drag.sheet.style.height = '' }, 400)
+  } else if (dy < -80) {
+    drag.sheet.style.height = (drag.phone.offsetHeight - 56) + 'px'
+  } else {
+    drag.sheet.style.height = ''
+  }
+  drag = null
+}
+
+document.addEventListener('mousemove', sheetDragMove)
+document.addEventListener('mouseup', sheetDragEnd)
+document.addEventListener('touchmove', sheetDragMove, { passive: true })
+document.addEventListener('touchend', sheetDragEnd)
+
+// ─── Wire data-sheet triggers ────────────────────────────────
+document.querySelectorAll('[data-sheet]').forEach(trigger => {
+  trigger.addEventListener('click', e => {
+    e.stopPropagation()
+    const phone = trigger.closest('.phone')
+    if (phone) openSheet(phone, trigger.dataset.sheet)
+  })
+})
+
+// ─── Backdrop click closes sheet ────────────────────────────
+document.querySelectorAll('.sheet-backdrop').forEach(bd => {
+  bd.addEventListener('click', () => closeSheet(bd))
+})
+</script>
+</body>
+</html>

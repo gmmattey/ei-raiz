@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quanto · Mockup v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16242F;--paper:#FBFCFD;--mist:#E8EDF1;--slate:#5E6B76;
+  --petro:#2A5A66;--petro-s:#DCE8EB;--verde:#1F7A4D;--vinho:#C2335B;
+  --amber:#B7791F;--amber-s:#FFF7DB;--red:#D63031;--red-s:#FFF0EE;
+  --soft:#F6F8FA;--hair:#D4D9DE;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#1C2830;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:32px;padding:40px 16px 60px}
+.label{color:#7A9AAA;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;text-align:center}
+
+/* ── phone shell ── */
+.phone{width:390px;max-width:100%;height:810px;background:var(--paper);border-radius:44px;border:6px solid #0B1318;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.bar{height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--paper)}
+.bar-brand{display:flex;align-items:center;gap:6px}
+.bar-brand svg{width:20px;height:20px}
+.bar-brand span{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;color:var(--ink);letter-spacing:-.02em}
+.bar-brand span em{color:var(--petro);font-style:normal}
+.bar-time{font-size:12px;font-weight:600;color:var(--ink)}
+.bar-sig{font-size:11px;color:var(--slate)}
+
+/* ── screens ── */
+.screen{flex:1;overflow-y:auto;display:none;padding:0 20px 90px}
+.screen.active{display:block}
+
+/* ── tabbar ── */
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:74px;background:rgba(251,252,253,.96);backdrop-filter:blur(10px);border-top:1px solid var(--mist);display:flex}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--slate);font-size:10.5px;font-weight:600;cursor:pointer;letter-spacing:.02em;transition:color .15s}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--ink)}
+.tab.active svg{stroke-width:2.4}
+
+/* ── HOJE header ── */
+.hoje-header{padding:12px 0 18px;border-bottom:1px solid var(--mist);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.hoje-logo-mark{width:40px;height:40px;flex:none}
+.hoje-logo-text{flex:1}
+.hoje-logo-text .wordmark{font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.hoje-logo-text .wordmark em{color:var(--petro);font-style:normal}
+.hoje-logo-text .dateline{font-size:11px;color:var(--slate);margin-top:2px}
+
+/* ── KPI ── */
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--slate);text-transform:uppercase;margin-bottom:3px}
+.kpi-num{font-family:'Archivo',sans-serif;font-weight:700;font-size:44px;letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.05;margin-bottom:3px}
+.kpi-num small{font-size:22px;font-weight:600;color:var(--slate)}
+.delta{font-size:13.5px;font-weight:600;color:var(--verde);font-variant-numeric:tabular-nums;margin-bottom:20px}
+
+/* ── frescor ── */
+.fresh{padding:13px 14px;border:1px solid var(--mist);border-radius:14px;background:#fff;margin-bottom:22px}
+.fresh-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--ink)}
+.fresh-top em{font-style:normal;color:var(--slate);font-weight:500}
+.fresh-bar{height:5px;border-radius:3px;background:var(--mist);margin-top:9px;overflow:hidden}
+.fresh-bar i{display:block;height:100%;width:78%;background:var(--petro);border-radius:3px}
+.fresh-warn{margin-top:8px;font-size:11.5px;color:var(--amber);font-weight:500;display:flex;align-items:center;gap:6px}
+.fresh-warn::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
+
+/* ── seções ── */
+.sec{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:var(--ink);margin:20px 0 8px}
+.arow{padding:9px 0;border-bottom:1px solid var(--mist)}
+.arow:last-child{border-bottom:none}
+.arow .l1{display:flex;justify-content:space-between;font-size:13px;font-weight:500;color:var(--ink)}
+.arow .l1 b{font-weight:600;font-variant-numeric:tabular-nums}
+.arow .l1 em{font-style:normal;color:var(--slate);font-weight:400;font-size:12px;margin-left:5px}
+.allocbar{height:4px;border-radius:2px;background:var(--mist);margin-top:5px;overflow:hidden}
+.allocbar i{display:block;height:100%;background:var(--petro);border-radius:2px}
+
+/* ── CARTEIRA header ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 4px;border-bottom:1px solid var(--mist);margin-bottom:14px}
+.page-header-left{display:flex;align-items:center;gap:8px}
+.page-logo-mini{width:28px;height:28px}
+.ptitle{font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.psub{font-size:12px;color:var(--slate)}
+
+/* ── asset list ── */
+.grp{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin:16px 0 4px;display:flex;align-items:center;justify-content:space-between}
+.grp-tot{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+.asset{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--mist);cursor:pointer;transition:background .12s}
+.asset .info{flex:1;min-width:0}
+.asset .name{font-size:14px;font-weight:600;color:var(--ink)}
+.asset .meta{font-size:11.5px;color:var(--slate);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.badge{font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+.badge.auto{background:var(--petro-s);color:var(--petro)}
+.badge.man{background:var(--amber-s);color:var(--amber)}
+.badge.man.ok{background:#E3F0E8;color:var(--verde)}
+.badge.red{background:#FEE2E2;color:#B91C1C}
+.asset .right{text-align:right;flex:none}
+.asset .right .v{font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.asset .right .d{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--verde)}
+.asset .right .d.neg{color:var(--vinho)}
+.asset .more{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--slate);flex:none;font-size:16px;font-weight:700;letter-spacing:.5px;cursor:pointer}
+.stale{color:var(--amber)!important}
+.fab{position:absolute;right:18px;bottom:90px;width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(22,36,47,.4);cursor:pointer;z-index:5;transition:transform .15s}
+.fab:active{transform:scale(.92)}
+
+/* ── HISTÓRICO ── */
+.chartcard{border:1px solid var(--mist);border-radius:16px;padding:16px 14px 10px;background:#fff;margin-bottom:16px}
+.chartcard .cl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin-bottom:8px}
+.hrow{display:flex;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--mist);gap:10px}
+.hrow:last-child{border-bottom:none}
+.hrow .m{width:60px;font-size:12.5px;color:var(--slate);font-weight:500}
+.hrow .t{flex:1;font-size:13.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.hrow .r{font-size:12.5px;font-weight:600;color:var(--verde);font-variant-numeric:tabular-nums}
+.autonote{font-size:11px;color:var(--slate);margin-top:14px;line-height:1.6}
+
+/* ── overlays + sheets ── */
+.ov{position:absolute;inset:0;background:rgba(12,20,27,.45);display:none;z-index:10;cursor:pointer}
+.ov.open{display:block}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:24px 24px 0 0;padding:14px 22px 36px;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,.3,1);z-index:11;max-height:88%;overflow-y:auto}
+.sheet.open{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--mist);margin:0 auto 18px}
+
+/* sheet logo strip */
+.sheet-logo{display:flex;align-items:center;gap:8px;padding:0 0 16px;border-bottom:1px solid var(--mist);margin-bottom:18px}
+.sheet-logo svg{width:32px;height:32px}
+.sheet-logo .sl-text{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;color:var(--ink);letter-spacing:-.02em}
+.sheet-logo .sl-text em{color:var(--petro);font-style:normal}
+.sheet-logo .sl-mode{font-size:11px;color:var(--slate);font-weight:500;margin-top:1px}
+
+.sheet h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;color:var(--ink)}
+.sheet .sh-sub{font-size:12px;color:var(--slate);margin:3px 0 20px}
+.sh-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+.sh-input{width:100%;font-family:'Archivo',sans-serif;font-size:32px;font-weight:700;color:var(--ink);border:none;border-bottom:2px solid var(--ink);background:transparent;padding:6px 0 8px;outline:none;font-variant-numeric:tabular-nums;margin:4px 0 6px}
+.sh-hint{font-size:12px;color:var(--slate);margin-bottom:22px}
+.btn-p{width:100%;background:var(--ink);color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;border:none;border-radius:13px;padding:15px;cursor:pointer}
+.btn-p:active{opacity:.82}
+.btn-ghost{width:100%;background:transparent;color:var(--slate);font-family:'Inter',sans-serif;font-size:14px;font-weight:500;border:1.5px solid var(--mist);border-radius:13px;padding:13px;cursor:pointer;margin-top:10px}
+.btn-danger{width:100%;background:var(--red-s);color:var(--red);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;border:none;border-radius:13px;padding:13px;cursor:pointer;margin-top:18px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 18px}
+.chip{padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--mist);color:var(--slate);cursor:pointer;transition:all .15s}
+.chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toggle-row{display:flex;gap:0;border:1.5px solid var(--mist);border-radius:10px;overflow:hidden;margin-bottom:20px}
+.toggle-opt{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer;transition:all .15s}
+.toggle-opt.sel{background:var(--ink);color:#fff}
+.sh-field{margin-bottom:16px}
+.sh-field label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:5px}
+.sh-field input{width:100%;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--ink);border:1.5px solid var(--mist);border-radius:10px;padding:10px 12px;outline:none;background:#fff}
+.sh-field input:focus{border-color:var(--ink)}
+.divider{height:1px;background:var(--mist);margin:18px 0}
+.confirm-box{background:var(--red-s);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.confirm-box p{font-size:13px;color:var(--red);font-weight:500;line-height:1.5;margin-bottom:12px}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.cb-cancel{background:var(--mist);color:var(--ink)}
+.cb-confirm{background:var(--red);color:#fff}
+.toast{position:absolute;left:50%;transform:translateX(-50%) translateY(16px);bottom:92px;background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;padding:10px 18px;border-radius:10px;opacity:0;transition:all .25s;pointer-events:none;z-index:20;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="label">Quanto · mockup v3 · com logo</div>
+
+<!-- ═══════════════════════ PHONE ═══════════════════════ -->
+<div class="phone" id="phone">
+
+  <!-- status bar com logo mini -->
+  <div class="bar">
+    <span class="bar-time">21:47</span>
+    <div class="bar-brand">
+      <!-- Q icon mini inline -->
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00"
+              fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <span>Quanto<em style="color:#2A5A66;font-style:normal">.</em></span>
+    </div>
+    <span class="bar-sig">5G ▮▮▮</span>
+  </div>
+
+  <!-- ═══════ HOJE ═══════ -->
+  <div class="screen active" id="s-hoje">
+
+    <!-- header com logo -->
+    <div class="hoje-header">
+      <div class="hoje-logo-mark">
+        <svg viewBox="0 0 100 100" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="24" fill="#16242F"/>
+          <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00"
+                fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+          <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+          <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+          <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+        </svg>
+      </div>
+      <div class="hoje-logo-text">
+        <div class="wordmark">Quanto<em>.</em></div>
+        <div class="dateline">sexta, 12 de junho · cotações há 11 min</div>
+      </div>
+    </div>
+
+    <div class="kpi-label">Você tem, de fato</div>
+    <div class="kpi-num">R$ 221.840<small>,53</small></div>
+    <div class="delta">+ R$ 38.461 (21,0%) sobre o aplicado</div>
+
+    <div class="fresh">
+      <div class="fresh-top"><span>Frescor dos dados</span><em>14 de 18 em dia</em></div>
+      <div class="fresh-bar"><i></i></div>
+      <div class="fresh-warn">Onze · Icatu Vanguarda sem atualização há 34 dias</div>
+    </div>
+
+    <div class="sec">Por instituição</div>
+    <div class="arow"><div class="l1"><span>Onze<em>previdência</em></span><b>R$ 82.562</b></div><div class="allocbar"><i style="width:37%"></i></div></div>
+    <div class="arow"><div class="l1"><span>Itaú / ION</span><b>R$ 55.844</b></div><div class="allocbar"><i style="width:25%"></i></div></div>
+    <div class="arow"><div class="l1"><span>XP</span><b>R$ 83.434</b></div><div class="allocbar"><i style="width:38%"></i></div></div>
+
+    <div class="sec">Por classe</div>
+    <div class="arow"><div class="l1"><span>Previdência</span><b>R$ 155.657</b></div><div class="allocbar"><i style="width:70%"></i></div></div>
+    <div class="arow"><div class="l1"><span>Fundos</span><b>R$ 53.388</b></div><div class="allocbar"><i style="width:24%"></i></div></div>
+    <div class="arow"><div class="l1"><span>Ações e FIIs</span><b>R$ 12.795</b></div><div class="allocbar"><i style="width:6%"></i></div></div>
+  </div>
+
+  <!-- ═══════ CARTEIRA ═══════ -->
+  <div class="screen" id="s-carteira">
+    <div class="page-header">
+      <div class="page-header-left">
+        <svg class="page-logo-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="24" fill="#16242F"/>
+          <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00"
+                fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+          <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+          <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+          <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+        </svg>
+        <span class="ptitle">Carteira</span>
+      </div>
+      <span class="psub">19 ativos · ··· para editar</span>
+    </div>
+
+    <div class="grp"><span>XP · Ações</span><span class="grp-tot">R$ 1.083</span></div>
+    <div class="asset"><div class="info"><div class="name">CPLE3</div><div class="meta"><span class="badge auto">auto</span>28 cotas · R$ 14,61</div></div><div class="right"><div class="v">R$ 409</div><div class="d">+9,5%</div></div><div class="more" onclick="openEdit('CPLE3','auto')">···</div></div>
+    <div class="asset"><div class="info"><div class="name">ITSA4</div><div class="meta"><span class="badge auto">auto</span>27 cotas · R$ 12,90</div></div><div class="right"><div class="v">R$ 348</div><div class="d neg">−6,8%</div></div><div class="more" onclick="openEdit('ITSA4','auto')">···</div></div>
+    <div class="asset"><div class="info"><div class="name">RANI3</div><div class="meta"><span class="badge auto">auto</span>41 cotas · R$ 7,95</div></div><div class="right"><div class="v">R$ 326</div><div class="d neg">−12,6%</div></div><div class="more" onclick="openEdit('RANI3','auto')">···</div></div>
+
+    <div class="grp"><span>XP · Fundos ativos</span><span class="grp-tot">R$ 19.665</span></div>
+    <div class="asset" onclick="openSaldo('Western Asset US Index 500','R$ 4.562,77','há 9 dias')"><div class="info"><div class="name">Western Asset US 500</div><div class="meta"><span class="badge man ok">manual</span>há 9 dias</div></div><div class="right"><div class="v">R$ 4.563</div><div class="d">+9,9%</div></div><div class="more" onclick="event.stopPropagation();openEdit('Western Asset','manual')">···</div></div>
+    <div class="asset" onclick="openSaldo('ACE Capital Multicenários','R$ 1.478,02','há 9 dias')"><div class="info"><div class="name">ACE Capital Multicenários</div><div class="meta"><span class="badge man ok">manual</span>há 9 dias</div></div><div class="right"><div class="v">R$ 1.478</div><div class="d">+2,1%</div></div><div class="more" onclick="event.stopPropagation();openEdit('ACE Capital','manual')">···</div></div>
+    <div class="asset" onclick="openSaldo('Trend Ouro FIF Multi RL','R$ 1.261,60','há 9 dias')"><div class="info"><div class="name">Trend Ouro FIF Multi RL</div><div class="meta"><span class="badge man ok">manual</span>parte em resgate</div></div><div class="right"><div class="v">R$ 1.262</div><div class="d">+32,4%</div></div><div class="more" onclick="event.stopPropagation();openEdit('Trend Ouro','manual')">···</div></div>
+
+    <div class="grp"><span>XP · Em resgate</span><span class="grp-tot">R$ 4.111</span></div>
+    <div class="asset"><div class="info"><div class="name">Selection RF Light</div><div class="meta"><span class="badge red">resgate · liq. 24/jun</span></div></div><div class="right"><div class="v">R$ 1.100</div><div class="d">+11,7%</div></div><div class="more" onclick="openEdit('Selection RF Light','redeeming')">···</div></div>
+    <div class="asset"><div class="info"><div class="name">Legacy Capital Compound</div><div class="meta"><span class="badge red">resgate · liq. 14/jul</span></div></div><div class="right"><div class="v">R$ 2.000</div><div class="d">+5,2%</div></div><div class="more" onclick="openEdit('Legacy Capital','redeeming')">···</div></div>
+
+    <div class="grp"><span>Itaú / ION</span><span class="grp-tot">R$ 55.844</span></div>
+    <div class="asset"><div class="info"><div class="name">BRST3</div><div class="meta"><span class="badge auto">auto</span>200 cotas · R$ 2,70</div></div><div class="right"><div class="v">R$ 540</div><div class="d neg">−7,9%</div></div><div class="more" onclick="openEdit('BRST3','auto')">···</div></div>
+    <div class="asset" onclick="openSaldo('Kinea Andes Prev PGBL','R$ 30.566,46','há 9 dias')"><div class="info"><div class="name">Kinea Andes Prev PGBL</div><div class="meta"><span class="badge man ok">manual</span>há 9 dias</div></div><div class="right"><div class="v">R$ 30.566</div><div class="d">—</div></div><div class="more" onclick="event.stopPropagation();openEdit('Kinea Andes PGBL','manual')">···</div></div>
+    <div class="asset" onclick="openSaldo('Cofrinhos ION','R$ 21.867,67','há 9 dias')"><div class="info"><div class="name">Cofrinhos ION</div><div class="meta"><span class="badge man ok">manual</span>rend. 2026: R$335</div></div><div class="right"><div class="v">R$ 21.868</div><div class="d">—</div></div><div class="more" onclick="event.stopPropagation();openEdit('Cofrinhos ION','manual')">···</div></div>
+
+    <div class="grp"><span>Onze · Previdência</span><span class="grp-tot">R$ 82.562</span></div>
+    <div class="asset" onclick="openSaldo('Icatu Vanguarda Pós Fixado RF','R$ 50.160,95','há 34 dias')"><div class="info"><div class="name">Icatu Vanguarda Pós Fixado RF</div><div class="meta"><span class="badge man">manual</span><span class="stale">há 34 dias — atualize</span></div></div><div class="right"><div class="v">R$ 50.161</div><div class="d">—</div></div><div class="more" onclick="event.stopPropagation();openEdit('Icatu Vanguarda','manual')">···</div></div>
+    <div class="asset" onclick="openSaldo('Schroder Icatu Low Vol','R$ 23.968,24','há 9 dias')"><div class="info"><div class="name">Schroder Icatu Low Vol</div><div class="meta"><span class="badge man ok">manual</span>há 9 dias</div></div><div class="right"><div class="v">R$ 23.968</div><div class="d">—</div></div><div class="more" onclick="event.stopPropagation();openEdit('Schroder Icatu','manual')">···</div></div>
+    <div class="asset" onclick="openSaldo('Icatu Seg Empresarial RF','R$ 8.432,36','há 9 dias')"><div class="info"><div class="name">Icatu Seg Empresarial RF</div><div class="meta"><span class="badge man ok">manual</span>há 9 dias</div></div><div class="right"><div class="v">R$ 8.432</div><div class="d">—</div></div><div class="more" onclick="event.stopPropagation();openEdit('Icatu Seg Empresarial','manual')">···</div></div>
+
+    <div class="fab" onclick="openAdd()">+</div>
+  </div>
+
+  <!-- ═══════ HISTÓRICO ═══════ -->
+  <div class="screen" id="s-hist">
+    <div class="page-header">
+      <div class="page-header-left">
+        <svg class="page-logo-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="24" fill="#16242F"/>
+          <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00"
+                fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+          <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+          <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+          <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+        </svg>
+        <span class="ptitle">Histórico</span>
+      </div>
+      <span class="psub">foto automática todo dia 1º</span>
+    </div>
+
+    <div class="chartcard">
+      <div class="cl">Evolução do patrimônio</div>
+      <svg viewBox="0 0 320 100" width="100%">
+        <polyline points="10,88 62,76 114,65 166,50 218,42 270,30 310,18" fill="none" stroke="#2A5A66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="310" cy="18" r="4" fill="#2A5A66"/>
+        <text x="10" y="98" font-size="9" fill="#9AA5B1" font-family="Inter">jan</text>
+        <text x="155" y="98" font-size="9" fill="#9AA5B1" font-family="Inter">abr</text>
+        <text x="296" y="98" font-size="9" fill="#9AA5B1" font-family="Inter">jun</text>
+      </svg>
+    </div>
+    <div class="hrow"><span class="m">jun/26</span><span class="t">R$ 221.840</span><span class="r">+ R$ 38.461</span></div>
+    <div class="hrow"><span class="m">mai/26</span><span class="t">R$ 218.300</span><span class="r">+ R$ 34.900</span></div>
+    <div class="hrow"><span class="m">abr/26</span><span class="t">R$ 210.500</span><span class="r">+ R$ 27.100</span></div>
+    <div class="hrow"><span class="m">mar/26</span><span class="t">R$ 198.200</span><span class="r">+ R$ 14.800</span></div>
+    <div class="hrow"><span class="m">fev/26</span><span class="t">R$ 189.400</span><span class="r">+ R$ 6.000</span></div>
+    <div class="hrow"><span class="m">jan/26</span><span class="t">R$ 183.379</span><span class="r">+ R$ 0</span></div>
+    <div class="autonote">Foto tirada automaticamente pelo servidor no dia 1º de cada mês.</div>
+  </div>
+
+  <!-- ═══════ SHEET: SALDO ═══════ -->
+  <div class="ov" id="ov-saldo" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-saldo">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <div>
+        <div class="sl-text" id="ss-title">Kinea Andes Prev PGBL</div>
+        <div class="sl-mode" id="ss-sub">atualizado há 9 dias</div>
+      </div>
+    </div>
+    <div class="sh-label">Saldo atual no app da instituição</div>
+    <input class="sh-input" id="ss-input" type="text" value="R$ 30.566,46" inputmode="decimal">
+    <div class="sh-hint">Último: R$ 30.566,46 · 03/jun</div>
+    <button class="btn-p" onclick="saveSaldo()">Salvar saldo</button>
+    <button class="btn-ghost" onclick="closeAll()">Cancelar</button>
+  </div>
+
+  <!-- ═══════ SHEET: EDITAR/REMOVER ═══════ -->
+  <div class="ov" id="ov-edit" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-edit">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <div>
+        <div class="sl-text" id="se-title">CPLE3</div>
+        <div class="sl-mode" id="se-sub">Ação · XP · cotação automática</div>
+      </div>
+    </div>
+    <div class="sh-field">
+      <label>Nome do ativo</label>
+      <input type="text" id="se-name" value="CPLE3 · Copel">
+    </div>
+    <div class="sh-field" id="se-ticker-row">
+      <label>Ticker B3</label>
+      <input type="text" value="CPLE3" style="text-transform:uppercase">
+    </div>
+    <div class="sh-field" id="se-qty-row">
+      <label>Quantidade</label>
+      <input type="text" value="28" inputmode="decimal">
+    </div>
+    <div class="sh-field">
+      <label>Valor aplicado (custo total)</label>
+      <input type="text" value="R$ 373,52" inputmode="decimal">
+    </div>
+    <button class="btn-p" onclick="saveEdit()">Salvar alterações</button>
+    <div class="divider"></div>
+    <div id="confirm-area" style="display:none">
+      <div class="confirm-box">
+        <p>Remover este ativo da carteira? O histórico de snapshots não é afetado.</p>
+        <div class="confirm-btns">
+          <button class="cb-cancel" onclick="cancelRemove()">Cancelar</button>
+          <button class="cb-confirm" onclick="confirmRemove()">Remover</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-danger" id="btn-remove" onclick="askRemove()">Remover ativo</button>
+  </div>
+
+  <!-- ═══════ SHEET: ADICIONAR ═══════ -->
+  <div class="ov" id="ov-add" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-add">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <div>
+        <div class="sl-text">Adicionar ativo</div>
+        <div class="sl-mode">preencha e salve</div>
+      </div>
+    </div>
+    <div class="sh-label">Instituição</div>
+    <div class="chips">
+      <div class="chip sel" onclick="selChip(this,'inst')">XP</div>
+      <div class="chip" onclick="selChip(this,'inst')">Itaú / ION</div>
+      <div class="chip" onclick="selChip(this,'inst')">Onze</div>
+      <div class="chip" onclick="selChip(this,'inst')">Outros</div>
+    </div>
+    <div class="sh-label">Classe</div>
+    <div class="chips">
+      <div class="chip sel" onclick="selChip(this,'cls')">Ação / FII</div>
+      <div class="chip" onclick="selChip(this,'cls')">Fundo</div>
+      <div class="chip" onclick="selChip(this,'cls')">Previdência</div>
+      <div class="chip" onclick="selChip(this,'cls')">RF</div>
+      <div class="chip" onclick="selChip(this,'cls')">Cofrinhos</div>
+      <div class="chip" onclick="selChip(this,'cls')">Poupança</div>
+    </div>
+    <div class="sh-label" style="margin-bottom:8px">Modo</div>
+    <div class="toggle-row">
+      <div class="toggle-opt sel" id="tog-auto" onclick="setMode('auto')">Automático (ticker B3)</div>
+      <div class="toggle-opt" id="tog-man" onclick="setMode('manual')">Manual (saldo no app)</div>
+    </div>
+    <div id="fields-auto">
+      <div class="sh-field"><label>Nome</label><input type="text" placeholder="ex: Petrobras PN"></div>
+      <div class="sh-field"><label>Ticker B3</label><input type="text" placeholder="ex: PETR4" style="text-transform:uppercase"></div>
+      <div class="sh-field"><label>Quantidade</label><input type="text" placeholder="ex: 100" inputmode="decimal"></div>
+      <div class="sh-field"><label>Valor aplicado total</label><input type="text" placeholder="ex: R$ 3.200,00" inputmode="decimal"></div>
+    </div>
+    <div id="fields-manual" style="display:none">
+      <div class="sh-field"><label>Nome</label><input type="text" placeholder="ex: Fundo Kinea RF"></div>
+      <div class="sh-field"><label>Saldo atual (do app)</label><input type="text" placeholder="ex: R$ 10.800,00" inputmode="decimal"></div>
+      <div class="sh-field"><label>Valor aplicado total</label><input type="text" placeholder="ex: R$ 10.000,00" inputmode="decimal"></div>
+    </div>
+    <button class="btn-p" onclick="saveAdd()">Adicionar ativo</button>
+    <button class="btn-ghost" onclick="closeAll()">Cancelar</button>
+  </div>
+
+  <div class="toast" id="toast">Salvo</div>
+
+  <!-- tabbar -->
+  <div class="tabbar">
+    <div class="tab active" data-s="s-hoje" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Hoje</div>
+    <div class="tab" data-s="s-carteira" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Carteira</div>
+    <div class="tab" data-s="s-hist" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><path d="M4 19L9 12l4 4 7-9"/></svg>Histórico</div>
+  </div>
+</div>
+
+<div class="label" style="max-width:420px;line-height:1.8">
+  Toque num ativo manual → saldo · ··· → editar/remover · + → cadastrar
+</div>
+
+<script>
+function go(el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(el.dataset.s).classList.add('active');
+}
+function closeAll(){
+  ['ov-saldo','ov-edit','ov-add'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  ['sh-saldo','sh-edit','sh-add'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  document.getElementById('confirm-area').style.display='none';
+  document.getElementById('btn-remove').style.display='block';
+}
+function openSaldo(t,v,sub){
+  closeAll();
+  document.getElementById('ss-title').textContent=t;
+  document.getElementById('ss-input').value=v;
+  document.getElementById('ss-sub').textContent=sub;
+  document.getElementById('ov-saldo').classList.add('open');
+  document.getElementById('sh-saldo').classList.add('open');
+}
+function saveSaldo(){closeAll();toast('Saldo salvo · frescor renovado');}
+function openEdit(name,mode){
+  closeAll();
+  document.getElementById('se-title').textContent=name;
+  const isAuto=mode==='auto', isRed=mode==='redeeming';
+  document.getElementById('se-sub').textContent=
+    isRed?'Fundo · em resgate':isAuto?'Ação/FII · cotação automática':'Fundo/Prev · saldo manual';
+  document.getElementById('se-ticker-row').style.display=isAuto?'block':'none';
+  document.getElementById('se-qty-row').style.display=isAuto?'block':'none';
+  document.getElementById('ov-edit').classList.add('open');
+  document.getElementById('sh-edit').classList.add('open');
+}
+function saveEdit(){closeAll();toast('Alterações salvas');}
+function askRemove(){document.getElementById('confirm-area').style.display='block';document.getElementById('btn-remove').style.display='none';}
+function cancelRemove(){document.getElementById('confirm-area').style.display='none';document.getElementById('btn-remove').style.display='block';}
+function confirmRemove(){closeAll();toast('Ativo removido');}
+function openAdd(){closeAll();document.getElementById('ov-add').classList.add('open');document.getElementById('sh-add').classList.add('open');}
+function saveAdd(){closeAll();toast('Ativo adicionado');}
+function selChip(el,g){el.closest('.chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function setMode(m){
+  document.getElementById('tog-auto').classList.toggle('sel',m==='auto');
+  document.getElementById('tog-man').classList.toggle('sel',m==='manual');
+  document.getElementById('fields-auto').style.display=m==='auto'?'block':'none';
+  document.getElementById('fields-manual').style.display=m==='manual'?'block':'none';
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
+</script>
+</body>
+</html>

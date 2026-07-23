@@ -1,0 +1,25 @@
+name = "quanto"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[assets]
+directory = "apps/web"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "quanto-db"
+database_id = "ba84c573-89a3-4d1f-b858-8e63b7c0e344"
+
+[triggers]
+crons = [
+  "0 12 * * *",   # cotacoes BRAPI diarias (meio-dia UTC = 9h BRT)
+  "0 12 1 * *",   # snapshot mensal (dia 1, meio-dia UTC)
+  "0 22 * * 1-5", # cotas CVM diarias (22h UTC = 19h BRT, seg-sex)
+  "0 23 2 * *"    # cadastro CVM mensal (dia 2, 23h UTC)
+]
+
+[ai]
+binding = "AI"
+
+[vars]
+BRAPI_BASE_URL = "https://brapi.dev/api"

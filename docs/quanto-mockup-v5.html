@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quanto · Mockup v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16242F;--paper:#FBFCFD;--mist:#E8EDF1;--slate:#5E6B76;
+  --petro:#2A5A66;--petro-s:#DCE8EB;--verde:#1F7A4D;--vinho:#C2335B;
+  --amber:#B7791F;--amber-s:#FFF7DB;--red:#D63031;--red-s:#FFF0EE;
+  --soft:#F6F8FA;--hair:#D4D9DE;--card:#FFFFFF;--bg-body:#1C2830;
+}
+.dark{
+  --ink:#E8EDF1;--paper:#0F1A24;--mist:#1E2D3A;--slate:#9CA3AF;
+  --soft:#162230;--hair:#1E2D3A;--card:#162230;--bg-body:#0A0F16;
+  --petro-s:#1A3A42;--amber-s:#2A2210;--red-s:#2A1418;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg-body);font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:32px;padding:40px 16px 60px}
+.label{color:#7A9AAA;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;text-align:center}
+.controls{display:flex;gap:12px;align-items:center}
+.ctrl-btn{background:#2A3A45;color:#7A9AAA;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.ctrl-btn.active{background:#2A5A66;color:#fff}
+.ctrl-btn:hover{opacity:.85}
+
+.phone{width:390px;max-width:100%;height:810px;background:var(--paper);border-radius:44px;border:6px solid #0B1318;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.bar{height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--paper)}
+.bar-brand{display:flex;align-items:center;gap:6px}
+.bar-brand svg{width:20px;height:20px}
+.bar-brand span{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;color:var(--ink);letter-spacing:-.02em}
+.bar-brand span em{color:var(--petro);font-style:normal}
+.bar-time{font-size:12px;font-weight:600;color:var(--ink)}
+.bar-right{display:flex;align-items:center;gap:10px}
+.bar-sig{font-size:11px;color:var(--slate)}
+.eye-btn{background:none;border:none;cursor:pointer;color:var(--slate);display:flex;align-items:center;padding:2px}
+.eye-btn:hover{color:var(--ink)}
+.eye-btn svg{width:18px;height:18px}
+
+.screen{flex:1;overflow-y:auto;display:none;padding:0 20px 90px}
+.screen.active{display:block}
+
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:74px;background:rgba(251,252,253,.96);backdrop-filter:blur(10px);border-top:1px solid var(--mist);display:flex}
+.dark .tabbar{background:rgba(15,26,36,.96)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--slate);font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.02em;transition:color .15s}
+.tab-item svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab-item.active{color:var(--ink)}
+.tab-item.active svg{stroke-width:2.4}
+
+/* HOJE */
+.hoje-header{padding:20px 0 18px;border-bottom:1px solid var(--mist);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.hoje-logo-mark{width:40px;height:40px;flex:none}
+.hoje-logo-text{flex:1}
+.hoje-logo-text .wordmark{font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.hoje-logo-text .wordmark em{color:var(--petro);font-style:normal}
+.hoje-logo-text .dateline{font-size:11px;color:var(--slate);margin-top:2px}
+.greeting{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--slate);text-transform:uppercase;margin-bottom:3px}
+.kpi-num{font-family:'Archivo',sans-serif;font-weight:700;font-size:44px;letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.05;margin-bottom:3px}
+.kpi-num small{font-size:22px;font-weight:600;color:var(--slate)}
+.delta{font-size:13.5px;font-weight:600;color:var(--verde);font-variant-numeric:tabular-nums;margin-bottom:4px}
+.delta.neg{color:var(--vinho)}
+.redeem-note{font-size:12px;font-weight:500;color:var(--slate);margin-bottom:20px;padding:6px 10px;background:var(--soft);border-radius:8px;border-left:3px solid var(--amber)}
+
+.fresh{padding:13px 14px;border:1px solid var(--mist);border-radius:14px;background:var(--card);margin-bottom:22px;cursor:pointer}
+.fresh-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--ink)}
+.fresh-top em{font-style:normal;color:var(--slate);font-weight:500}
+.fresh-bar{height:5px;border-radius:3px;background:var(--mist);margin-top:9px;overflow:hidden}
+.fresh-bar i{display:block;height:100%;background:var(--petro);border-radius:3px}
+.fresh-warn{margin-top:8px;font-size:11.5px;color:var(--amber);font-weight:500;display:flex;align-items:center;gap:6px}
+.fresh-warn::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
+
+.sec{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:var(--ink);margin:20px 0 8px}
+.alloc-header{display:flex;justify-content:space-between;align-items:center;margin:20px 0 14px}
+.alloc-toggle{display:flex;background:var(--soft);border-radius:20px;border:1px solid var(--mist);overflow:hidden}
+.alloc-toggle button{padding:5px 12px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:transparent;color:var(--slate);border-radius:20px;transition:all .15s}
+.alloc-toggle button.sel{background:var(--ink);color:var(--paper)}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:8px}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-center .dc-label{font-size:11px;color:var(--slate);font-weight:500}
+.donut-center .dc-val{font-family:'Archivo',sans-serif;font-size:16px;font-weight:700;color:var(--ink)}
+.donut-center .dc-pct{font-size:11px;color:var(--slate)}
+.legend-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--mist)}
+.legend-row:last-child{border-bottom:none}
+.legend-left{display:flex;align-items:center;gap:8px}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.legend-name{font-size:13px;color:var(--ink)}
+.legend-right{text-align:right}
+.legend-val{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.legend-pct{font-size:11px;color:var(--slate);margin-left:6px}
+.quote-info{font-size:11px;color:var(--slate);margin-top:18px;text-align:center}
+
+/* CARTEIRA */
+.page-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 4px;border-bottom:1px solid var(--mist);margin-bottom:14px}
+.page-header-left{display:flex;align-items:center;gap:8px}
+.page-logo-mini{width:28px;height:28px}
+.ptitle{font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.psub{font-size:12px;color:var(--slate);text-align:right}
+.psub b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.cart-toggle{display:flex;background:var(--soft);border-radius:20px;border:1px solid var(--mist);overflow:hidden;margin-bottom:12px;width:fit-content}
+.cart-toggle button{padding:6px 14px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:transparent;color:var(--slate);border-radius:20px;transition:all .15s}
+.cart-toggle button.sel{background:var(--ink);color:var(--paper)}
+.filter-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filter-chips::-webkit-scrollbar{display:none}
+.fchip{white-space:nowrap;padding:5px 14px;border-radius:20px;border:1.5px solid var(--mist);background:var(--card);color:var(--slate);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;flex-shrink:0}
+.fchip.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.stacked-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:16px}
+.grp{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin:16px 0 4px;display:flex;align-items:center;justify-content:space-between}
+.grp-tot{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+.grp-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.sub-grp{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin:8px 0 2px;padding-left:18px}
+.asset{display:flex;align-items:center;gap:10px;padding:11px 0 11px 18px;border-bottom:1px solid var(--mist);cursor:pointer;transition:background .12s}
+.asset-noindent{padding-left:0}
+.asset .info{flex:1;min-width:0}
+.asset .name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asset .meta{font-size:11.5px;color:var(--slate);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.badge{font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+.badge.auto{background:var(--petro-s);color:var(--petro)}
+.badge.man{background:var(--amber-s);color:var(--amber)}
+.badge.man.ok{background:#E3F0E8;color:var(--verde)}
+.dark .badge.man.ok{background:#1A2E22;color:var(--verde)}
+.badge.red{background:#FEE2E2;color:#B91C1C}
+.dark .badge.red{background:#2A1418;color:#F87171}
+.asset .right{text-align:right;flex:none}
+.asset .right .v{font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.asset .right .d{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--verde)}
+.asset .right .d.neg{color:var(--vinho)}
+.asset .more{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--slate);flex:none;font-size:16px;font-weight:700;letter-spacing:.5px;cursor:pointer}
+.stale{color:var(--amber)!important}
+.redeem-sep{border-top:2px dashed var(--mist);margin-top:12px;padding-top:4px}
+.fab{position:absolute;right:18px;bottom:90px;width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(22,36,47,.4);cursor:pointer;z-index:5;transition:transform .15s}
+.fab:active{transform:scale(.92)}
+
+/* HISTORICO */
+.chartcard{border:1px solid var(--mist);border-radius:16px;padding:16px 14px 10px;background:var(--card);margin-bottom:16px;position:relative}
+.chartcard .cl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);margin-bottom:8px}
+.chart-tip{position:absolute;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap;z-index:5}
+.chart-tip.show{opacity:1}
+.hrow{display:flex;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--mist);gap:10px}
+.hrow:last-child{border-bottom:none}
+.hrow .m{width:60px;font-size:12.5px;color:var(--slate);font-weight:500}
+.hrow .t{flex:1;font-size:13.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.hrow .r{font-size:12.5px;font-weight:600;color:var(--verde);font-variant-numeric:tabular-nums;text-align:right}
+.hrow .r.neg{color:var(--vinho)}
+.autonote{font-size:11px;color:var(--slate);margin-top:14px;line-height:1.6}
+
+/* IMPORTAR */
+.wizard-steps{display:flex;gap:0;margin-bottom:20px}
+.wstep{flex:1;text-align:center;padding:10px 0 8px;font-size:11px;font-weight:600;color:var(--slate);border-bottom:2px solid var(--mist);transition:all .15s}
+.wstep.active{color:var(--ink);border-color:var(--petro)}
+.wstep.done{color:var(--verde);border-color:var(--verde)}
+.wstep-num{font-family:'Archivo',sans-serif;font-size:14px;font-weight:700;display:block;margin-bottom:2px}
+.dropzone{border:2px dashed var(--mist);border-radius:16px;padding:36px 20px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:16px}
+.dropzone:hover{border-color:var(--petro)}
+.dropzone-icon{font-size:36px;margin-bottom:8px;color:var(--slate)}
+.dropzone-text{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.dropzone-hint{font-size:12px;color:var(--slate)}
+.template-link{font-size:12px;color:var(--petro);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:12px}
+.file-selected{text-align:center;padding:16px;border:1.5px solid var(--petro);border-radius:14px;margin-bottom:16px;background:var(--soft)}
+.file-selected .fn{font-size:14px;font-weight:600;color:var(--ink)}
+.file-selected .fs{font-size:12px;color:var(--slate);margin-top:2px}
+.review-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+.review-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);text-align:left;padding:8px 6px;border-bottom:1px solid var(--mist)}
+.review-table td{font-size:12.5px;color:var(--ink);padding:8px 6px;border-bottom:1px solid var(--mist);font-weight:500}
+.review-table .badge-ok{background:#E3F0E8;color:var(--verde);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.dark .review-table .badge-ok{background:#1A2E22}
+.review-table .badge-warn{background:var(--amber-s);color:var(--amber);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.review-table .badge-err{background:var(--red-s);color:var(--red);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.confirm-summary{background:var(--soft);border-radius:14px;padding:16px;margin-bottom:20px}
+.confirm-summary .cs-num{font-family:'Archivo',sans-serif;font-size:28px;font-weight:700;color:var(--ink)}
+.confirm-summary .cs-label{font-size:12px;color:var(--slate);margin-top:2px}
+.confirm-summary .cs-row{display:flex;gap:24px;margin-top:12px}
+.confirm-summary .cs-item{text-align:center;flex:1}
+.cs-breakdown{font-size:12px;color:var(--slate);margin-bottom:16px;line-height:1.8}
+.cs-breakdown b{color:var(--ink);font-weight:600}
+
+/* SHEETS */
+.ov{position:absolute;inset:0;background:rgba(12,20,27,.45);display:none;z-index:10;cursor:pointer}
+.ov.open{display:block}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:24px 24px 0 0;padding:14px 22px 36px;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,.3,1);z-index:11;max-height:88%;overflow-y:auto}
+.sheet.open{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--mist);margin:0 auto 18px}
+.sheet-logo{display:flex;align-items:center;gap:8px;padding:0 0 16px;border-bottom:1px solid var(--mist);margin-bottom:18px}
+.sheet-logo svg{width:32px;height:32px}
+.sheet-logo .sl-text{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;color:var(--ink);letter-spacing:-.02em}
+.sheet-logo .sl-text em{color:var(--petro);font-style:normal}
+.sheet-logo .sl-mode{font-size:11px;color:var(--slate);font-weight:500;margin-top:1px}
+.sheet h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;color:var(--ink)}
+.sheet .sh-sub{font-size:12px;color:var(--slate);margin:3px 0 20px}
+.sh-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+.sh-input-wrap{display:flex;align-items:baseline;gap:4px;border-bottom:2px solid var(--ink);padding:6px 0 8px;margin:4px 0 6px}
+.sh-input-wrap .prefix{font-family:'Archivo',sans-serif;font-size:28px;font-weight:700;color:var(--slate)}
+.sh-input{flex:1;font-family:'Archivo',sans-serif;font-size:32px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-variant-numeric:tabular-nums;width:100%}
+.sh-hint{font-size:12px;color:var(--slate);margin-bottom:22px}
+.btn-p{width:100%;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;font-size:15px;font-weight:600;border:none;border-radius:13px;padding:15px;cursor:pointer}
+.btn-p:active{opacity:.82}
+.btn-ghost{width:100%;background:transparent;color:var(--slate);font-family:'Inter',sans-serif;font-size:14px;font-weight:500;border:1.5px solid var(--mist);border-radius:13px;padding:13px;cursor:pointer;margin-top:10px}
+.btn-danger{width:100%;background:var(--red-s);color:var(--red);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;border:none;border-radius:13px;padding:13px;cursor:pointer;margin-top:18px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 18px}
+.chip{padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--mist);color:var(--slate);cursor:pointer;transition:all .15s}
+.chip.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.toggle-row{display:flex;gap:0;border:1.5px solid var(--mist);border-radius:10px;overflow:hidden;margin-bottom:20px}
+.toggle-opt{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer;transition:all .15s}
+.toggle-opt.sel{background:var(--ink);color:var(--paper)}
+.sh-field{margin-bottom:16px}
+.sh-field label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);display:block;margin-bottom:5px}
+.sh-field input,.sh-field select{width:100%;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;color:var(--ink);border:1.5px solid var(--mist);border-radius:10px;padding:10px 12px;outline:none;background:var(--card)}
+.sh-field input:focus{border-color:var(--ink)}
+.divider{height:1px;background:var(--mist);margin:18px 0}
+.confirm-box{background:var(--red-s);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.confirm-box p{font-size:13px;color:var(--red);font-weight:500;line-height:1.5;margin-bottom:12px}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.cb-cancel{background:var(--mist);color:var(--ink)}
+.cb-confirm{background:var(--red);color:#fff}
+
+.redeem-flow{margin-top:18px}
+.redeem-flow .rf-q{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.redeem-opt{width:100%;padding:13px 16px;border-radius:12px;font-size:14px;font-weight:600;border:1.5px solid var(--mist);cursor:pointer;margin-bottom:8px;text-align:left;background:var(--card);color:var(--ink);transition:all .15s}
+.redeem-opt:hover{border-color:var(--petro)}
+.redeem-opt.danger{color:var(--red);border-color:var(--red-s)}
+.redeem-opt.positive{color:var(--verde)}
+.redeem-opt small{display:block;font-size:11px;font-weight:400;color:var(--slate);margin-top:2px}
+
+.inst-name-row{display:none;margin-bottom:16px}
+.inst-name-row.visible{display:block}
+
+.toast{position:absolute;left:50%;transform:translateX(-50%) translateY(16px);bottom:92px;background:var(--ink);color:var(--paper);font-size:12.5px;font-weight:500;padding:10px 18px;border-radius:10px;opacity:0;transition:all .25s;pointer-events:none;z-index:20;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.masked .v-mask{color:var(--mist)!important;letter-spacing:2px}
+</style>
+</head>
+<body>
+
+<div class="label">Quanto · mockup v5 · spec funcional v1.3</div>
+<div class="controls">
+  <button class="ctrl-btn" id="ctrl-dark" onclick="toggleDark()">Dark Mode</button>
+  <button class="ctrl-btn" id="ctrl-mask" onclick="toggleMask()">Ocultar Valores</button>
+</div>
+
+<!-- ═══════ PHONE ═══════ -->
+<div class="phone" id="phone">
+
+  <div class="bar">
+    <span class="bar-time">21:47</span>
+    <div class="bar-brand">
+      <svg viewBox="0 0 100 100" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+      <span>Quanto<em>.</em></span>
+    </div>
+    <div class="bar-right">
+      <button class="eye-btn" id="eye-toggle" onclick="toggleMask()" title="Ocultar valores">
+        <svg id="eye-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <span class="bar-sig">5G</span>
+    </div>
+  </div>
+
+  <!-- ═══════ HOJE ═══════ -->
+  <div class="screen active" id="s-hoje">
+    <div class="hoje-header">
+      <div class="hoje-logo-mark">
+        <svg viewBox="0 0 100 100" width="40" height="40" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+      </div>
+      <div class="hoje-logo-text">
+        <div class="wordmark">Quanto<em>.</em></div>
+        <div class="dateline">sexta, 13 de junho de 2026</div>
+      </div>
+    </div>
+
+    <div class="greeting">Boa noite!</div>
+    <div class="kpi-label">Patrimonio total</div>
+    <div class="kpi-num"><span class="v-mask">R$ 159.153</span><small class="v-mask">,53</small></div>
+    <div class="delta v-mask">+ R$ 58.335 (57,9%) sobre o aplicado</div>
+    <div class="redeem-note">+ <span class="v-mask">R$ 4.111,32</span> em resgate (nao contabilizado)</div>
+
+    <div class="fresh" onclick="go(document.querySelector('[data-s=s-carteira]'))">
+      <div class="fresh-top"><span>Saldos manuais</span><em>10 de 11 em dia</em></div>
+      <div class="fresh-bar"><i style="width:91%"></i></div>
+      <div class="fresh-warn">Onze · Icatu Vanguarda sem atualizacao ha 35 dias</div>
+    </div>
+
+    <div class="alloc-header">
+      <span class="sec" style="margin:0">Alocacao</span>
+      <div class="alloc-toggle">
+        <button class="sel" id="dt-inst" onclick="setDonutMode('inst')">Instituicao</button>
+        <button id="dt-class" onclick="setDonutMode('class')">Classe</button>
+      </div>
+    </div>
+
+    <div class="donut-wrap">
+      <div style="position:relative;width:180px;height:180px">
+        <svg id="donut-svg" viewBox="0 0 180 180" width="180" height="180"></svg>
+        <div class="donut-center" id="donut-center">
+          <div class="dc-label">Total</div>
+          <div class="dc-val v-mask">R$ 159.153</div>
+        </div>
+      </div>
+    </div>
+    <div id="donut-legend"></div>
+
+    <div class="quote-info">cotacoes ha 8 min</div>
+  </div>
+
+  <!-- ═══════ CARTEIRA ═══════ -->
+  <div class="screen" id="s-carteira">
+    <div class="page-header">
+      <div class="page-header-left">
+        <svg class="page-logo-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+        <span class="ptitle">Carteira</span>
+      </div>
+      <div class="psub">15 ativos<br><b class="v-mask">R$ 159.153</b></div>
+    </div>
+
+    <div class="cart-toggle">
+      <button class="sel" id="ct-inst" onclick="setCartMode('inst')">Por instituicao</button>
+      <button id="ct-class" onclick="setCartMode('class')">Por classe</button>
+    </div>
+
+    <div class="filter-chips" id="cart-chips"></div>
+    <div class="stacked-bar" id="cart-bar"></div>
+    <div id="cart-list"></div>
+
+    <div class="fab" onclick="openAdd()">+</div>
+  </div>
+
+  <!-- ═══════ HISTORICO ═══════ -->
+  <div class="screen" id="s-hist">
+    <div class="page-header">
+      <div class="page-header-left">
+        <svg class="page-logo-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+        <span class="ptitle">Historico</span>
+      </div>
+      <span class="psub">foto automatica todo dia 1</span>
+    </div>
+
+    <div class="chartcard">
+      <div class="cl">Evolucao do patrimonio</div>
+      <svg viewBox="0 0 320 110" width="100%">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2A5A66" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#2A5A66" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <polygon points="10,88 62,76 114,65 166,50 218,42 270,30 310,18 310,95 10,95" fill="url(#areaGrad)"/>
+        <polyline points="10,88 62,76 114,65 166,50 218,42 270,30 310,18" fill="none" stroke="#2A5A66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="10" cy="88" r="3.5" fill="#2A5A66"/>
+        <circle cx="62" cy="76" r="3.5" fill="#2A5A66"/>
+        <circle cx="114" cy="65" r="3.5" fill="#2A5A66"/>
+        <circle cx="166" cy="50" r="3.5" fill="#2A5A66"/>
+        <circle cx="218" cy="42" r="3.5" fill="#2A5A66"/>
+        <circle cx="270" cy="30" r="3.5" fill="#2A5A66"/>
+        <circle cx="310" cy="18" r="5" fill="#2A5A66"/>
+        <circle cx="10" cy="88" r="14" fill="transparent" onclick="showTip(0,10,88)" style="cursor:pointer"/>
+        <circle cx="62" cy="76" r="14" fill="transparent" onclick="showTip(1,62,76)" style="cursor:pointer"/>
+        <circle cx="114" cy="65" r="14" fill="transparent" onclick="showTip(2,114,65)" style="cursor:pointer"/>
+        <circle cx="166" cy="50" r="14" fill="transparent" onclick="showTip(3,166,50)" style="cursor:pointer"/>
+        <circle cx="218" cy="42" r="14" fill="transparent" onclick="showTip(4,218,42)" style="cursor:pointer"/>
+        <circle cx="270" cy="30" r="14" fill="transparent" onclick="showTip(5,270,30)" style="cursor:pointer"/>
+        <circle cx="310" cy="18" r="14" fill="transparent" onclick="showTip(6,310,18)" style="cursor:pointer"/>
+        <text x="10" y="108" font-size="9" fill="#9AA5B1" font-family="Inter">Jan</text>
+        <text x="155" y="108" font-size="9" fill="#9AA5B1" font-family="Inter">Abr</text>
+        <text x="296" y="108" font-size="9" fill="#9AA5B1" font-family="Inter">Jun</text>
+      </svg>
+      <div class="chart-tip" id="chart-tip"></div>
+    </div>
+
+    <div class="hrow"><span class="m">Jun/26</span><span class="t v-mask">R$ 159.153</span><span class="r v-mask">+2,5% · +R$ 3.853</span></div>
+    <div class="hrow"><span class="m">Mai/26</span><span class="t v-mask">R$ 155.300</span><span class="r v-mask">+3,1% · +R$ 4.700</span></div>
+    <div class="hrow"><span class="m">Abr/26</span><span class="t v-mask">R$ 150.600</span><span class="r v-mask">+2,8% · +R$ 4.100</span></div>
+    <div class="hrow"><span class="m">Mar/26</span><span class="t v-mask">R$ 146.500</span><span class="r v-mask">+1,9% · +R$ 2.700</span></div>
+    <div class="hrow"><span class="m">Fev/26</span><span class="t v-mask">R$ 143.800</span><span class="r v-mask">+1,4% · +R$ 2.000</span></div>
+    <div class="hrow"><span class="m">Jan/26</span><span class="t v-mask">R$ 141.800</span><span class="r" style="color:var(--slate)">—</span></div>
+    <div class="autonote">Foto tirada automaticamente pelo servidor no dia 1 de cada mes.</div>
+  </div>
+
+  <!-- ═══════ IMPORTAR ═══════ -->
+  <div class="screen" id="s-import">
+    <div class="page-header">
+      <div class="page-header-left">
+        <svg class="page-logo-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+        <span class="ptitle">Importar</span>
+      </div>
+      <span class="psub">planilha de ativos</span>
+    </div>
+
+    <div class="wizard-steps">
+      <div class="wstep active" id="ws-1"><span class="wstep-num">1</span>Upload</div>
+      <div class="wstep" id="ws-2"><span class="wstep-num">2</span>Revisao</div>
+      <div class="wstep" id="ws-3"><span class="wstep-num">3</span>Confirmar</div>
+    </div>
+
+    <div id="imp-step1">
+      <div class="dropzone" onclick="selectFile()">
+        <div class="dropzone-icon">&#128196;</div>
+        <div class="dropzone-text">Arraste sua planilha ou toque para selecionar</div>
+        <div class="dropzone-hint">Aceita .xlsx e .xls</div>
+      </div>
+      <div class="file-selected" id="file-info" style="display:none">
+        <div class="fn" id="file-name">patrimonio_luiz.xlsx</div>
+        <div class="fs" id="file-size">24 KB</div>
+      </div>
+      <div id="btn-process" style="display:none">
+        <button class="btn-p" onclick="processFile()">Processar</button>
+      </div>
+      <div style="text-align:center">
+        <a class="template-link" href="#">&#11015; Baixar template modelo</a>
+      </div>
+    </div>
+
+    <div id="imp-step2" style="display:none">
+      <div style="font-size:12px;color:var(--slate);margin-bottom:12px">patrimonio_luiz.xlsx · 12 ativos encontrados</div>
+      <table class="review-table">
+        <thead><tr><th>Nome</th><th>Tipo</th><th>Saldo</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>CPLE3</td><td>Acao</td><td class="v-mask">R$ 409</td><td><span class="badge-ok">OK</span></td></tr>
+          <tr><td>Western Asset US 500</td><td>Fundo</td><td class="v-mask">R$ 4.563</td><td><span class="badge-ok">OK</span></td></tr>
+          <tr><td>Kinea Andes Prev</td><td>Prev.</td><td class="v-mask">R$ 30.566</td><td><span class="badge-ok">OK</span></td></tr>
+          <tr><td>Cofrinhos ION</td><td>Cofr.</td><td class="v-mask">R$ 21.868</td><td><span class="badge-ok">OK</span></td></tr>
+          <tr><td>Tesouro Selic 2029</td><td>Tes.</td><td class="v-mask">R$ 5.200</td><td><span class="badge-ok">OK</span></td></tr>
+          <tr><td>Fundo Novo XP</td><td>Fundo</td><td class="v-mask">R$ 5.200</td><td><span class="badge-warn">CONFLITO</span></td></tr>
+          <tr><td>???</td><td>—</td><td class="v-mask">R$ 800</td><td><span class="badge-err">ERRO</span></td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:var(--slate);margin-bottom:16px">
+        <span style="color:var(--verde)">10 prontos</span> · <span style="color:var(--amber)">1 conflito</span> · <span style="color:var(--red)">1 erro</span>
+      </div>
+      <button class="btn-p" onclick="goStep(3)">Continuar com 11 ativos</button>
+      <button class="btn-ghost" onclick="goStep(1)">Voltar</button>
+    </div>
+
+    <div id="imp-step3" style="display:none">
+      <div class="confirm-summary">
+        <div class="cs-row">
+          <div class="cs-item"><div class="cs-num" style="color:var(--verde)">11</div><div class="cs-label">serao criados</div></div>
+          <div class="cs-item"><div class="cs-num" style="color:var(--red)">1</div><div class="cs-label">ignorado</div></div>
+        </div>
+      </div>
+      <div class="cs-breakdown">
+        <b>Por instituicao:</b> XP: 5 · Itau: 4 · Onze: 2<br>
+        <b>Por classe:</b> Fundos: 4 · Prev.: 3 · Acoes: 2 · Tesouro: 1 · Cofr.: 1
+      </div>
+      <div style="font-size:13px;color:var(--ink);margin-bottom:20px;line-height:1.6">
+        Os 11 ativos serao adicionados a sua carteira. O ativo com erro sera ignorado.
+      </div>
+      <button class="btn-p" onclick="confirmImport()">Confirmar importacao</button>
+      <button class="btn-ghost" onclick="goStep(2)">Voltar para revisao</button>
+    </div>
+  </div>
+
+  <!-- ═══════ SHEET A: SALDO RAPIDO ═══════ -->
+  <div class="ov" id="ov-saldo" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-saldo">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" width="32" height="32" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+      <div>
+        <div class="sl-text" id="ss-title">Atualizar saldo</div>
+        <div class="sl-mode" id="ss-sub">atualizado ha 1 dia</div>
+      </div>
+    </div>
+    <div class="sh-label">Saldo atual no app da instituicao</div>
+    <div class="sh-input-wrap">
+      <span class="prefix">R$</span>
+      <input class="sh-input" id="ss-input" type="text" placeholder="0,00" inputmode="decimal">
+    </div>
+    <div class="sh-hint" id="ss-hint">Ultimo: R$ 30.566,46 · em 12/jun</div>
+    <button class="btn-p" onclick="saveSaldo()">Salvar saldo</button>
+    <button class="btn-ghost" onclick="closeAll()">Cancelar</button>
+  </div>
+
+  <!-- ═══════ SHEET B: EDITAR/REMOVER ═══════ -->
+  <div class="ov" id="ov-edit" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-edit">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" width="32" height="32" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+      <div>
+        <div class="sl-text" id="se-title">CPLE3</div>
+        <div class="sl-mode" id="se-sub">Acao · XP · cotacao automatica</div>
+      </div>
+    </div>
+
+    <div id="edit-normal">
+      <div class="sh-field">
+        <label>Nome do ativo</label>
+        <input type="text" id="se-name" value="CPLE3 · Copel">
+      </div>
+      <div class="sh-label">Instituicao</div>
+      <div class="chips" id="se-inst-chips">
+        <div class="chip sel" onclick="selInstChip(this,'edit')">XP</div>
+        <div class="chip" onclick="selInstChip(this,'edit')">Itau</div>
+        <div class="chip" onclick="selInstChip(this,'edit')">Onze</div>
+        <div class="chip" onclick="selInstChip(this,'edit')">Outros</div>
+      </div>
+      <div class="inst-name-row" id="se-inst-name-row">
+        <div class="sh-field">
+          <label>Nome da instituicao</label>
+          <input type="text" id="se-inst-name" placeholder="ex: Nubank, BTG, Rico">
+        </div>
+      </div>
+      <div class="sh-label">Classe</div>
+      <div class="chips" id="se-class-chips">
+        <div class="chip sel" onclick="selChip(this)">Acao/FII</div>
+        <div class="chip" onclick="selChip(this)">Fundo</div>
+        <div class="chip" onclick="selChip(this)">Previdencia</div>
+        <div class="chip" onclick="selChip(this)">Tesouro</div>
+        <div class="chip" onclick="selChip(this)">RF</div>
+        <div class="chip" onclick="selChip(this)">Poupanca</div>
+        <div class="chip" onclick="selChip(this)">Cofrinho</div>
+      </div>
+      <div class="sh-field" id="se-ticker-row">
+        <label>Ticker B3</label>
+        <input type="text" value="CPLE3" style="text-transform:uppercase">
+      </div>
+      <div class="sh-field" id="se-qty-row">
+        <label>Quantidade</label>
+        <input type="text" value="28" inputmode="decimal">
+      </div>
+      <div class="sh-field">
+        <label>Valor aplicado (custo total)</label>
+        <input type="text" value="R$ 373,52" inputmode="decimal">
+      </div>
+      <button class="btn-p" onclick="saveEdit()">Salvar alteracoes</button>
+      <div class="divider"></div>
+      <div id="confirm-area" style="display:none">
+        <div class="confirm-box">
+          <p>Remover? Historico nao e afetado.</p>
+          <div class="confirm-btns">
+            <button class="cb-cancel" onclick="cancelRemove()">Cancelar</button>
+            <button class="cb-confirm" onclick="confirmRemove()">Remover</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-danger" id="btn-remove" onclick="askRemove()">Remover ativo</button>
+    </div>
+
+    <div id="edit-redeeming" style="display:none">
+      <div class="redeem-flow">
+        <div class="rf-q">O resgate foi concluido?</div>
+        <button class="redeem-opt danger" onclick="confirmRemove()">
+          Sim, remover
+          <small>O ativo sera arquivado (soft delete)</small>
+        </button>
+        <button class="redeem-opt positive" onclick="redeemBack()">
+          Voltou para ativo
+          <small>Status volta para ativo, atualize o saldo</small>
+        </button>
+        <button class="redeem-opt" onclick="closeAll()">
+          Ainda em andamento
+          <small>Fecha sem alterar</small>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SHEET C: ADICIONAR ═══════ -->
+  <div class="ov" id="ov-add" onclick="closeAll()"></div>
+  <div class="sheet" id="sh-add">
+    <div class="grab"></div>
+    <div class="sheet-logo">
+      <svg viewBox="0 0 100 100" width="32" height="32" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="24" fill="#16242F"/><path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+      <div>
+        <div class="sl-text">Adicionar ativo</div>
+        <div class="sl-mode">preencha e salve</div>
+      </div>
+    </div>
+    <div class="sh-label">Instituicao</div>
+    <div class="chips">
+      <div class="chip sel" onclick="selInstChip(this,'add')">XP</div>
+      <div class="chip" onclick="selInstChip(this,'add')">Itau</div>
+      <div class="chip" onclick="selInstChip(this,'add')">Onze</div>
+      <div class="chip" onclick="selInstChip(this,'add')">Outros</div>
+    </div>
+    <div class="inst-name-row" id="sa-inst-name-row">
+      <div class="sh-field">
+        <label>Nome da instituicao</label>
+        <input type="text" placeholder="ex: Nubank, BTG, Rico">
+      </div>
+    </div>
+    <div class="sh-label">Classe</div>
+    <div class="chips">
+      <div class="chip sel" onclick="selChip(this)">Acao/FII</div>
+      <div class="chip" onclick="selChip(this)">Fundo</div>
+      <div class="chip" onclick="selChip(this)">Previdencia</div>
+      <div class="chip" onclick="selChip(this)">Tesouro</div>
+      <div class="chip" onclick="selChip(this)">RF</div>
+      <div class="chip" onclick="selChip(this)">Poupanca</div>
+      <div class="chip" onclick="selChip(this)">Cofrinho</div>
+    </div>
+    <div class="sh-label" style="margin-bottom:8px">Modo</div>
+    <div class="toggle-row">
+      <div class="toggle-opt" id="tog-auto" onclick="setAddMode('auto')">Automatico (ticker B3)</div>
+      <div class="toggle-opt sel" id="tog-man" onclick="setAddMode('manual')">Manual (saldo no app)</div>
+    </div>
+    <div id="fields-auto" style="display:none">
+      <div class="sh-field"><label>Nome</label><input type="text" placeholder="ex: Petrobras PN"></div>
+      <div class="sh-field"><label>Ticker B3</label><input type="text" placeholder="ex: PETR4" style="text-transform:uppercase"></div>
+      <div class="sh-field"><label>Quantidade</label><input type="text" placeholder="ex: 100" inputmode="decimal"></div>
+      <div class="sh-field"><label>Valor aplicado total</label><input type="text" placeholder="ex: R$ 3.200,00" inputmode="decimal"></div>
+    </div>
+    <div id="fields-manual">
+      <div class="sh-field"><label>Nome</label><input type="text" placeholder="ex: Fundo Kinea RF"></div>
+      <div class="sh-field"><label>Saldo atual (do app)</label><input type="text" placeholder="ex: R$ 10.800,00" inputmode="decimal"></div>
+      <div class="sh-field"><label>Valor aplicado total</label><input type="text" placeholder="ex: R$ 10.000,00" inputmode="decimal"></div>
+    </div>
+    <button class="btn-p" onclick="saveAdd()">Adicionar ativo</button>
+    <button class="btn-ghost" onclick="closeAll()">Cancelar</button>
+  </div>
+
+  <div class="toast" id="toast">Salvo</div>
+
+  <div class="tabbar">
+    <div class="tab-item active" data-s="s-hoje" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Hoje</div>
+    <div class="tab-item" data-s="s-carteira" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Carteira</div>
+    <div class="tab-item" data-s="s-hist" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><path d="M4 19L9 12l4 4 7-9"/></svg>Historico</div>
+    <div class="tab-item" data-s="s-import" onclick="go(this)">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Importar</div>
+  </div>
+</div>
+
+<div class="label" style="max-width:420px;line-height:1.8">
+  4 telas · 4 sheets · dark mode · ocultar valores · donut chart · barra empilhada · sub-agrupamento · filtros · spec funcional v1.3 · 98 RNs
+</div>
+
+<script>
+var ASSETS=[
+  {n:'CPLE3 · Copel',inst:'XP',cls:'Acao',bal:409,inv:373.52,auto:true,st:'active',qty:28,price:14.61},
+  {n:'ITSA4 · Itausa',inst:'XP',cls:'Acao',bal:348,inv:373.68,auto:true,st:'active',qty:27,price:12.90},
+  {n:'RANI3 · Irani',inst:'XP',cls:'Acao',bal:326,inv:373.10,auto:true,st:'active',qty:41,price:7.95},
+  {n:'AZ Quest Luce Prev PGBL',inst:'XP',cls:'Previdencia',bal:12362,inv:10000,auto:false,st:'active',days:1},
+  {n:'Western Asset US 500',inst:'XP',cls:'Fundo',bal:4563,inv:4150.21,auto:false,st:'active',days:1},
+  {n:'ACE Capital Multicenarios',inst:'XP',cls:'Fundo',bal:1478,inv:1447.64,auto:false,st:'active',days:1},
+  {n:'Trend Ouro FIF Multi',inst:'XP',cls:'Fundo',bal:1262,inv:952.87,auto:false,st:'active',days:1},
+  {n:'BRST3 · BrasilAgro',inst:'Itau',cls:'Acao',bal:540,inv:586.15,auto:true,st:'active',qty:200,price:2.70},
+  {n:'Kinea Andes Prev PGBL',inst:'Itau',cls:'Previdencia',bal:30566,inv:0,auto:false,st:'active',days:1},
+  {n:'Cofrinhos ION',inst:'Itau',cls:'Cofrinho',bal:21868,inv:0,auto:false,st:'active',days:1},
+  {n:'Kinea Andes RF CP LP',inst:'Itau',cls:'Fundo',bal:2568,inv:0,auto:false,st:'active',days:1},
+  {n:'Poupanca MULTIDATA',inst:'Itau',cls:'Poupanca',bal:302,inv:0,auto:false,st:'active',days:1},
+  {n:'Icatu Vanguarda Pos Fixado',inst:'Onze',cls:'Previdencia',bal:50161,inv:50160.95,auto:false,st:'active',days:35},
+  {n:'Schroder Icatu Low Vol',inst:'Onze',cls:'Previdencia',bal:23968,inv:23968.24,auto:false,st:'active',days:1},
+  {n:'Icatu Seg FIC Empresarial',inst:'Onze',cls:'Previdencia',bal:8432,inv:8432.36,auto:false,st:'active',days:1},
+  {n:'Selection RF Light',inst:'XP',cls:'Fundo',bal:1100,inv:984.64,auto:false,st:'redeeming'},
+  {n:'Legacy Capital Compound',inst:'XP',cls:'Fundo',bal:2000,inv:1900,auto:false,st:'redeeming'},
+  {n:'Trend Valor Brasil FIA',inst:'XP',cls:'Fundo',bal:877,inv:750,auto:false,st:'redeeming'},
+  {n:'Trend Fixed Income US',inst:'XP',cls:'Fundo',bal:135,inv:124.33,auto:false,st:'redeeming'}
+];
+
+var INST_COLORS={XP:'#2A5A66',Itau:'#1F7A4D',Onze:'#B7791F'};
+var CLS_COLORS={Previdencia:'#2A5A66',Acao:'#1F7A4D',Fundo:'#C2335B',Cofrinho:'#B7791F',Poupanca:'#6B7280'};
+var donutMode='inst', cartMode='inst', cartFilter=null;
+
+function fmt(v){return v.toLocaleString('pt-BR');}
+function pct(v,t){return t?((v/t)*100).toFixed(1):'0.0';}
+function delta(bal,inv){if(!inv)return '';var p=((bal-inv)/inv*100).toFixed(1);return p>=0?'+'+p+'%':p+'%';}
+
+/* ═══ TAB NAV ═══ */
+function go(el){
+  document.querySelectorAll('.tab-item').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  el.classList.add('active');
+  document.getElementById(el.dataset.s).classList.add('active');
+}
+
+function closeAll(){
+  ['ov-saldo','ov-edit','ov-add'].forEach(function(id){document.getElementById(id).classList.remove('open');});
+  ['sh-saldo','sh-edit','sh-add'].forEach(function(id){document.getElementById(id).classList.remove('open');});
+  document.getElementById('confirm-area').style.display='none';
+  document.getElementById('btn-remove').style.display='block';
+  document.getElementById('edit-normal').style.display='block';
+  document.getElementById('edit-redeeming').style.display='none';
+  var tip=document.getElementById('chart-tip');if(tip)tip.classList.remove('show');
+}
+
+/* ═══ DONUT (HOJE) ═══ */
+function setDonutMode(m){
+  donutMode=m;
+  document.getElementById('dt-inst').classList.toggle('sel',m==='inst');
+  document.getElementById('dt-class').classList.toggle('sel',m==='class');
+  drawDonut();
+}
+
+function drawDonut(){
+  var active=ASSETS.filter(function(a){return a.st==='active';});
+  var total=active.reduce(function(s,a){return s+a.bal;},0);
+  var groups={},colors=donutMode==='inst'?INST_COLORS:CLS_COLORS;
+  active.forEach(function(a){
+    var k=donutMode==='inst'?a.inst:a.cls;
+    groups[k]=(groups[k]||0)+a.bal;
+  });
+  var data=Object.keys(groups).map(function(k){return{name:k,value:groups[k],color:colors[k]||'#6B7280'};});
+  data.sort(function(a,b){return b.value-a.value;});
+
+  var svg=document.getElementById('donut-svg');
+  svg.innerHTML='';
+  var cx=90,cy=90,r=80,inner=52,cum=-Math.PI/2;
+  data.forEach(function(d){
+    var angle=(d.value/total)*2*Math.PI;
+    var gap=0.03,sa=cum+gap/2,ea=cum+angle-gap/2;
+    var la=angle>Math.PI?1:0;
+    var x1o=cx+r*Math.cos(sa),y1o=cy+r*Math.sin(sa);
+    var x2o=cx+r*Math.cos(ea),y2o=cy+r*Math.sin(ea);
+    var x1i=cx+inner*Math.cos(ea),y1i=cy+inner*Math.sin(ea);
+    var x2i=cx+inner*Math.cos(sa),y2i=cy+inner*Math.sin(sa);
+    var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M'+x1o+','+y1o+' A'+r+','+r+' 0 '+la+' 1 '+x2o+','+y2o+' L'+x1i+','+y1i+' A'+inner+','+inner+' 0 '+la+' 0 '+x2i+','+y2i+' Z');
+    path.setAttribute('fill',d.color);
+    path.style.cursor='pointer';
+    path.style.transition='opacity .15s';
+    (function(dd){
+      path.addEventListener('click',function(){
+        document.getElementById('donut-center').innerHTML='<div class="dc-label">'+dd.name+'</div><div class="dc-val v-mask">R$ '+fmt(dd.value)+'</div><div class="dc-pct">'+pct(dd.value,total)+'%</div>';
+        if(masked)reMask();
+      });
+    })(d);
+    svg.appendChild(path);
+    cum+=angle;
+  });
+
+  var leg=document.getElementById('donut-legend');
+  leg.innerHTML=data.map(function(d){
+    return '<div class="legend-row"><div class="legend-left"><span class="legend-dot" style="background:'+d.color+'"></span><span class="legend-name">'+d.name+'</span></div><div class="legend-right"><span class="legend-val v-mask">R$ '+fmt(d.value)+'</span><span class="legend-pct v-mask">'+pct(d.value,total)+'%</span></div></div>';
+  }).join('');
+  if(masked)reMask();
+}
+
+/* ═══ CARTEIRA ═══ */
+function setCartMode(m){
+  cartMode=m;cartFilter=null;
+  document.getElementById('ct-inst').classList.toggle('sel',m==='inst');
+  document.getElementById('ct-class').classList.toggle('sel',m==='class');
+  renderCarteira();
+}
+function setCartFilter(f){
+  cartFilter=cartFilter===f?null:f;
+  renderCarteira();
+}
+
+function renderCarteira(){
+  var active=ASSETS.filter(function(a){return a.st==='active';});
+  var redeeming=ASSETS.filter(function(a){return a.st==='redeeming';});
+  var gKey=cartMode==='inst'?'inst':'cls';
+  var sKey=cartMode==='inst'?'cls':'inst';
+  var colors=cartMode==='inst'?INST_COLORS:CLS_COLORS;
+
+  var chipSet=[];
+  active.forEach(function(a){if(chipSet.indexOf(a[gKey])<0)chipSet.push(a[gKey]);});
+  var chipsHtml=chipSet.map(function(c){
+    var sel=cartFilter===c;
+    return '<button class="fchip'+(sel?' sel':'')+'" onclick="setCartFilter(\''+c+'\')">'+c+'</button>';
+  }).join('');
+  document.getElementById('cart-chips').innerHTML=chipsHtml;
+
+  var filtered=cartFilter?active.filter(function(a){return a[gKey]===cartFilter;}):active;
+  var filtTotal=filtered.reduce(function(s,a){return s+a.bal;},0);
+
+  var barGroups={};
+  filtered.forEach(function(a){var k=a[gKey];barGroups[k]=(barGroups[k]||0)+a.bal;});
+  var barHtml=Object.keys(barGroups).map(function(k){
+    var p=(barGroups[k]/filtTotal*100).toFixed(1);
+    return '<div style="width:'+p+'%;background:'+(colors[k]||'#6B7280')+';height:8px" title="'+k+': '+p+'%"></div>';
+  }).join('');
+  document.getElementById('cart-bar').innerHTML=barHtml;
+
+  var groups={};
+  filtered.forEach(function(a){var g=a[gKey];if(!groups[g])groups[g]=[];groups[g].push(a);});
+
+  var html='';
+  Object.keys(groups).forEach(function(gName){
+    var items=groups[gName];
+    var gTotal=items.reduce(function(s,a){return s+a.bal;},0);
+    html+='<div class="grp"><div style="display:flex;align-items:center;gap:8px"><span class="grp-dot" style="background:'+(colors[gName]||'#6B7280')+'"></span><span>'+gName+'</span></div><span class="grp-tot v-mask">R$ '+fmt(gTotal)+'</span></div>';
+
+    var subs={};
+    items.forEach(function(a){var s=a[sKey];if(!subs[s])subs[s]=[];subs[s].push(a);});
+
+    Object.keys(subs).forEach(function(sName){
+      html+='<div class="sub-grp">'+sName+'</div>';
+      subs[sName].forEach(function(a){
+        var badge=a.auto?'<span class="badge auto">auto</span>':'<span class="badge man'+(a.days&&a.days<=30?' ok':'')+'">manual</span>';
+        var metaExtra=a.auto?(a.qty+' cotas · R$ '+(a.price||0).toFixed(2)):(a.days?('ha '+a.days+(a.days===1?' dia':' dias')):'');
+        var isStale=a.days&&a.days>30;
+        var staleClass=isStale?' stale':'';
+        if(isStale)metaExtra+=' — atualize';
+        var dStr=a.inv?delta(a.bal,a.inv):'';
+        var dClass=dStr.charAt(0)==='-'?' neg':'';
+        var clickSaldo=!a.auto?(' onclick="openSaldo(\''+a.n.replace(/'/g,"\\'")+'\',\''+fmt(a.bal)+'\',\'12/jun\',\''+a.days+' dias\')"'):'';
+        html+='<div class="asset"'+clickSaldo+'><div class="info"><div class="name">'+a.n+'</div><div class="meta">'+badge+'<span class="'+staleClass+'">'+metaExtra+'</span></div></div><div class="right"><div class="v v-mask">R$ '+fmt(a.bal)+'</div>'+(dStr?'<div class="d'+dClass+' v-mask">'+dStr+'</div>':'')+'</div><div class="more" onclick="event.stopPropagation();openEdit(\''+a.n.replace(/'/g,"\\'")+'\',\''+(a.auto?'auto':'manual')+'\')">···</div></div>';
+      });
+    });
+  });
+
+  if(redeeming.length){
+    var rTotal=redeeming.reduce(function(s,a){return s+a.bal;},0);
+    html+='<div class="redeem-sep"></div>';
+    html+='<div class="grp"><div style="display:flex;align-items:center;gap:8px"><span class="grp-dot" style="background:#C2335B"></span><span>Em resgate</span></div><span class="grp-tot v-mask">R$ '+fmt(rTotal)+'</span></div>';
+    redeeming.forEach(function(a){
+      var dStr=a.inv?delta(a.bal,a.inv):'';
+      html+='<div class="asset"><div class="info"><div class="name">'+a.n+'</div><div class="meta"><span class="badge red">resgate</span>'+a.inst+'</div></div><div class="right"><div class="v v-mask">R$ '+fmt(a.bal)+'</div>'+(dStr?'<div class="d v-mask">'+dStr+'</div>':'')+'</div><div class="more" onclick="openEdit(\''+a.n.replace(/'/g,"\\'")+'\',\'redeeming\')">···</div></div>';
+    });
+  }
+
+  document.getElementById('cart-list').innerHTML=html;
+  if(masked)reMask();
+}
+
+/* ═══ SHEETS ═══ */
+function openSaldo(name,balance,lastDate,daysSince){
+  closeAll();
+  document.getElementById('ss-title').textContent=name;
+  document.getElementById('ss-input').value='';
+  document.getElementById('ss-sub').textContent='atualizado ha '+daysSince;
+  document.getElementById('ss-hint').textContent='Ultimo: R$ '+balance+' · em '+lastDate;
+  document.getElementById('ov-saldo').classList.add('open');
+  document.getElementById('sh-saldo').classList.add('open');
+}
+function saveSaldo(){closeAll();toast('Saldo salvo · frescor renovado');}
+
+function openEdit(name,mode){
+  closeAll();
+  document.getElementById('se-title').textContent=name;
+  var isAuto=mode==='auto',isRed=mode==='redeeming';
+  document.getElementById('se-sub').textContent=
+    isRed?'Fundo · em resgate':isAuto?'Acao/FII · cotacao automatica':'Fundo/Prev · saldo manual';
+  if(isRed){
+    document.getElementById('edit-normal').style.display='none';
+    document.getElementById('edit-redeeming').style.display='block';
+  }else{
+    document.getElementById('edit-normal').style.display='block';
+    document.getElementById('edit-redeeming').style.display='none';
+    document.getElementById('se-ticker-row').style.display=isAuto?'block':'none';
+    document.getElementById('se-qty-row').style.display=isAuto?'block':'none';
+  }
+  document.getElementById('ov-edit').classList.add('open');
+  document.getElementById('sh-edit').classList.add('open');
+}
+function saveEdit(){closeAll();toast('Alteracoes salvas');}
+function askRemove(){document.getElementById('confirm-area').style.display='block';document.getElementById('btn-remove').style.display='none';}
+function cancelRemove(){document.getElementById('confirm-area').style.display='none';document.getElementById('btn-remove').style.display='block';}
+function confirmRemove(){closeAll();toast('Ativo removido');}
+function redeemBack(){closeAll();toast('Status alterado para ativo');}
+
+function openAdd(){closeAll();document.getElementById('ov-add').classList.add('open');document.getElementById('sh-add').classList.add('open');}
+function saveAdd(){closeAll();toast('Ativo adicionado');}
+
+function selChip(el){el.closest('.chips').querySelectorAll('.chip').forEach(function(c){c.classList.remove('sel');});el.classList.add('sel');}
+function selInstChip(el,ctx){
+  selChip(el);
+  var isOutros=el.textContent.trim()==='Outros';
+  var rowId=ctx==='edit'?'se-inst-name-row':'sa-inst-name-row';
+  document.getElementById(rowId).classList.toggle('visible',isOutros);
+}
+function setAddMode(m){
+  document.getElementById('tog-auto').classList.toggle('sel',m==='auto');
+  document.getElementById('tog-man').classList.toggle('sel',m==='manual');
+  document.getElementById('fields-auto').style.display=m==='auto'?'block':'none';
+  document.getElementById('fields-manual').style.display=m==='manual'?'block':'none';
+}
+
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1900);}
+
+/* ═══ IMPORT WIZARD ═══ */
+function selectFile(){
+  document.getElementById('file-info').style.display='block';
+  document.getElementById('btn-process').style.display='block';
+  document.querySelector('.dropzone').style.display='none';
+}
+function processFile(){goStep(2);}
+function goStep(n){
+  [1,2,3].forEach(function(i){
+    document.getElementById('imp-step'+i).style.display=i===n?'block':'none';
+    var ws=document.getElementById('ws-'+i);
+    ws.classList.remove('active','done');
+    if(i<n)ws.classList.add('done');
+    if(i===n)ws.classList.add('active');
+  });
+  if(n===1){
+    document.querySelector('.dropzone').style.display='block';
+    document.getElementById('file-info').style.display='none';
+    document.getElementById('btn-process').style.display='none';
+  }
+}
+function confirmImport(){
+  goStep(1);
+  go(document.querySelector('[data-s="s-carteira"]'));
+  toast('11 ativos importados');
+}
+
+/* ═══ CHART TOOLTIP ═══ */
+var tipData=[
+  {m:'Jan/26',v:'R$ 141.800'},{m:'Fev/26',v:'R$ 143.800'},{m:'Mar/26',v:'R$ 146.500'},
+  {m:'Abr/26',v:'R$ 150.600'},{m:'Mai/26',v:'R$ 155.300'},{m:'Jun/26',v:'R$ 159.153'}
+];
+function showTip(idx,cx,cy){
+  var tip=document.getElementById('chart-tip');
+  if(!tipData[idx])return;
+  tip.textContent=tipData[idx].m+': '+tipData[idx].v;
+  var card=tip.parentElement;
+  var rect=card.querySelector('svg').getBoundingClientRect();
+  var cardRect=card.getBoundingClientRect();
+  var scaleX=rect.width/320;
+  var px=cx*scaleX+rect.left-cardRect.left;
+  var py=cy*(rect.height/110)+rect.top-cardRect.top;
+  tip.style.left=Math.max(10,Math.min(px-40,cardRect.width-120))+'px';
+  tip.style.top=(py-30)+'px';
+  tip.classList.add('show');
+}
+
+/* ═══ DARK MODE ═══ */
+function toggleDark(){
+  document.getElementById('phone').classList.toggle('dark');
+  document.getElementById('ctrl-dark').classList.toggle('active');
+}
+
+/* ═══ MASK VALUES ═══ */
+var masked=false;
+function reMask(){
+  document.querySelectorAll('.v-mask').forEach(function(el){
+    if(!el.dataset.orig)el.dataset.orig=el.textContent;
+    var orig=el.dataset.orig;
+    if(orig.indexOf('R$')>=0)el.textContent='R$ *****,**';
+    else if(orig.indexOf('%')>=0)el.textContent='**,**%';
+    else el.textContent='*****';
+    el.style.color='var(--mist)';
+    el.style.letterSpacing='2px';
+  });
+}
+function unMask(){
+  document.querySelectorAll('.v-mask').forEach(function(el){
+    if(el.dataset.orig){
+      el.textContent=el.dataset.orig;
+      el.style.color='';
+      el.style.letterSpacing='';
+    }
+  });
+}
+function toggleMask(){
+  masked=!masked;
+  document.getElementById('ctrl-mask').classList.toggle('active',masked);
+  if(masked)reMask();else unMask();
+}
+
+/* ═══ INIT ═══ */
+drawDonut();
+renderCarteira();
+</script>
+</body>
+</html>
