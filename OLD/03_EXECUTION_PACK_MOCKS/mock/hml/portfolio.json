@@ -1,0 +1,152 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-portfolio-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "portfolioId": "portfolio_demo_01",
+    "summary": {
+      "totalEquity": 11441.28,
+      "totalInvested": 11066.1,
+      "totalProfitLoss": 375.18,
+      "totalProfitLossPct": 3.39,
+      "statusLabel": "Atenção moderada"
+    },
+    "groups": [
+      {
+        "key": "PENSION",
+        "label": "Previdência",
+        "totalValue": 8795.0,
+        "sharePct": 76.87,
+        "holdings": [
+          {
+            "id": "position_05",
+            "assetId": "asset_tim_prev",
+            "code": "TIM-PREV",
+            "name": "Previdência TIM",
+            "categoryKey": "PENSION",
+            "platformId": "platform_tim_prev",
+            "platformName": "Previdência TIM",
+            "quantity": 1,
+            "averagePrice": 8450.0,
+            "currentPrice": 8795.0,
+            "currentValue": 8795.0,
+            "investedAmount": 8450.0,
+            "performancePct": 4.08,
+            "allocationPct": 76.87,
+            "recommendation": "Manter",
+            "statusLabel": "Proteção forte"
+          }
+        ]
+      },
+      {
+        "key": "BOND",
+        "label": "Renda fixa",
+        "totalValue": 1568.0,
+        "sharePct": 13.7,
+        "holdings": [
+          {
+            "id": "position_04",
+            "assetId": "asset_tesouro_ipca",
+            "code": "TESOURO-IPCA",
+            "name": "Tesouro IPCA 2035",
+            "categoryKey": "BOND",
+            "platformId": "platform_ion",
+            "platformName": "ION Itaú",
+            "quantity": 1,
+            "averagePrice": 1500.0,
+            "currentPrice": 1568.0,
+            "currentValue": 1568.0,
+            "investedAmount": 1500.0,
+            "performancePct": 4.53,
+            "allocationPct": 13.7,
+            "recommendation": "Manter",
+            "statusLabel": "Proteção complementar"
+          }
+        ]
+      },
+      {
+        "key": "STOCK",
+        "label": "Ações",
+        "totalValue": 1078.28,
+        "sharePct": 9.43,
+        "holdings": [
+          {
+            "id": "position_01",
+            "assetId": "asset_itsa4",
+            "code": "ITSA4",
+            "name": "Itaúsa",
+            "categoryKey": "STOCK",
+            "platformId": "platform_xp",
+            "platformName": "XP Investimentos",
+            "quantity": 27,
+            "averagePrice": 13.84,
+            "currentPrice": 14.52,
+            "currentValue": 392.04,
+            "investedAmount": 373.68,
+            "performancePct": 4.91,
+            "allocationPct": 3.43,
+            "recommendation": "Manter",
+            "statusLabel": "Boa estabilidade"
+          },
+          {
+            "id": "position_02",
+            "assetId": "asset_cple3",
+            "code": "CPLE3",
+            "name": "Copel",
+            "categoryKey": "STOCK",
+            "platformId": "platform_xp",
+            "platformName": "XP Investimentos",
+            "quantity": 28,
+            "averagePrice": 13.34,
+            "currentPrice": 12.95,
+            "currentValue": 362.6,
+            "investedAmount": 373.52,
+            "performancePct": -2.93,
+            "allocationPct": 3.17,
+            "recommendation": "Monitorar",
+            "statusLabel": "Oscilação controlada"
+          },
+          {
+            "id": "position_03",
+            "assetId": "asset_cmin3",
+            "code": "CMIN3",
+            "name": "CSN Mineração",
+            "categoryKey": "STOCK",
+            "platformId": "platform_ion",
+            "platformName": "ION Itaú",
+            "quantity": 62,
+            "averagePrice": 5.95,
+            "currentPrice": 5.22,
+            "currentValue": 323.64,
+            "investedAmount": 368.9,
+            "performancePct": -12.27,
+            "allocationPct": 2.83,
+            "recommendation": "Revisar",
+            "statusLabel": "Em atenção"
+          }
+        ]
+      }
+    ],
+    "orders": [
+      {
+        "id": "order_mock_01",
+        "orderKind": "buy",
+        "assetCode": "ITSA4",
+        "suggestedAmount": 150.0,
+        "reason": "Aumentar gradualmente a fatia de crescimento defensivo.",
+        "priority": "medium"
+      },
+      {
+        "id": "order_mock_02",
+        "orderKind": "buy",
+        "assetCode": "CPLE3",
+        "suggestedAmount": 100.0,
+        "reason": "Diluir concentração em previdência sem subir risco de forma burra.",
+        "priority": "medium"
+      }
+    ]
+  }
+}

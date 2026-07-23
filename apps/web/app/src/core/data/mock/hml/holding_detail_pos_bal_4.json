@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_holding_pension",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "holding": {
+      "id": "pos_bal_4",
+      "assetId": "ast_prev",
+      "code": null,
+      "name": "Previdencia Demo",
+      "categoryKey": "previdencia",
+      "categoryLabel": "Previdencia",
+      "platformId": "plt_ion",
+      "platformName": "Ion Itau",
+      "quantity": 1,
+      "averagePrice": 15000.0,
+      "currentPrice": 15350.0,
+      "currentValue": 15350.0,
+      "investedAmount": 15000.0,
+      "performanceValue": 350.0,
+      "performancePct": 2.33,
+      "allocationPct": 72.15,
+      "recommendation": "Reduzir concentracao aos poucos",
+      "statusLabel": "Cotacao disponivel",
+      "quotationStatus": "priced",
+      "notes": "",
+      "stopLoss": null,
+      "targetPrice": null,
+      "sourceKind": "manual",
+      "assetTypeCode": "PENSION"
+    },
+    "ranking": {
+      "score": 52,
+      "status": "Atencao",
+      "motives": [],
+      "opportunityScore": 50
+    },
+    "recommendation": {
+      "code": "reduce_concentration_pension",
+      "title": "Diluir concentracao",
+      "body": "A previdencia virou o maior bloco da carteira. Use novos aportes fora dela ate reduzir o peso."
+    },
+    "categoryContext": {
+      "categoryKey": "previdencia",
+      "categoryLabel": "Previdencia",
+      "categoryRisk": "Moderada",
+      "categoryRecommendation": "Nao deixar dominar a carteira",
+      "primaryMessage": "Previdencia pode ser estrategica, mas quando domina ela reduz flexibilidade e aumenta dependencia de um unico bloco.",
+      "holdingsCount": 1,
+      "totalCurrent": 15350.0,
+      "totalInvested": 15000.0,
+      "totalProfitLoss": 350.0,
+      "totalProfitLossPct": 2.33
+    },
+    "externalLink": null
+  }
+}
+

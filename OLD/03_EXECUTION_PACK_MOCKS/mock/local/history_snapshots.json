@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-history-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "portfolioId": "portfolio_demo_01",
+    "snapshots": [
+      {
+        "snapshotId": "snapshot_2026_02",
+        "referenceDate": "2026-02-28",
+        "totalEquity": 11110.0,
+        "totalInvested": 10880.0,
+        "totalProfitLoss": 230.0,
+        "totalProfitLossPct": 2.11
+      },
+      {
+        "snapshotId": "snapshot_2026_03",
+        "referenceDate": "2026-03-30",
+        "totalEquity": 11441.28,
+        "totalInvested": 11066.1,
+        "totalProfitLoss": 375.18,
+        "totalProfitLossPct": 3.39
+      }
+    ],
+    "events": [
+      {
+        "id": "event_01",
+        "eventType": "import_committed",
+        "eventStatus": "success",
+        "message": "Importação confirmada com sucesso.",
+        "occurredAt": "2026-03-05T12:10:00Z"
+      },
+      {
+        "id": "event_02",
+        "eventType": "snapshot_created",
+        "eventStatus": "success",
+        "message": "Snapshot mensal criado.",
+        "occurredAt": "2026-03-30T09:00:00Z"
+      },
+      {
+        "id": "event_03",
+        "eventType": "analysis_generated",
+        "eventStatus": "success",
+        "message": "Análise principal da carteira gerada.",
+        "occurredAt": "2026-03-30T09:01:00Z"
+      }
+    ]
+  }
+}

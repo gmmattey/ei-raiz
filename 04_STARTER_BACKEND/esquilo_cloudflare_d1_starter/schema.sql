@@ -1,0 +1,16 @@
+-- ============================================================
+-- ATENÇÃO: Este arquivo NÃO é a fonte de verdade do schema.
+-- ============================================================
+-- A fonte canônica está em:
+--   ../../database/d1/schema.sql
+--
+-- Para aplicar o schema, use os comandos documentados em ENVIRONMENTS.md:
+--
+--   npx wrangler d1 execute esquilo-invest-local \
+--     --env local \
+--     --file=../../database/d1/schema.sql \
+--     --remote
+--
+-- NÃO edite este arquivo. Qualquer alteração de schema deve ser feita
+-- em database/d1/schema.sql e aplicada via wrangler nos ambientes corretos.
+-- ============================================================

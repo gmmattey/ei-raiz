@@ -1,0 +1,2344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esquilo Invest — Bíblia do Produto</title>
+  <meta
+    name="description"
+    content="Documento mestre canônico do Esquilo Invest consolidado exclusivamente a partir do repositório Quebra-Nozes."
+  >
+  <link rel="stylesheet" href="esquilo_biblia_produto.css">
+</head>
+<body>
+  <nav class="quick-nav">
+    <div class="quick-nav__inner">
+      <div class="quick-nav__brand">
+        <img src="assets/esquilo_logo.png" alt="Marca Esquilo Invest">
+        <span>Esquilo Invest · Bíblia Canônica</span>
+      </div>
+      <div class="quick-nav__links">
+        <a href="#manifesto">Manifesto</a>
+        <a href="#canonica">Canônica</a>
+        <a href="#marca">Marca</a>
+        <a href="#funcional">Funcional</a>
+        <a href="#prototipos">Protótipos</a>
+        <a href="#dsi">DSI</a>
+        <a href="#codex">Guia Codex</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="document">
+    <section class="section section--dark cover" id="capa">
+      <div class="cover__top">
+        <div class="cover__brand">
+          <img src="assets/esquilo_logo.png" alt="Logo do Esquilo Invest">
+          <div>
+            <span class="cover__eyebrow">Documento Mestre · Versão Canônica</span>
+            <h1>Bíblia do Produto Esquilo Invest</h1>
+            <p class="cover__subtitle">
+              Referência executiva, funcional, visual, arquitetural e técnica consolidada
+              exclusivamente a partir do repositório <strong>Quebra-Nozes</strong>.
+            </p>
+          </div>
+        </div>
+        <div class="cover__meta">
+          <div class="kv-list">
+            <div>
+              <dt>Versão</dt>
+              <dd>v2026.04 · edição canônica inicial</dd>
+            </div>
+            <div>
+              <dt>Data-base</dt>
+              <dd>02 de abril de 2026</dd>
+            </div>
+            <div>
+              <dt>Escopo</dt>
+              <dd>Produto, marca, UX, arquitetura, backlog real e manutenção futura pelo Codex.</dd>
+            </div>
+            <div>
+              <dt>Frase de posição</dt>
+              <dd>O tradutor da vida financeira aplicada, feito para consolidar, traduzir e orientar.</dd>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover__summary">
+        <div class="cover__statement">
+          <span class="metric-card__label">Resumo Executivo</span>
+          <p>
+            Este material substitui a documentação anterior como narrativa principal do produto.
+            Ele não transforma hipótese em fato, não promove protótipo a entrega e não esconde os
+            conflitos internos do repositório. Onde o <strong>Quebra-Nozes</strong> já sustenta
+            decisão, a decisão foi consolidada. Onde a base ainda está fragmentada, a fragmentação
+            foi registrada com critério e fechada como governança documental para reduzir
+            deriva entre produto, design, branding, UX e engenharia.
+          </p>
+          <p>
+            A direção oficial passa a ser: <strong>`apps/` consome</strong>,
+            <strong>`services/api` entrega a fronteira HTTP</strong>,
+            <strong>`backend/modules` concentra o domínio</strong>,
+            <strong>`packages/` compartilha contratos e núcleo</strong> e
+            <strong>`database/d1/schema.sql` governa o modelo de dados</strong>.
+            O starter D1 continua relevante como evidência do estado atual, mas deixa de ser
+            tratado como casa oficial definitiva.
+          </p>
+        </div>
+
+        <div class="panel panel--dark">
+          <span class="metric-card__label">Assinatura Editorial</span>
+          <p>
+            Material produzido como caderno de referência premium para liderança, investidores,
+            produto, UX, arquitetura, desenvolvimento e para o próprio Codex não perder a mão
+            ao evoluir o projeto.
+          </p>
+          <div class="badge-row">
+            <span class="badge badge--fact">Fonte exclusiva: Quebra-Nozes</span>
+            <span class="badge badge--decision">Substitui a documentação anterior</span>
+            <span class="badge badge--derived">Consolida padrão canônico futuro</span>
+            <span class="badge badge--open">Lacunas seguem marcadas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover__grid">
+        <article class="metric-card metric-card--dark">
+          <span class="metric-card__label">Fonte Normativa</span>
+          <span class="metric-card__value">1</span>
+          <p>Este documento passa a ser a leitura principal do produto.</p>
+        </article>
+        <article class="metric-card metric-card--dark">
+          <span class="metric-card__label">Backlog Auditável</span>
+          <span class="metric-card__value">233</span>
+          <p>Issues abertas observadas em 02/04/2026, sem espelho fiel de status real.</p>
+        </article>
+        <article class="metric-card metric-card--dark">
+          <span class="metric-card__label">Base Integrada</span>
+          <span class="metric-card__value">10d0519</span>
+          <p>Commit da `main` tratado pelo repositório como base auditada desta fase.</p>
+        </article>
+        <article class="metric-card metric-card--dark">
+          <span class="metric-card__label">Estado do Produto</span>
+          <span class="metric-card__value">Parcial</span>
+          <p>Produto forte em direção e regra; ainda fragmentado em runtime integrado.</p>
+        </article>
+      </div>
+
+      <p class="footnote">
+        Fonte principal da capa: `README.md`, `docs/README.md`, `docs/90_diagnostico/README.md`,
+        `docs/assets/esquilo_logo.png`.
+      </p>
+    </section>
+
+    <section class="section section--muted" id="sumario">
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Mapa do Documento</span>
+          <h2>Leitura Organizada para Executivo e Técnico</h2>
+        </div>
+        <p>
+          O documento foi desenhado para ser escaneável em leitura rápida e profundo quando o
+          leitor decide mergulhar. Cada parte cumpre um papel específico e aponta explicitamente
+          o que é fato, decisão documental, padronização derivada ou ponto aberto.
+        </p>
+      </div>
+
+      <div class="toc">
+        <a href="#manifesto">Parte 2 · Manifesto<small>Essência, tese e proposta de valor</small></a>
+        <a href="#canonica">Parte 3 · Bíblia Canônica<small>Papel, governança e uso obrigatório</small></a>
+        <a href="#conselho">Conselho Editorial<small>Personas humanas que conduzem a leitura</small></a>
+        <a href="#marca">Parte 4 · Essência da Marca<small>Marca, linguagem, tipografia, cores, ícones</small></a>
+        <a href="#visao">Parte 5 · Visão do Produto<small>Pilares, diferenciais e leitura de mercado</small></a>
+        <a href="#publico">Parte 6 · Público-Alvo<small>Mercado principal, secundário e objeções</small></a>
+        <a href="#funcional">Parte 7 · Especificação Funcional<small>Módulos reais, regras e status atual</small></a>
+        <a href="#jornada">Parte 8 · Jornada Total<small>Fluxo ponta a ponta com atritos e valor</small></a>
+        <a href="#prototipos">Parte 9 · Protótipos<small>Mockups documentais com direção visual aplicada</small></a>
+        <a href="#dsi">Parte 10 · DSI<small>Solução, arquitetura, dados, NFR e riscos</small></a>
+        <a href="#tecnica">Parte 11 · Técnica Mestra<small>Stack, pastas, contratos e integrações</small></a>
+        <a href="#experiencia">Parte 12 · Experiência do Desenvolvimento<small>Making of editorial e crítico</small></a>
+        <a href="#matriz">Parte 13 · Rastreabilidade<small>Decisões, conflitos e validação pendente</small></a>
+        <a href="#codex">Parte 14 · Guia Codex<small>Como manter o produto sem drift</small></a>
+        <a href="#fechamento">Parte 15 · Fechamento Executivo<small>Valor, implicações e próximos passos</small></a>
+      </div>
+    </section>
+
+    <section class="section" id="manifesto">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura Executiva · Ricardo Bastos</span>
+        <blockquote>
+          “O que me dá confiança aqui não é promessa de fintech grandiosa. É clareza de recorte:
+          o Esquilo não quer virar corretora, não quer parecer banco genérico e não quer empurrar
+          complexidade antes de resolver o básico.”
+        </blockquote>
+        <div class="editorial-note__signature">Ricardo Bastos · Estratégia e Investor-facing</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 2</span>
+          <h2>Manifesto do Produto</h2>
+          <p class="section__lede">
+            O Esquilo Invest existe para atacar uma dor simples e subestimada: muita gente investe
+            sem conseguir traduzir a própria carteira em entendimento prático.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Leitura forte para liderança</h3>
+          <p>
+            O produto não vende acesso a mercado. Ele vende clareza operacional para quem já
+            convive com investimentos, plataformas e decisões financeiras, mas ainda não tem uma
+            leitura consolidada, orientada e confiável do próprio cenário.
+          </p>
+        </div>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel">
+          <h3>O que é</h3>
+          <ul>
+            <li>Um produto que consolida a carteira do usuário em um único lugar.</li>
+            <li>Uma camada de tradução que transforma posição financeira em linguagem simples.</li>
+            <li>Um motor de orientação que destaca um problema principal e uma ação principal.</li>
+            <li>Uma base futura para histórico, radar, alertas, metas e decisões mais contextuais.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>O que resolve</h3>
+          <ul>
+            <li>Reduz opacidade: “quanto eu tenho” e “onde está” deixam de ser perguntas soltas.</li>
+            <li>Reduz dispersão: múltiplas plataformas viram uma leitura unificada.</li>
+            <li>Reduz ambiguidade: o sistema prioriza uma ação principal por vez.</li>
+            <li>Reduz jargão: análise técnica vira explicação usável por humano comum.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid-4">
+        <article class="panel">
+          <h3>Por que existe</h3>
+          <p>
+            Porque investir sem entender a estrutura da própria carteira gera ansiedade, falsa
+            sensação de controle e decisões ruins. O produto nasce para organizar, traduzir e
+            orientar antes de sofisticar.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Dor atacada</h3>
+          <p>
+            A dor central não é “falta de investimento”. É falta de leitura consolidada, simples e
+            acionável da vida financeira aplicada.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>O que não pretende ser</h3>
+          <p>
+            Não executa ordens, não promete retorno, não se vende como corretora e não terceiriza a
+            regra do produto para IA ou fonte externa.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Visão de futuro</h3>
+          <p>
+            Depois de consolidar a base, o Esquilo pode ficar mais inteligente, automático e
+            profundo, sem perder a premissa de clareza e uma decisão principal por rodada.
+          </p>
+        </article>
+      </div>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Proposta de valor:</strong> consolidar, traduzir, orientar.</span>
+        <span class="fact-pill"><strong>Tese central:</strong> primeiro muito bom no básico, depois mais inteligente.</span>
+        <span class="fact-pill"><strong>Fato canônico:</strong> o produto não executa compra ou venda.</span>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/20_product/visao_do_produto.md</span>
+        <span class="source-chip">docs/20_product/regras_do_produto.md</span>
+        <span class="source-chip">docs/20_product/jornada_principal.md</span>
+        <span class="source-chip">docs/20_product/o_que_manter_do_legado.md</span>
+      </div>
+    </section>
+
+    <section class="section section--dark" id="canonica">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Arquitetura · Augusto Menezes</span>
+        <blockquote>
+          “A maior ameaça deste repositório não era falta de ideia. Era falta de fronteira clara.
+          Esta bíblia existe para reduzir drift: ela diz o que é oficial, o que é estado real
+          temporário e o que ainda exige decisão explícita antes de qualquer feature nova.”
+        </blockquote>
+        <div class="editorial-note__signature">Augusto Menezes · Arquitetura e Soluções</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 3</span>
+          <h2>A Bíblia Canônica</h2>
+        </div>
+        <p>
+          Este documento passa a ser a principal referência narrativa do produto. Os documentos
+          ativos do repositório continuam como fonte primária de evidência, mas deixam de competir
+          entre si como narrativa dispersa. Arquivos em `OLD/` permanecem úteis como procedência e
+          contexto histórico, nunca como norma atual sem revalidação explícita.
+        </p>
+      </div>
+
+      <div class="badge-row">
+        <span class="badge badge--fact">Fato: a `main` integrada é a verdade de implementação</span>
+        <span class="badge badge--decision">Decisão: direção oficial documentada vira canônica</span>
+        <span class="badge badge--derived">Padronização: marca e UX fecham lacunas futuras</span>
+        <span class="badge badge--open">Aberto: implementação ainda não reflete toda a direção</span>
+      </div>
+
+      <div class="grid-2">
+        <article class="panel panel--dark">
+          <h3>Como este documento deve ser usado</h3>
+          <ul>
+            <li>Como leitura inicial obrigatória antes de mudar produto, UX, marca ou arquitetura.</li>
+            <li>Como filtro para evitar interpretações novas que contradigam a essência do Esquilo.</li>
+            <li>Como ponto de apoio para refino de backlog, revisão de PR e leitura executiva.</li>
+            <li>Como memória operacional do que já está resolvido e do que continua lacuna.</li>
+          </ul>
+        </article>
+        <article class="callout">
+          <h3>Substituição da documentação anterior</h3>
+          <p>
+            A documentação antiga deixa de ser a narrativa principal do produto. Quando houver
+            conflito entre este documento e materiais históricos, prevalece esta bíblia, salvo se a
+            implementação integrada na `main` provar que a bíblia precisa ser atualizada.
+          </p>
+        </article>
+      </div>
+
+      <table class="table source-table">
+        <thead>
+          <tr>
+            <th>Regra de Governança</th>
+            <th>Decisão Canônica</th>
+            <th>Implicação Operacional</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fronteira oficial do produto</td>
+            <td>`services/api` expõe a API; `backend/modules` concentra a regra; `database/d1/schema.sql` governa o dado.</td>
+            <td>O starter D1 deixa de ser tratado como destino arquitetural final.</td>
+          </tr>
+          <tr>
+            <td>Fonte oficial de contrato HTTP</td>
+            <td>`services/api/openapi.yaml` é a base canônica formal já materializada, hoje mais completa no domínio de importação; o mapa mais amplo de rotas segue complementado por `services/api/routes.md`, `docs/10_target_architecture/api_e_dados.md` e `packages/contracts`.</td>
+            <td>`docs/api/swagger.yaml` vira material paralelo/histórico de escopo antigo e não deve liderar novas decisões.</td>
+          </tr>
+          <tr>
+            <td>Fonte oficial de schema</td>
+            <td>`database/d1/schema.sql` governa a V1 documental.</td>
+            <td>Diferenças com o schema do starter devem ser tratadas como dívida de alinhamento.</td>
+          </tr>
+          <tr>
+            <td>Status de implementação</td>
+            <td>Só existe “completo” com evidência objetiva em código integrado na `main`.</td>
+            <td>Wireframe, mock, starter ou PR merged fora da área oficial não bastam sozinhos.</td>
+          </tr>
+          <tr>
+            <td>Leitura de legado</td>
+            <td>`OLD/` é procedência, contexto e contraste; não é norma atual.</td>
+            <td>Útil para origem, perigoso como contrato ativo.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-3">
+        <article class="trace-card">
+          <strong>Decisão documental central</strong>
+          <p>
+            A direção oficial documentada passa a ser mais importante que a localização do código
+            mais vivo. O papel desta bíblia é segurar a direção enquanto a implementação converge.
+          </p>
+        </article>
+        <article class="trace-card">
+          <strong>Conflito explicitado</strong>
+          <p>
+            O backend mais vivo do repositório segue em `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter`,
+            mas ele continua fora da fronteira oficial e usa dependências de schema ainda não
+            refletidas na linha canônica do banco.
+          </p>
+        </article>
+        <article class="trace-card">
+          <strong>Regra para mudança futura</strong>
+          <p>
+            Se alguma evolução futura mexer em arquitetura, contrato, merge, compatibilidade ou
+            experiência principal, a decisão deve voltar ao usuário antes da execução.
+          </p>
+        </article>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/90_diagnostico/README.md</span>
+        <span class="source-chip">docs/90_diagnostico/01_estado_real_do_repositorio.md</span>
+        <span class="source-chip">docs/arquitetura/02_fontes_oficiais_e_conflitos.md</span>
+        <span class="source-chip">docs/arquitetura/03_reorganizacao_segura_da_arvore.md</span>
+        <span class="source-chip">docs/implementation/implementation_plan_for_codex.md</span>
+      </div>
+    </section>
+
+    <section class="section" id="conselho">
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Camada Editorial</span>
+          <h2>Conselho Editorial do Documento</h2>
+        </div>
+        <p>
+          As personas abaixo são um recurso editorial deliberado deste material. Elas não são
+          pessoas factuais do repositório. Funcionam como vozes profissionais para tornar a leitura
+          mais humana, crítica e memorável sem inventar funcionalidades ou status de entrega.
+        </p>
+      </div>
+
+      <div class="badge-row">
+        <span class="badge badge--decision">Decisão documental: personas são recurso narrativo, não fato histórico</span>
+      </div>
+
+      <div class="persona-grid">
+        <article class="persona-card">
+          <span class="persona-card__role">Produto / PO Sênior</span>
+          <h3>Helena Duarte</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> objetiva, orientada a prioridade e impacto de produto.</li>
+            <li><strong>Papel no projeto:</strong> garantir que o produto diga ao usuário o que importa e o que fazer.</li>
+            <li><strong>Viés de leitura:</strong> clareza de recorte, valor percebido e foco.</li>
+            <li><strong>Contribuição:</strong> abre blocos de visão, jornada e escopo funcional.</li>
+          </ul>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">UX / Experiência</span>
+          <h3>Camila Teles</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> humana, prática e muito sensível a atrito cognitivo.</li>
+            <li><strong>Papel no projeto:</strong> proteger entendimento, ritmo e utilidade real da interface.</li>
+            <li><strong>Viés de leitura:</strong> próxima ação, estados vazios, mensagens e fluidez.</li>
+            <li><strong>Contribuição:</strong> interpreta jornada, protótipos e regras de experiência.</li>
+          </ul>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Engenharia / Dev Sênior</span>
+          <h3>Rafael Viana</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> direta, sem romantizar dívida técnica.</li>
+            <li><strong>Papel no projeto:</strong> separar o que é código vivo, contrato e material de apoio.</li>
+            <li><strong>Viés de leitura:</strong> integridade, manutenção e previsibilidade.</li>
+            <li><strong>Contribuição:</strong> qualifica estado real, restrições técnicas e riscos de implementação.</li>
+          </ul>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Arquitetura / Soluções</span>
+          <h3>Augusto Menezes</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> crítica, estrutural e orientada a fronteira.</li>
+            <li><strong>Papel no projeto:</strong> fechar direção oficial, dependências e responsabilidade por camada.</li>
+            <li><strong>Viés de leitura:</strong> compatibilidade, evolução e merge safety.</li>
+            <li><strong>Contribuição:</strong> conduz DSI, governança documental e decisões de canonicidade.</li>
+          </ul>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Branding / Marca</span>
+          <h3>Marina Alencar</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> sofisticada, firme e sem aceitar visual genérico.</li>
+            <li><strong>Papel no projeto:</strong> proteger essência, tom e coerência entre marca e produto.</li>
+            <li><strong>Viés de leitura:</strong> presença, linguagem e memória visual.</li>
+            <li><strong>Contribuição:</strong> abre a seção de marca e tensiona o que parece “banco genérico”.</li>
+          </ul>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Estratégia / Investor-facing</span>
+          <h3>Ricardo Bastos</h3>
+          <ul>
+            <li><strong>Forma de falar:</strong> enxuta, de tese, risco e alocação de confiança.</li>
+            <li><strong>Papel no projeto:</strong> traduzir o produto para leitura de liderança, VP e investidor.</li>
+            <li><strong>Viés de leitura:</strong> foco, diferenciamento, robustez e credibilidade.</li>
+            <li><strong>Contribuição:</strong> enquadra manifesto, valor e fechamento executivo.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section page-break" id="marca">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Marca · Marina Alencar</span>
+        <blockquote>
+          “Na marca, a gente precisava marcar presença sem cair no clichê do banco bonitinho que
+          fala difícil. O Esquilo tem que parecer confiável, mas principalmente legível.”
+        </blockquote>
+        <div class="editorial-note__signature">Marina Alencar · Branding e Marca</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 4</span>
+          <h2>Essência da Marca</h2>
+          <p class="section__lede">
+            Esta seção combina o que já está formalizado em `docs/brand/*` com uma padronização
+            canônica derivada do estado atual do projeto, sempre marcada quando extrapola o que
+            está literalmente descrito.
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge badge--fact">Fato: Sora + Inter já estão definidos</span>
+          <span class="badge badge--fact">Fato: paleta principal está documentada</span>
+          <span class="badge badge--derived">Padronização derivada: aplicação futura de marca</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <article class="panel">
+          <h3>Visão, essência e promessa</h3>
+          <div class="kv-list">
+            <div>
+              <dt>Visão da marca</dt>
+              <dd>Ser a marca que transforma carteira em clareza prática, sem voz de corretora.</dd>
+            </div>
+            <div>
+              <dt>Essência</dt>
+              <dd>Clareza aplicada à vida financeira.</dd>
+            </div>
+            <div>
+              <dt>Promessa central</dt>
+              <dd>Organizar, traduzir e orientar sem inflar linguagem ou prometer o que não controla.</dd>
+            </div>
+            <div>
+              <dt>Personalidade</dt>
+              <dd>Direta, humana, confiável, simples e crítica quando necessário.</dd>
+            </div>
+            <div>
+              <dt>Posicionamento</dt>
+              <dd>O produto que ajuda o usuário a entender a própria realidade antes de sofisticar decisão.</dd>
+            </div>
+          </div>
+        </article>
+        <article class="panel">
+          <h3>Tom de voz e linguagem</h3>
+          <ul>
+            <li><strong>Tom:</strong> humano, curto, sem professoralismo e sem jargão desnecessário.</li>
+            <li><strong>Regra:</strong> clareza vale mais que profundidade; uma ação principal por vez.</li>
+            <li><strong>Vocabulário preferencial:</strong> carteira, concentração, equilíbrio, aporte, contexto, próximo passo, revisar, acompanhar.</li>
+            <li><strong>Vocabulário a evitar:</strong> suitability bancário, rentabilidade milagrosa, oportunidade imperdível, trader, wealth lifestyle, promessas de retorno.</li>
+            <li><strong>Percepção desejada:</strong> produto sério, inteligível, contemporâneo e útil.</li>
+            <li><strong>Percepção a evitar:</strong> banco genérico, corretora disfarçada, app de gamificação financeira infantil.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="callout">
+          <h3>Público-alvo no discurso da marca</h3>
+          <p>
+            A marca fala com pessoas físicas brasileiras que já convivem com alguma carteira,
+            plataformas de investimento e escolhas financeiras, mas não querem virar analistas
+            profissionais para entender o que está acontecendo.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Presença da marca no produto</h3>
+          <ul>
+            <li>A marca aparece para reduzir ruído, não para disputar com o conteúdo.</li>
+            <li>Home, Carteira e Importação devem parecer parte do mesmo sistema.</li>
+            <li>Call to action precisa soar como orientação, nunca como empurrão comercial.</li>
+            <li>Estados vazios e mensagens de erro também são lugares de marca.</li>
+          </ul>
+        </article>
+      </div>
+
+      <article class="panel">
+        <h3>Tipografia oficial e hierarquia canônica</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Camada</th>
+              <th>Uso</th>
+              <th>Família / Peso</th>
+              <th>Tamanho sugerido</th>
+              <th>Base</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Família primária</td>
+              <td>Marca, títulos, destaques</td>
+              <td>Sora · 600/700/800</td>
+              <td>H1 produto 28px · H2 produto 22px</td>
+              <td>Fato de `docs/brand/esquilo_brand_guide.md` e `docs/brand/esquilo_design_system.md`</td>
+            </tr>
+            <tr>
+              <td>Família secundária</td>
+              <td>Texto, dados, tabelas, UI</td>
+              <td>Inter · 400/600/700</td>
+              <td>Body 14px · números em tabular nums</td>
+              <td>Fato de `docs/brand/esquilo_brand_guide.md` e `docs/fluxos/04_padrao_visual_base_webapp.md`</td>
+            </tr>
+            <tr>
+              <td>Expansão editorial</td>
+              <td>Documento mestre e capas</td>
+              <td>Sora / Inter</td>
+              <td>Display 44–82px · legenda 11–12px</td>
+              <td>Decisão editorial deste material para leitura A4 e tela</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel">
+        <h3>Paleta principal, secundária e de apoio</h3>
+        <div class="color-grid">
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#061018;"></div>
+            <div class="color-chip__meta">
+              <strong>Brand Deep</strong>
+              <span>#061018 · fundo base, contraste premium</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#0C1823;"></div>
+            <div class="color-chip__meta">
+              <strong>Brand Card</strong>
+              <span>#0C1823 · cards, painéis, superfícies densas</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#56D5DE;"></div>
+            <div class="color-chip__meta">
+              <strong>Clareza</strong>
+              <span>#56D5DE · ação primária e leitura de estado</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#F7B955;"></div>
+            <div class="color-chip__meta">
+              <strong>Ação</strong>
+              <span>#F7B955 · destaque, atenção útil e incentivo</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#7ED9A3;"></div>
+            <div class="color-chip__meta">
+              <strong>Positivo</strong>
+              <span>#7ED9A3 · avanço, melhoria, consistência</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#FF6B6B;"></div>
+            <div class="color-chip__meta">
+              <strong>Alerta</strong>
+              <span>#FF6B6B · risco, conflito, atenção forte</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#EFF5F7;"></div>
+            <div class="color-chip__meta">
+              <strong>Texto claro</strong>
+              <span>#EFF5F7 · leitura sobre superfícies escuras</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#9DB1BC;"></div>
+            <div class="color-chip__meta">
+              <strong>Texto de apoio</strong>
+              <span>#9DB1BC · secundário, legenda e contexto</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:#FF5F1F;"></div>
+            <div class="color-chip__meta">
+              <strong>Acento editorial derivado</strong>
+              <span>#FF5F1F · derivado do asset de logo disponível; não substitui a paleta funcional</span>
+            </div>
+          </div>
+          <div class="color-chip">
+            <div class="color-chip__swatch" style="background:linear-gradient(135deg,#061018,#56D5DE,#F7B955);"></div>
+            <div class="color-chip__meta">
+              <strong>Regra de contraste</strong>
+              <span>Superfície escura + texto claro; CTA com alta legibilidade</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="comparison-grid">
+        <article class="callout">
+          <h3>Conflito de marca resolvido</h3>
+          <p>
+            O repositório traz um asset de logo disponível em laranja sólido (`docs/assets/esquilo_logo.png`),
+            enquanto a paleta formal da UI documentada privilegia fundo profundo, cyan e amber.
+            <strong>Decisão canônica:</strong> a paleta funcional do produto continua sendo a de
+            `docs/brand/*`; o laranja do asset vira acento editorial e assinatura visual deste
+            documento, sem reescrever o sistema cromático do app.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Composição visual e imagem</h3>
+          <ul>
+            <li>Grid base de 8px, sem espaçamento arbitrário.</li>
+            <li>Cards com profundidade leve e leitura rápida.</li>
+            <li>Fundo escuro ou claro só entra se reforçar hierarquia, não como efeito vazio.</li>
+            <li>Fotografia e ilustração devem priorizar vida real, pessoas comuns e contexto cotidiano.</li>
+            <li>Evitar traders, luxo estereotipado, “banco premium” genérico e excesso de efeito.</li>
+          </ul>
+        </article>
+      </div>
+
+      <article class="panel">
+        <h3>Sessão obrigatória de ícones</h3>
+        <div class="grid-2">
+          <div>
+            <ul>
+              <li><strong>Lógica iconográfica:</strong> ícone como apoio de escaneabilidade, não decoração.</li>
+              <li><strong>Estilo:</strong> outline suave, cantos arredondados, sem detalhe excessivo.</li>
+              <li><strong>Peso visual:</strong> stroke 1.5, geometria simples, leitura consistente.</li>
+              <li><strong>Onde aplicar:</strong> navegação, estados, ações rápidas, categorias, alertas.</li>
+              <li><strong>Onde não aplicar:</strong> blocos que já se explicam por texto ou número.</li>
+              <li><strong>Set inicial recomendado:</strong> home, carteira, ativo, fundo, previdência, perfil, histórico, importar, alerta, score, tendência, filtro, info, erro, sucesso.</li>
+              <li><strong>Relação com o produto:</strong> o ícone deve reduzir atrito cognitivo e reforçar a linguagem simples.</li>
+            </ul>
+          </div>
+          <div class="icon-grid">
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M3 8h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>
+              <span>Carteira</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M4 18h16"/><path d="M6 15l4-4 3 3 5-6"/></svg>
+              <span>Gráfico</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              <span>Alerta</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>
+              <span>Sucesso</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+              <span>Importar</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 8-8"/><path d="M12 8v5l3 2"/></svg>
+              <span>Histórico</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>
+              <span>Perfil</span>
+            </div>
+            <div class="icon-card">
+              <svg viewBox="0 0 24 24"><path d="M5 19l14-14"/><path d="M7 7h10v10"/></svg>
+              <span>Ativo</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="source-list">
+        <span class="source-chip">docs/brand/esquilo_brand_guide.md</span>
+        <span class="source-chip">docs/brand/esquilo_design_system.md</span>
+        <span class="source-chip">docs/brand/esquilo_ui_examples.md</span>
+        <span class="source-chip">assets/icons/manifest.md</span>
+        <span class="source-chip">docs/fluxos/04_padrao_visual_base_webapp.md</span>
+      </div>
+    </section>
+
+    <section class="section" id="visao">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Produto · Helena Duarte</span>
+        <blockquote>
+          “O maior risco do Esquilo seria querer ser inteligente demais antes de ser legível. O
+          repositório deixa uma tese muito clara: primeiro consolidar, traduzir e orientar. O resto
+          entra depois.”
+        </blockquote>
+        <div class="editorial-note__signature">Helena Duarte · Produto / PO Sênior</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 5</span>
+          <h2>Visão do Produto</h2>
+        </div>
+        <p>
+          O produto novo preserva o propósito central do legado sem herdar sua dependência
+          estrutural de Apps Script. A lógica do produto é contínua; a base técnica é que muda de
+          patamar.
+        </p>
+      </div>
+
+      <div class="grid-4">
+        <article class="panel">
+          <h3>Pilar 1</h3>
+          <p><strong>Consolidar.</strong> Unificar carteira, contexto e histórico em uma leitura confiável.</p>
+        </article>
+        <article class="panel">
+          <h3>Pilar 2</h3>
+          <p><strong>Traduzir.</strong> Transformar estrutura financeira em linguagem curta e compreensível.</p>
+        </article>
+        <article class="panel">
+          <h3>Pilar 3</h3>
+          <p><strong>Orientar.</strong> Destacar um problema principal e um próximo passo plausível.</p>
+        </article>
+        <article class="panel">
+          <h3>Pilar 4</h3>
+          <p><strong>Contextualizar.</strong> Ler carteira à luz da vida real do usuário, não só dos ativos.</p>
+        </article>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel">
+          <h3>O produto é</h3>
+          <ul>
+            <li>Um cockpit de entendimento financeiro.</li>
+            <li>Um produto orientado a utilidade, não a deslumbramento.</li>
+            <li>Uma plataforma preparada para web, app e contratos claros.</li>
+            <li>Uma base que trata IA como tradutora, não como verdade de domínio.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>O produto não é</h3>
+          <ul>
+            <li>Uma corretora ou app de execução.</li>
+            <li>Um parser universal de PDF desde o dia 1.</li>
+            <li>Um sistema dependente de Open Finance completo para existir.</li>
+            <li>Uma interface que despeja informação sem hierarquia.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Diferencial real:</strong> interpretação da carteira com base em contexto financeiro.</span>
+        <span class="fact-pill"><strong>Leitura de mercado:</strong> produto para clareza e decisão, não para execução.</span>
+        <span class="fact-pill"><strong>Regra de ouro:</strong> se faltar dado, o próximo passo é completar dado.</span>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/20_product/visao_do_produto.md</span>
+        <span class="source-chip">docs/20_product/mvp_e_fases.md</span>
+        <span class="source-chip">docs/20_product/jornada_principal.md</span>
+        <span class="source-chip">docs/20_product/o_que_manter_do_legado.md</span>
+      </div>
+    </section>
+
+    <section class="section" id="publico">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de UX · Camila Teles</span>
+        <blockquote>
+          “O público do Esquilo não quer parecer especialista. Quer parar de se sentir perdido. A
+          interface precisa respeitar isso o tempo todo, inclusive quando o dado estiver faltando.”
+        </blockquote>
+        <div class="editorial-note__signature">Camila Teles · UX / Experiência</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 6</span>
+          <h2>Público-Alvo e Personas de Mercado</h2>
+        </div>
+        <p>
+          O repositório não traz uma pesquisa formal de mercado completa. Por isso, a segmentação
+          abaixo é uma <strong>consolidação editorial derivada</strong> das histórias de usuário,
+          regras de perfil, maturidade e jornadas documentadas.
+        </p>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel">
+          <h3>Público principal</h3>
+          <p>
+            Pessoa física brasileira com carteira distribuída em uma ou mais plataformas,
+            interessada em entender melhor sua realidade financeira, sem intenção de operar como
+            trader ou especialista técnico.
+          </p>
+          <ul>
+            <li>Já tem investimento, mas não tem leitura consolidada confiável.</li>
+            <li>Valoriza objetividade e recusa jargão bancário.</li>
+            <li>Precisa de orientação prática sem excesso de recomendação simultânea.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Públicos secundários</h3>
+          <ul>
+            <li>Usuário em começo de organização, ainda montando contexto e carteira.</li>
+            <li>Usuário com carteira maior, mas com concentração ou estrutura pouco clara.</li>
+            <li>Usuário que já investe, mas quer coerência entre patrimônio, objetivos e disciplina.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid-3">
+        <article class="persona-card">
+          <span class="persona-card__role">Mercado Principal · Derivada</span>
+          <h3>Luciana Prado</h3>
+          <p>
+            Tem investimentos espalhados, entende termos básicos, mas ainda depende de extratos e
+            sensação para decidir. Rejeita “financês” e quer saber o que merece atenção agora.
+          </p>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Secundária · Derivada</span>
+          <h3>Bruno Matos</h3>
+          <p>
+            Aporta com alguma regularidade, já acumulou produtos diferentes e precisa enxergar
+            concentração, coerência e próximos passos sem virar analista em tempo integral.
+          </p>
+        </article>
+        <article class="persona-card">
+          <span class="persona-card__role">Secundária · Derivada</span>
+          <h3>Renata Siqueira</h3>
+          <p>
+            Valoriza proteção e patrimônio construído, mas teme recomendações genéricas ou
+            agressivas demais para sua realidade. Procura segurança funcional e leitura humana.
+          </p>
+        </article>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Aspecto</th>
+            <th>Leitura Canônica</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Maturidade financeira</td>
+            <td>Vai de 0 a 3 em prontidão para metas e leitura mais sofisticada; maturidade depende de comportamento, não de renda.</td>
+          </tr>
+          <tr>
+            <td>Dores principais</td>
+            <td>Não saber quanto tem, onde está, se a carteira faz sentido e qual passo tomar agora.</td>
+          </tr>
+          <tr>
+            <td>Comportamento esperado</td>
+            <td>Consulta frequente da Home, revisões por importação, acompanhamento de score, radar, histórico e perfil.</td>
+          </tr>
+          <tr>
+            <td>Objeções</td>
+            <td>Medo de app complexo, linguagem bancária, excesso de recomendações, importação confusa ou análise opaca.</td>
+          </tr>
+          <tr>
+            <td>Linguagem ideal</td>
+            <td>Curta, direta, explicativa e não professoral.</td>
+          </tr>
+          <tr>
+            <td>O que esse público rejeita</td>
+            <td>Promessa de retorno, gamificação vazia, call-to-action comercial e recomendação “mágica”.</td>
+          </tr>
+          <tr>
+            <td>Posicionamento diante dele</td>
+            <td>Ferramenta séria de entendimento e orientação, não vitrine de produto financeiro.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="source-list">
+        <span class="source-chip">docs/product/e2e_user_stories_full.md</span>
+        <span class="source-chip">docs/product/score_and_profile_rules.md</span>
+        <span class="source-chip">docs/product/maturity_points_rules.md</span>
+        <span class="source-chip">docs/rules/profile_rules.md</span>
+        <span class="source-chip">docs/rules/maturity_rules.md</span>
+      </div>
+    </section>
+
+    <section class="section section--dark page-break" id="funcional">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Engenharia · Rafael Viana</span>
+        <blockquote>
+          “Aqui é onde a conversa precisa ficar honesta. O repositório tem regra, contrato, mock,
+          protótipo e starter. O documento separa essas camadas para não chamar de entregue o que
+          ainda é só intenção ou implementação paralela.”
+        </blockquote>
+        <div class="editorial-note__signature">Rafael Viana · Engenharia / Dev Sênior</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 7</span>
+          <h2>Especificação Funcional Completa</h2>
+          <p class="section__lede">
+            Abaixo está o mapa funcional canônico organizado por módulos reais do projeto. A coluna
+            de estado não descreve promessa; descreve o que o repositório já sustenta em 02/04/2026.
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge badge--fact">Fato: importação exige preview antes de persistir</span>
+          <span class="badge badge--fact">Fato: IA não calcula score nem decide alerta</span>
+          <span class="badge badge--open">Aberto: frontend integrado ainda não existe na `main`</span>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th>Capacidade Canônica</th>
+            <th>Estado Real em 02/04/2026</th>
+            <th>Observação Crítica</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Acesso, sessão e recuperação</td>
+            <td>Validar ambiente, abrir sessão, registrar usuário, recuperar acesso inicial.</td>
+            <td>Parcial, com rotas no starter e conflito de schema/auth na linha oficial.</td>
+            <td>O starter usa `auth_sessions` e carteira principal; o schema canônico ainda não reflete isso.</td>
+          </tr>
+          <tr>
+            <td>Onboarding e contexto</td>
+            <td>Capturar renda, aporte, objetivo, horizonte, risco e plataformas em poucas etapas.</td>
+            <td>Parcial, bem documentado e com rotas de perfil/contexto no starter.</td>
+            <td>É peça central da leitura contextual; a UX já está clara, mas falta app integrado.</td>
+          </tr>
+          <tr>
+            <td>Entrada da carteira</td>
+            <td>Levar o usuário para importação ou input manual com clareza.</td>
+            <td>Parcial, com `GET /v1/onboarding/portfolio-entry` no starter.</td>
+            <td>Feature integrada via PR `#9`, ainda fora da fronteira oficial de API.</td>
+          </tr>
+          <tr>
+            <td>Home</td>
+            <td>Mostrar patrimônio, score, problema principal, ação principal, distribuição e insights.</td>
+            <td>Parcial, com contrato, mock e protótipo de alta qualidade; sem app web oficial.</td>
+            <td>A Home é o núcleo do produto e já tem semântica muito bem definida.</td>
+          </tr>
+          <tr>
+            <td>Carteira</td>
+            <td>Ler holdings por categoria, instituição e relevância, com filtros úteis.</td>
+            <td>Parcial, com contratos, mocks e rota no starter.</td>
+            <td>Falta conectar leitura real a um frontend oficial navegável.</td>
+          </tr>
+          <tr>
+            <td>Detalhe do investimento</td>
+            <td>Aprofundar ativo, fundo ou previdência com métricas, contexto e recomendação coerente.</td>
+            <td>Parcial, com rota no starter e contrato documentado.</td>
+            <td>Sem tela integrada; ainda depende de encaixe de domínio e UI oficial.</td>
+          </tr>
+          <tr>
+            <td>Importação, preview e commit</td>
+            <td>Receber arquivo, processar, revisar linhas, decidir conflitos e persistir só após confirmação.</td>
+            <td>Parcial, com a cadeia mais viva do repositório hoje.</td>
+            <td>O fluxo está adiantado no starter, mas ainda conflita com o schema canônico oficial.</td>
+          </tr>
+          <tr>
+            <td>Status operacional e detalhe do processamento</td>
+            <td>Expor andamento do motor, conflitos, baixa confiança e resumo decisório.</td>
+            <td>Parcial, com endpoints adicionados recentemente no starter.</td>
+            <td>Importante como transparência operacional; ainda sem absorção formal pela API oficial.</td>
+          </tr>
+          <tr>
+            <td>Histórico</td>
+            <td>Mostrar snapshots, comparação temporal e eventos operacionais.</td>
+            <td>Parcial, com contrato, mocks e rota no starter.</td>
+            <td>Não há ainda leitura de produto fechada no frontend oficial.</td>
+          </tr>
+          <tr>
+            <td>Radar / análise</td>
+            <td>Aprofundar score, problema principal, ação principal e insights.</td>
+            <td>Parcial, com documentação forte, rota no starter e módulos de score/alerta isolados.</td>
+            <td>A lógica existe; o encaixe operacional ainda não.</td>
+          </tr>
+          <tr>
+            <td>Alertas e notificações</td>
+            <td>Gerar sinais relevantes, aplicar cooldown, priorizar contexto e disparar canais.</td>
+            <td>Parcial em regra isolada; sem módulo oficial dedicado do produto fechado.</td>
+            <td>Há envio via Telegram em módulo isolado, mas sem persistência e runtime oficial único.</td>
+          </tr>
+          <tr>
+            <td>Metas e simuladores</td>
+            <td>Projetar meta, prazo, gap e recomendação determinística.</td>
+            <td>Sem evidência suficiente além de regra e wireframe.</td>
+            <td>É evolução futura, não capacidade pronta desta fase.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-3">
+        <article class="panel panel--dark">
+          <h3>Regras globais de negócio</h3>
+          <ul>
+            <li>Nunca mostrar erro técnico cru ao usuário.</li>
+            <li>Sempre existir próximo passo claro.</li>
+            <li>Importação nunca persiste sem preview.</li>
+            <li>Nenhuma recomendação deve ignorar o contexto do usuário.</li>
+            <li>IA traduz; backend decide.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Entradas, processamento e saídas</h3>
+          <ul>
+            <li><strong>Entradas:</strong> contexto do usuário, arquivo, input manual, snapshot, fontes externas.</li>
+            <li><strong>Processamento:</strong> normalização, cálculo, score, análise, deduplicação, enriquecimento.</li>
+            <li><strong>Saídas:</strong> Home, Carteira, Detalhe, Histórico, Radar, Alertas, recomendações.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Estados relevantes e mensagens</h3>
+          <ul>
+            <li>Sem carteira → orientar importação ou cadastro manual.</li>
+            <li>Erro de backend → mensagem humana + recuperação.</li>
+            <li>Importação inválida → explicar o problema, não expor tecnicismo.</li>
+            <li>Fonte externa indisponível → warning, nunca quebra da carteira.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="trace-card">
+          <strong>Itens maduros documentalmente</strong>
+          <p>
+            Visão do produto, regras de score, perfil, alertas, importação com preview, estrutura de
+            Home e Carteira, linguagem de marca e fluxo principal do usuário.
+          </p>
+        </article>
+        <article class="trace-card">
+          <strong>Itens em construção</strong>
+          <p>
+            Integração real do frontend, absorção do starter pela trilha oficial, alinhamento de
+            auth/schema, persistência consistente de alertas e pipeline de operação.
+          </p>
+        </article>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="callout">
+          <h3>Fora de escopo desta fase</h3>
+          <p>
+            Integração direta com corretoras, Open Finance completo, parser universal de PDF,
+            automação complexa, benchmark mais rico e recomendações profundamente sofisticadas.
+          </p>
+        </article>
+        <article class="callout">
+          <h3>Limitação objetiva</h3>
+          <p>
+            O repositório ainda não sustenta chamar o produto de aplicativo integrado único. Ele
+            sustenta direção, contratos, módulos e uma trilha técnica parcialmente implementada.
+          </p>
+        </article>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/20_product/telas_e_servicos.md</span>
+        <span class="source-chip">docs/product/e2e_user_stories_full.md</span>
+        <span class="source-chip">docs/fluxos/02_telas_e_jornadas.md</span>
+        <span class="source-chip">docs/90_diagnostico/04_backlog_vs_implementacao.md</span>
+        <span class="source-chip">04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/src/index.ts</span>
+      </div>
+    </section>
+
+    <section class="section" id="jornada">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Jornada · Camila Teles</span>
+        <blockquote>
+          “A jornada boa do Esquilo não é a que tem mais tela. É a que tira o usuário do ruído,
+          mostra o que importa e impede que ele saia mais confuso do que entrou.”
+        </blockquote>
+        <div class="editorial-note__signature">Camila Teles · UX / Experiência</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 8</span>
+          <h2>Jornada Total Mapeada</h2>
+        </div>
+        <p>
+          O fluxo abaixo registra a jornada canônica do MVP e seus arredores imediatos. Algumas
+          etapas já têm lastro técnico parcial; outras ainda existem só como diretriz funcional.
+        </p>
+      </div>
+
+      <svg class="svg-diagram" viewBox="0 0 1280 360" role="img" aria-label="Mapa sequencial da jornada do usuário">
+        <rect x="30" y="70" width="150" height="78" rx="22" fill="#FF5F1F" fill-opacity="0.12" stroke="#FF5F1F"/>
+        <text x="55" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Acesso</text>
+        <text x="55" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">sessão, auth, health</text>
+        <rect x="225" y="70" width="170" height="78" rx="22" fill="#F7B955" fill-opacity="0.16" stroke="#F7B955"/>
+        <text x="250" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Onboarding</text>
+        <text x="250" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">contexto financeiro</text>
+        <rect x="440" y="70" width="190" height="78" rx="22" fill="#56D5DE" fill-opacity="0.16" stroke="#56D5DE"/>
+        <text x="465" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Entrada da Carteira</text>
+        <text x="465" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">importar ou lançar</text>
+        <rect x="675" y="70" width="200" height="78" rx="22" fill="#FF5F1F" fill-opacity="0.12" stroke="#FF5F1F"/>
+        <text x="700" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Preview / Revisão</text>
+        <text x="700" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">validar antes de salvar</text>
+        <rect x="920" y="70" width="160" height="78" rx="22" fill="#7ED9A3" fill-opacity="0.18" stroke="#7ED9A3"/>
+        <text x="950" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Home</text>
+        <text x="950" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">problema + ação</text>
+        <rect x="1115" y="70" width="130" height="78" rx="22" fill="#56D5DE" fill-opacity="0.12" stroke="#56D5DE"/>
+        <text x="1140" y="105" font-size="22" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Radar</text>
+        <text x="1140" y="132" font-size="14" fill="#495560" font-family="Inter, sans-serif">aprofundar</text>
+        <rect x="440" y="220" width="180" height="78" rx="22" fill="#ffffff" stroke="#101418" stroke-opacity="0.12"/>
+        <text x="468" y="255" font-size="20" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Carteira</text>
+        <text x="468" y="281" font-size="14" fill="#495560" font-family="Inter, sans-serif">categoria e holdings</text>
+        <rect x="665" y="220" width="180" height="78" rx="22" fill="#ffffff" stroke="#101418" stroke-opacity="0.12"/>
+        <text x="690" y="255" font-size="20" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Detalhe</text>
+        <text x="690" y="281" font-size="14" fill="#495560" font-family="Inter, sans-serif">métricas e contexto</text>
+        <rect x="890" y="220" width="180" height="78" rx="22" fill="#ffffff" stroke="#101418" stroke-opacity="0.12"/>
+        <text x="916" y="255" font-size="20" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Histórico</text>
+        <text x="916" y="281" font-size="14" fill="#495560" font-family="Inter, sans-serif">snapshots e eventos</text>
+        <rect x="1115" y="220" width="130" height="78" rx="22" fill="#ffffff" stroke="#101418" stroke-opacity="0.12"/>
+        <text x="1136" y="255" font-size="20" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Perfil</text>
+        <text x="1136" y="281" font-size="14" fill="#495560" font-family="Inter, sans-serif">ajuste de contexto</text>
+        <path d="M180 109H225" stroke="#FF5F1F" stroke-width="3"/>
+        <path d="M395 109H440" stroke="#FF5F1F" stroke-width="3"/>
+        <path d="M630 109H675" stroke="#FF5F1F" stroke-width="3"/>
+        <path d="M875 109H920" stroke="#FF5F1F" stroke-width="3"/>
+        <path d="M1080 109H1115" stroke="#FF5F1F" stroke-width="3"/>
+        <path d="M1000 148V220" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"/>
+        <path d="M755 148V220" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"/>
+        <path d="M530 148V220" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"/>
+      </svg>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Etapa</th>
+            <th>Ação do usuário</th>
+            <th>Resposta do sistema</th>
+            <th>Valor percebido</th>
+            <th>Atrito / risco</th>
+            <th>Leitura de negócio e UX</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Entrada</td>
+            <td>Abrir o produto e validar acesso.</td>
+            <td>Checar health, sessão e próxima rota.</td>
+            <td>Baixa fricção inicial.</td>
+            <td>Conflito atual entre auth do starter e schema canônico.</td>
+            <td>O produto não pode começar pedindo burocracia pesada.</td>
+          </tr>
+          <tr>
+            <td>2. Onboarding</td>
+            <td>Informar renda, aporte, objetivo, horizonte e risco.</td>
+            <td>Salvar contexto financeiro do usuário.</td>
+            <td>Leitura futura ganha coerência.</td>
+            <td>Se parecer suitability bancário, a experiência quebra.</td>
+            <td>Essa etapa existe para calibrar análise, não para julgar o usuário.</td>
+          </tr>
+          <tr>
+            <td>3. Entrada da carteira</td>
+            <td>Escolher entre importar arquivo ou cadastrar manualmente.</td>
+            <td>Orientar caminho principal de dados.</td>
+            <td>Produto mostra por onde começar.</td>
+            <td>Input manual ainda não está formalmente fechado.</td>
+            <td>Decisão simples evita abandono do fluxo.</td>
+          </tr>
+          <tr>
+            <td>4. Importação</td>
+            <td>Enviar arquivo e iniciar processamento.</td>
+            <td>Criar rodada de importação e preparar preview.</td>
+            <td>Redução de trabalho manual.</td>
+            <td>Pipeline ainda depende de starter e de alinhamento com schema oficial.</td>
+            <td>Importar bem é mais valioso que prometer parser mágico.</td>
+          </tr>
+          <tr>
+            <td>5. Preview e revisão</td>
+            <td>Conferir linhas, conflitos e confirmação final.</td>
+            <td>Exibir totais, duplicidade, erros e detalhe operacional.</td>
+            <td>Confiança antes de persistir.</td>
+            <td>É a etapa mais sensível do produto hoje.</td>
+            <td>Nada entra no escuro; transparência operacional é obrigatória.</td>
+          </tr>
+          <tr>
+            <td>6. Home</td>
+            <td>Entender situação atual da carteira.</td>
+            <td>Mostrar patrimônio, score, problema, ação e distribuição.</td>
+            <td>Valor rápido em poucos segundos.</td>
+            <td>Sem frontend oficial integrado ainda.</td>
+            <td>É o centro de gravidade da proposta de valor.</td>
+          </tr>
+          <tr>
+            <td>7. Carteira e detalhe</td>
+            <td>Explorar holdings, categorias e investimento específico.</td>
+            <td>Listar por relevância e aprofundar contexto por ativo.</td>
+            <td>Entendimento estrutural, não só saldo.</td>
+            <td>Falta encaixe pleno entre rota, domínio e UI oficial.</td>
+            <td>Essas telas transformam número em leitura acionável.</td>
+          </tr>
+          <tr>
+            <td>8. Radar, histórico e perfil</td>
+            <td>Aprofundar score, eventos, snapshots e contexto.</td>
+            <td>Conectar análise, passado e preferência do usuário.</td>
+            <td>Continuidade e confiança.</td>
+            <td>Alertas dedicados, canais e metas ainda não estão fechados.</td>
+            <td>São extensões naturais da Home, não módulos para roubar foco.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="source-list">
+        <span class="source-chip">docs/20_product/jornada_principal.md</span>
+        <span class="source-chip">docs/fluxos/01_fluxo_de_importacao.md</span>
+        <span class="source-chip">docs/fluxos/03_webapp_estrutural_mapa_do_produto.md</span>
+        <span class="source-chip">docs/50_stories/01_onboarding.md</span>
+        <span class="source-chip">docs/50_stories/02_home.md</span>
+        <span class="source-chip">docs/50_stories/04_importacao.md</span>
+      </div>
+    </section>
+
+    <section class="section section--muted" id="prototipos">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de UX · Camila Teles</span>
+        <blockquote>
+          “Esses protótipos não existem para fantasiar roadmap. Eles existem para fixar o que o
+          produto quer fazer a pessoa sentir: clareza primeiro, densidade depois, sempre com uma
+          ação principal visível.”
+        </blockquote>
+        <div class="editorial-note__signature">Camila Teles · UX e Experiência</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 9</span>
+          <h2>Protótipos e Exemplos de Tela</h2>
+          <p class="section__lede">
+            Os mockups abaixo são protótipos documentais de alta fidelidade. Eles consolidam a
+            leitura funcional extraída do repositório e aplicam direção visual premium para fixar
+            linguagem de interface, hierarquia e presença de marca.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Critério de verdade</h3>
+          <p>
+            A composição visual foi inspirada na referência de interface enviada pelo usuário em
+            02/04/2026, mas essa referência não foi usada como fonte factual do produto. Fato de
+            produto continua vindo apenas do <strong>Quebra-Nozes</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Fato:</strong> fluxos, estados e módulos vêm do repositório.</span>
+        <span class="fact-pill"><strong>Padronização derivada:</strong> mockups consolidam a linguagem visual futura.</span>
+        <span class="fact-pill"><strong>Ponto aberto:</strong> integração do frontend oficial ainda não está fechada.</span>
+      </div>
+
+      <article class="prototype-card">
+        <div class="prototype-stage">
+          <div>
+            <span class="eyebrow">Tela 1</span>
+            <h3>Entrada e enquadramento inicial</h3>
+            <p>
+              A entrada do Esquilo precisa parecer leve, direta e orientadora. O repositório
+              aponta onboarding contextual, acesso simples e rejeição explícita a qualquer cara de
+              fluxo bancário pesado. Por isso a tela enfatiza uma pergunta prática em vez de abrir
+              pedindo burocracia.
+            </p>
+            <ul>
+              <li>Papel na jornada: reduzir atrito e enquadrar o contexto financeiro do usuário.</li>
+              <li>Componentes-chave: pergunta inicial, seleção de caminho, CTA única, linguagem simples.</li>
+              <li>Regra aplicada: suitability não pode dominar a experiência.</li>
+            </ul>
+            <div class="proto-caption">
+              <strong>Leitura editorial</strong>
+              <span>
+                O produto começa conversando, não julgando. Isso mantém coerência com a proposta
+                de traduzir e orientar em vez de intimidar.
+              </span>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-shell app-light">
+              <div class="mock-header">
+                <div class="mock-brand">esquilo</div>
+                <div class="mock-pill">entrada</div>
+              </div>
+              <div class="mock-hero">
+                <h4>Qual contexto vamos usar para ler sua carteira?</h4>
+                <p>Escolha um caminho simples para começar. O sistema organiza o resto.</p>
+              </div>
+              <div class="mock-list">
+                <div class="mock-list-item">
+                  <div>
+                    <strong>Entrar com CPF</strong>
+                    <span>Retomar sessão e acessar sua leitura atual.</span>
+                  </div>
+                  <div>&rsaquo;</div>
+                </div>
+                <div class="mock-list-item">
+                  <div>
+                    <strong>Começar onboarding</strong>
+                    <span>Informar renda, aporte, objetivo e horizonte.</span>
+                  </div>
+                  <div>&rsaquo;</div>
+                </div>
+              </div>
+              <div class="mock-cta">Continuar</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="prototype-card">
+        <div class="prototype-stage">
+          <div>
+            <span class="eyebrow">Tela 2</span>
+            <h3>Home como centro de gravidade</h3>
+            <p>
+              A Home concentra a proposta de valor do produto: mostrar patrimônio, score, principal
+              problema, principal ação e distribuição com leitura rápida. A referência documental
+              do repositório pede densidade controlada, não mosaico de dashboard.
+            </p>
+            <ul>
+              <li>Papel na jornada: entregar valor em segundos depois da consolidação.</li>
+              <li>Componentes-chave: saldo consolidado, atalhos orientados, banner analítico, navegação enxuta.</li>
+              <li>Regra aplicada: uma ação principal por rodada, clareza antes de profundidade.</li>
+            </ul>
+            <div class="proto-caption">
+              <strong>Leitura de produto</strong>
+              <span>
+                Se a Home não responder rapidamente “como estou?” e “por onde começo?”, o Esquilo
+                perde sua força principal.
+              </span>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-shell app-dark">
+              <div class="mock-toolbar">
+                <div class="mock-toolbar__left">
+                  <span class="mock-dot"></span>
+                  <span>esquilo</span>
+                </div>
+                <div class="mock-toolbar__right">
+                  <span class="mock-pill">hoje</span>
+                </div>
+              </div>
+              <div class="mock-balance">
+                <strong>R$ 328.420</strong>
+                <span>Patrimônio consolidado · atualização 09:12</span>
+              </div>
+              <div class="mock-shortcut-grid">
+                <div class="mock-shortcut">
+                  <i>01</i>
+                  <strong>Problema</strong>
+                </div>
+                <div class="mock-shortcut">
+                  <i>02</i>
+                  <strong>Ação</strong>
+                </div>
+                <div class="mock-shortcut">
+                  <i>03</i>
+                  <strong>Carteira</strong>
+                </div>
+                <div class="mock-shortcut">
+                  <i>04</i>
+                  <strong>Radar</strong>
+                </div>
+              </div>
+              <div class="mock-banner">
+                <strong>Você está concentrado demais em renda variável local.</strong>
+                <span>Use os próximos aportes para reduzir assimetria em vez de perseguir novo risco.</span>
+              </div>
+              <div class="mock-bottom-nav">
+                <div>Home</div>
+                <div>Carteira</div>
+                <div>Radar</div>
+                <div>Perfil</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="prototype-card">
+        <div class="prototype-stage">
+          <div>
+            <span class="eyebrow">Tela 3</span>
+            <h3>Importação com revisão explícita</h3>
+            <p>
+              O fluxo de importação é a área mais operacional e mais sensível do produto hoje. A
+              documentação insiste em preview antes de commit, rastreabilidade de linhas e clareza
+              sobre conflito ou erro. O mockup traduz isso para uma leitura robusta, sem cara de
+              console cru.
+            </p>
+            <ul>
+              <li>Papel na jornada: transformar entrada de dados em confiança.</li>
+              <li>Componentes-chave: chips de status, linhas revisáveis, resumo, CTA de commit controlado.</li>
+              <li>Regra aplicada: nada persiste no escuro; transparência operacional é obrigatória.</li>
+            </ul>
+            <div class="proto-caption">
+              <strong>Leitura de engenharia</strong>
+              <span>
+                A tela mostra o que o backend precisa provar: preview sólido, mensagens legíveis e
+                separação clara entre parse, validação e persistência.
+              </span>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-shell app-light">
+              <div class="mock-header">
+                <div class="mock-brand">importação</div>
+                <div class="mock-pill">preview</div>
+              </div>
+              <div class="mock-chip-row">
+                <div class="mock-chip">142 linhas</div>
+                <div class="mock-chip">3 conflitos</div>
+                <div class="mock-chip">1 erro</div>
+              </div>
+              <div class="mock-import-stack">
+                <div class="mock-import-row">
+                  <div>
+                    <strong>ITUB4</strong>
+                    <span>Posição reconhecida · categoria renda variável</span>
+                  </div>
+                  <div class="mock-status mock-status--ok">ok</div>
+                </div>
+                <div class="mock-import-row">
+                  <div>
+                    <strong>Fundo XP Alpha</strong>
+                    <span>Falta vínculo com ativo normalizado</span>
+                  </div>
+                  <div class="mock-status mock-status--warn">revisar</div>
+                </div>
+                <div class="mock-import-row">
+                  <div>
+                    <strong>Linha 104</strong>
+                    <span>Formato de data inválido para leitura automática</span>
+                  </div>
+                  <div class="mock-status mock-status--err">erro</div>
+                </div>
+              </div>
+              <div class="mock-cta">Confirmar somente itens válidos</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="prototype-card">
+        <div class="prototype-stage">
+          <div>
+            <span class="eyebrow">Tela 4</span>
+            <h3>Radar, score e contexto pessoal</h3>
+            <p>
+              A expansão natural do produto fica entre radar, score, histórico e perfil. O objetivo
+              não é criar um universo paralelo de telas, e sim aprofundar a Home em módulos que
+              expliquem melhor o porquê da recomendação, da maturidade e do próximo passo.
+            </p>
+            <ul>
+              <li>Papel na jornada: aprofundar contexto sem roubar a centralidade da Home.</li>
+              <li>Componentes-chave: KPIs, bloco de score, leituras por camada, ajustes de perfil.</li>
+              <li>Regra aplicada: backend decide cálculo; IA apenas traduz a leitura final.</li>
+            </ul>
+            <div class="proto-caption">
+              <strong>Leitura de marca</strong>
+              <span>
+                A identidade aqui aparece pela combinação de limpeza, energia contida e linguagem
+                direta. O produto precisa ser memorável sem performar riqueza caricata.
+              </span>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-shell app-light">
+              <div class="mock-header">
+                <div class="mock-brand">radar</div>
+                <div class="mock-pill">perfil</div>
+              </div>
+              <div class="mock-kpi-row">
+                <div class="mock-kpi">
+                  <label>Score</label>
+                  <strong>72</strong>
+                </div>
+                <div class="mock-kpi">
+                  <label>Maturidade</label>
+                  <strong>2</strong>
+                </div>
+              </div>
+              <div class="mock-sheet">
+                <div class="mock-sheet-handle"></div>
+                <div class="mock-sheet-item">
+                  <div>
+                    <strong>Concentração excessiva</strong>
+                    <span>O peso atual em um bloco específico está acima do recomendado.</span>
+                  </div>
+                  <div>&rsaquo;</div>
+                </div>
+                <div class="mock-sheet-item">
+                  <div>
+                    <strong>Objetivo em construção</strong>
+                    <span>Meta pode ser validada com renda, prazo e capacidade de aporte.</span>
+                  </div>
+                  <div>&rsaquo;</div>
+                </div>
+                <div class="mock-sheet-item">
+                  <div>
+                    <strong>Ajustar contexto financeiro</strong>
+                    <span>Renda, horizonte e risco continuam governando a leitura do produto.</span>
+                  </div>
+                  <div>&rsaquo;</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="source-list">
+        <span class="source-chip">apps/web/prototypes/home_esquilo_v1.html</span>
+        <span class="source-chip">apps/web/prototypes/home_esquilo_mobile_safe.html</span>
+        <span class="source-chip">apps/web/wireframes/onboarding_wireframe.html</span>
+        <span class="source-chip">apps/web/wireframes/home_wireframe.html</span>
+        <span class="source-chip">apps/web/wireframes/alerts_wireframe.html</span>
+        <span class="source-chip">docs/fluxos/06_wireframes_figjam_oficiais.md</span>
+        <span class="source-chip">docs/20_product/telas_e_servicos.md</span>
+      </div>
+    </section>
+
+    <section class="section section--dark" id="dsi">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Arquitetura · Augusto Menezes</span>
+        <blockquote>
+          “O que precisava ser resolvido aqui não era estética de desenho. Era autoridade. O
+          repositório mostrava mais de uma verdade ao mesmo tempo, e a bíblia precisava declarar
+          qual delas governa o futuro sem apagar a dívida do presente.”
+        </blockquote>
+        <div class="editorial-note__signature">Augusto Menezes · Arquitetura e Soluções</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 10</span>
+          <h2>DSI Completo em Padrão de Mercado</h2>
+          <p class="section__lede">
+            A solução alvo do Esquilo Invest é modular, orientada por contratos, com fronteira HTTP
+            em `services/api`, domínio em `backend/modules`, compartilhamento em `packages/` e base
+            de dados governada por `database/d1/schema.sql`.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Estado atual versus estado alvo</h3>
+          <p>
+            O estado atual ainda depende do starter D1 para parte relevante do runtime. O estado
+            alvo absorve essa energia operacional sem canonizar o starter como casa final.
+          </p>
+        </div>
+      </div>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Objetivo:</strong> consolidar carteira, traduzir leitura e orientar ação.</span>
+        <span class="fact-pill"><strong>Fronteira oficial:</strong> API nova modular, não starter isolado.</span>
+        <span class="fact-pill"><strong>Regra dura:</strong> backend decide; IA traduz.</span>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel panel--dark">
+          <h3>Escopo</h3>
+          <ul>
+            <li>Autenticação, contexto financeiro, dashboard, carteira, detalhe, histórico, análise e importação.</li>
+            <li>Motor de score, maturidade, recomendações e alertas com regra determinística.</li>
+            <li>Persistência em D1 e rotinas auxiliares para fontes externas, notificações e snapshots.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Fora de escopo atual</h3>
+          <ul>
+            <li>Execução de ordens ou integração de corretagem.</li>
+            <li>IA definindo regra de negócio, score ou alerta.</li>
+            <li>Dependência síncrona crítica de fonte externa na experiência principal.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="arch-grid">
+        <div class="arch-node">
+          <strong>apps/web</strong>
+          <span>Destino oficial da experiência. Ainda não integrado como app completo na `main`.</span>
+        </div>
+        <div class="arch-node">
+          <strong>services/api</strong>
+          <span>Fronteira HTTP oficial. Hoje materializa melhor importação e carrega o mapa da API nova.</span>
+        </div>
+        <div class="arch-node">
+          <strong>backend/modules</strong>
+          <span>Regra de negócio e módulos de score, alerta e notificação isolados do runtime final.</span>
+        </div>
+        <div class="arch-node">
+          <strong>packages/</strong>
+          <span>Contratos, núcleo compartilhado, design system documental e dependências reutilizáveis.</span>
+        </div>
+        <div class="arch-node">
+          <strong>database/d1</strong>
+          <span>Schema e seeds canônicos da V1 documental. Ainda em dívida de alinhamento com o starter.</span>
+        </div>
+        <div class="arch-node">
+          <strong>Starter D1</strong>
+          <span>Implementação viva e útil. Serve como ponte operacional, não como destino arquitetural.</span>
+        </div>
+        <div class="arch-node">
+          <strong>Jobs e conectores</strong>
+          <span>Import pipeline, atualização regulatória e sync assíncrono com fontes externas.</span>
+        </div>
+        <div class="arch-node">
+          <strong>IA de tradução</strong>
+          <span>Camada de explicação, simplificação e adaptação de tom. Não define regra.</span>
+        </div>
+        <div class="arch-node">
+          <strong>Fontes externas</strong>
+          <span>CVM, Banco Central e fonte pública auxiliar complementam dados, sem mandar na posição do usuário.</span>
+        </div>
+        <div class="arch-node">
+          <strong>Notificações</strong>
+          <span>Telegram como canal recomendado de MVP; email opcional; WhatsApp fora do escopo inicial.</span>
+        </div>
+      </div>
+
+      <div class="desktop-frame" style="margin-top: 22px;">
+        <div class="desktop-shell app-light">
+          <svg viewBox="0 0 1320 430" role="img" aria-label="Diagrama lógico e aplicacional da solução">
+            <rect x="0" y="0" width="1320" height="430" fill="#FFF7EE"></rect>
+            <rect x="60" y="70" width="180" height="92" rx="26" fill="#FFFFFF" stroke="#FF5F1F" stroke-width="2"></rect>
+            <text x="92" y="106" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">apps/web</text>
+            <text x="92" y="136" font-size="14" fill="#495560" font-family="Inter, sans-serif">experiência oficial</text>
+            <rect x="315" y="70" width="220" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="350" y="106" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">services/api</text>
+            <text x="350" y="136" font-size="14" fill="#495560" font-family="Inter, sans-serif">fronteira HTTP canônica</text>
+            <rect x="610" y="70" width="220" height="92" rx="26" fill="#56D5DE" fill-opacity="0.14" stroke="#56D5DE"></rect>
+            <text x="634" y="106" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">backend/modules</text>
+            <text x="634" y="136" font-size="14" fill="#495560" font-family="Inter, sans-serif">score, alertas, regra</text>
+            <rect x="905" y="70" width="160" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="940" y="106" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">packages</text>
+            <text x="940" y="136" font-size="14" fill="#495560" font-family="Inter, sans-serif">contratos e core</text>
+            <rect x="1140" y="70" width="140" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="1166" y="106" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">D1</text>
+            <text x="1166" y="136" font-size="14" fill="#495560" font-family="Inter, sans-serif">schema oficial</text>
+            <rect x="315" y="255" width="220" height="92" rx="26" fill="#FF5F1F" fill-opacity="0.12" stroke="#FF5F1F"></rect>
+            <text x="348" y="291" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Starter D1</text>
+            <text x="348" y="321" font-size="14" fill="#495560" font-family="Inter, sans-serif">runtime vivo e transitório</text>
+            <rect x="610" y="255" width="220" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="645" y="291" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Jobs externos</text>
+            <text x="645" y="321" font-size="14" fill="#495560" font-family="Inter, sans-serif">CVM, BC, sync</text>
+            <rect x="905" y="255" width="160" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="938" y="291" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">IA</text>
+            <text x="938" y="321" font-size="14" fill="#495560" font-family="Inter, sans-serif">tradução final</text>
+            <rect x="1140" y="255" width="140" height="92" rx="26" fill="#FFFFFF" stroke="#101418" stroke-opacity="0.14"></rect>
+            <text x="1154" y="291" font-size="24" fill="#101418" font-family="Inter, sans-serif" font-weight="700">Canais</text>
+            <text x="1154" y="321" font-size="14" fill="#495560" font-family="Inter, sans-serif">Telegram / email</text>
+            <path d="M240 116H315" stroke="#FF5F1F" stroke-width="3"></path>
+            <path d="M535 116H610" stroke="#101418" stroke-width="3"></path>
+            <path d="M830 116H905" stroke="#101418" stroke-width="3"></path>
+            <path d="M1065 116H1140" stroke="#101418" stroke-width="3"></path>
+            <path d="M425 162V255" stroke="#FF5F1F" stroke-width="3" stroke-dasharray="10 8"></path>
+            <path d="M720 162V255" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"></path>
+            <path d="M985 162V255" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"></path>
+            <path d="M1210 162V255" stroke="#101418" stroke-width="2" stroke-dasharray="8 8"></path>
+          </svg>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Dimensão</th>
+            <th>Estado atual sustentado</th>
+            <th>Estado alvo canônico</th>
+            <th>Observação crítica</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Arquitetura lógica</td>
+            <td>Documentação nova já aponta separação por apps, services, backend, packages e database.</td>
+            <td>Essas fronteiras viram regra oficial de evolução.</td>
+            <td>A direção existe; o runtime ainda não foi totalmente alinhado a ela.</td>
+          </tr>
+          <tr>
+            <td>Arquitetura aplicacional</td>
+            <td>Starter D1 concentra boa parte da execução real atual.</td>
+            <td>Absorver o que presta do starter dentro da linha oficial.</td>
+            <td>Perigo real de duplicação se o time mantiver duas verdades em paralelo.</td>
+          </tr>
+          <tr>
+            <td>Arquitetura de integração</td>
+            <td>Import pipeline, Telegram e fontes externas estão documentados, com partes vivas isoladas.</td>
+            <td>Conectores assíncronos e tolerantes a falha.</td>
+            <td>Fonte externa não pode bloquear Home nem substituir a base do usuário.</td>
+          </tr>
+          <tr>
+            <td>Arquitetura de dados</td>
+            <td>`database/d1/schema.sql` é canônico, mas não reflete tudo que o starter já usa.</td>
+            <td>Schema único alinhado ao runtime oficial.</td>
+            <td>Drift entre schema e código é hoje um dos riscos mais concretos.</td>
+          </tr>
+          <tr>
+            <td>Deploy e operação</td>
+            <td>Direção Cloudflare + D1, com segredos e variáveis documentados.</td>
+            <td>Pipeline previsível, observável e sem segredos fora do inventário.</td>
+            <td>Observabilidade ainda não aparece madura no repositório.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="comparison-grid">
+        <article class="panel panel--dark">
+          <h3>Requisitos não funcionais</h3>
+          <ul>
+            <li>Segurança: segredos só por variável de ambiente; nada sensível no repositório.</li>
+            <li>Autenticação: sessão e recuperação documentadas; conflito atual entre linha oficial e starter.</li>
+            <li>Autorização: produto é centrado em dado do próprio usuário; escopo multi-tenant ainda não aparece como problema principal.</li>
+            <li>Performance: Home e dashboard não podem depender de fonte externa ao vivo.</li>
+            <li>Escalabilidade: jobs assíncronos e contratos estáveis antes de ganho de volume.</li>
+            <li>Disponibilidade: falha externa degrada complemento, não derruba leitura principal.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Riscos, dívida e pontos abertos</h3>
+          <ul>
+            <li>Risco de drift entre `database/d1/schema.sql` e o schema realmente consumido no starter.</li>
+            <li>Dívida de consolidar autenticação e sessão na trilha oficial.</li>
+            <li>Ponto aberto para fechar oficialmente os contratos HTTP além do domínio de importação em OpenAPI.</li>
+            <li>Ponto aberto de integração do frontend oficial com a API nova.</li>
+            <li>Trilha recomendada: alinhar schema e auth, migrar rotas vivas e só então acelerar tela integrada.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/90_diagnostico/02_mapa_do_sistema_e_arquitetura.md</span>
+        <span class="source-chip">docs/arquitetura/02_fontes_oficiais_e_conflitos.md</span>
+        <span class="source-chip">docs/10_target_architecture/api_e_dados.md</span>
+        <span class="source-chip">services/api/routes.md</span>
+        <span class="source-chip">services/api/openapi.yaml</span>
+        <span class="source-chip">database/d1/schema.sql</span>
+        <span class="source-chip">docs/infrastructure/environment_variables.md</span>
+        <span class="source-chip">docs/infrastructure/secrets_and_tokens.md</span>
+      </div>
+    </section>
+
+    <section class="section" id="tecnica">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Leitura de Engenharia · Rafael Viana</span>
+        <blockquote>
+          “A grande armadilha seria chamar de ‘arquitetura final’ uma soma de trechos úteis mas
+          ainda desencontrados. A documentação técnica precisava dizer com nitidez o que é trilha
+          oficial, o que é implementação viva e onde estão os pontos sensíveis.”
+        </blockquote>
+        <div class="editorial-note__signature">Rafael Viana · Engenharia Sênior</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 11</span>
+          <h2>Documentação Técnica Mestra</h2>
+          <p class="section__lede">
+            Esta seção organiza a leitura futura para manutenção. Ela não substitui o código, mas
+            evita que o time perca tempo tentando descobrir qual pasta manda em quê.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Regra de manutenção</h3>
+          <p>
+            Sempre comparar documentação com implementação real. Quando divergirem, registrar a
+            divergência, corrigir a linha oficial e nunca marcar pronto por inferência.
+          </p>
+        </div>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel">
+          <h3>Stack e plataforma</h3>
+          <ul>
+            <li>Frontend: trilha oficial em `apps/web`, com protótipos, wireframes, contratos e mocks locais.</li>
+            <li>Backend: direção Cloudflare/D1, fronteira HTTP em `services/api` e módulos em `backend/modules`.</li>
+            <li>Dados: D1 como base principal, seeds em `database/seeds/seed_base.sql`.</li>
+            <li>IA: camada opcional de tradução usando provedores documentados via variáveis de ambiente.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Convenções técnicas</h3>
+          <ul>
+            <li>Todo segredo precisa estar documentado em `docs/infrastructure/secrets_and_tokens.md`.</li>
+            <li>Fonte externa complementa; nunca substitui silenciosamente o dado do usuário.</li>
+            <li>Importação só persiste após preview explícito.</li>
+            <li>Resposta de API deve carregar `requestId`, `timestamp`, `version` e metadado de fonte quando fizer sentido.</li>
+          </ul>
+        </article>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Área</th>
+            <th>Local oficial</th>
+            <th>Responsabilidade</th>
+            <th>Leitura futura</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>App web</td>
+            <td>`apps/web/`</td>
+            <td>Experiência, protótipos, wireframes, contratos visuais e base futura de integração.</td>
+            <td>Hoje é mais documentação e protótipo do que aplicação integrada.</td>
+          </tr>
+          <tr>
+            <td>API</td>
+            <td>`services/api/`</td>
+            <td>Bootstrap, rotas, handlers e contrato HTTP da linha nova.</td>
+            <td>OpenAPI formal ainda cobre melhor importação; o restante do mapa segue distribuído.</td>
+          </tr>
+          <tr>
+            <td>Domínio</td>
+            <td>`backend/modules/`</td>
+            <td>Score, alertas, notificações e regra financeira especializada.</td>
+            <td>Boa fonte para preservar regra ao migrar runtime vivo.</td>
+          </tr>
+          <tr>
+            <td>Contratos</td>
+            <td>`packages/contracts/`</td>
+            <td>Shapes de resposta por tela e payloads documentais do produto novo.</td>
+            <td>Essencial para alinhar frontend, backend e backlog.</td>
+          </tr>
+          <tr>
+            <td>Dados</td>
+            <td>`database/d1/`</td>
+            <td>Schema e baseline de persistência da solução oficial.</td>
+            <td>Precisa absorver as diferenças hoje presentes no starter sem perder governança.</td>
+          </tr>
+          <tr>
+            <td>Implementação viva transitória</td>
+            <td>`04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/`</td>
+            <td>Rotas reais, auth, importação e partes úteis do estado atual.</td>
+            <td>Tratar como ponte técnica auditável, não como casa definitiva.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Contrato / endpoint / fonte</th>
+            <th>Situação documental</th>
+            <th>Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>`GET /v1/health`, `GET/PUT /v1/profile/context`, `GET /v1/dashboard/home`, `GET /v1/portfolio`</td>
+            <td>Mapeados em documentação de arquitetura e rotas.</td>
+            <td>Servem como espinha dorsal da API oficial, ainda não toda formalizada em OpenAPI.</td>
+          </tr>
+          <tr>
+            <td>`POST /v1/imports/start`, `GET /preview`, `GET /engine-status`, `GET /detail`, `POST /commit`</td>
+            <td>Mais formalizados e melhor refletidos em `services/api/openapi.yaml` e no starter.</td>
+            <td>Domínio com maior maturidade operacional hoje.</td>
+          </tr>
+          <tr>
+            <td>Home, carteira, detalhe, histórico, análise e perfil</td>
+            <td>Contratos descritos em `packages/contracts/` e em mocks locais do frontend.</td>
+            <td>Boa base para integração futura sem inventar payload novo.</td>
+          </tr>
+          <tr>
+            <td>Fontes externas</td>
+            <td>CVM, Banco Central e fonte pública auxiliar documentadas.</td>
+            <td>Ordem de confiança: usuário, snapshot, regulador, fonte auxiliar, inferência.</td>
+          </tr>
+          <tr>
+            <td>Notificações</td>
+            <td>Telegram é canal recomendado; email é opcional.</td>
+            <td>IA entra apenas na formulação da frase final do alerta.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Limitação técnica:</strong> frontend oficial ainda não está costurado à API nova.</span>
+        <span class="fact-pill"><strong>Ponto sensível:</strong> auth e schema estão desalinhados entre trilha oficial e starter.</span>
+        <span class="fact-pill"><strong>Critério de evolução:</strong> migrar o que já funciona sem duplicar verdade de produto.</span>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">README.md</span>
+        <span class="source-chip">docs/10_target_architecture/stack_e_pastas.md</span>
+        <span class="source-chip">docs/10_target_architecture/api_e_dados.md</span>
+        <span class="source-chip">services/api/README.md</span>
+        <span class="source-chip">services/api/routes.md</span>
+        <span class="source-chip">packages/contracts/README.md</span>
+        <span class="source-chip">docs/30_data/fontes_externas.md</span>
+        <span class="source-chip">docs/product/alerts_and_notifications_mvp.md</span>
+      </div>
+    </section>
+
+    <section class="section section--muted" id="experiencia">
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 12</span>
+          <h2>Experiência do Desenvolvimento</h2>
+          <p class="section__lede">
+            Esta seção registra o making of profissional do projeto. Não como bastidor decorativo,
+            mas como memória útil do que estava claro, do que estava confuso e do que precisou ser
+            protegido para o Esquilo não perder o próprio DNA.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Por que isso importa</h3>
+          <p>
+            Produto que nasce entre visão forte e base fragmentada precisa guardar o racional da
+            consolidação. Senão a próxima iteração volta a discutir o que já deveria estar resolvido.
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <article class="timeline-item">
+          <strong>Helena Duarte · Produto</strong>
+          <span>
+            “No começo, o projeto parecia mais maduro em intenção do que em costura. Tinha visão,
+            regra, backlog, wireframe, starter e contratos, mas nem tudo falava com a mesma
+            hierarquia. O ponto crítico foi separar destino de evidência: a direção oficial precisava
+            mandar, e o estado vivo precisava ser tratado com respeito, sem virar atalho conceitual.”
+          </span>
+        </article>
+        <article class="timeline-item">
+          <strong>Camila Teles · UX</strong>
+          <span>
+            “O que mais ficou forte ao ler o repositório foi a recusa do produto em virar palco de
+            ruído financeiro. O Esquilo funciona quando aponta um problema principal e uma ação
+            principal. Sempre que a interface ameaça ficar espalhada, ela começa a parecer o oposto
+            do que o produto promete.”
+          </span>
+        </article>
+        <article class="timeline-item">
+          <strong>Rafael Viana · Engenharia</strong>
+          <span>
+            “O trecho mais sensível está onde o runtime vivo já resolveu coisa importante, mas a
+            linha oficial ainda não absorveu esse aprendizado. Se o time fingir que isso não existe,
+            gera drift. Se canonizar o starter inteiro, compromete a arquitetura. A saída madura é
+            migrar com critério, não negar nem idolatrar o que já está funcionando.”
+          </span>
+        </article>
+        <article class="timeline-item">
+          <strong>Augusto Menezes · Arquitetura</strong>
+          <span>
+            “A tensão central não era técnica pura. Era de governança. Havia mais de uma fonte com
+            autoridade parcial: `services/api`, `database/d1`, starter, contratos em `packages`,
+            backlog, fluxos. A bíblia resolveu isso declarando uma linha mestra e colocando o resto
+            no lugar certo: apoio, ponte, histórico ou lacuna.”
+          </span>
+        </article>
+        <article class="timeline-item">
+          <strong>Marina Alencar · Branding</strong>
+          <span>
+            “A marca tinha uma direção forte no texto e no design system, mas um ruído visual
+            objetivo no asset de logo disponível. A decisão certa não foi esconder o conflito; foi
+            registrar que a paleta funcional do produto é a do brand guide e que o laranja do asset
+            atual entra como assinatura editorial até a identidade visual executável ser fechada.”
+          </span>
+        </article>
+        <article class="timeline-item">
+          <strong>Ricardo Bastos · Estratégia</strong>
+          <span>
+            “O que dá confiança para fora não é um discurso de superapp financeiro. É a clareza de
+            recorte: consolidar, traduzir e orientar. Quando o projeto tenta caber em moldura de
+            banco genérico, ele perde valor. Quando assume sua disciplina, ele fica mais forte.”
+          </span>
+        </article>
+      </div>
+
+      <div class="comparison-grid" style="margin-top: 18px;">
+        <article class="panel">
+          <h3>O que foi ficando claro</h3>
+          <ul>
+            <li>O Esquilo não existe para operar mercado, e sim para tornar a carteira legível.</li>
+            <li>Importação e Home são o núcleo prático do MVP.</li>
+            <li>IA só pode traduzir; regra continua do backend.</li>
+            <li>A direção modular do produto é mais estável que o runtime atual.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>O que não pode se perder</h3>
+          <ul>
+            <li>Clareza sobre a ação principal da rodada.</li>
+            <li>Rastreamento explícito entre fato, decisão e hipótese.</li>
+            <li>Integração futura sem apagar o que já foi aprendido no starter.</li>
+            <li>Presença de marca sem cair no clichê de banco genérico.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/90_diagnostico/01_estado_real_do_repositorio.md</span>
+        <span class="source-chip">docs/90_diagnostico/04_backlog_vs_implementacao.md</span>
+        <span class="source-chip">docs/arquitetura/02_fontes_oficiais_e_conflitos.md</span>
+        <span class="source-chip">docs/20_product/visao_do_produto.md</span>
+        <span class="source-chip">docs/brand/esquilo_brand_guide.md</span>
+      </div>
+    </section>
+
+    <section class="section" id="matriz">
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 13</span>
+          <h2>Matriz de Consistência e Rastreabilidade</h2>
+          <p class="section__lede">
+            A tabela abaixo registra de onde veio cada decisão central desta bíblia, o que é fato
+            do repositório, o que foi consolidado editorialmente e o que ainda depende de validação.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Regra de leitura</h3>
+          <p>
+            Quando houver dúvida futura, a primeira pergunta deve ser: isso está classificado como
+            fato, decisão documental, padronização derivada ou ponto aberto?
+          </p>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tópico</th>
+            <th>Base observada no Quebra-Nozes</th>
+            <th>Decisão desta bíblia</th>
+            <th>Classificação</th>
+            <th>Validação pendente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Direção arquitetural</td>
+            <td>`README.md`, `docs/arquitetura/*` e `docs/10_target_architecture/*` apontam linha modular por apps, services, backend, packages e database.</td>
+            <td>Essa direção vira oficial e canônica.</td>
+            <td>Decisão documental</td>
+            <td>Absorver runtime vivo sem reabrir a arquitetura-base.</td>
+          </tr>
+          <tr>
+            <td>Starter D1</td>
+            <td>É a área mais viva de backend hoje.</td>
+            <td>Tratar como ponte operacional, não como destino final.</td>
+            <td>Decisão documental</td>
+            <td>Migrar rotas úteis para a linha oficial.</td>
+          </tr>
+          <tr>
+            <td>Contrato HTTP</td>
+            <td>`services/api/openapi.yaml` formaliza melhor importação; mapa mais amplo aparece em `services/api/routes.md`, `docs/10_target_architecture/api_e_dados.md` e `packages/contracts`.</td>
+            <td>OpenAPI novo é base formal já existente; documentação complementar segue mandatória até a cobertura total.</td>
+            <td>Fato atual + decisão documental</td>
+            <td>Fechar OpenAPI completo da linha oficial.</td>
+          </tr>
+          <tr>
+            <td>Schema</td>
+            <td>`database/d1/schema.sql` diverge do uso real do starter em alguns pontos.</td>
+            <td>Schema canônico é o de `database/d1`, com diferença registrada como dívida.</td>
+            <td>Decisão documental</td>
+            <td>Alinhar auth, carteira principal e normalização de ativos.</td>
+          </tr>
+          <tr>
+            <td>Marca e paleta</td>
+            <td>Brand guide e design system definem paleta funcional; asset de logo disponível destoa em laranja sólido.</td>
+            <td>Paleta do brand guide governa o produto; laranja do asset atual entra como assinatura editorial transitória.</td>
+            <td>Padronização canônica derivada</td>
+            <td>Fechar identidade visual executável com asset coerente.</td>
+          </tr>
+          <tr>
+            <td>Ícones</td>
+            <td>Manifestos e design system apontam linha outline, arredondada, leve.</td>
+            <td>Esse estilo vira referência inicial do produto.</td>
+            <td>Padronização canônica derivada</td>
+            <td>Consolidar biblioteca executável completa.</td>
+          </tr>
+          <tr>
+            <td>Home e importação</td>
+            <td>São os fluxos mais fortes e mais recorrentes no conjunto produto + wireframes + contratos + starter.</td>
+            <td>Viraram centro de gravidade do MVP canônico.</td>
+            <td>Fato atual consolidado</td>
+            <td>Integrar frontend oficial e estabilizar dados.</td>
+          </tr>
+          <tr>
+            <td>Alertas e metas</td>
+            <td>Há regras, notas de produto e módulos, mas integração final ainda não está fechada.</td>
+            <td>Continuam como expansão imediata, não como centro operacional do MVP.</td>
+            <td>Fato atual + leitura editorial</td>
+            <td>Fechar payloads, canais e telas oficiais.</td>
+          </tr>
+          <tr>
+            <td>Personas editoriais</td>
+            <td>Não existem como time factual no repositório.</td>
+            <td>São recurso editorial humano desta bíblia para explicar e memorizar decisões.</td>
+            <td>Padronização editorial explícita</td>
+            <td>Sem pendência técnica; apenas manter coerência futura.</td>
+          </tr>
+          <tr>
+            <td>Documentação antiga</td>
+            <td>Existe material histórico em várias áreas, inclusive `OLD/`.</td>
+            <td>Todo material anterior deixa de ser narrativa principal quando conflitar com esta bíblia.</td>
+            <td>Decisão documental</td>
+            <td>Atualizar esta bíblia sempre que a realidade mudar.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="source-list">
+        <span class="source-chip">README.md</span>
+        <span class="source-chip">docs/arquitetura/02_fontes_oficiais_e_conflitos.md</span>
+        <span class="source-chip">docs/90_diagnostico/05_recomendacoes_de_integracao.md</span>
+        <span class="source-chip">docs/brand/esquilo_design_system.md</span>
+        <span class="source-chip">assets/icons/manifest.md</span>
+      </div>
+    </section>
+
+    <section class="section section--dark" id="codex">
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 14</span>
+          <h2>Guia de Uso Futuro pelo Codex</h2>
+          <p class="section__lede">
+            Esta seção existe para impedir drift. O Codex deve usar esta bíblia como régua de
+            coerência antes de propor arquitetura, UX, texto, regra de negócio ou status de entrega.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>Mandato operacional</h3>
+          <p>
+            Antes de qualquer evolução relevante, comparar o pedido do momento com esta bíblia,
+            com a `main` e com a área oficial do repositório. Se houver conflito, perguntar.
+          </p>
+        </div>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel panel--dark">
+          <h3>Como o Codex deve começar</h3>
+          <ul>
+            <li>Ler esta bíblia antes de reinterpretar produto, fluxo ou arquitetura.</li>
+            <li>Tratar `main` como evidência de implementação integrada e esta bíblia como narrativa canônica.</li>
+            <li>Usar `services/api`, `backend/modules`, `packages/` e `database/d1` como linha oficial.</li>
+            <li>Tratar o starter como ponte auditável do estado atual, não como desculpa para ignorar a direção oficial.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Quando o Codex deve parar e perguntar</h3>
+          <ul>
+            <li>Quando código, documento, PR, issue ou branch apontarem verdades conflitantes.</li>
+            <li>Quando houver mais de um caminho razoável com impacto em arquitetura, contrato, fluxo ou marca.</li>
+            <li>Quando faltar base suficiente no Quebra-Nozes para afirmar regra como fato.</li>
+            <li>Quando o pedido empurrar o produto para fora do recorte de consolidar, traduzir e orientar.</li>
+          </ul>
+        </article>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Situação futura</th>
+            <th>Conduta esperada do Codex</th>
+            <th>Erro a evitar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nova tela ou fluxo</td>
+            <td>Confirmar aderência à jornada canônica e aos contratos existentes antes de desenhar do zero.</td>
+            <td>Inventar módulo novo por entusiasmo de interface.</td>
+          </tr>
+          <tr>
+            <td>Mudança em backend</td>
+            <td>Verificar se reforça a linha oficial ou se perpetua o drift entre starter e arquitetura-alvo.</td>
+            <td>Marcar como “resolvido” sem alinhar schema, contrato e runtime.</td>
+          </tr>
+          <tr>
+            <td>Texto e IA</td>
+            <td>Manter IA como camada de tradução, sem empurrar regra de negócio para prompts.</td>
+            <td>Delegar score, alerta ou decisão para modelo generativo.</td>
+          </tr>
+          <tr>
+            <td>Branding e UX</td>
+            <td>Preservar clareza, respiro, tom humano e rejeição ao clichê de banco genérico.</td>
+            <td>Transformar o produto em dashboard ruidoso ou marca financeira genérica.</td>
+          </tr>
+          <tr>
+            <td>Documentação futura</td>
+            <td>Atualizar esta bíblia quando descoberta estrutural ou decisão canônica realmente mudarem.</td>
+            <td>Deixar documentação paralela contradizendo a narrativa central.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Regra 1:</strong> fato do Quebra-Nozes vem antes de memória solta.</span>
+        <span class="fact-pill"><strong>Regra 2:</strong> decisão canônica vem antes de conveniência local.</span>
+        <span class="fact-pill"><strong>Regra 3:</strong> lacuna deve ser marcada; não preenchida por alucinação.</span>
+      </div>
+
+      <div class="source-list">
+        <span class="source-chip">docs/implementation/implementation_playbook_codex_authoritative.md</span>
+        <span class="source-chip">docs/implementation/codex_start_prompt_authoritative.md</span>
+        <span class="source-chip">docs/implementation/implementation_plan_for_codex.md</span>
+        <span class="source-chip">docs/rules/ia_boundary_rules.md</span>
+      </div>
+    </section>
+
+    <section class="section section--dark" id="fechamento">
+      <div class="editorial-note">
+        <span class="editorial-note__label">Fechamento Executivo · Ricardo Bastos</span>
+        <blockquote>
+          “O valor do Esquilo está em parecer mais simples do que o problema que ele resolve. E o
+          valor desta bíblia está em impedir que o projeto volte a se fragmentar cada vez que uma
+          nova entrega começar.”
+        </blockquote>
+        <div class="editorial-note__signature">Ricardo Bastos · Estratégia e Investor-facing</div>
+      </div>
+
+      <div class="section__header">
+        <div>
+          <span class="eyebrow">Parte 15</span>
+          <h2>Fechamento Executivo</h2>
+          <p class="section__lede">
+            O Esquilo Invest importa porque resolve uma dor real com um recorte disciplinado:
+            consolidar a carteira, traduzir a leitura e orientar o próximo passo sem fingir ser o
+            que não é. Esta bíblia importa porque transforma essa disciplina em referência canônica.
+          </p>
+        </div>
+        <div class="callout">
+          <h3>O que esta bíblia libera</h3>
+          <p>
+            Liderança ganha uma história coerente. Produto ganha régua. UX ganha linguagem.
+            Arquitetura ganha eixo. Engenharia ganha mapa. O Codex ganha limite e direção.
+          </p>
+        </div>
+      </div>
+
+      <div class="comparison-grid">
+        <article class="panel panel--dark">
+          <h3>Próximos passos recomendados</h3>
+          <ul>
+            <li>Alinhar `database/d1/schema.sql` com a realidade útil do starter, principalmente auth e ativos.</li>
+            <li>Fechar a cobertura oficial da API nova além do domínio de importação.</li>
+            <li>Costurar o frontend oficial com os contratos e mocks já consolidados.</li>
+            <li>Reduzir drift de backlog, issues e status real de implementação.</li>
+            <li>Subir o nível de observabilidade, teste e rastreabilidade operacional.</li>
+          </ul>
+        </article>
+        <article class="panel panel--dark">
+          <h3>Mensagem final de governança</h3>
+          <ul>
+            <li>Este material substitui a documentação anterior como narrativa principal do produto.</li>
+            <li>Qualquer evolução futura deve consultá-lo antes de criar nova interpretação.</li>
+            <li>Quando a realidade mudar de fato, esta bíblia deve ser atualizada explicitamente.</li>
+            <li>Sem isso, o projeto volta a sofrer deriva entre produto, marca, UX e engenharia.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="fact-strip">
+        <span class="fact-pill"><strong>Resumo de valor:</strong> produto robusto, humano e disciplinado.</span>
+        <span class="fact-pill"><strong>Resumo de risco:</strong> drift entre direção oficial e runtime atual.</span>
+        <span class="fact-pill"><strong>Resumo de decisão:</strong> a direção oficial agora governa.</span>
+      </div>
+
+      <p class="footnote">
+        Esta edição canônica inicial foi consolidada exclusivamente a partir do repositório
+        `Quebra-Nozes`, com conflitos internos registrados e resolvidos documentalmente para uso
+        futuro do time e do Codex.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

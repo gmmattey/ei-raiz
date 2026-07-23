@@ -1,0 +1,80 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-home-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "portfolioId": "portfolio_demo_01",
+    "hero": {
+      "totalEquity": 11441.28,
+      "totalInvested": 11066.1,
+      "totalProfitLoss": 375.18,
+      "totalProfitLossPct": 3.39,
+      "statusLabel": "Atenção moderada"
+    },
+    "primaryProblem": {
+      "code": "concentration_pension",
+      "title": "Carteira concentrada demais em previdência",
+      "body": "A carteira está estável, mas a fatia em previdência está alta demais e limita flexibilidade e crescimento.",
+      "severity": "warning"
+    },
+    "primaryAction": {
+      "code": "increase_growth_gradually",
+      "title": "Aumentar crescimento aos poucos",
+      "body": "Direcione novos aportes para ativos de crescimento com critério, sem desmontar a proteção já construída.",
+      "ctaLabel": "Ver foco da carteira",
+      "target": "/portfolio?category=STOCK"
+    },
+    "score": {
+      "value": 67,
+      "status": "Atenção moderada",
+      "explanation": "A carteira tem estabilidade, mas sofre com concentração excessiva e baixa exposição à perna de crescimento."
+    },
+    "distribution": [
+      {
+        "key": "PENSION",
+        "label": "Previdência",
+        "value": 8795.0,
+        "sharePct": 76.87,
+        "performancePct": 4.08,
+        "sourceType": "platform"
+      },
+      {
+        "key": "BOND",
+        "label": "Renda fixa",
+        "value": 1568.0,
+        "sharePct": 13.7,
+        "performancePct": 4.53,
+        "sourceType": "platform"
+      },
+      {
+        "key": "STOCK",
+        "label": "Ações",
+        "value": 1078.28,
+        "sharePct": 9.43,
+        "performancePct": -3.84,
+        "sourceType": "platform"
+      }
+    ],
+    "insights": [
+      {
+        "kind": "warning",
+        "title": "CMIN3 pede revisão de tese",
+        "body": "A perda está relevante e exige leitura fria, não impulso."
+      },
+      {
+        "kind": "info",
+        "title": "Proteção razoável",
+        "body": "A perna de previdência e renda fixa reduz tranco, mas pesa demais."
+      },
+      {
+        "kind": "opportunity",
+        "title": "Espaço para crescimento",
+        "body": "Novos aportes podem melhorar a assimetria da carteira."
+      }
+    ],
+    "updatedAt": "2026-03-30T10:00:00Z"
+  }
+}

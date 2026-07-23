@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Quebra_Nozes API
+  version: 0.1.0
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHealth'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+components:
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp, version]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string }
+        version: { type: string }
+        sourceWarning: { type: string, nullable: true }
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true, nullable: true }
+    ApiEnvelopeOk:
+      type: object
+      required: [ok, meta, data]
+      properties:
+        ok: { type: boolean, const: true }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+        data: { type: object }
+    ApiEnvelopeError:
+      type: object
+      required: [ok, meta, error]
+      properties:
+        ok: { type: boolean, const: false }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+        error: { $ref: '#/components/schemas/ApiError' }
+    HealthData:
+      type: object
+      properties:
+        ok: { type: boolean }
+        db: { type: object, additionalProperties: true }
+        version: { type: string }
+        env: { type: string }
+    ApiOkHealth:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HealthData'

@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-health-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "status": "ok",
+    "appEnv": "local",
+    "apiVersion": "v1",
+    "services": {
+      "d1": "ok",
+      "externalReferences": "mock"
+    }
+  }
+}

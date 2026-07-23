@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_profile",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "userId": "usr_seed_balanced",
+    "portfolioId": "pfl_seed_balanced",
+    "context": {
+      "financialGoal": "equilibrar e crescer",
+      "monthlyIncomeRange": "10k-15k",
+      "monthlyInvestmentTarget": 1000,
+      "availableToInvest": 500,
+      "riskProfileSelfDeclared": "moderado",
+      "riskProfileQuizResult": "moderado",
+      "riskProfileEffective": "moderado",
+      "investmentHorizon": "longo_prazo",
+      "platformsUsed": { "platformIds": ["xp", "ion"], "otherPlatforms": [] },
+      "displayPreferences": { "ghostMode": false }
+    },
+    "onboarding": {
+      "currentStep": "confirm",
+      "completed": true,
+      "completedAt": "2026-03-31T00:00:00.000Z",
+      "homeUnlocked": true,
+      "completedSteps": ["goal", "risk_quiz", "income_horizon", "platforms", "confirm"],
+      "missing": []
+    },
+    "backendHealth": {
+      "status": "ok",
+      "appEnv": "local",
+      "apiVersion": "v1",
+      "services": { "d1": "ok", "externalReferences": "unknown" }
+    }
+  }
+}

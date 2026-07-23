@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_hml_portfolio",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "redirect_onboarding",
+    "redirectTo": "/onboarding"
+  }
+}

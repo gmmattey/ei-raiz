@@ -1,0 +1,14 @@
+name = "esquilo-extraction-engine"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+
+[vars]
+APP_ENV = "hml"
+API_VERSION = "v1"
+OPENAI_MODEL = "gpt-4.1-mini"
+GEMINI_MODEL = "gemini-2.5-flash"
+
+[[d1_databases]]
+binding = "AUDIT_DB"
+database_name = "esquilo_extraction_audit"
+database_id = "REPLACE_ME"

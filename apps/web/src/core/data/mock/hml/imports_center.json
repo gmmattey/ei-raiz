@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_hml_imports_center",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "summary": {
+      "totalImports": 1,
+      "pendingImports": 0,
+      "completedImports": 1,
+      "failedImports": 0
+    },
+    "imports": [
+      {
+        "id": "imp_hml_1",
+        "origin": "DOCUMENT_AI_PARSE",
+        "originLabel": "Documento assistido",
+        "status": "COMMITTED",
+        "statusLabel": "Concluída",
+        "fileName": "nota_corretagem.pdf",
+        "mimeType": "application/pdf",
+        "totals": { "totalRows": 9, "validRows": 9, "invalidRows": 0, "duplicateRows": 0 },
+        "createdAt": "2026-03-31T01:00:00Z",
+        "updatedAt": "2026-03-31T01:03:00Z",
+        "snapshot": { "id": "snp_bal_1", "referenceDate": "2026-03-31", "target": "/history/snapshots" },
+        "primaryAction": { "code": "open_preview", "title": "Ver importação", "target": "/imports/imp_hml_1/preview" },
+        "secondaryAction": { "code": "open_snapshot", "title": "Ver snapshot", "target": "/history/snapshots" }
+      }
+    ]
+  }
+}
+

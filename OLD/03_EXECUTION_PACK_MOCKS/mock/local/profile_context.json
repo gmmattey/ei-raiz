@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-profile-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "userId": "user_demo_01",
+    "displayName": "Luiz Demo",
+    "context": {
+      "financialGoal": "Construir patrimônio com equilíbrio entre crescimento e segurança",
+      "monthlyIncomeRange": "8k_15k",
+      "monthlyInvestmentTarget": 1200,
+      "availableToInvest": 350,
+      "riskProfile": "moderado",
+      "investmentHorizon": "longo_prazo",
+      "platformsUsed": [
+        "XP",
+        "ION",
+        "TIM_PREV"
+      ],
+      "displayPreferences": {
+        "ghostMode": false
+      }
+    },
+    "backendHealth": {
+      "status": "ok",
+      "appEnv": "local",
+      "apiVersion": "v1",
+      "services": {
+        "d1": "ok",
+        "externalReferences": "mock"
+      }
+    },
+    "displayPreferences": {
+      "ghostMode": false
+    }
+  }
+}

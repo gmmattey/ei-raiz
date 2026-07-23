@@ -1,0 +1,94 @@
+name: D1 Execute (Controlled)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Ambiente do D1"
+        required: true
+        type: choice
+        options:
+          - hml
+          - production
+      mode:
+        description: "Modo de execucao"
+        required: true
+        type: choice
+        options:
+          - file
+          - command
+      sql_file:
+        description: "Caminho do arquivo SQL (somente quando mode=file)"
+        required: false
+        default: "database/d1/schema.sql"
+      sql_command:
+        description: "Comando SQL inline (somente quando mode=command)"
+        required: false
+        default: ""
+      ref:
+        description: "Branch/tag/sha para usar como fonte do SQL (opcional). Vazio = ref atual."
+        required: false
+        default: ""
+
+concurrency:
+  group: d1-exec-${{ inputs.target_env }}
+  cancel-in-progress: false
+
+jobs:
+  d1:
+    name: D1 Execute (${{ inputs.target_env }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_env }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install (worker)
+        working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter
+        run: npm ci
+
+      - name: Validate Cloudflare secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
+            echo "Missing secret: CLOUDFLARE_API_TOKEN (or CF_API_TOKEN)." >&2
+            exit 1
+          fi
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "Missing secret: CLOUDFLARE_ACCOUNT_ID (or CF_ACCOUNT_ID)." >&2
+            exit 1
+          fi
+
+      - name: Execute SQL (remote)
+        working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.mode }}" = "file" ]; then
+            echo "[d1] file=${{ inputs.sql_file }}"
+            npx wrangler d1 execute DB --env "${{ inputs.target_env }}" --file="../../${{ inputs.sql_file }}" --remote --yes
+          else
+            if [ -z "${{ inputs.sql_command }}" ]; then
+              echo "[d1] sql_command vazio (mode=command)."
+              exit 1
+            fi
+            echo "[d1] command"
+            npx wrangler d1 execute DB --env "${{ inputs.target_env }}" --command "${{ inputs.sql_command }}" --remote --yes
+          fi
+
