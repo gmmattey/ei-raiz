@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ts-node *)",
+      "mcp__fd35feb5-7997-4c1c-aa2e-f30a3e69fdd1__accounts_list",
+      "mcp__fd35feb5-7997-4c1c-aa2e-f30a3e69fdd1__d1_databases_list",
+      "mcp__fd35feb5-7997-4c1c-aa2e-f30a3e69fdd1__kv_namespace_create",
+      "Bash(curl -s https://vera-worker.giammattey-luiz.workers.dev/api/health)",
+      "Bash(curl -s -X POST https://vera-worker.giammattey-luiz.workers.dev/api/profile/analyze -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST https://vera-worker.giammattey-luiz.workers.dev/api/profile/analyze -H 'Content-Type: application/json' -d '{\"userId\":\"test2\",\"profile\":{\"income\":5000,\"expenses\":2000,\"debt\":10000,\"assets\":25000}}')",
+      "Bash(npm run *)",
+      "Bash(curl -X POST http://localhost:3000/api/profile/analyze -H 'Content-Type: application/json' -d '{ *)"
+    ]
+  }
+}

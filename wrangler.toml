@@ -1,0 +1,53 @@
+name = "vera-worker"
+main = "src/worker/index.ts"
+compatibility_date = "2024-11-21"
+
+# Default development environment
+[[d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-dev"
+database_id = "e2a0b0a8-484d-4507-b21c-facf090481dd"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "91187102639a4f8e9067d52322e8847b"
+
+[build]
+command = "npm install && npm run build:worker"
+cwd = "./"
+
+# Staging environment
+[env.staging]
+name = "vera-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-hml"
+database_id = "f7ee1506-ae01-45e4-875d-781042ea3f00"
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "vera-cache-staging"
+
+# Production environment
+[env.production]
+name = "vera-production"
+routes = [
+  { pattern = "api.vera.app/*", zone_name = "vera.app" }
+]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest"
+database_id = "2a4849fa-e980-4540-bd60-514b740287d3"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "vera-cache-prod"
+
+[vars]
+BRAPI_API_KEY = ""
+LOG_LEVEL = "info"
+
+[env.production.vars]
+LOG_LEVEL = "warn"
