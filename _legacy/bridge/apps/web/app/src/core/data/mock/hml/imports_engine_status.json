@@ -1,0 +1,50 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_engine_status",
+    "timestamp": "2026-04-03T12:00:00.000Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "importId": "imp_mock",
+    "origin": "B3_CSV",
+    "importStatus": "PREVIEW_READY",
+    "engineStatus": {
+      "status": "ready_for_review",
+      "label": "Pronta para revisão",
+      "readyForReview": true,
+      "readyToCommit": false
+    },
+    "document": { "parserMode": "b3_csv", "confidence": 0.92, "importable": true },
+    "summary": {
+      "totalRows": 82,
+      "processedRows": 82,
+      "validRows": 79,
+      "invalidRows": 1,
+      "duplicateRows": 2,
+      "lowConfidenceRows": 3,
+      "blockedRows": 0,
+      "failedRows": 0,
+      "fallbackRows": 1,
+      "manualDecisionRows": 0,
+      "aiAssistedRows": 1
+    },
+    "states": {
+      "received": false,
+      "processing": false,
+      "completed": false,
+      "lowConfidence": true,
+      "fallback": true,
+      "nonImportable": false,
+      "readyForReview": true
+    },
+    "targets": {
+      "preview": "/v1/imports/imp_mock/preview",
+      "detail": "/v1/imports/imp_mock/detail",
+      "conflicts": "/v1/imports/imp_mock/conflicts",
+      "commit": null
+    }
+  }
+}
+

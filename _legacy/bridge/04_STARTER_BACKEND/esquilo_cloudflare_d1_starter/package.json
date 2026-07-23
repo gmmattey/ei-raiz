@@ -1,0 +1,25 @@
+{
+  "name": "esquilo-invest-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --env local",
+    "dev:local": "wrangler dev --env local",
+    "build:web": "node scripts/build_web.mjs",
+    "sync:web": "node scripts/sync_web_public.mjs",
+    "deploy:hml": "node scripts/deploy.mjs hml",
+    "deploy:prod": "node scripts/deploy.mjs production",
+    "deploy": "npm run deploy:prod",
+    "rollback:prod": "node scripts/rollback.mjs production",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260320.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.8.0"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_holding_fund",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "holding": {
+      "id": "pos_bal_3",
+      "assetId": "ast_fund_mm",
+      "code": null,
+      "name": "Fundo Multimercado Demo",
+      "categoryKey": "fundos",
+      "categoryLabel": "Fundos",
+      "platformId": "plt_xp",
+      "platformName": "XP Investimentos",
+      "quantity": 1,
+      "averagePrice": 5000.0,
+      "currentPrice": 5200.0,
+      "currentValue": 5200.0,
+      "investedAmount": 5000.0,
+      "performanceValue": 200.0,
+      "performancePct": 4.0,
+      "allocationPct": 24.44,
+      "recommendation": "Revisar se ainda faz sentido manter",
+      "statusLabel": "Cotacao disponivel",
+      "quotationStatus": "priced",
+      "notes": "",
+      "stopLoss": null,
+      "targetPrice": null,
+      "sourceKind": "manual",
+      "assetTypeCode": "FUND"
+    },
+    "ranking": {
+      "score": 68,
+      "status": "Neutro",
+      "motives": [],
+      "opportunityScore": 65
+    },
+    "recommendation": {
+      "code": "review_fund_fit",
+      "title": "Revisar aderencia do fundo",
+      "body": "Fundos podem ficar na carteira por inercia. Confirme se ele ainda cumpre o papel esperado para o seu objetivo e risco."
+    },
+    "categoryContext": {
+      "categoryKey": "fundos",
+      "categoryLabel": "Fundos",
+      "categoryRisk": "Neutra",
+      "categoryRecommendation": "Manter apenas fundos com papel claro",
+      "primaryMessage": "Use fundos quando eles resolverem um problema especifico (diversificacao, volatilidade, exposicao) e nao por falta de alternativa.",
+      "holdingsCount": 1,
+      "totalCurrent": 5200.0,
+      "totalInvested": 5000.0,
+      "totalProfitLoss": 200.0,
+      "totalProfitLossPct": 4.0
+    },
+    "externalLink": null
+  }
+}
+

@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_health",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "status": "ok",
+    "appEnv": "local",
+    "services": {
+      "database": "ok",
+      "analysis": "ok"
+    }
+  }
+}

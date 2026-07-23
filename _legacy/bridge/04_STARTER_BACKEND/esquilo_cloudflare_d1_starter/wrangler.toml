@@ -1,0 +1,64 @@
+name = "esquilo-invest-api"
+main = "src/index.ts"
+compatibility_date = "2026-03-30"
+
+# Single Worker: serve SPA (assets) + API (/v1/*) na mesma origem.
+assets = { directory = "./public", binding = "ASSETS" }
+
+[observability]
+enabled = true
+
+[vars]
+API_VERSION = "v1"
+
+# Regra: nao usar configuracao default para evitar "rodar sem querer" apontando para recursos errados.
+# Sempre executar com `--env local|hml|production`.
+
+[env.local]
+name = "esquilo-invest-api-local"
+
+[env.local.vars]
+APP_ENV = "local"
+API_VERSION = "v1"
+# Vite dev server roda em porta diferente do wrangler dev — CORS necessário em local.
+CORS_ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174"
+EXTERNAL_REFERENCES_ENABLED = "0"
+EXTERNAL_REFERENCES_BRAPI_BASE_URL = "https://brapi.dev/api"
+
+[[env.local.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-local"
+database_id = "REPLACE_WITH_LOCAL_D1_DATABASE_ID"
+
+[env.hml]
+name = "esquilo-invest-api-hml"
+
+[env.hml.vars]
+APP_ENV = "hml"
+API_VERSION = "v1"
+EXTERNAL_REFERENCES_ENABLED = "0"
+EXTERNAL_REFERENCES_BRAPI_BASE_URL = "https://brapi.dev/api"
+
+[[env.hml.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-hml"
+database_id = "REPLACE_WITH_HML_D1_DATABASE_ID"
+
+# NOTE: R2 ficou opcional nesta Release 0.1 para destravar deploy e evitar
+# dependencia de habilitacao manual de R2 na conta.
+# O runtime atual ainda nao depende de R2 para o fluxo CSV v1 (importacao via D1).
+# Quando o fluxo passar a armazenar arquivos/documentos, reabilitar os buckets aqui.
+
+[env.production]
+name = "esquilo-invest-api"
+
+[env.production.vars]
+APP_ENV = "production"
+API_VERSION = "v1"
+EXTERNAL_REFERENCES_ENABLED = "0"
+EXTERNAL_REFERENCES_BRAPI_BASE_URL = "https://brapi.dev/api"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest"
+database_id = "2a4849fa-e980-4540-bd60-514b740287d3"

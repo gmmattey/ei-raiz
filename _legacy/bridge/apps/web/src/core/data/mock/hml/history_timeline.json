@@ -1,0 +1,62 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_history_timeline",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "summary": {
+      "totalItems": 3,
+      "totalSnapshots": 2,
+      "totalEvents": 1,
+      "latestOccurredAt": "2026-03-31T01:00:00Z"
+    },
+    "items": [
+      {
+        "kind": "snapshot",
+        "id": "snp_bal_1",
+        "occurredAt": "2026-03-31T01:00:00Z",
+        "referenceDate": "2026-03-31",
+        "createdAt": "2026-03-31T01:00:00Z",
+        "totals": {
+          "totalEquity": 21276.84,
+          "totalInvested": 20742.58,
+          "totalProfitLoss": 534.26,
+          "totalProfitLossPct": 2.58
+        },
+        "recommendation": {
+          "status": "atencao_moderada",
+          "primaryProblem": "Concentracao relativamente alta em previdencia.",
+          "primaryAction": "Diluir concentracao aos poucos."
+        }
+      },
+      {
+        "kind": "event",
+        "id": "evt_bal_2",
+        "occurredAt": "2026-03-01T00:00:00.000Z",
+        "portfolioId": "pfl_seed_balanced",
+        "type": "snapshot_created",
+        "status": "ok",
+        "message": "Snapshot inicial gerado."
+      },
+      {
+        "kind": "snapshot",
+        "id": "snp_bal_0",
+        "occurredAt": "2026-02-28T01:00:00Z",
+        "referenceDate": "2026-02-28",
+        "createdAt": "2026-02-28T01:00:00Z",
+        "totals": {
+          "totalEquity": 20350.0,
+          "totalInvested": 20100.0,
+          "totalProfitLoss": 250.0,
+          "totalProfitLossPct": 1.24
+        },
+        "recommendation": null
+      }
+    ]
+  }
+}
+

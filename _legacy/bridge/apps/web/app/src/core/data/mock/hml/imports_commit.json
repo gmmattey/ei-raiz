@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_commit",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "importId": "imp_seed_1",
+    "status": "committed",
+    "createdSnapshotId": "snp_seed_2",
+    "affectedPositions": 4,
+    "nextStep": "/history/snapshots"
+  }
+}
+

@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "mock-import-preview-001",
+    "timestamp": "2026-03-30T10:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "importId": "import_demo_02",
+    "status": "preview_ready",
+    "totals": {
+      "totalRows": 6,
+      "validRows": 4,
+      "invalidRows": 1,
+      "duplicateRows": 1
+    },
+    "rows": [
+      {
+        "rowNumber": 1,
+        "status": "valid",
+        "normalized": {
+          "assetCode": "ITSA4",
+          "assetName": "Itaúsa",
+          "platform": "XP",
+          "quantity": 27,
+          "averagePrice": 13.84
+        },
+        "validationErrors": [],
+        "dedupKey": "platform_xp|ITSA4|2026-02"
+      },
+      {
+        "rowNumber": 2,
+        "status": "duplicate",
+        "normalized": {
+          "assetCode": "ITSA4",
+          "assetName": "Itaúsa",
+          "platform": "XP",
+          "quantity": 27,
+          "averagePrice": 13.84
+        },
+        "validationErrors": [],
+        "dedupKey": "platform_xp|ITSA4|2026-02"
+      },
+      {
+        "rowNumber": 3,
+        "status": "invalid",
+        "normalized": {},
+        "validationErrors": [
+          "asset_code_missing"
+        ],
+        "dedupKey": ""
+      },
+      {
+        "rowNumber": 4,
+        "status": "valid",
+        "normalized": {
+          "assetCode": "TESOURO-IPCA",
+          "assetName": "Tesouro IPCA 2035",
+          "platform": "ION",
+          "quantity": 1,
+          "averagePrice": 1500.0
+        },
+        "validationErrors": [],
+        "dedupKey": "platform_ion|TESOURO-IPCA|2026-02"
+      }
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_portfolio",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "portfolioId": "pfl_seed_balanced",
+    "summary": {
+      "totalEquity": 21276.84,
+      "totalInvested": 20742.58,
+      "totalProfitLoss": 534.26,
+      "totalProfitLossPct": 2.58,
+      "statusLabel": "Posicoes ativas"
+    },
+    "groups": [
+      {
+        "categoryKey": "previdencia",
+        "categoryLabel": "Previdencia",
+        "totalInvested": 15000.0,
+        "totalCurrent": 15350.0,
+        "totalProfitLoss": 350.0,
+        "totalProfitLossPct": 2.33,
+        "holdings": [
+          {
+            "id": "pos_bal_4",
+            "assetId": "ast_prev",
+            "code": null,
+            "name": "Previdencia Demo",
+            "categoryKey": "previdencia",
+            "categoryLabel": "Previdencia",
+            "platformId": "plt_ion",
+            "platformName": "Ion Itau",
+            "quantity": 1,
+            "averagePrice": 15000.0,
+            "currentPrice": 15350.0,
+            "currentValue": 15350.0,
+            "investedAmount": 15000.0,
+            "performanceValue": 350.0,
+            "performancePct": 2.33,
+            "allocationPct": 72.15,
+            "quotationStatus": "priced"
+          }
+        ]
+      },
+      {
+        "categoryKey": "fundos",
+        "categoryLabel": "Fundos",
+        "totalInvested": 5000.0,
+        "totalCurrent": 5200.0,
+        "totalProfitLoss": 200.0,
+        "totalProfitLossPct": 4.0,
+        "holdings": [
+          {
+            "id": "pos_bal_3",
+            "assetId": "ast_fund_mm",
+            "code": null,
+            "name": "Fundo Multimercado Demo",
+            "categoryKey": "fundos",
+            "categoryLabel": "Fundos",
+            "platformId": "plt_xp",
+            "platformName": "XP Investimentos",
+            "quantity": 1,
+            "averagePrice": 5000.0,
+            "currentPrice": 5200.0,
+            "currentValue": 5200.0,
+            "investedAmount": 5000.0,
+            "performanceValue": 200.0,
+            "performancePct": 4.0,
+            "allocationPct": 24.44,
+            "quotationStatus": "priced"
+          }
+        ]
+      },
+      {
+        "categoryKey": "acoes",
+        "categoryLabel": "Acoes",
+        "totalInvested": 742.58,
+        "totalCurrent": 726.84,
+        "totalProfitLoss": -15.74,
+        "totalProfitLossPct": -2.12,
+        "holdings": [
+          {
+            "id": "pos_bal_1",
+            "assetId": "ast_itsa4",
+            "code": "ITSA4",
+            "name": "Itausa",
+            "categoryKey": "acoes",
+            "categoryLabel": "Acoes",
+            "platformId": "plt_xp",
+            "platformName": "XP Investimentos",
+            "quantity": 27,
+            "averagePrice": 13.84,
+            "currentPrice": 14.52,
+            "currentValue": 392.04,
+            "investedAmount": 373.68,
+            "performanceValue": 18.36,
+            "performancePct": 4.92,
+            "allocationPct": 1.84,
+            "quotationStatus": "priced"
+          },
+          {
+            "id": "pos_bal_2",
+            "assetId": "ast_cmin3",
+            "code": "CMIN3",
+            "name": "CSN Mineracao",
+            "categoryKey": "acoes",
+            "categoryLabel": "Acoes",
+            "platformId": "plt_xp",
+            "platformName": "XP Investimentos",
+            "quantity": 62,
+            "averagePrice": 5.95,
+            "currentPrice": 5.4,
+            "currentValue": 334.8,
+            "investedAmount": 368.9,
+            "performanceValue": -34.1,
+            "performancePct": -9.24,
+            "allocationPct": 1.57,
+            "quotationStatus": "priced"
+          }
+        ]
+      }
+    ],
+    "filters": { "performance": "all" },
+    "orders": []
+  }
+}

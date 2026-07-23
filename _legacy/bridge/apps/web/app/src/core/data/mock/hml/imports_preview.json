@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_preview",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "importId": "imp_seed_1",
+    "status": "PREVIEW_READY",
+    "origin": "MANUAL_ENTRY",
+    "totals": { "totalRows": 6, "validRows": 5, "invalidRows": 1, "duplicateRows": 0 },
+    "readyToCommit": true,
+    "document": null,
+    "importable": true,
+    "rows": [
+      {
+        "id": "imr_1",
+        "rowNumber": 1,
+        "source": { "asset": "ITSA4", "qty": 27, "avg": 13.84 },
+        "normalized": { "assetId": "ast_itsa4", "holdingId": "pos_bal_1" },
+        "resolutionStatus": "NORMALIZED",
+        "errorMessage": null,
+        "warnings": [],
+        "fieldSources": {},
+        "fieldConfidences": {},
+        "reviewMeta": {}
+      },
+      {
+        "id": "imr_2",
+        "rowNumber": 2,
+        "source": { "asset": "CMIN3", "qty": 62, "avg": 5.95 },
+        "normalized": { "assetId": "ast_cmin3", "holdingId": "pos_bal_2" },
+        "resolutionStatus": "NORMALIZED",
+        "errorMessage": null,
+        "warnings": [],
+        "fieldSources": {},
+        "fieldConfidences": {},
+        "reviewMeta": {}
+      },
+      {
+        "id": "imr_6",
+        "rowNumber": 6,
+        "source": { "asset": "???", "qty": 0 },
+        "normalized": {},
+        "resolutionStatus": "INVALID",
+        "errorMessage": "Linha incompleta",
+        "warnings": [],
+        "fieldSources": {},
+        "fieldConfidences": {},
+        "reviewMeta": {}
+      }
+    ]
+  }
+}
+

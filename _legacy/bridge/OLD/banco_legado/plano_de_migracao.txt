@@ -1,0 +1,491 @@
+# Resumo executivo
+
+## Escopo desta etapa
+
+Este documento consolida o diagnóstico do cenário atual e define a base conceitual para a futura modelagem de dados do Esquilo Invest em Cloudflare D1, sem alterar o backend atual neste momento.
+
+## Situação atual resumida
+
+O runtime atual do projeto está centrado em Google Apps Script, com frontend principal em `Dashboard.html`, backend em arquivos `.gs`, BigQuery como fonte primária operacional do dashboard e Google Sheets como fallback e origem histórica de estrutura. O app Flutter consome o backend via Web App do Apps Script, com contrato JSON específico para mobile. O projeto já possui esforço real de reorganização técnica, mas ainda convive com fragilidades importantes de segurança, versionamento, contratos, rastreabilidade e acoplamento entre modelo operacional e estrutura de planilha.
+
+## Diagnóstico consolidado
+
+A solução atual já deixou de ser apenas um dashboard de planilha, mas ainda não chegou a uma base de dados madura. Hoje existe um modelo de persistência que reflete diretamente abas operacionais e cabeçalhos da planilha. Isso foi suficiente para acelerar a evolução do MVP, mas se tornou limitador para segurança, multiusuário, histórico, observabilidade, ampliação de tipos de ativo, governança e estabilidade de contrato entre backend e app.
+
+## Direção recomendada
+
+A nova base deve ser desenhada para:
+
+* sustentar o produto como um todo, não apenas o layout atual das abas
+* permitir migração progressiva para Cloudflare D1 com mínimo impacto no Apps Script atual
+* reduzir dependência estrutural de planilhas e aliases frágeis
+* preservar compatibilidade transitória com o legado por meio de camada de compatibilidade lógica
+* preparar suporte real a multiusuário, histórico, importação rastreável, observabilidade e evolução gradual do backend
+
+## Conclusão executiva
+
+A recomendação não é reproduzir no D1 o mesmo desenho precário de "uma tabela por aba" como verdade estrutural. Também não faz sentido romper o legado agora. O caminho mais seguro é criar uma base relacional mínima, auditável, com entidades de domínio mais estáveis, e adicionar views ou estruturas derivadas que sustentem a convivência temporária com o AppScript atual.
+
+---
+
+# Diagnóstico do cenário atual
+
+## 1. Estado atual da solução
+
+### Fato
+
+O backend atual possui:
+
+* Apps Script como camada principal de execução
+* `Backend_Core.gs` como orquestrador do dashboard
+* `BigQueryService.gs` como camada principal de leitura e escrita operacional
+* `Operational_CRUD.gs` com operações controladas de CRUD
+* `Mobile_Api.gs` com contrato JSON para app Flutter
+* `Dashboard.html` como frontend web principal, incluindo camada mobile responsiva
+* app Flutter separado, consumindo o Apps Script via HTTP
+
+### Fato
+
+O dashboard atual usa BigQuery como fonte primária de dados e cai para planilha como fallback quando a leitura principal falha.
+
+### Fato
+
+O modelo operacional atual está organizado em torno das estruturas abaixo:
+
+* `acoes`
+* `fundos`
+* `previdencia`
+* `pre_ordens`
+* `aportes`
+* `app_config`
+
+Essas estruturas refletem diretamente as abas operacionais e seus cabeçalhos.
+
+### Fato
+
+O projeto ainda preserva compatibilidade com aliases e convenções herdadas da planilha, como:
+
+* `entrada`
+* `qtd`
+* `stop`
+* `inicio`
+* `plano_fundo`
+* `total_aportado`
+
+### Fato
+
+O frontend e o backend ainda exibem sinais de drift de versionamento e coexistência entre estados antigos e atuais do projeto.
+
+## 2. Leitura crítica do modelo atual
+
+### Fato
+
+O modelo atual foi útil para acelerar o produto porque:
+
+* reduziu tempo de construção inicial
+* permitiu operar diretamente sobre a planilha
+* simplificou a passagem para BigQuery
+* manteve compatibilidade com o Apps Script clássico
+* sustentou o MVP analítico e o app mobile inicial
+
+### Inferência
+
+Essa mesma escolha agora se tornou uma das principais fontes de fragilidade. O modelo atual não foi desenhado como base de produto. Ele foi acumulado como base operacional pragmática.
+
+### Fato
+
+O schema atual é orientado por tabela operacional e cabeçalho de planilha, não por domínio de negócio estabilizado.
+
+### Inferência
+
+Isso gera um backend que ainda depende mais da estrutura de entrada do que de um modelo de dados propriamente dito. Em outras palavras: a persistência ainda está muito próxima do formato de captura e não suficientemente próxima do domínio real do produto.
+
+## 3. Problemas estruturais, de segurança e de evolução
+
+## 3.1 Problemas estruturais
+
+### Fato
+
+O modelo atual usa tabelas separadas por categoria operacional e reproduz diretamente o desenho da planilha e do BigQuery atual.
+
+### Fato
+
+A camada de sync com BigQuery depende de cabeçalhos exatos e do mapeamento direto entre aba e tabela.
+
+### Fato
+
+A documentação legada ainda descreve a planilha como fonte principal, enquanto o runtime atual já trata BigQuery como fonte primária.
+
+### Inferência
+
+Há inconsistência de fonte de verdade entre documentação, legado operacional e implementação real.
+
+### Fato
+
+Campos semanticamente distintos estão misturados por compatibilidade, como o uso de `valor_investido` como ponte para `total_aportado` em previdência.
+
+### Inferência
+
+Isso enfraquece a semântica dos dados e dificulta evolução de regra de negócio, validação e auditoria futura.
+
+### Fato
+
+A modelagem atual não evidencia separação real entre:
+
+* usuário
+* carteira
+* posição consolidada
+* evento de importação
+* leitura analítica
+* fonte externa
+* contexto financeiro do usuário
+
+### Inferência
+
+O modelo atual ainda serve mais ao runtime do dashboard do que ao produto como plataforma.
+
+## 3.2 Problemas de segurança
+
+### Fato
+
+Havia e ainda há evidências de tratamento inseguro de segredos e credenciais, incluindo chave Gemini hardcoded no repositório e persistência automática em `Script Properties`.
+
+### Fato
+
+O app Flutter também possui URL padrão e token debug embutidos na configuração de ambiente.
+
+### Fato
+
+O acesso mobile ainda depende de token manual simples no Apps Script.
+
+### Inferência
+
+O projeto ainda não possui uma base robusta para identidade, autenticação, segregação por usuário e gestão adequada de segredos.
+
+### Fato
+
+Issues futuras do GitHub já reconhecem explicitamente a necessidade de:
+
+* corrigir gestão de segredos e chaves
+* restringir permissões de rotas
+* estruturar autenticação mínima
+* preparar a base para múltiplos usuários
+
+### Inferência
+
+A nova base não pode ser modelada como se continuasse eternamente em cenário de usuário único com token estático.
+
+## 3.3 Problemas de evolução
+
+### Fato
+
+As issues futuras do projeto apontam necessidades claras de evolução em:
+
+* multiusuário
+* login
+* histórico de recomendações
+* alertas de mudança relevante
+* comparação por plataforma
+* comparação com CDI
+* catálogo de tipos suportados
+* suporte progressivo a tipos avançados
+* importação confiável com deduplicação
+* observabilidade e logging
+* rollout e rollback entre backend e app
+* versionamento de rotas e contratos
+
+### Inferência
+
+A base atual não suporta esses movimentos de forma saudável sem acumular remendos adicionais.
+
+### Fato
+
+A estrutura atual não possui modelagem clara para:
+
+* snapshots auditáveis de carteira
+* origem rastreável de importação
+* eventos de atualização por usuário
+* falhas observáveis por contexto
+* contexto financeiro editável por usuário
+* suporte progressivo a novos tipos de ativo sem multiplicar tabelas operacionais
+
+### Inferência
+
+Se a base nova apenas copiar o desenho atual, o projeto continuará preso ao mesmo teto técnico.
+
+---
+
+# Premissas e limitações
+
+## 1. Premissas adotadas
+
+### Fato
+
+O backend atual não deve ser alterado nesta etapa.
+
+### Fato
+
+A proposta precisa preservar o funcionamento atual o máximo possível.
+
+### Fato
+
+A migração desejada é progressiva, saudável e de baixo impacto.
+
+### Fato
+
+Cloudflare D1 e SQLite são o alvo técnico da nova base.
+
+### Fato
+
+A nova base deve ser compatível com implementação incremental e com possibilidade de camada de compatibilidade para o Apps Script legado.
+
+### Inferência
+
+A modelagem precisa equilibrar duas forças ao mesmo tempo:
+
+* corrigir fragilidades estruturais reais
+* não exigir ruptura precoce do runtime existente
+
+## 2. Limitações conhecidas da análise
+
+### Fato
+
+Nem todas as telas e fluxos futuros já estão implementados no código atual.
+
+### Fato
+
+Parte das necessidades futuras está registrada em issues do GitHub, mas ainda não em código.
+
+### Fato
+
+O projeto ainda possui coexistência entre legado documental, runtime atual e backlog futuro.
+
+### Hipótese
+
+Algumas evoluções futuras, como login Google, observabilidade ampliada e multiusuário, ainda podem sofrer refinamento de escopo antes da implementação.
+
+### Hipótese
+
+O backend futuro poderá migrar para outra camada fora do Apps Script, mas isso ainda não deve ser pressuposto como condição de modelagem imediata.
+
+## 3. Limitações técnicas do alvo D1 / SQLite
+
+### Fato
+
+Cloudflare D1 segue o ecossistema SQLite e não deve receber modelagem dependente de recursos típicos de bancos mais pesados sem validação explícita.
+
+### Fato
+
+A modelagem deve evitar dependência desnecessária de recursos complexos, frágeis ou pouco adequados ao contexto de D1.
+
+### Inferência
+
+A estratégia correta é privilegiar:
+
+* schema claro
+* tipos simples
+* integridade básica
+* índices objetivos
+* views de compatibilidade quando fizer sentido
+* mínimo de lógica mágica no banco
+
+---
+
+# Objetivos da nova base
+
+## 1. O que a nova estrutura precisa resolver
+
+### Fato
+
+A nova base precisa resolver problemas atuais de:
+
+* acoplamento excessivo à planilha
+* fragilidade semântica de dados
+* baixa rastreabilidade
+* ausência de isolamento por usuário
+* baixa governança de contratos
+* dificuldade para suportar importação estruturada
+* dificuldade para manter histórico auditável
+* limitações para observabilidade e evolução
+
+### Inferência
+
+O banco novo deve deixar de ser apenas um espelho operacional e passar a ser uma base real de domínio do produto.
+
+## 2. O que a nova estrutura precisa preservar
+
+### Fato
+
+A nova base precisa preservar:
+
+* operação atual do dashboard e do app com mínimo impacto
+* compatibilidade transitória com o Apps Script atual
+* leitura analítica já existente
+* dados operacionais relevantes do legado
+* semântica mínima necessária para não quebrar o runtime atual
+
+### Inferência
+
+Preservar compatibilidade não significa preservar o desenho precário como verdade estrutural. Significa apenas manter uma ponte segura durante a transição.
+
+## 3. O que a nova estrutura precisa permitir
+
+### Fato
+
+A nova base precisa permitir evolução futura em:
+
+* múltiplos usuários
+* login e associação de dados por usuário
+* catálogo de tipos suportados
+* suporte progressivo a novos tipos de investimento
+* histórico de leitura e recomendação
+* observabilidade e logging úteis
+* importação com preview, normalização e deduplicação
+* comparação por plataforma, benchmark e contexto
+* rollout e rollback mais controláveis
+* contratos mais previsíveis entre camadas
+
+## 4. Critérios de sucesso da migração
+
+A migração será bem-sucedida quando:
+
+1. o runtime atual puder continuar operando durante a transição
+2. a nova base deixar de depender estruturalmente do layout de planilha
+3. o modelo passar a suportar usuário, carteira, posição, importação, snapshot e histórico de forma coerente
+4. a compatibilidade com o legado puder ser tratada por camada dedicada e não por contaminação do domínio principal
+5. o banco novo puder crescer sem exigir nova reestruturação logo nas próximas sprints
+6. o projeto ganhar base real para sair do cenário de uso quase individual sem explodir complexidade
+
+---
+
+# Princípios arquiteturais
+
+## 1. Princípios de modelagem
+
+## 1.1 Modelar domínio, não aba
+
+A nova base deve representar entidades do produto, não apenas categorias operacionais herdadas da planilha.
+
+Isso significa priorizar estruturas como:
+
+* usuário
+* carteira
+* posição
+* ativo
+* conta ou plataforma
+* importação
+* snapshot
+* contexto do usuário
+* leitura ou recomendação histórica
+
+em vez de continuar tratando a base como coleção de tabelas isoladas por aba.
+
+## 1.2 Compatibilidade por camada, não por contaminação
+
+A compatibilidade com o legado deve ser tratada por:
+
+* views
+* tabelas derivadas
+* adaptadores
+* convenções de leitura transitórias
+
+e não pela deformação do modelo principal para caber eternamente no contrato antigo.
+
+## 1.3 Evolução incremental
+
+A nova modelagem deve permitir implantação em fases, sem exigir migração completa antes de gerar valor.
+
+## 1.4 Semântica explícita
+
+Campos com significados diferentes não devem continuar misturados por conveniência. Quando houver necessidade de compatibilidade, isso deve ser explicitado na camada de tradução.
+
+## 1.5 Estruturas justificadas
+
+Toda tabela, campo, índice ou view deve existir porque atende pelo menos um destes critérios:
+
+* necessidade real do produto atual
+* necessidade explícita das issues futuras
+* exigência estrutural evidente para transição segura
+* compatibilidade prática com o legado
+
+## 2. Princípios de segurança
+
+## 2.1 Separação por usuário desde a base
+
+Mesmo que o runtime atual ainda opere quase como single-user, a nova base deve nascer preparada para isolamento por usuário.
+
+## 2.2 Dados sensíveis com exposição mínima
+
+A base não deve ser desenhada para depender de segredo hardcoded, token espalhado ou identificação manual frágil.
+
+## 2.3 Rastreabilidade de mutação
+
+Mudanças relevantes precisam deixar rastros estruturados, especialmente para importação, atualização operacional, leitura histórica e eventos críticos.
+
+## 3. Princípios de compatibilidade
+
+## 3.1 O legado é restrição real
+
+O Apps Script atual consome contratos e estruturas concretas. A proposta deve respeitar isso.
+
+## 3.2 Compatibilidade é transitória
+
+A camada de compatibilidade deve existir para reduzir risco de migração, não para eternizar um modelo ruim.
+
+## 3.3 Mudança mínima no runtime atual
+
+A estratégia ideal é permitir que o AppScript, quando chegar a hora, aponte para uma camada logicamente compatível com poucas mudanças localizadas.
+
+## 4. Princípios de evolução futura
+
+## 4.1 Preparar o que já está sinalizado
+
+Deve entrar na modelagem o que já possui evidência forte nas issues e no produto:
+
+* multiusuário
+* histórico
+* importação rastreável
+* observabilidade mínima
+* catálogo de tipos
+* contexto financeiro do usuário
+* compatibilidade entre app e backend em transição
+
+## 4.2 Evitar overengineering
+
+Não devem entrar agora estruturas especulativas sem evidência real, como modelagens excessivamente abstratas, engine genérica demais para qualquer produto financeiro ou suporte profundo a instrumentos ainda não priorizados.
+
+## 5. Princípios de performance e manutenção
+
+## 5.1 Índices apenas onde houver justificativa real
+
+A base deve ser eficiente para os acessos mais prováveis, mas sem inflar complexidade desnecessária.
+
+## 5.2 Leitura principal simples
+
+O banco deve facilitar:
+
+* leitura de carteira atual
+* leitura por plataforma
+* leitura por tipo
+* histórico de recomendação e snapshot
+* importação recente
+* eventos operacionais relevantes
+
+## 5.3 Manutenção previsível
+
+A estrutura precisa ser compreensível e migrável. O banco não deve depender de truques difíceis de auditar.
+
+## 6. Adequação ao contexto Cloudflare D1 / SQLite
+
+A nova base deve ser pensada explicitamente para D1, o que implica:
+
+* tipos simples
+* chaves e relações objetivas
+* uso criterioso de views
+* mínimo acoplamento a features específicas de outros bancos
+* scripts de criação e evolução reproduzíveis
+* desenho compatível com migração incremental e setup controlado
+
+## Síntese arquitetural
+
+A nova base deve nascer como base de domínio enxuta, auditável e incremental, com compatibilidade planejada para o legado AppScript e capacidade real de sustentar o produto nas próximas fases. O objetivo não é redesenhar tudo por perfeccionismo. O objetivo é parar de empilhar evolução em cima de uma estrutura que já mostrou limites claros.

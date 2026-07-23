@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_hml_profile",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "userId": "usr_hml_no_context",
+    "portfolioId": null,
+    "context": {
+      "financialGoal": null,
+      "monthlyIncomeRange": null,
+      "monthlyInvestmentTarget": null,
+      "availableToInvest": null,
+      "riskProfileSelfDeclared": null,
+      "riskProfileQuizResult": null,
+      "riskProfileEffective": null,
+      "investmentHorizon": null,
+      "platformsUsed": null,
+      "displayPreferences": { "ghostMode": false }
+    },
+    "onboarding": {
+      "currentStep": "goal",
+      "completed": false,
+      "completedAt": null,
+      "homeUnlocked": false,
+      "completedSteps": [],
+      "missing": ["financialGoal", "monthlyIncomeRange", "investmentHorizon", "riskProfileEffective", "platformsUsed.platformIds"]
+    },
+    "backendHealth": {
+      "status": "ok",
+      "appEnv": "local",
+      "apiVersion": "v1",
+      "services": { "d1": "ok", "externalReferences": "unknown" }
+    }
+  }
+}

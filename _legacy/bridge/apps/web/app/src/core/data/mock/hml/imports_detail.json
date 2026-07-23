@@ -1,0 +1,151 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_import_detail",
+    "timestamp": "2026-04-03T12:00:00.000Z",
+    "version": "v1"
+  },
+  "data": {
+    "screenState": "ready",
+    "importId": "imp_mock",
+    "importMeta": {
+      "origin": "B3_CSV",
+      "originLabel": "CSV da B3",
+      "status": "PREVIEW_READY",
+      "statusLabel": "Pronta para commit",
+      "totalRows": 82,
+      "validRows": 79,
+      "invalidRows": 1,
+      "duplicateRows": 2,
+      "createdAt": "2026-04-03T11:40:00.000Z",
+      "updatedAt": "2026-04-03T11:52:00.000Z",
+      "finishedAt": null,
+      "fileName": "b3_2026-03.csv",
+      "mimeType": "text/csv"
+    },
+    "operationalSummary": {
+      "engineStatus": {
+        "status": "ready_for_review",
+        "label": "Pronta para revisão",
+        "readyForReview": true,
+        "readyToCommit": false
+      },
+      "document": {
+        "fileName": "b3_2026-03.csv",
+        "mimeType": "text/csv",
+        "documentType": "b3_csv",
+        "parserMode": "b3_csv",
+        "confidence": 0.92,
+        "importable": true
+      },
+      "counts": {
+        "totalRows": 82,
+        "validRows": 79,
+        "invalidRows": 1,
+        "duplicateRows": 2,
+        "lowConfidenceRows": 3,
+        "blockedRows": 0,
+        "failedRows": 0,
+        "fallbackRows": 1,
+        "manualDecisionRows": 0
+      },
+      "targets": {
+        "engineStatus": "/v1/imports/imp_mock/engine-status",
+        "preview": "/v1/imports/imp_mock/preview",
+        "conflicts": "/v1/imports/imp_mock/conflicts"
+      }
+    },
+    "issueSummary": {
+      "errorRows": 1,
+      "conflictRows": 2,
+      "lowConfidenceRows": 3,
+      "nonImportableRows": 0,
+      "items": [
+        {
+          "rowId": "imr_10",
+          "rowNumber": 10,
+          "resolutionStatus": "PENDING_CRITICAL",
+          "errorMessage": "Valor inválido",
+          "issueKinds": ["erro", "baixa_confianca"]
+        }
+      ]
+    },
+    "decisionSummary": {
+      "manualRows": 0,
+      "fallbackRows": 1,
+      "aiRows": 1,
+      "systemRows": 80,
+      "items": [
+        {
+          "rowId": "imr_12",
+          "rowNumber": 12,
+          "code": "fallback",
+          "label": "Fallback operacional",
+          "origin": "fallback",
+          "details": "O processamento usou caminho de fallback."
+        }
+      ]
+    },
+    "snapshot": null,
+    "rows": [
+      {
+        "rowId": "imr_10",
+        "rowNumber": 10,
+        "resolutionStatus": "PENDING_CRITICAL",
+        "errorMessage": "Valor inválido",
+        "source": {},
+        "normalized": {},
+        "fieldSources": {},
+        "fieldConfidences": {},
+        "lowConfidenceFields": [
+          { "field": "quantity", "confidence": 0.42, "source": "document" }
+        ],
+        "warnings": [],
+        "reviewMeta": {},
+        "documentMeta": { "parserMode": "b3_csv", "confidence": 0.92 },
+        "duplicateCandidates": [],
+        "operationalFlags": {
+          "hasError": true,
+          "hasConflict": false,
+          "hasLowConfidence": true,
+          "usedFallback": false,
+          "usedAi": false,
+          "usedManualDecision": false,
+          "nonImportable": false
+        },
+        "decision": { "code": "none", "label": "Sem decisão registrada", "origin": "system", "details": "" }
+      },
+      {
+        "rowId": "imr_12",
+        "rowNumber": 12,
+        "resolutionStatus": "NORMALIZED",
+        "errorMessage": null,
+        "source": {},
+        "normalized": {},
+        "fieldSources": {},
+        "fieldConfidences": {},
+        "lowConfidenceFields": [],
+        "warnings": [],
+        "reviewMeta": { "fallbackUsed": true },
+        "documentMeta": { "parserMode": "fallback" },
+        "duplicateCandidates": [],
+        "operationalFlags": {
+          "hasError": false,
+          "hasConflict": false,
+          "hasLowConfidence": false,
+          "usedFallback": true,
+          "usedAi": false,
+          "usedManualDecision": false,
+          "nonImportable": false
+        },
+        "decision": {
+          "code": "fallback",
+          "label": "Fallback operacional",
+          "origin": "fallback",
+          "details": "O processamento usou caminho de fallback."
+        }
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,427 @@
+Conceito
+
+O problema não é investimento. O problema é desorientação.
+O Esquilo não nasce para “analisar ativos”. Ele nasce para dar clareza, traduzir, consolidar e orientar decisão real.
+
+Esse é o ponto forte. E também é onde muita fintech falha feio.
+
+As plataformas atuais fazem uma dessas coisas, no máximo duas:
+mostram saldo, empurram produto, jogam gráfico, falam difícil, recomendam coisa fora da realidade do usuário e ainda fingem que estão ajudando.
+
+Você não quer mais um app de investimento.
+Você quer um tradutor de vida financeira aplicada.
+
+Isso muda tudo.
+
+⸻
+
+O problema central do Esquilo
+
+Se eu resumir teu problema em uma frase de produto, ela seria:
+
+“Eu tenho dinheiro investido em lugares diferentes, não entendo direito o que tenho, não sei se está bom, não sei o que fazer e não confio nas recomendações das plataformas.”
+
+Isso é excelente como tese de produto. Porque é:
+	•	real
+	•	recorrente
+	•	emocional
+	•	caro
+	•	pouco bem resolvido
+
+Tem dor prática e dor psicológica junto.
+
+A dor prática é:
+	•	investimentos pulverizados
+	•	dificuldade de consolidação
+	•	atualização ruim
+	•	leitura ruim
+	•	recomendação inútil
+
+A dor psicológica é:
+	•	sensação de estar perdido
+	•	medo de estar fazendo merda
+	•	medo de estar sendo enganado
+	•	culpa por não acompanhar
+	•	vergonha por não entender termos
+
+Esse segundo bloco é muito importante.
+Porque é ele que cria retenção. O usuário não volta só pelo saldo. Ele volta porque quer segurança mental.
+
+⸻
+
+O que o Esquilo realmente precisa ser
+
+O Esquilo não deve se vender como:
+	•	“super app de investimentos”
+	•	“plataforma avançada de wealth management”
+	•	“painel financeiro completo”
+
+Isso tudo é genérico e fraco.
+
+O Esquilo precisa se posicionar como:
+
+“o app que organiza seus investimentos e explica, em português normal, se sua carteira faz sentido e o que fazer agora.”
+
+Isso é forte.
+
+Mais direto ainda:
+
+“um lugar único para entender o que você tem, quanto rendeu e qual a próxima jogada.”
+
+Esse é o produto.
+
+⸻
+
+A persona principal do MVP
+
+Aqui tem um ponto crítico: se você tentar atender “todo investidor”, vai virar bagunça.
+
+A persona inicial mais forte é:
+
+jovem adulto ou adulto iniciante/intermediário, que:
+	•	já começou a investir
+	•	tem dinheiro espalhado em 2 ou 3 lugares
+	•	entende pouco ou médio de investimentos
+	•	não acompanha com disciplina
+	•	não confia totalmente nas recomendações dos apps
+	•	quer uma visão simples, realista e útil
+	•	não quer estudar economia pra sempre
+	•	quer saber “se está bom” e “o que fazer”
+
+Essa persona é muito melhor que “iniciante absoluto que nunca investiu”, porque:
+	•	ela já tem dor concreta
+	•	já sente desorganização
+	•	já tem dados para consolidar
+	•	já tem urgência
+
+Iniciante absoluto pode vir depois.
+
+⸻
+
+A proposta de valor do MVP
+
+Se eu tivesse que lapidar o MVP numa frase brutalmente objetiva:
+
+O Esquilo pega seus investimentos espalhados, consolida tudo em um lugar, traduz o que isso significa e te diz o que vale revisar agora, com base na sua realidade.
+
+Essa frase já mostra o que entra e o que não entra.
+
+Entra:
+	•	consolidação
+	•	tradução
+	•	leitura de carteira
+	•	orientação prática
+	•	realidade financeira do usuário
+
+Não entra agora:
+	•	integração bancária completa
+	•	operações automáticas
+	•	recomendação sofisticada de mercado
+	•	rebalanceamento avançado
+	•	simuladores muito complexos
+	•	corretagem dentro do app
+
+Se tentar enfiar isso no MVP, vai ficar confuso e fraco.
+
+⸻
+
+A jornada do cliente E2E
+
+Agora sim, pensando como PO, UX e produto de verdade.
+
+1. Gatilho
+
+O usuário percebe que:
+	•	investe em lugares diferentes
+	•	não sabe o total
+	•	não sabe se está indo bem
+	•	não entende o que os apps dizem
+	•	sente que deveria cuidar disso, mas evita
+
+Esse momento de entrada é muito forte.
+A copy do produto precisa bater exatamente nessa dor.
+
+Exemplo de entrada:
+“Você sabe quanto tem investido no total, de verdade?”
+“Sua carteira faz sentido ou só está espalhada?”
+“Os apps te recomendam o que é bom pra você ou o que é bom pra eles?”
+
+Aí o usuário se identifica.
+
+⸻
+
+2. Onboarding
+
+Aqui está um ponto muito importante: o onboarding não pode parecer cadastro bancário nem prova de economia.
+
+Ele precisa ser leve, útil e rápido.
+
+O onboarding do MVP deveria descobrir:
+	•	onde o usuário investe hoje
+	•	se já tem CSV ou extrato
+	•	perfil percebido dele
+	•	renda aproximada
+	•	reserva disponível para investir
+	•	objetivo principal
+	•	quanto de complexidade ele tolera
+
+E uma coisa importante:
+você não precisa perguntar “qual seu perfil de investidor?” do jeito tradicional logo de cara.
+Isso é chato e artificial.
+
+Melhor levantar isso com perguntas humanas:
+	•	você topa ver oscilações?
+	•	prefere segurança previsível?
+	•	quer crescer patrimônio ou organizar o que já tem?
+	•	você aporta com frequência ou está parado?
+
+Isso dá base muito melhor.
+
+⸻
+
+3. Importação inicial
+
+Esse é um dos corações do MVP.
+
+Você já sacou corretamente:
+copiar e colar é ruim. Atualizar planilha manualmente é ruim. Atualizar direto no banco é ruim.
+
+Então o fluxo mais forte do MVP é:
+	•	usuário escolhe a plataforma
+	•	sobe o CSV ou extrato exportado
+	•	o app reconhece o padrão
+	•	faz o preenchimento automático
+	•	mostra preview
+	•	usuário confirma
+	•	carteira consolidada é atualizada
+
+Esse fluxo resolve uma dor concreta sem exigir integração bancária sensível.
+
+Aqui tem ouro.
+
+Se esse fluxo for ruim, o app morre.
+Se esse fluxo for liso, o usuário sente valor já no primeiro uso.
+
+⸻
+
+4. Consolidação da carteira
+
+Depois da importação, o app precisa entregar um primeiro momento de “caralho”.
+
+Esse momento não é com gráfico bonito.
+É com clareza.
+
+O primeiro impacto deveria ser algo como:
+	•	quanto você tem no total
+	•	onde está esse dinheiro
+	•	quanto rendeu no consolidado
+	•	se sua carteira está equilibrada ou não
+	•	o principal ponto de atenção
+	•	a próxima ação sugerida
+
+Esse momento tem que parecer:
+“agora finalmente eu entendi minha vida financeira.”
+
+Se você entregar só números e pizza chart, está fraco.
+
+⸻
+
+5. Tradução
+
+Essa é a camada que realmente diferencia.
+
+O Esquilo precisa agir como tradutor.
+
+Exemplo:
+em vez de “exposição elevada a renda variável com baixa diversificação setorial”
+
+o app deveria dizer:
+“Você está com dinheiro demais concentrado em poucos investimentos. Se um deles for mal, sua carteira sente forte.”
+
+É isso que você quer resolver.
+
+Então toda tela importante precisa ter dois níveis:
+	•	dado
+	•	tradução do dado
+
+Sem isso, vira painel.
+
+⸻
+
+6. Orientação prática
+
+Depois de consolidar e traduzir, vem a parte que mais importa:
+
+o que fazer agora?
+
+Mas aqui tem um detalhe crítico: o app não pode virar coach genérico.
+
+Ele precisa dizer só o que é possível de verdade para aquele usuário.
+
+Exemplos:
+	•	“Com sua renda atual, faz mais sentido reorganizar o que você já tem do que abrir novas posições.”
+	•	“Você não precisa comprar nada novo agora. Primeiro corrija a concentração.”
+	•	“Seu aporte disponível hoje não comporta essa recomendação de mercado. Melhor focar em constância.”
+	•	“Você já tem produto parecido em outra plataforma. Não faz sentido duplicar.”
+
+Isso é valioso demais.
+
+As recomendações dos bancos falham justamente porque ignoram o contexto do usuário real.
+
+⸻
+
+7. Acompanhamento
+
+O retorno do usuário ao app não vai acontecer porque ele ama finanças.
+Vai acontecer porque ele quer respostas simples.
+
+Então o acompanhamento do MVP deve responder:
+	•	mudou algo importante?
+	•	minha carteira piorou ou melhorou?
+	•	continuo coerente com meu perfil?
+	•	preciso agir ou posso seguir como está?
+	•	recebi novo CSV, posso atualizar fácil?
+
+O loop ideal é:
+subi dado novo → entendi situação → recebi tradução → recebi ação simples
+
+⸻
+
+8. Evolução
+
+Depois do MVP consolidado, aí sim entram camadas mais sofisticadas:
+	•	metas
+	•	trilhas para iniciantes
+	•	comparativos de plataformas
+	•	recomendações de aporte
+	•	evolução patrimonial
+	•	alertas inteligentes
+	•	cenários
+
+Mas isso é depois. Antes, tem que existir o núcleo.
+
+⸻
+
+O MVP certo
+
+Sendo brutalmente sincero:
+seu MVP não pode tentar ser “o melhor app de investimentos”.
+Tem que tentar ser o melhor app para entender os próprios investimentos.
+
+Isso é diferente.
+
+O que o MVP precisa ter obrigatoriamente
+	1.	Cadastro simples e onboarding humano
+	2.	Importação por CSV / extrato
+	3.	Consolidação multi-plataforma
+	4.	Visão total do patrimônio investido
+	5.	Visão de rentabilidade consolidada
+	6.	Classificação básica da carteira
+	7.	Tradução em linguagem simples
+	8.	Uma recomendação principal por vez
+	9.	Atualização fácil da base
+	10.	Histórico básico de leituras
+
+O que pode ficar fora do MVP
+	•	integração direta com corretoras
+	•	compra/venda dentro do app
+	•	automação de rebalanceamento
+	•	comparação sofisticada com benchmark
+	•	comunidade
+	•	gamificação forte
+	•	IA conversacional aberta
+	•	radar de mercado complexo
+
+Essas coisas parecem sexy, mas pro teu problema real não são o centro.
+
+⸻
+
+O principal risco do produto
+
+O maior risco não é técnico.
+É de posicionamento.
+
+Se o Esquilo ficar técnico demais, perde o usuário iniciante/intermediário.
+Se ficar simplista demais, parece app infantil.
+
+Então o ponto certo é:
+linguagem simples, mas não burra
+análise útil, mas não professoral
+orientação prática, mas sem fingir onisciência
+
+Outro risco é virar “mais uma planilha com skin bonita”.
+Você precisa evitar isso com:
+	•	importação fácil
+	•	leitura clara
+	•	recomendação contextual
+
+⸻
+
+A lógica de produto que eu recomendo
+
+Se eu fosse desenhar a espinha do produto, seria assim:
+
+Pilar 1 — Consolidar
+
+“quanto eu tenho e onde está”
+
+Pilar 2 — Traduzir
+
+“o que isso significa em linguagem normal”
+
+Pilar 3 — Orientar
+
+“o que vale fazer agora, de forma realista”
+
+Se qualquer funcionalidade não fortalecer um desses pilares, ela provavelmente está sobrando no MVP.
+
+⸻
+
+Como o usuário deve se sentir em cada etapa
+
+No início:
+“finalmente alguém falou a minha língua”
+
+Depois da importação:
+“agora eu sei quanto eu tenho”
+
+Depois da leitura:
+“entendi se minha carteira faz sentido”
+
+Depois da recomendação:
+“sei qual é minha próxima jogada”
+
+Depois de voltar no app:
+“não preciso fugir disso mais”
+
+Se o app não provocar essa sensação, ele ainda está incompleto.
+
+⸻
+
+Minha avaliação sincera da tese
+
+A tese é boa. Bem boa mesmo.
+
+Porque ela não nasce de modinha.
+Nasce de dor real, recorrente e muito comum.
+
+E tem um recorte inteligente:
+você não está querendo competir com XP, Itaú ou Onze como plataforma de investimento.
+Você está querendo competir com a confusão que elas deixam na cabeça do usuário.
+
+Isso é muito mais interessante.
+
+⸻
+
+O que eu faria agora, sem perder tempo
+
+O próximo passo certo é transformar isso em backlog de MVP, com jornada E2E.
+
+A ordem ideal seria:
+
+Sprint 1: proposta de valor + onboarding + cadastro de perfil
+Sprint 2: importação de CSV/extrato + normalização
+Sprint 3: consolidação da carteira + visão total
+Sprint 4: tradução da carteira em linguagem simples
+Sprint 5: recomendação principal + alertas úteis
+Sprint 6: atualização da carteira pelo app + histórico básico

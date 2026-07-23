@@ -1,0 +1,137 @@
+name: Deploy Worker (Controlled)
+
+# Auto-deploy:
+#   push em `main`    → production
+#   push em `develop` → hml
+# Manual:
+#   workflow_dispatch com escolha de ambiente e ref opcional
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Ambiente de deploy (controlado)"
+        required: true
+        type: choice
+        options:
+          - hml
+          - production
+      ref:
+        description: "Branch/tag/sha para deploy (opcional). Vazio = ref atual do workflow."
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-worker-${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' && 'production' || 'hml') || inputs.target_env }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy (${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' && 'production' || 'hml') || inputs.target_env }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' && 'production' || 'hml') || inputs.target_env }}
+    permissions:
+      contents: read
+
+    env:
+      TARGET_ENV: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' && 'production' || 'hml') || inputs.target_env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Validate Cloudflare secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
+            echo "Missing secret: CLOUDFLARE_API_TOKEN (or CF_API_TOKEN)." >&2
+            exit 1
+          fi
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "Missing secret: CLOUDFLARE_ACCOUNT_ID (or CF_ACCOUNT_ID)." >&2
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/package-lock.json
+            apps/web/app/package-lock.json
+
+      - name: Install (worker)
+        working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter
+        run: npm ci
+
+      - name: Install (web)
+        working-directory: apps/web/app
+        run: npm ci
+
+      # Injeta o database ID do D1 no wrangler.toml antes do deploy.
+      # O secret CF_D1_DATABASE_ID deve conter o ID correto para cada environment.
+      - name: Inject D1 database ID into wrangler.toml
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.CF_D1_DATABASE_ID }}" ]; then
+            echo "Missing secret: CF_D1_DATABASE_ID." >&2
+            exit 1
+          fi
+          if [ "$TARGET_ENV" = "production" ]; then
+            PLACEHOLDER="REPLACE_WITH_PROD_D1_DATABASE_ID"
+          else
+            PLACEHOLDER="REPLACE_WITH_HML_D1_DATABASE_ID"
+          fi
+          sed -i "s/${PLACEHOLDER}/${{ secrets.CF_D1_DATABASE_ID }}/g" \
+            04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/wrangler.toml
+
+      # Cria o .env do frontend.
+      # Se VITE_API_BASE_URL existir, usa a URL explícita.
+      # Se não existir, deixa o app usar mesma origem — comportamento correto
+      # quando SPA + API /v1/* estão no mesmo Worker.
+      - name: Create web app .env
+        run: |
+          set -euo pipefail
+          {
+            if [ -n "${{ secrets.VITE_API_BASE_URL }}" ]; then
+              printf 'VITE_API_BASE_URL=%s\n' "${{ secrets.VITE_API_BASE_URL }}"
+              echo "Using explicit VITE_API_BASE_URL from secrets." >&2
+            else
+              echo "VITE_API_BASE_URL not set — using same-origin API fallback." >&2
+            fi
+            printf 'VITE_APP_ENV=%s\n' "$TARGET_ENV"
+            printf 'VITE_DATA_SOURCE_MODE=http\n'
+          } > apps/web/app/.env
+
+      - name: Deploy (build gate + wrangler)
+        working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          if [ "$TARGET_ENV" = "production" ]; then
+            npm run deploy:prod
+          else
+            npm run deploy:hml
+          fi
+
+      - name: Rollback (best-effort, production only)
+        if: failure() && env.TARGET_ENV == 'production'
+        continue-on-error: true
+        working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+        run: npm run rollback:prod

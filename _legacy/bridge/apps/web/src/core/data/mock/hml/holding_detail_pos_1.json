@@ -1,0 +1,60 @@
+{
+  "ok": true,
+  "meta": {
+    "requestId": "req_local_holding_1",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "holding": {
+      "id": "pos_bal_1",
+      "assetId": "ast_itsa4",
+      "code": "ITSA4",
+      "name": "Itausa",
+      "categoryKey": "acoes",
+      "categoryLabel": "Acoes",
+      "platformId": "plt_xp",
+      "platformName": "XP Investimentos",
+      "quantity": 27,
+      "averagePrice": 13.84,
+      "currentPrice": 14.52,
+      "currentValue": 392.04,
+      "investedAmount": 373.68,
+      "performanceValue": 18.36,
+      "performancePct": 4.92,
+      "allocationPct": 1.84,
+      "recommendation": "Manter e monitorar",
+      "statusLabel": "Cotacao disponivel",
+      "quotationStatus": "priced",
+      "notes": "",
+      "stopLoss": null,
+      "targetPrice": null,
+      "sourceKind": "manual",
+      "assetTypeCode": "STOCK"
+    },
+    "ranking": {
+      "score": 74,
+      "status": "Neutro",
+      "motives": [],
+      "opportunityScore": 70
+    },
+    "recommendation": {
+      "code": "hold_and_monitor",
+      "title": "Manter e monitorar",
+      "body": "Este ativo cumpre um papel pequeno, mas ainda util na carteira. Vale acompanhar sem transformar isso no maior foco agora."
+    },
+    "categoryContext": {
+      "categoryKey": "acoes",
+      "categoryLabel": "Acoes",
+      "categoryRisk": "Neutra",
+      "categoryRecommendation": "Sem recomendacao consolidada especifica",
+      "primaryMessage": "Acoes ajudam no crescimento, mas voce ainda tem pouco peso aqui.",
+      "holdingsCount": 2,
+      "totalCurrent": 726.84,
+      "totalInvested": 742.58,
+      "totalProfitLoss": -15.74,
+      "totalProfitLossPct": -2.12
+    },
+    "externalLink": "https://www.google.com/finance/quote/ITSA4:BVMF"
+  }
+}
