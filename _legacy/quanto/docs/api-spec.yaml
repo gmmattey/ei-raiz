@@ -1,0 +1,1169 @@
+openapi: 3.0.3
+info:
+  title: Quanto API
+  version: 1.0.0
+  description: |
+    API do Quanto — PWA de consolidacao de patrimonio pessoal.
+
+    Backend em Cloudflare Workers + Hono, banco D1 (SQLite).
+    Todas as rotas exigem autenticacao via Cloudflare Access (JWT)
+    ou header `X-Dev-Email` em ambiente de desenvolvimento local.
+
+    Todas as queries filtram por `user_id` extraido do JWT — nenhum
+    usuario ve dados de outro (multi-tenant).
+
+    **Calculo de saldo por ativo:**
+    - Ativo com ticker (modo auto): `balance = qty * price(cache)`
+    - Ativo sem ticker (modo manual): `balance = manual_balance`
+
+    **Frescor:** ativo manual com `balance_updated_at` > 30 dias e considerado "stale".
+
+    **Cotacoes:** cache BRAPI de 15 minutos. Refresh automatico em lote
+    quando `GET /api/portfolio` detecta cache expirado.
+  contact:
+    name: Luiz Giammattey
+    email: giammattey.luiz@gmail.com
+  license:
+    name: Private
+    url: https://quanto.example.com
+
+servers:
+  - url: https://quanto.{domain}.workers.dev
+    description: Producao (Cloudflare Workers)
+    variables:
+      domain:
+        default: example
+        description: Subdominio do Cloudflare Workers
+  - url: http://localhost:8787
+    description: Desenvolvimento local (wrangler dev)
+
+tags:
+  - name: Portfolio
+    description: Consolidacao e visualizacao do patrimonio
+  - name: Assets
+    description: CRUD de ativos (acoes, fundos, previdencia, etc.)
+  - name: History
+    description: Snapshots mensais e evolucao patrimonial
+  - name: Import
+    description: Importacao de ativos em lote via planilha XLSX
+
+security:
+  - cloudflareAccess: []
+  - devEmail: []
+
+paths:
+  /api/portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [Portfolio]
+      summary: Dados consolidados do patrimonio
+      description: |
+        Retorna o resumo completo do patrimonio do usuario: total, ganho,
+        frescor de saldos manuais, alocacao por instituicao e por classe,
+        lista de ativos ativos e lista separada de ativos em resgate.
+
+        Se o cache de cotacoes BRAPI estiver expirado (> 15 min), o endpoint
+        dispara refresh em lote antes de calcular os saldos.
+
+        O total inclui APENAS ativos com `status = active`.
+        Ativos `redeeming` sao retornados separadamente.
+        Ativos `archived` sao invisiveis.
+      responses:
+        '200':
+          description: Portfolio consolidado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioResponse'
+              example:
+                total: 159153.53
+                invested: 100818.72
+                gain: 58334.81
+                gainPct: 57.86
+                quotesFetchedAt: "2026-06-13T14:32:00Z"
+                freshness:
+                  ok: 14
+                  total: 15
+                  byInstitution:
+                    - institution: ONZE
+                      ok: 2
+                      total: 3
+                      staleAssets:
+                        - id: 19
+                          name: "Icatu Vanguarda Pos Fixado RF Prev"
+                          daysAgo: 35
+                byInstitution:
+                  - institution: XP
+                    total: 20748.55
+                    pct: 13.03
+                  - institution: ITAU
+                    total: 55304.51
+                    pct: 34.75
+                  - institution: ONZE
+                    total: 82561.55
+                    pct: 51.87
+                byClass:
+                  - class: ACAO
+                    total: 1669.15
+                    pct: 1.05
+                  - class: PREVIDENCIA
+                    total: 104923.71
+                    pct: 65.93
+                  - class: FUNDO
+                    total: 8610.39
+                    pct: 5.41
+                assets:
+                  - id: 1
+                    institution: XP
+                    class: ACAO
+                    name: "CPLE3 · Copel"
+                    ticker: CPLE3
+                    qty: 28
+                    price: 14.61
+                    invested: 373.52
+                    balance: 409.08
+                    gain: 35.56
+                    gainPct: 9.52
+                    mode: auto
+                    status: active
+                    balanceUpdatedAt: null
+                    staleDays: null
+                redeeming:
+                  - id: 8
+                    institution: XP
+                    class: FUNDO
+                    name: "Selection RF Light FIC FIRF CP LP"
+                    ticker: null
+                    qty: null
+                    price: null
+                    invested: 984.64
+                    balance: 1099.50
+                    gain: 114.86
+                    gainPct: 11.67
+                    mode: manual
+                    status: redeeming
+                    balanceUpdatedAt: "2026-06-12T00:00:00Z"
+                    staleDays: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/assets:
+    post:
+      operationId: createAsset
+      tags: [Assets]
+      summary: Criar novo ativo
+      description: |
+        Cria um novo ativo no portfolio do usuario.
+
+        O modo do ativo (auto/manual) e determinado pela presenca de `ticker`:
+        - Com ticker: modo automatico (cotacao via BRAPI)
+        - Sem ticker: modo manual (saldo digitado)
+
+        Campos preenchidos automaticamente pelo backend:
+        - `user_id`: extraido do JWT
+        - `status`: sempre `active`
+        - `balance_updated_at`: `datetime('now')` se modo manual
+        - `created_at`: `datetime('now')`
+
+        Se o ativo tem ticker, o backend tenta buscar cotacao imediata
+        na BRAPI (nao espera o cron).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssetRequest'
+            examples:
+              autoAsset:
+                summary: Ativo automatico (acao B3)
+                value:
+                  institution: XP
+                  class: ACAO
+                  name: "CPLE3 · Copel"
+                  ticker: CPLE3
+                  qty: 28
+                  invested: 373.52
+              manualAsset:
+                summary: Ativo manual (fundo)
+                value:
+                  institution: XP
+                  class: FUNDO
+                  name: "Western Asset US Index 500 FIF"
+                  manual_balance: 4562.77
+                  invested: 4150.21
+              outrosInstitution:
+                summary: Ativo com instituicao customizada
+                value:
+                  institution: OUTROS
+                  institution_name: Nubank
+                  class: POUPANCA
+                  name: "Poupanca Nubank"
+                  manual_balance: 1500.00
+      responses:
+        '201':
+          description: Ativo criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/assets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AssetId'
+
+    put:
+      operationId: updateAsset
+      tags: [Assets]
+      summary: Atualizar ativo (parcial)
+      description: |
+        Atualiza campos de um ativo existente. Aceita update parcial
+        (dynamic SET builder — envia apenas os campos que mudaram).
+
+        Regras automaticas:
+        - Se `manual_balance` presente no body → `balance_updated_at`
+          e preenchido automaticamente com `datetime('now')`
+        - Se `status` mudado para `archived` → equivale a soft delete
+        - Se `ticker` removido (null) → ativo passa de auto para manual
+
+        Apenas ativos do usuario autenticado podem ser alterados
+        (`WHERE id = ? AND user_id = ?`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAssetRequest'
+            examples:
+              updateBalance:
+                summary: Atualizar saldo manual (Sheet A — saldo rapido)
+                value:
+                  manual_balance: 12500.00
+              updateStatus:
+                summary: Marcar como em resgate
+                value:
+                  status: redeeming
+              updateFields:
+                summary: Editar varios campos (Sheet B)
+                value:
+                  name: "Nome atualizado"
+                  institution: ITAU
+                  class: FUNDO
+                  invested: 5000.00
+      responses:
+        '200':
+          description: Ativo atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      operationId: deleteAsset
+      tags: [Assets]
+      summary: Remover ativo (soft delete)
+      description: |
+        Soft delete: muda `status` para `archived`.
+        O ativo permanece no banco mas fica invisivel em todas as telas
+        e nao entra em nenhum calculo.
+
+        Snapshots historicos NAO sao afetados — o total daquele mes
+        permanece inalterado.
+
+        Apenas ativos do usuario autenticado podem ser removidos
+        (`WHERE id = ? AND user_id = ?`).
+      responses:
+        '200':
+          description: Ativo arquivado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAssetResponse'
+              example:
+                archived: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/history:
+    get:
+      operationId: getHistory
+      tags: [History]
+      summary: Snapshots mensais do patrimonio
+      description: |
+        Retorna a serie historica de snapshots mensais do usuario,
+        ordenada por mes decrescente (mais recente primeiro).
+
+        Cada snapshot e uma foto tirada automaticamente no dia 1
+        de cada mes (cron 12h UTC = 9h BRT).
+
+        O ganho e calculado como `total - invested`.
+        O ganho percentual como `((total / invested) - 1) * 100`.
+      responses:
+        '200':
+          description: Lista de snapshots mensais
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SnapshotResponse'
+              example:
+                - month: "2026-06"
+                  total: 159153.53
+                  invested: 100818.72
+                  gain: 58334.81
+                  gainPct: 57.86
+                - month: "2026-05"
+                  total: 155200.00
+                  invested: 100818.72
+                  gain: 54381.28
+                  gainPct: 53.94
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/snapshot:
+    post:
+      operationId: createSnapshot
+      tags: [History]
+      summary: Upsert snapshot do mes corrente
+      description: |
+        Calcula e grava (ou atualiza) o snapshot do mes corrente para
+        o usuario autenticado.
+
+        O snapshot soma `total` e `invested` de todos os ativos com
+        `status = active`. E idempotente: se ja existe snapshot para
+        o mes corrente, faz UPDATE (nao duplica).
+
+        Usado pelo cron mensal (dia 1, 12h UTC) e disponivel para
+        debug/admin. Nao exposto na UI.
+
+        Tambem e chamado automaticamente no primeiro acesso com ativos
+        (onboarding), para que o historico comece imediatamente.
+      responses:
+        '200':
+          description: Snapshot criado ou atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotUpsertResponse'
+              example:
+                month: "2026-06"
+                total: 159153.53
+                invested: 100818.72
+                created: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/import:
+    post:
+      operationId: importAssets
+      tags: [Import]
+      summary: Importar ativos em lote (planilha XLSX)
+      description: |
+        Cria ativos em lote a partir dos itens confirmados pelo usuario
+        no wizard de importacao XLSX.
+
+        O parse da planilha e feito 100% client-side (SheetJS).
+        Este endpoint recebe apenas os itens ja validados e confirmados.
+
+        Todos os ativos criados recebem:
+        - `user_id`: do JWT
+        - `status`: `active`
+        - `balance_updated_at`: `datetime('now')` para manuais (sem ticker)
+        - `created_at`: `datetime('now')`
+
+        Nao ha deteccao de duplicatas — importar a mesma planilha
+        duas vezes cria ativos duplicados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+            example:
+              items:
+                - institution: XP
+                  class: ACAO
+                  name: "CPLE3 · Copel"
+                  ticker: CPLE3
+                  qty: 28
+                  invested: 373.52
+                - institution: ONZE
+                  class: PREVIDENCIA
+                  name: "Schroder Icatu Prev Low Vol"
+                  manual_balance: 23968.24
+                  invested: 23968.24
+                - institution: ITAU
+                  class: POUPANCA
+                  name: "Poupanca MULTIDATA"
+                  manual_balance: 302.01
+      responses:
+        '201':
+          description: Ativos importados com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResponse'
+              example:
+                created: 3
+                assets:
+                  - id: 20
+                    institution: XP
+                    class: ACAO
+                    name: "CPLE3 · Copel"
+                    ticker: CPLE3
+                    qty: 28
+                    invested: 373.52
+                    status: active
+                  - id: 21
+                    institution: ONZE
+                    class: PREVIDENCIA
+                    name: "Schroder Icatu Prev Low Vol"
+                    manual_balance: 23968.24
+                    invested: 23968.24
+                    status: active
+                  - id: 22
+                    institution: ITAU
+                    class: POUPANCA
+                    name: "Poupanca MULTIDATA"
+                    manual_balance: 302.01
+                    status: active
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    cloudflareAccess:
+      type: apiKey
+      in: header
+      name: Cf-Access-Jwt-Assertion
+      description: |
+        JWT emitido pelo Cloudflare Access (Zero Trust).
+        O Cloudflare Access intercepta toda request ao hostname e exige
+        OTP por email. Apos autenticacao, injeta este header automaticamente.
+
+        O middleware Hono decodifica o JWT, extrai o email do usuario,
+        faz upsert na tabela `users` e injeta `user_id` no contexto
+        da request.
+
+        O app NAO tem nenhum codigo de autenticacao proprio.
+
+    devEmail:
+      type: apiKey
+      in: header
+      name: X-Dev-Email
+      description: |
+        Header mock para desenvolvimento local (`wrangler dev`).
+        Substitui o JWT do Cloudflare Access quando o Access nao esta
+        ativo. Valor: email do usuario (ex: `user@example.com`).
+
+        Usado APENAS em `wrangler dev`. Em producao, o Cloudflare Access
+        fornece o JWT real.
+
+  parameters:
+    AssetId:
+      name: id
+      in: path
+      required: true
+      description: ID numerico do ativo (chave primaria em `assets`)
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  schemas:
+    # ----- Enums -----
+
+    Institution:
+      type: string
+      enum: [XP, ITAU, ONZE, OUTROS]
+      description: |
+        Instituicao financeira do ativo.
+        - XP: XP Investimentos
+        - ITAU: Itau / ION
+        - ONZE: Onze (previdencia corporativa)
+        - OUTROS: outra instituicao (nome em `institution_name`)
+
+    AssetClass:
+      type: string
+      enum: [ACAO, FUNDO, RF, TESOURO, PREVIDENCIA, POUPANCA, COFRINHO]
+      description: |
+        Classe do ativo:
+        - ACAO: Acoes e FIIs da B3
+        - FUNDO: Fundos de investimento
+        - RF: Renda fixa (CDB, LCI, LCA, etc.)
+        - TESOURO: Titulos do Tesouro Direto
+        - PREVIDENCIA: Previdencia privada (PGBL/VGBL)
+        - POUPANCA: Caderneta de poupanca
+        - COFRINHO: Cofrinhos/reserva (ex: ION)
+
+    AssetStatus:
+      type: string
+      enum: [active, redeeming, archived]
+      description: |
+        Ciclo de vida do ativo:
+        - active: ativo contabilizado no total
+        - redeeming: em resgate, exibido separadamente, NAO entra no total
+        - archived: soft delete, invisivel em todas as telas
+
+    AssetMode:
+      type: string
+      enum: [auto, manual]
+      description: |
+        Modo de atualizacao do saldo:
+        - auto: cotacao automatica via BRAPI (ativo tem ticker)
+        - manual: saldo digitado pelo usuario (ativo sem ticker)
+
+    # ----- Request schemas -----
+
+    CreateAssetRequest:
+      type: object
+      required: [institution, class, name]
+      properties:
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          maxLength: 100
+          description: |
+            Nome customizado da instituicao. Obrigatorio quando
+            `institution = OUTROS`. Ex: "Nubank", "BTG", "Rico".
+            Usado no agrupamento da Carteira e nas barras de alocacao.
+          example: Nubank
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        name:
+          type: string
+          maxLength: 200
+          description: Nome do ativo (texto livre, sem validacao de unicidade)
+          example: "Western Asset US Index 500 FIF"
+        ticker:
+          type: string
+          pattern: '^[A-Z0-9]{4,6}$'
+          description: |
+            Ticker B3 do ativo (modo automatico). Se presente, `qty` e
+            obrigatorio. Se ausente, o ativo e modo manual e
+            `manual_balance` e obrigatorio.
+          example: CPLE3
+        qty:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Quantidade de cotas/acoes. Obrigatorio se `ticker` presente.
+          example: 28
+        invested:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            Valor total aportado (custo). Opcional — usuario pode nao saber.
+            Se null/ausente, ganho nao e calculado para este ativo.
+          example: 373.52
+        manual_balance:
+          type: number
+          format: double
+          minimum: 0
+          description: |
+            Saldo atual digitado pelo usuario (modo manual).
+            Obrigatorio se `ticker` nao estiver presente.
+            Zero e valido (ex: poupanca sacada que o usuario quer manter).
+          example: 4562.77
+
+    UpdateAssetRequest:
+      type: object
+      description: |
+        Update parcial — envie apenas os campos que mudaram.
+        O backend usa dynamic SET builder para montar o UPDATE.
+      properties:
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Nome customizado da instituicao (quando OUTROS)
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        name:
+          type: string
+          maxLength: 200
+        ticker:
+          type: string
+          pattern: '^[A-Z0-9]{4,6}$'
+          nullable: true
+          description: |
+            Se definido como null, ativo muda de auto para manual.
+            Nesse caso, `manual_balance` passa a ser obrigatorio.
+        qty:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          nullable: true
+        invested:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        manual_balance:
+          type: number
+          format: double
+          minimum: 0
+          description: |
+            Ao enviar este campo, `balance_updated_at` e preenchido
+            automaticamente pelo backend com `datetime('now')`.
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+
+    ImportRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ImportItem'
+          description: |
+            Lista de ativos confirmados pelo usuario no wizard de importacao.
+            Cada item segue a mesma estrutura de criacao de ativo.
+
+    ImportItem:
+      type: object
+      required: [institution, class, name]
+      properties:
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          maxLength: 100
+          description: Nome customizado quando institution = OUTROS
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        name:
+          type: string
+          maxLength: 200
+        ticker:
+          type: string
+          pattern: '^[A-Z0-9]{4,6}$'
+        qty:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+        invested:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        manual_balance:
+          type: number
+          format: double
+          minimum: 0
+
+    # ----- Response schemas -----
+
+    PortfolioResponse:
+      type: object
+      required: [total, invested, quotesFetchedAt, freshness, byInstitution, byClass, assets, redeeming]
+      properties:
+        total:
+          type: number
+          format: double
+          description: |
+            Soma dos saldos de todos os ativos com `status = active`.
+            Auto: qty * price(cache). Manual: manual_balance.
+          example: 159153.53
+        invested:
+          type: number
+          format: double
+          description: |
+            Soma dos valores aplicados (invested) dos ativos active.
+            Ativos com invested null/0 contribuem com 0 para esta soma.
+          example: 100818.72
+        gain:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            Ganho absoluto: `total - invested`.
+            Null se invested = 0 (nao ha base para calculo).
+          example: 58334.81
+        gainPct:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            Ganho percentual: `((total / invested) - 1) * 100`.
+            Null se invested = 0.
+          example: 57.86
+        quotesFetchedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            Timestamp ISO da cotacao mais recente no cache (max fetched_at).
+            Null se nenhum ativo tem ticker (nenhuma cotacao no cache).
+            Usado na UI como "cotacoes ha X min".
+          example: "2026-06-13T14:32:00Z"
+        freshness:
+          $ref: '#/components/schemas/Freshness'
+        byInstitution:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocationGroup'
+          description: |
+            Alocacao por instituicao (para donut chart).
+            Ordenado decrescente por total.
+            Apenas ativos active.
+        byClass:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocationGroup'
+          description: |
+            Alocacao por classe (para donut chart alternativo).
+            Ordenado decrescente por total.
+            Apenas ativos active.
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioAsset'
+          description: Lista completa de ativos com `status = active`
+        redeeming:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioAsset'
+          description: |
+            Ativos com `status = redeeming`.
+            Exibidos separadamente na UI com nota "nao contabilizado".
+            NAO entram no total principal.
+
+    Freshness:
+      type: object
+      required: [ok, total, byInstitution]
+      description: |
+        Indicador de frescor dos saldos manuais.
+        Aplica-se APENAS a ativos manuais (sem ticker) com status = active.
+        Ativos automaticos (com ticker) NAO participam do calculo.
+      properties:
+        ok:
+          type: integer
+          minimum: 0
+          description: Quantidade de ativos manuais com balance_updated_at <= 30 dias
+          example: 14
+        total:
+          type: integer
+          minimum: 0
+          description: Quantidade total de ativos manuais ativos
+          example: 15
+        byInstitution:
+          type: array
+          items:
+            $ref: '#/components/schemas/FreshnessInstitution'
+          description: |
+            Frescor agrupado por instituicao.
+            Usado no card "Saldos manuais" da tela Hoje.
+
+    FreshnessInstitution:
+      type: object
+      required: [institution, ok, total, staleAssets]
+      properties:
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          nullable: true
+          description: Nome customizado (quando institution = OUTROS)
+        ok:
+          type: integer
+          minimum: 0
+          description: Manuais frescos nesta instituicao
+          example: 2
+        total:
+          type: integer
+          minimum: 0
+          description: Total de manuais nesta instituicao
+          example: 3
+        staleAssets:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaleAsset'
+          description: |
+            Lista de ativos vencidos (> 30 dias sem atualizacao).
+            Vazio se todos os manuais da instituicao estao frescos.
+
+    StaleAsset:
+      type: object
+      required: [id, name, daysAgo]
+      properties:
+        id:
+          type: integer
+          description: ID do ativo stale
+          example: 19
+        name:
+          type: string
+          description: Nome do ativo (para exibir no alerta)
+          example: "Icatu Vanguarda Pos Fixado RF Prev"
+        daysAgo:
+          type: integer
+          minimum: 31
+          description: Dias desde a ultima atualizacao do saldo
+          example: 35
+
+    AllocationGroup:
+      type: object
+      required: [total, pct]
+      properties:
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          nullable: true
+          description: |
+            Nome customizado da instituicao (presente apenas em
+            byInstitution quando institution = OUTROS)
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        total:
+          type: number
+          format: double
+          description: Soma dos saldos do grupo
+          example: 20748.55
+        pct:
+          type: number
+          format: double
+          description: Percentual do grupo em relacao ao total geral
+          example: 13.03
+      description: |
+        Grupo de alocacao (por instituicao ou por classe).
+        Contem `institution` OU `class` dependendo do contexto:
+        - Em `byInstitution`: campo `institution` presente
+        - Em `byClass`: campo `class` presente
+
+    PortfolioAsset:
+      type: object
+      required: [id, institution, class, name, balance, mode, status]
+      description: |
+        Ativo enriquecido com saldo calculado, ganho e informacoes de frescor.
+        Retornado dentro do portfolio (GET /api/portfolio).
+      properties:
+        id:
+          type: integer
+          description: ID do ativo
+          example: 1
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          nullable: true
+          description: Nome customizado (quando institution = OUTROS)
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        name:
+          type: string
+          description: Nome do ativo
+          example: "CPLE3 · Copel"
+        ticker:
+          type: string
+          nullable: true
+          description: Ticker B3 (null para ativos manuais)
+          example: CPLE3
+        qty:
+          type: number
+          format: double
+          nullable: true
+          description: Quantidade de cotas/acoes (null para manuais)
+          example: 28
+        price:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            Preco unitario da cotacao (do cache BRAPI).
+            Null para ativos manuais.
+          example: 14.61
+        invested:
+          type: number
+          format: double
+          nullable: true
+          description: Valor total aportado (custo)
+          example: 373.52
+        balance:
+          type: number
+          format: double
+          description: |
+            Saldo atual calculado:
+            - Auto: qty * price (ou invested como fallback se cotacao indisponivel)
+            - Manual: manual_balance
+          example: 409.08
+        gain:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            Ganho absoluto: balance - invested.
+            Null se invested = 0 ou null.
+          example: 35.56
+        gainPct:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            Ganho percentual: ((balance / invested) - 1) * 100.
+            Null se invested = 0 ou null.
+          example: 9.52
+        mode:
+          $ref: '#/components/schemas/AssetMode'
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+        balanceUpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            Data/hora da ultima atualizacao do saldo manual (ISO 8601).
+            Null para ativos automaticos.
+            Base do calculo de frescor.
+          example: "2026-06-12T00:00:00Z"
+        staleDays:
+          type: integer
+          nullable: true
+          description: |
+            Dias desde a ultima atualizacao do saldo manual.
+            Null para ativos automaticos.
+            > 30 indica ativo "stale" (vencido no frescor).
+          example: 1
+        priceUnavailable:
+          type: boolean
+          description: |
+            True se o ticker nao foi encontrado na BRAPI e o preco
+            esta usando valor antigo do cache ou fallback para invested.
+            Ausente ou false em operacao normal.
+
+    AssetResponse:
+      type: object
+      required: [id, institution, class, name, status, created_at]
+      description: Ativo como armazenado no banco (retorno de POST/PUT)
+      properties:
+        id:
+          type: integer
+          example: 1
+        institution:
+          $ref: '#/components/schemas/Institution'
+        institution_name:
+          type: string
+          nullable: true
+        class:
+          $ref: '#/components/schemas/AssetClass'
+        name:
+          type: string
+          example: "CPLE3 · Copel"
+        ticker:
+          type: string
+          nullable: true
+          example: CPLE3
+        qty:
+          type: number
+          format: double
+          nullable: true
+          example: 28
+        invested:
+          type: number
+          format: double
+          nullable: true
+          example: 373.52
+        manual_balance:
+          type: number
+          format: double
+          nullable: true
+          example: null
+        balance_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-13T12:00:00Z"
+
+    DeleteAssetResponse:
+      type: object
+      required: [archived]
+      properties:
+        archived:
+          type: boolean
+          enum: [true]
+          description: Sempre true em caso de sucesso
+
+    SnapshotResponse:
+      type: object
+      required: [month, total, invested, gain, gainPct]
+      description: Foto mensal do patrimonio
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: Mes do snapshot no formato YYYY-MM
+          example: "2026-06"
+        total:
+          type: number
+          format: double
+          description: Total do patrimonio no momento do snapshot
+          example: 159153.53
+        invested:
+          type: number
+          format: double
+          description: Total aportado no momento do snapshot
+          example: 100818.72
+        gain:
+          type: number
+          format: double
+          description: "total - invested"
+          example: 58334.81
+        gainPct:
+          type: number
+          format: double
+          description: "((total / invested) - 1) * 100"
+          example: 57.86
+
+    SnapshotUpsertResponse:
+      type: object
+      required: [month, total, invested, created]
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          example: "2026-06"
+        total:
+          type: number
+          format: double
+          example: 159153.53
+        invested:
+          type: number
+          format: double
+          example: 100818.72
+        created:
+          type: boolean
+          description: |
+            True se o snapshot foi criado pela primeira vez neste mes.
+            False se ja existia e foi atualizado (upsert).
+
+    ImportResponse:
+      type: object
+      required: [created, assets]
+      properties:
+        created:
+          type: integer
+          minimum: 0
+          description: Numero de ativos criados com sucesso
+          example: 12
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetResponse'
+          description: Lista dos ativos criados (com IDs atribuidos)
+
+    # ----- Error schemas -----
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro legivel
+          example: "Invalid request body"
+        details:
+          type: array
+          items:
+            type: string
+          description: |
+            Detalhes adicionais sobre o erro (validacao de campos, etc.).
+            Opcional — presente apenas em erros 400 com multiplos problemas.
+          example:
+            - "field 'institution' is required"
+            - "field 'class' must be one of: ACAO, FUNDO, RF, TESOURO, PREVIDENCIA, POUPANCA, COFRINHO"
+
+  responses:
+    BadRequest:
+      description: |
+        Request invalida — body malformado, campos obrigatorios ausentes
+        ou valores fora dos enums permitidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid request body"
+            details:
+              - "field 'name' is required"
+              - "field 'institution' must be one of: XP, ITAU, ONZE, OUTROS"
+
+    Unauthorized:
+      description: |
+        Autenticacao ausente ou invalida.
+        Em producao: JWT do Cloudflare Access ausente, expirado ou invalido.
+        Em dev: header X-Dev-Email ausente.
+        Na maioria dos casos, o Cloudflare Access intercepta antes do Worker
+        e redireciona para o OTP.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Missing auth header"
+
+    NotFound:
+      description: |
+        Ativo nao encontrado. Pode significar:
+        - ID nao existe no banco
+        - Ativo pertence a outro usuario (filtro por user_id)
+        - Ativo ja esta archived
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Asset not found"
+
+    InternalError:
+      description: |
+        Erro interno do servidor. Pode ser falha no D1, na BRAPI
+        ou erro inesperado no Worker.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Internal server error"

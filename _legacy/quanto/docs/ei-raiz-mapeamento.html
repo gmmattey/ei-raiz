@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esquilo Invest — Mapeamento Completo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #F5F0EB;
+    color: #0B1218;
+    padding: 32px 16px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 32px; }
+  .section {
+    background: white;
+    border: 1px solid #EFE7DC;
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F56A2A;
+    display: inline-block;
+  }
+  .section-num {
+    display: inline-block;
+    background: #F56A2A;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    width: 24px; height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; }
+  .card {
+    background: #FAFAF8;
+    border: 1px solid #EFE7DC;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .card-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    background: #0B1218;
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .card-header.accent { background: #F56A2A; }
+  .card-header.blue { background: #2563EB; }
+  .card-header.purple { background: #7C3AED; }
+  .card-header.green { background: #059669; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .card ul { list-style: none; padding: 0; }
+  .card li { font-size: 13px; color: #444; padding: 2px 0; }
+  .card li::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #F56A2A; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 700; padding: 8px 12px; background: #0B1218; color: white; }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: 8px 12px; border-bottom: 1px solid #EFE7DC; }
+  tr:hover td { background: #FFF8F3; }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .tag-pub { background: #DCFCE7; color: #166534; }
+  .tag-auth { background: #FEF3C7; color: #92400E; }
+  .tag-admin { background: #FEE2E2; color: #991B1B; }
+
+  .flow-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    margin: 16px 0;
+  }
+  .flow-box {
+    background: white;
+    border: 2px solid #EFE7DC;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 90px;
+  }
+  .flow-box.start { background: #F56A2A; color: white; border-color: #F56A2A; }
+  .flow-box.main { border-color: #F56A2A; }
+  .flow-arrow { font-size: 20px; color: #CCC; padding: 0 6px; }
+  .flow-arrow.accent { color: #F56A2A; }
+  .flow-branch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: 24px;
+    padding: 12px 0 12px 20px;
+    border-left: 2px dashed #EFE7DC;
+  }
+  .flow-branch .flow-box { font-size: 12px; padding: 6px 12px; min-width: 70px; }
+
+  .endpoint-group { margin-bottom: 16px; }
+  .endpoint-group-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #F56A2A;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .endpoint {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #444;
+    padding: 3px 0;
+  }
+  .method {
+    display: inline-block;
+    width: 50px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .method.get { color: #2563EB; }
+  .method.post { color: #059669; }
+  .method.patch { color: #D97706; }
+  .method.put { color: #7C3AED; }
+  .method.del { color: #DC2626; }
+
+  .cron-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #FAFAF8;
+    border: 1px solid #EFE7DC;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .cron-schedule {
+    font-family: 'Cascadia Code', monospace;
+    font-size: 12px;
+    background: #0B1218;
+    color: #F56A2A;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .cron-desc { font-size: 13px; }
+
+  .backlog-item {
+    background: #FAFAF8;
+    border: 2px dashed #EFE7DC;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .backlog-item .card-title { color: #F56A2A; }
+
+  .vera-banner {
+    background: linear-gradient(135deg, #0B1218 0%, #1a1a2e 100%);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: white;
+  }
+  .vera-banner h3 { font-size: 16px; margin-bottom: 6px; }
+  .vera-banner p { font-size: 13px; color: #AAA; }
+  .vera-banner code { background: rgba(245,106,42,0.2); color: #F56A2A; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  footer { text-align: center; padding: 24px; font-size: 12px; color: #999; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Esquilo Invest — Mapeamento Completo</h1>
+  <p class="subtitle">Monorepo TypeScript · Cloudflare Workers + D1 + Pages · React + Vite · Capacitor (Android) · Gerado em 2026-06-13</p>
+
+  <!-- ===== 1. ARQUITETURA ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">1</span> Arquitetura</div>
+    <div class="grid-4">
+      <div class="card">
+        <span class="card-header accent">Frontend (Pages)</span>
+        <ul>
+          <li>React 18 + Vite</li>
+          <li>Tailwind CSS</li>
+          <li>Framer Motion (animacoes)</li>
+          <li>Capacitor (Android wrapper)</li>
+          <li>Responsivo: Desktop + Mobile</li>
+          <li>Code splitting (lazy routes)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header">Backend (Worker)</span>
+        <ul>
+          <li>Cloudflare Worker (Hono)</li>
+          <li>7 dominios, 36 endpoints</li>
+          <li>JWT Auth + Zod validation</li>
+          <li>3 cron jobs</li>
+          <li>Camadas: Rotas / Servico / Repositorio / Calculos</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header blue">Banco (D1/SQLite)</span>
+        <ul>
+          <li>26 tabelas</li>
+          <li>9 views (vw_*)</li>
+          <li>35+ migrations legadas</li>
+          <li>1 canonical rebuild (100_)</li>
+          <li>Seed de desenvolvimento</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header purple">Servicos Externos</span>
+        <ul>
+          <li>BRAPI — cotacoes acoes/FIIs</li>
+          <li>CVM — fundos de investimento</li>
+          <li>FIPE — tabela veiculos</li>
+          <li>Google Apps Script — e-mail</li>
+          <li>Cloudflare AI — Vera (IA)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2. MAPA DE TELAS ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">2</span> Mapa de Telas — 18 rotas (todas responsivas)</div>
+    <table>
+      <tr><th>#</th><th>Tela</th><th>Rota</th><th>Arquivo</th><th>Acesso</th></tr>
+      <tr><td>1</td><td>Landing Page + Login Modal</td><td><code>/</code></td><td>LandingPage.tsx</td><td><span class="tag tag-pub">Publica</span></td></tr>
+      <tr><td>2</td><td>Onboarding (5 steps)</td><td><code>/onboarding</code></td><td>onboarding.jsx</td><td><span class="tag tag-pub">Publica</span></td></tr>
+      <tr><td>3</td><td>Home</td><td><code>/home</code></td><td>Home.jsx / HomeMobile.jsx</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>4</td><td>Carteira</td><td><code>/carteira</code></td><td>Carteira.jsx / CarteiraMobile.jsx</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>5</td><td>Categoria de Ativos</td><td><code>/carteira/:cat</code></td><td>AssetCategoryView / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>6</td><td>Detalhe do Ativo</td><td><code>/ativo/:ticker</code></td><td>DetalheAtivo / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>7</td><td>Insights (Score/Radar)</td><td><code>/insights</code></td><td>Insights / InsightsMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>8</td><td>Historico</td><td><code>/historico</code></td><td>Historico / HistoricoMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>9</td><td>Aportes</td><td><code>/aportes</code></td><td>Aportes / AportesMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>10</td><td>Importar (CSV)</td><td><code>/importar</code></td><td>Importar / ImportarMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>11</td><td>Hub de Decisoes</td><td><code>/decisoes</code></td><td>DecisionHub / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>12</td><td>Simulador: Imovel</td><td><code>/decisoes/imovel</code></td><td>PropertySimulator / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>13</td><td>Simulador: Carro</td><td><code>/decisoes/carro</code></td><td>CarSimulator / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>14</td><td>Simulador: Reserva ou Financiar</td><td><code>/decisoes/reserva-ou-financiar</code></td><td>ReserveOrFinance / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>15</td><td>Simulador: Gastar ou Investir</td><td><code>/decisoes/gastar-ou-investir</code></td><td>SpendOrInvest / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>16</td><td>Simulador: Livre</td><td><code>/decisoes/livre</code></td><td>FreeSimulation / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>17</td><td>Perfil</td><td><code>/perfil</code></td><td>PerfilUsuario / PerfilMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>18</td><td>Perfil de Risco</td><td><code>/perfil-de-risco</code></td><td>PerfilRisco / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>19</td><td>Configuracoes</td><td><code>/configuracoes</code></td><td>Configuracoes / Mobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>20</td><td>Contexto Financeiro</td><td><code>/contexto-financeiro</code></td><td>ContextoFinanceiroMobile</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>21</td><td>Dashboard</td><td><code>/dashboard</code></td><td>dashboard.jsx</td><td><span class="tag tag-auth">Auth</span></td></tr>
+      <tr><td>22</td><td>Painel Admin</td><td><code>/admin</code></td><td>PainelAdmin.jsx</td><td><span class="tag tag-admin">Admin</span></td></tr>
+    </table>
+  </div>
+
+  <!-- ===== 3. FLUXO DE TELAS ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">3</span> Fluxo de Navegacao</div>
+
+    <p style="font-size:13px;color:#666;margin-bottom:16px">Fluxo principal do usuario — da entrada ate a navegacao autenticada.</p>
+
+    <div class="flow-container">
+      <div class="flow-box start">Landing /</div>
+      <span class="flow-arrow accent">&#8594;</span>
+      <div class="flow-box">Login Modal</div>
+      <span class="flow-arrow accent">&#8594;</span>
+      <div class="flow-box main">Home /home</div>
+    </div>
+
+    <div class="flow-branch">
+      <div class="flow-box">Carteira</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Categoria</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Detalhe Ativo</div>
+    </div>
+    <div class="flow-branch">
+      <div class="flow-box">Insights</div>
+      <div class="flow-box">Historico</div>
+      <div class="flow-box">Aportes</div>
+      <div class="flow-box">Importar</div>
+    </div>
+    <div class="flow-branch">
+      <div class="flow-box">Hub Decisoes</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Imovel</div>
+      <div class="flow-box">Carro</div>
+      <div class="flow-box">Reserva/Fin.</div>
+      <div class="flow-box">Gastar/Inv.</div>
+      <div class="flow-box">Livre</div>
+    </div>
+    <div class="flow-branch">
+      <div class="flow-box">Perfil</div>
+      <div class="flow-box">Perfil Risco</div>
+      <div class="flow-box">Config.</div>
+      <div class="flow-box">Contexto Fin.</div>
+    </div>
+
+    <p style="font-size:13px;color:#666;margin-top:20px;margin-bottom:10px">Fluxo alternativo — novo usuario:</p>
+    <div class="flow-container">
+      <div class="flow-box start">Landing /</div>
+      <span class="flow-arrow accent">&#8594;</span>
+      <div class="flow-box">Registro (step 1)</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Estilo (step 2)</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Financeiro (step 3)</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Template (step 4)</div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-box">Senha (step 5)</div>
+      <span class="flow-arrow accent">&#8594;</span>
+      <div class="flow-box main">Importar</div>
+    </div>
+  </div>
+
+  <!-- ===== 4. API ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">4</span> API REST — 36 Endpoints</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">auth (7 endpoints)</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/registrar</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/entrar</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/sair</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/auth/sessao</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/recuperar/iniciar</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/recuperar/confirmar</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/auth/recuperar/redefinir</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">usuario (4 endpoints)</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/usuario</div>
+          <div class="endpoint"><span class="method patch">PATCH</span> /api/usuario</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/usuario/preferencias</div>
+          <div class="endpoint"><span class="method patch">PATCH</span> /api/usuario/preferencias</div>
+        </div>
+        <div class="endpoint-group" style="margin-top:12px">
+          <div class="endpoint-group-title">perfil (2 endpoints)</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/perfil</div>
+          <div class="endpoint"><span class="method put">PUT</span> /api/perfil</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">patrimonio (13 endpoints)</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/resumo</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/itens</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/patrimonio/itens</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/itens/:id</div>
+          <div class="endpoint"><span class="method patch">PATCH</span> /api/patrimonio/itens/:id</div>
+          <div class="endpoint"><span class="method del">DEL</span> /api/patrimonio/itens/:id</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/aportes</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/patrimonio/aportes</div>
+          <div class="endpoint"><span class="method del">DEL</span> /api/patrimonio/aportes/:id</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/historico</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/score</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/patrimonio/importacoes</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/patrimonio/importacoes/:id</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">mercado (4 endpoints) — parcialmente publico</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/mercado/ativos?q=</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/mercado/ativos/:ticker</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/mercado/ativos/:ticker/historico</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/mercado/fundos-cvm/:cnpj</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">decisoes (4 endpoints)</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/decisoes/simulacoes</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/decisoes/simulacoes</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/decisoes/simulacoes/:id</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/decisoes/vera/mensagens</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="endpoint-group">
+          <div class="endpoint-group-title">admin (4) + telemetria (1)</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/admin/entrar</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/admin/usuarios</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/admin/auditoria</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/admin/cvm</div>
+          <div class="endpoint" style="margin-top:8px"><span class="method post">POST</span> /api/telemetria/eventos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 5. BANCO ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">5</span> Banco de Dados — 26 Tabelas + 9 Views</div>
+    <div class="grid-3">
+      <div class="card">
+        <span class="card-header">Usuario (4 tabelas)</span>
+        <ul>
+          <li>usuarios</li>
+          <li>usuario_preferencias</li>
+          <li>usuario_plataformas</li>
+          <li>recuperacoes_acesso</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header accent">Patrimonio (5 tabelas)</span>
+        <ul>
+          <li>patrimonio_itens</li>
+          <li>patrimonio_aportes</li>
+          <li>patrimonio_historico_mensal</li>
+          <li>patrimonio_scores</li>
+          <li>patrimonio_fila_reconstrucao</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header blue">Mercado (5 tabelas)</span>
+        <ul>
+          <li>ativos</li>
+          <li>ativos_cotacoes_cache</li>
+          <li>fundos_cvm</li>
+          <li>fundos_cvm_cotas</li>
+          <li>corretoras</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header">Importacao (2 tabelas)</span>
+        <ul>
+          <li>importacoes</li>
+          <li>importacao_itens</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header">Outros (3 tabelas)</span>
+        <ul>
+          <li>perfis_financeiros</li>
+          <li>decisoes_simulacoes</li>
+          <li>telemetria_eventos</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="card-header purple">Config / Admin (7 tabelas)</span>
+        <ul>
+          <li>admin_usuarios</li>
+          <li>admin_auditoria</li>
+          <li>configuracoes_produto</li>
+          <li>feature_flags</li>
+          <li>configuracoes_menu</li>
+          <li>conteudo_blocos</li>
+          <li>cvm_execucoes</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:20px 0 12px">Views (leitura — zero SQL de agregacao em servicos)</h3>
+    <div class="grid-3">
+      <div class="card">
+        <ul>
+          <li>vw_patrimonio_resumo</li>
+          <li>vw_patrimonio_posicoes</li>
+          <li>vw_patrimonio_alocacao</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul>
+          <li>vw_patrimonio_evolucao_mensal</li>
+          <li>vw_patrimonio_aportes_mes</li>
+          <li>vw_patrimonio_score_atual</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul>
+          <li>vw_patrimonio_score_historico</li>
+          <li>vw_mercado_ativo_detalhe</li>
+          <li>vw_admin_ingestao_cvm</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6. CRON JOBS ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">6</span> Jobs Agendados (Cron)</div>
+    <div class="cron-row">
+      <span class="cron-schedule">*/5 * * * *</span>
+      <div class="cron-desc"><strong>Atualizar Cotacoes</strong> — Busca precos atualizados via BRAPI + CVM a cada 5 min</div>
+    </div>
+    <div class="cron-row">
+      <span class="cron-schedule">*/30 * * * *</span>
+      <div class="cron-desc"><strong>Reconstruir Patrimonio</strong> — Processa fila de recalculo de carteira a cada 30 min</div>
+    </div>
+    <div class="cron-row">
+      <span class="cron-schedule">0 3 * * *</span>
+      <div class="cron-desc"><strong>Consolidar Historico Mensal</strong> — Snapshot mensal de todos os usuarios, diario as 3h</div>
+    </div>
+  </div>
+
+  <!-- ===== 7. VERA ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">7</span> Vera — Assistente IA Financeiro</div>
+    <div class="vera-banner">
+      <h3>Vera (Cloudflare AI)</h3>
+      <p>Assistente de IA integrado ao modulo de Insights e Decisoes. Analisa score de carteira, diagnostica alocacao, sugere simulacoes e responde perguntas financeiras contextualizadas com os dados reais do usuario.</p>
+      <p style="margin-top:10px">Endpoint: <code>POST /api/decisoes/vera/mensagens</code></p>
+    </div>
+  </div>
+
+  <!-- ===== 8. TELA x ENDPOINT ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">8</span> Mapa Tela x Endpoints</div>
+    <table>
+      <tr><th>Tela</th><th>Endpoints consumidos</th><th>#</th></tr>
+      <tr><td>Home</td><td><code>GET /patrimonio/resumo</code></td><td>1</td></tr>
+      <tr><td>Carteira</td><td><code>GET /patrimonio/resumo</code>, <code>GET /patrimonio/itens</code></td><td>2</td></tr>
+      <tr><td>Detalhe Ativo</td><td><code>GET /patrimonio/itens/:id</code>, <code>GET /mercado/ativos/:ticker/historico</code></td><td>2</td></tr>
+      <tr><td>Insights</td><td><code>GET /patrimonio/score</code>, <code>GET /patrimonio/historico</code></td><td>2</td></tr>
+      <tr><td>Aportes</td><td><code>GET /patrimonio/aportes</code>, <code>POST /patrimonio/aportes</code></td><td>2</td></tr>
+      <tr><td>Perfil</td><td><code>GET /perfil</code>, <code>PUT /perfil</code></td><td>2</td></tr>
+      <tr><td>Decisoes</td><td><code>GET /decisoes/simulacoes</code>, <code>POST /decisoes/simulacoes</code></td><td>2</td></tr>
+      <tr><td>Importar</td><td><code>POST /patrimonio/importacoes</code>, <code>GET /patrimonio/importacoes/:id</code></td><td>2</td></tr>
+      <tr><td>Historico</td><td><code>GET /patrimonio/historico</code></td><td>1</td></tr>
+      <tr><td>Admin</td><td><code>GET /admin/usuarios</code>, <code>GET /admin/cvm</code>, <code>GET /admin/auditoria</code></td><td>3</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== 9. BACKLOG ===== -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">9</span> Backlog — Proximas Features</div>
+    <div class="grid-2">
+      <div class="backlog-item">
+        <div class="card-title">Objetivos Financeiros</div>
+        <p style="font-size:13px;color:#666;margin-top:6px">Spec completa com 10 user stories. CRUD de metas de vida, motor de viabilidade (viavel / com ajuste / incompativel), conflito entre objetivos concorrentes, sugestoes praticas da IA, integracao com score e aportes.</p>
+      </div>
+      <div class="backlog-item">
+        <div class="card-title">Melhorias de Importacao</div>
+        <p style="font-size:13px;color:#666;margin-top:6px">Tela de conflitos na importacao CSV, historico detalhado de importacoes individuais.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Esquilo Invest (ei-raiz) — Documento gerado automaticamente em 2026-06-13</footer>
+</div>
+</body>
+</html>

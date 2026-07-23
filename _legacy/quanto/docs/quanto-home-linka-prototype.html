@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quanto · Home Prototype · Linka DS</title>
+  <style>
+    @font-face {
+      font-family: 'Archivo';
+      src: url('../public/fonts/archivo-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Archivo';
+      src: url('../public/fonts/archivo-extrabold.woff2') format('woff2');
+      font-weight: 800;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Inter';
+      src: url('../public/fonts/inter-regular.woff2') format('woff2');
+      font-weight: 400;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Inter';
+      src: url('../public/fonts/inter-medium.woff2') format('woff2');
+      font-weight: 500;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Inter';
+      src: url('../public/fonts/inter-semibold.woff2') format('woff2');
+      font-weight: 600;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Inter';
+      src: url('../public/fonts/inter-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-display: swap;
+    }
+
+    :root {
+      --accent: #6C2BFF;
+      --accent-blue: #2563EB;
+      --success: #22C55E;
+      --warning: #F5A623;
+      --error: #FF4D4F;
+      --bg-primary: #000000;
+      --bg-secondary: #121212;
+      --bg-card: #171717;
+      --bg-card-strong: #1E1E1E;
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --text-tertiary: #6B7280;
+      --border: #2A2A2A;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+      --radius-card: 16px;
+      --radius-pill: 999px;
+      --radius-button: 12px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(108, 43, 255, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.14), transparent 24%),
+        #050505;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 16px 48px;
+    }
+
+    .prototype-meta {
+      width: min(430px, 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .prototype-title {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .toolbar button {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      border-radius: var(--radius-pill);
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .phone {
+      width: min(430px, 100%);
+      min-height: 932px;
+      background:
+        linear-gradient(180deg, rgba(108, 43, 255, 0.12), transparent 18%),
+        linear-gradient(180deg, #090909 0%, #000000 16%, #060606 100%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 36px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-bar,
+    .app-bar,
+    .bottom-nav {
+      padding-inline: 18px;
+      flex-shrink: 0;
+    }
+
+    .status-bar {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .app-bar {
+      height: 68px;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 12px 24px rgba(108, 43, 255, 0.28);
+    }
+
+    .app-bar-center {
+      text-align: center;
+    }
+
+    .app-bar-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .app-bar-subtitle {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .icon-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      display: grid;
+      place-items: center;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .screen {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 18px 112px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: none;
+    }
+
+    .screen::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hero-card,
+    .panel,
+    .metric-card,
+    .institution-card,
+    .assistant-card {
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .hero-card {
+      padding: 20px;
+      background:
+        radial-gradient(circle at top right, rgba(108, 43, 255, 0.36), transparent 44%),
+        linear-gradient(135deg, rgba(108, 43, 255, 0.18), rgba(17, 17, 17, 0.96) 48%),
+        var(--bg-card);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: '';
+      position: absolute;
+      inset: auto -46px -46px auto;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .hero-greeting {
+      display: grid;
+      gap: 4px;
+    }
+
+    .hero-greeting strong {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-greeting p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      max-width: 230px;
+      line-height: 1.45;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .chip-success {
+      background: rgba(34, 197, 94, 0.14);
+      color: var(--success);
+    }
+
+    .chip-warning {
+      background: rgba(245, 166, 35, 0.14);
+      color: #FFD97A;
+    }
+
+    .hero-value {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-value h2 {
+      font-family: 'Archivo', 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: clamp(34px, 10vw, 46px);
+      letter-spacing: -0.05em;
+      line-height: 0.96;
+    }
+
+    .hero-value small {
+      font-size: 22px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    .hero-delta {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 8px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .hero-footnote {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: var(--radius-button);
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8D56FF);
+      color: white;
+      box-shadow: 0 14px 28px rgba(108, 43, 255, 0.26);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-icon {
+      width: 48px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .metric-card {
+      padding: 14px;
+      background: var(--bg-card-strong);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .tracker {
+      display: grid;
+      gap: 12px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: #242424;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 83%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #8D56FF);
+    }
+
+    .tracker-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .tracker-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(245, 166, 35, 0.08);
+      border: 1px solid rgba(245, 166, 35, 0.18);
+      color: #FFD97A;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .quick-action {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+      padding: 14px 12px;
+      display: grid;
+      gap: 12px;
+      min-height: 126px;
+    }
+
+    .quick-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(108, 43, 255, 0.12);
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+    }
+
+    .quick-action strong {
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .quick-action p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: repeat(2, 1fr);
+      border-radius: var(--radius-pill);
+      background: var(--bg-secondary);
+      padding: 3px;
+      border: 1px solid var(--border);
+    }
+
+    .segmented button {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+    }
+
+    .segmented button.active {
+      background: #222222;
+      color: var(--text-primary);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .allocation-wrap {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .allocation-chart {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #101010 0 42px, transparent 43px),
+        conic-gradient(
+          var(--accent) 0 31%,
+          #8B5CF6 31% 53%,
+          #3B82F6 53% 70%,
+          #14B8A6 70% 87%,
+          #64748B 87% 100%
+        );
+      display: grid;
+      place-items: center;
+      position: relative;
+      margin-inline: auto;
+    }
+
+    .allocation-chart.class-view {
+      background:
+        radial-gradient(circle at center, #101010 0 42px, transparent 43px),
+        conic-gradient(
+          var(--accent) 0 38%,
+          var(--success) 38% 57%,
+          #F59E0B 57% 76%,
+          #3B82F6 76% 90%,
+          #64748B 90% 100%
+        );
+    }
+
+    .allocation-center {
+      text-align: center;
+      display: grid;
+      gap: 3px;
+    }
+
+    .allocation-center span {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .allocation-center strong {
+      font-family: 'Archivo', 'Inter', sans-serif;
+      font-size: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .legend-label {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .legend-value {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .benchmark-list,
+    .institution-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .benchmark-item,
+    .institution-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .benchmark-item {
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--bg-card-strong);
+      border: 1px solid var(--border);
+    }
+
+    .benchmark-badge,
+    .institution-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .benchmark-badge {
+      background: rgba(108, 43, 255, 0.12);
+      color: var(--accent);
+    }
+
+    .institution-card {
+      padding: 14px;
+      background: var(--bg-card-strong);
+    }
+
+    .institution-badge.xp {
+      background: rgba(139, 92, 246, 0.14);
+      color: #C4B5FD;
+    }
+
+    .institution-badge.itau {
+      background: rgba(249, 115, 22, 0.16);
+      color: #FDBA74;
+    }
+
+    .institution-badge.onze {
+      background: rgba(20, 184, 166, 0.14);
+      color: #7DD3FC;
+    }
+
+    .institution-main strong,
+    .benchmark-main strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .institution-main span,
+    .benchmark-main span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .institution-right,
+    .benchmark-right {
+      text-align: right;
+    }
+
+    .institution-right strong,
+    .benchmark-right strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .institution-right span,
+    .benchmark-right span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .assistant-card {
+      padding: 16px;
+      background:
+        linear-gradient(180deg, rgba(108, 43, 255, 0.12), rgba(108, 43, 255, 0.03)),
+        var(--bg-card);
+      display: grid;
+      gap: 14px;
+    }
+
+    .assistant-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .assistant-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .assistant-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: rgba(108, 43, 255, 0.16);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+    }
+
+    .assistant-copy strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .assistant-copy span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .assistant-body {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      display: grid;
+      gap: 12px;
+    }
+
+    .assistant-body p {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .assistant-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .assistant-chips span {
+      padding: 7px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      inset: auto 0 0;
+      background: rgba(17, 17, 17, 0.98);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding-top: 10px;
+      padding-bottom: 24px;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-item {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-pill {
+      min-width: 58px;
+      height: 36px;
+      border-radius: var(--radius-pill);
+      display: grid;
+      place-items: center;
+    }
+
+    .nav-item.active .nav-pill {
+      background: rgba(108, 43, 255, 0.18);
+    }
+
+    .maskable {
+      transition: color 0.18s ease;
+    }
+
+    .is-masked .maskable {
+      color: transparent !important;
+      background: #262626;
+      border-radius: 6px;
+      user-select: none;
+      text-shadow: none !important;
+    }
+
+    .is-masked .maskable.inline {
+      display: inline-block;
+      min-width: 92px;
+    }
+
+    .is-masked .maskable.block {
+      display: block;
+      min-height: 22px;
+    }
+
+    @media (max-width: 430px) {
+      body {
+        padding-inline: 0;
+        padding-top: 0;
+      }
+
+      .prototype-meta {
+        width: 100%;
+        padding: 16px 16px 0;
+      }
+
+      .phone {
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border-inline: none;
+        border-bottom: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-meta">
+    <div class="prototype-title">Quanto · Home Prototype · Linka DS</div>
+    <div class="toolbar">
+      <button id="toggle-mask" type="button">Ocultar valores</button>
+      <button id="toggle-allocation" type="button">Ver por classe</button>
+    </div>
+  </div>
+
+  <div class="phone" id="prototype-root">
+    <div class="status-bar">
+      <span>09:41</span>
+      <div class="status-icons">
+        <span>5G</span>
+        <span>▂▄▆█</span>
+        <span>83%</span>
+      </div>
+    </div>
+
+    <header class="app-bar">
+      <div class="avatar">L</div>
+      <div class="app-bar-center">
+        <div class="app-bar-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12l9-7 9 7"></path>
+            <path d="M5 10v9h14v-9"></path>
+          </svg>
+          <span>Hoje</span>
+        </div>
+        <div class="app-bar-subtitle">Quanto você tem, de fato.</div>
+      </div>
+      <button class="icon-button" type="button" aria-label="Notificações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4v-3.2a6 6 0 1 0-12 0v3.2c0 .53-.21 1.04-.59 1.4L4 17h5"></path>
+          <path d="M10 17a2 2 0 0 0 4 0"></path>
+        </svg>
+      </button>
+    </header>
+
+    <main class="screen">
+      <section class="hero-card">
+        <div class="hero-grid">
+          <div class="hero-top">
+            <div class="hero-greeting">
+              <span class="eyebrow">Patrimônio consolidado</span>
+              <strong>Bom dia, Luiz</strong>
+              <p>Home do Quanto reinterpretada com o ritmo visual, densidade e contraste do Linka.</p>
+            </div>
+            <span class="chip chip-success">Atualizado agora</span>
+          </div>
+
+          <div class="hero-value">
+            <h2><span class="maskable inline">R$ 159.153</span><small class="maskable inline">,42</small></h2>
+            <div class="hero-delta">
+              <span>▲</span>
+              <span class="maskable inline">+4,8% no mês</span>
+            </div>
+            <div class="hero-footnote">
+              <span class="maskable inline">R$ 438.000</span> em bens e garantias já entram no patrimônio bruto.
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button class="btn-primary" type="button">Adicionar ativo</button>
+            <button class="btn-secondary btn-icon" type="button" aria-label="Importar planilha">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v12"></path>
+                <path d="M7 8l5-5 5 5"></path>
+                <path d="M5 21h14"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-row">
+        <article class="metric-card">
+          <div class="metric-label">Investimentos</div>
+          <div class="metric-value maskable block">R$ 159,1 mil</div>
+          <div class="metric-sub">Carteira líquida somada por ativo.</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Bens</div>
+          <div class="metric-value maskable block">R$ 438 mil</div>
+          <div class="metric-sub">FGTS, imóveis e veículos.</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Aportes</div>
+          <div class="metric-value maskable block">R$ 7,2 mil</div>
+          <div class="metric-sub">Registrados neste mês.</div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Frescor dos saldos</div>
+            <div class="panel-subtitle">O que ainda depende de atualização manual no app da instituição.</div>
+          </div>
+          <span class="chip chip-warning">3 pontos de atenção</span>
+        </div>
+
+        <div class="tracker">
+          <div class="progress-track">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="tracker-meta">
+            <span>14 de 17 posições manuais atualizadas</span>
+            <strong class="maskable inline" style="color: var(--text-primary);">83%</strong>
+          </div>
+          <div class="tracker-warning">
+            <span>●</span>
+            <span>Icatu Vanguarda Pos Fixado, FGTS principal e um imóvel estão há mais tempo do que o limite sugerido.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-actions">
+        <article class="quick-action">
+          <div class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v18"></path>
+              <path d="M3 12h18"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>Novo ativo</strong>
+            <p>Lançar posição manual ou por ticker B3.</p>
+          </div>
+        </article>
+        <article class="quick-action">
+          <div class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M12 15V3"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>Importar XLSX</strong>
+            <p>Wizard em 3 passos com revisão antes de salvar.</p>
+          </div>
+        </article>
+        <article class="quick-action">
+          <div class="quick-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>Novo bem</strong>
+            <p>FGTS, imóvel ou veículo com valor estimado.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Alocação atual</div>
+            <div class="panel-subtitle">Alternância da home entre leitura por instituição e por classe.</div>
+          </div>
+          <div class="segmented" aria-label="Modo de alocação">
+            <button class="active" data-mode="institution" type="button">Instituição</button>
+            <button data-mode="class" type="button">Classe</button>
+          </div>
+        </div>
+
+        <div class="allocation-wrap">
+          <div class="allocation-chart" id="allocation-chart">
+            <div class="allocation-center">
+              <span>Total</span>
+              <strong class="maskable inline">R$ 159 mil</strong>
+            </div>
+          </div>
+
+          <div class="legend" id="allocation-legend">
+            <div class="legend-row">
+              <span class="legend-dot" style="background:#6C2BFF"></span>
+              <span class="legend-label">XP</span>
+              <span class="legend-value maskable inline">31%</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-dot" style="background:#8B5CF6"></span>
+              <span class="legend-label">Itaú</span>
+              <span class="legend-value maskable inline">22%</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-dot" style="background:#3B82F6"></span>
+              <span class="legend-label">Onze</span>
+              <span class="legend-value maskable inline">17%</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-dot" style="background:#14B8A6"></span>
+              <span class="legend-label">BTG / Outros</span>
+              <span class="legend-value maskable inline">17%</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-dot" style="background:#64748B"></span>
+              <span class="legend-label">Resgates</span>
+              <span class="legend-value maskable inline">13%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Benchmarks</div>
+            <div class="panel-subtitle">Referências já consolidadas para contexto macro da carteira.</div>
+          </div>
+        </div>
+
+        <div class="benchmark-list">
+          <article class="benchmark-item">
+            <div class="benchmark-badge">CDI</div>
+            <div class="benchmark-main">
+              <strong>CDI acumulado</strong>
+              <span>Comparador para caixa, renda fixa e cofrinhos.</span>
+            </div>
+            <div class="benchmark-right">
+              <strong class="maskable inline">10,65%</strong>
+              <span>12 meses</span>
+            </div>
+          </article>
+          <article class="benchmark-item">
+            <div class="benchmark-badge">IPCA</div>
+            <div class="benchmark-main">
+              <strong>Inflação oficial</strong>
+              <span>Leitura rápida para ganho real da carteira.</span>
+            </div>
+            <div class="benchmark-right">
+              <strong class="maskable inline">4,11%</strong>
+              <span>12 meses</span>
+            </div>
+          </article>
+          <article class="benchmark-item">
+            <div class="benchmark-badge">SELIC</div>
+            <div class="benchmark-main">
+              <strong>Taxa básica</strong>
+              <span>Base de referência para tesouro e pós-fixados.</span>
+            </div>
+            <div class="benchmark-right">
+              <strong class="maskable inline">10,50%</strong>
+              <span>ano</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Instituições em destaque</div>
+            <div class="panel-subtitle">Atalhos visuais para ler onde está o volume principal do patrimônio.</div>
+          </div>
+        </div>
+
+        <div class="institution-list">
+          <article class="institution-card">
+            <div class="institution-badge xp">XP</div>
+            <div class="institution-main">
+              <strong>XP Investimentos</strong>
+              <span>Previdência, fundos e ações com cotação B3.</span>
+            </div>
+            <div class="institution-right">
+              <strong class="maskable inline">R$ 49,4 mil</strong>
+              <span>31% da carteira</span>
+            </div>
+          </article>
+          <article class="institution-card">
+            <div class="institution-badge itau">IT</div>
+            <div class="institution-main">
+              <strong>Itaú + ION</strong>
+              <span>Caixa, cofrinhos e posições de renda fixa.</span>
+            </div>
+            <div class="institution-right">
+              <strong class="maskable inline">R$ 35,1 mil</strong>
+              <span>22% da carteira</span>
+            </div>
+          </article>
+          <article class="institution-card">
+            <div class="institution-badge onze">11</div>
+            <div class="institution-main">
+              <strong>Onze / Previdência</strong>
+              <span>Saldos manuais sujeitos a frescor mensal.</span>
+            </div>
+            <div class="institution-right">
+              <strong class="maskable inline">R$ 27,4 mil</strong>
+              <span>17% da carteira</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="assistant-card">
+        <div class="assistant-top">
+          <div class="assistant-brand">
+            <div class="assistant-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3a9 9 0 0 1 9 9c0 4.97-4.03 9-9 9S3 16.97 3 12"></path>
+                <path d="M12 7v5l3 3"></path>
+              </svg>
+            </div>
+            <div class="assistant-copy">
+              <strong>Núcleo Q</strong>
+              <span>Análise contextual do portfólio e das lacunas da home.</span>
+            </div>
+          </div>
+          <span class="chip chip-success">Workers AI</span>
+        </div>
+
+        <div class="assistant-body">
+          <p>Seu patrimônio está concentrado em previdência e fundos pós-fixados. Há espaço para revisar concentração por instituição e priorizar atualização dos saldos manuais com mais atraso.</p>
+          <div class="assistant-chips">
+            <span>Ver riscos de concentração</span>
+            <span>Priorizar atualizações manuais</span>
+            <span>Comparar contra CDI</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegação principal">
+      <div class="nav-item active">
+        <div class="nav-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12l9-7 9 7"></path>
+            <path d="M5 10v9h14v-9"></path>
+          </svg>
+        </div>
+        <span>Hoje</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+            <path d="M3 10h18"></path>
+          </svg>
+        </div>
+        <span>Carteira</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <path d="M7 10l5 5 5-5"></path>
+            <path d="M12 15V3"></path>
+          </svg>
+        </div>
+        <span>Importar</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20V8"></path>
+            <path d="M12 20V4"></path>
+            <path d="M20 20v-6"></path>
+          </svg>
+        </div>
+        <span>Histórico</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path>
+          </svg>
+        </div>
+        <span>Bens</span>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById('prototype-root');
+      const maskButton = document.getElementById('toggle-mask');
+      const allocationButton = document.getElementById('toggle-allocation');
+      const segmentedButtons = Array.from(document.querySelectorAll('[data-mode]'));
+      const chart = document.getElementById('allocation-chart');
+      const legend = document.getElementById('allocation-legend');
+
+      const institutionLegend = [
+        { color: '#6C2BFF', label: 'XP', value: '31%' },
+        { color: '#8B5CF6', label: 'Itaú', value: '22%' },
+        { color: '#3B82F6', label: 'Onze', value: '17%' },
+        { color: '#14B8A6', label: 'BTG / Outros', value: '17%' },
+        { color: '#64748B', label: 'Resgates', value: '13%' }
+      ];
+
+      const classLegend = [
+        { color: '#6C2BFF', label: 'Previdência', value: '38%' },
+        { color: '#22C55E', label: 'Fundos', value: '19%' },
+        { color: '#F59E0B', label: 'Renda fixa', value: '19%' },
+        { color: '#3B82F6', label: 'Ações / FIIs', value: '14%' },
+        { color: '#64748B', label: 'Cofrinhos / caixa', value: '10%' }
+      ];
+
+      let masked = false;
+      let mode = 'institution';
+
+      function renderLegend(items) {
+        legend.innerHTML = items.map((item) => (
+          '<div class="legend-row">' +
+            '<span class="legend-dot" style="background:' + item.color + '"></span>' +
+            '<span class="legend-label">' + item.label + '</span>' +
+            '<span class="legend-value maskable inline">' + item.value + '</span>' +
+          '</div>'
+        )).join('');
+      }
+
+      function applyMask() {
+        root.classList.toggle('is-masked', masked);
+        maskButton.textContent = masked ? 'Mostrar valores' : 'Ocultar valores';
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        segmentedButtons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.mode === nextMode);
+        });
+        chart.classList.toggle('class-view', nextMode === 'class');
+        renderLegend(nextMode === 'class' ? classLegend : institutionLegend);
+        allocationButton.textContent = nextMode === 'class' ? 'Ver por instituição' : 'Ver por classe';
+        applyMask();
+      }
+
+      maskButton.addEventListener('click', function () {
+        masked = !masked;
+        applyMask();
+      });
+
+      allocationButton.addEventListener('click', function () {
+        setMode(mode === 'institution' ? 'class' : 'institution');
+      });
+
+      segmentedButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          setMode(button.dataset.mode);
+        });
+      });
+
+      setMode('institution');
+      applyMask();
+    }());
+  </script>
+</body>
+</html>

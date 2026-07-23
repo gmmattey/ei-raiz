@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Inter';src:url('fonts/inter-regular.woff2') format('woff2');font-weight:400;font-display:swap;}
+@font-face{font-family:'Inter';src:url('fonts/inter-medium.woff2') format('woff2');font-weight:500;font-display:swap;}
+@font-face{font-family:'Inter';src:url('fonts/inter-semibold.woff2') format('woff2');font-weight:600;font-display:swap;}
+@font-face{font-family:'Inter';src:url('fonts/inter-bold.woff2') format('woff2');font-weight:700;font-display:swap;}
+@font-face{font-family:'Archivo';src:url('fonts/archivo-bold.woff2') format('woff2');font-weight:700;font-display:swap;}
+@font-face{font-family:'Archivo';src:url('fonts/archivo-extrabold.woff2') format('woff2');font-weight:800;font-display:swap;}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:#E7ECF1;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-family:'Inter',sans-serif;}
+@keyframes qFade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes qDonut{from{opacity:0;transform:rotate(-90deg) scale(.82);}to{opacity:1;transform:rotate(-90deg) scale(1);}}
+@keyframes qDraw{to{stroke-dashoffset:0;}}
+@keyframes qPulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes qFill{from{width:0;}}
+@keyframes qShim{0%{background-position:-260px 0;}100%{background-position:260px 0;}}
+div[style*="overscroll"]::-webkit-scrollbar{width:0;height:0;display:none;}
+div[style*="overscroll"]{scrollbar-width:none;-ms-overflow-style:none;}
+</style>
+</helmet>
+<div style="min-height:100vh;background:radial-gradient(120% 70% at 50% 0%,#EEF2F6 0%,#E2E8EE 100%);padding:56px 40px 100px;font-family:'Inter',sans-serif;">
+
+  <div style="max-width:1480px;margin:0 auto;">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:8px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;">
+          <svg viewBox="0 0 100 100" width="34" height="34"><rect width="100" height="100" rx="26" fill="#16242F"/><path d="M 50.8,63.92 A 22,22 0 1,1 66,43" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/><rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/><rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/><rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/></svg>
+          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:23px;color:#16242F;letter-spacing:-.02em;">Quanto<span style="color:#1B4D57;">.</span></span>
+        </div>
+        <h1 style="margin:0;font-family:'Archivo',sans-serif;font-weight:800;font-size:38px;line-height:1.05;color:#16242F;letter-spacing:-.03em;">Wireframes &amp; Redesign</h1>
+        <p style="margin:10px 0 0;font-size:15.5px;line-height:1.5;color:#54616D;max-width:600px;">Redesenho premium da PWA mobile — sóbrio e bancário, mono-cor petróleo. Todas as telas, sheets e estados, com as melhorias de usabilidade anotadas <b style="color:#16242F;">antes → depois</b>.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#54616D;background:#fff;border:1px solid #DCE3EA;padding:7px 13px;border-radius:999px;">PWA · 390px</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#54616D;background:#fff;border:1px solid #DCE3EA;padding:7px 13px;border-radius:999px;">Inter + Archivo</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#fff;background:#1B4D57;padding:7px 13px;border-radius:999px;">Mono-cor petróleo</span>
+      </div>
+    </div>
+
+    <div style="margin:40px 0 8px;display:grid;grid-template-columns:1.15fr 2fr;gap:20px;align-items:stretch;">
+
+  <div style="background:#16242F;border-radius:22px;padding:26px 26px 24px;color:#fff;position:relative;overflow:hidden;">
+    <div style="position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(43,90,102,.55),transparent 70%);"></div>
+    <div style="position:relative;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:16px;">Direção de design</div>
+      <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:21px;line-height:1.25;letter-spacing:-.02em;margin-bottom:16px;">Calmo, confiante,<br>quase nada de UI.</div>
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div style="display:flex;gap:11px;align-items:flex-start;"><div style="width:7px;height:7px;border-radius:50%;background:#3B8A99;margin-top:6px;flex:none;"></div><div style="font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.8);"><b style="color:#fff;">Um número manda.</b> Todo o resto serve a ele — hierarquia agressiva.</div></div>
+        <div style="display:flex;gap:11px;align-items:flex-start;"><div style="width:7px;height:7px;border-radius:50%;background:#3B8A99;margin-top:6px;flex:none;"></div><div style="font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.8);"><b style="color:#fff;">Respiro generoso.</b> Margens largas, poucos elementos por dobra.</div></div>
+        <div style="display:flex;gap:11px;align-items:flex-start;"><div style="width:7px;height:7px;border-radius:50%;background:#3B8A99;margin-top:6px;flex:none;"></div><div style="font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.8);"><b style="color:#fff;">Mono-cor.</b> Petróleo é a marca; verde/vinho só para sinal.</div></div>
+        <div style="display:flex;gap:11px;align-items:flex-start;"><div style="width:7px;height:7px;border-radius:50%;background:#3B8A99;margin-top:6px;flex:none;"></div><div style="font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.8);"><b style="color:#fff;">Shell fixo.</b> Header e tab fixos; só o miolo rola.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+    <div style="background:#fff;border-radius:18px;padding:20px 18px;border:1px solid #E5EBF0;display:flex;flex-direction:column;">
+      <div style="width:38px;height:38px;border-radius:11px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="2" stroke-linecap="round"><path d="M12 20V10M6 20v-6M18 20V4"/></svg></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1B4D57;margin-bottom:5px;">Fix 01</div>
+      <div style="font-weight:700;font-size:15px;color:#16242F;margin-bottom:7px;letter-spacing:-.01em;">O Hero</div>
+      <div style="font-size:12.5px;line-height:1.5;color:#54616D;">Antes: bloco lotado (saudação + label + número + ganho + resgate + frescor empilhados). Agora: hero imersivo só com o <b style="color:#16242F;">número-tese</b> e <b style="color:#16242F;">um</b> chip de ganho. Frescor e alocação viram cards brancos abaixo.</div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:20px 18px;border:1px solid #E5EBF0;display:flex;flex-direction:column;">
+      <div style="width:38px;height:38px;border-radius:11px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 6h2"/></svg></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1B4D57;margin-bottom:5px;">Fix 02</div>
+      <div style="font-weight:700;font-size:15px;color:#16242F;margin-bottom:7px;letter-spacing:-.01em;">Fim do "samba" no Safari</div>
+      <div style="font-size:12.5px;line-height:1.5;color:#54616D;">Shell <b style="color:#16242F;">position:fixed</b> com header e tab travados; um único miolo rola com <b style="color:#16242F;">overscroll-behavior:contain</b>. <b style="color:#16242F;">safe-area-inset</b> respeitada — sem bounce, sem barra pulando.</div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:20px 18px;border:1px solid #E5EBF0;display:flex;flex-direction:column;">
+      <div style="width:38px;height:38px;border-radius:11px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="15" width="18" height="6" rx="2"/><circle cx="7" cy="18" r="0.5" fill="#1B4D57"/></svg></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1B4D57;margin-bottom:5px;">Fix 03</div>
+      <div style="font-weight:700;font-size:15px;color:#16242F;margin-bottom:7px;letter-spacing:-.01em;">Tab bar maior</div>
+      <div style="font-size:12.5px;line-height:1.5;color:#54616D;">De 52px para <b style="color:#16242F;">64px + safe-area</b>. Ícones 24px, alvos de toque cheios, rótulos sempre visíveis e estado ativo em petróleo sólido.</div>
+    </div>
+  </div>
+
+</div>
+    <div style="display:flex;align-items:center;gap:16px;margin:54px 0 26px;">
+  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#fff;background:#16242F;padding:0 12px;height:32px;border-radius:9px;display:flex;align-items:center;letter-spacing:.02em;">Antes → Depois</span>
+  <div>
+    <div style="font-size:13.5px;color:#6B7783;">As duas mudanças de maior impacto, lado a lado.</div>
+  </div>
+  <div style="flex:1;height:1px;background:linear-gradient(90deg,#CDD6DE,transparent);"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px;">
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:20px;padding:22px;">
+    <div style="font-weight:700;font-size:15px;color:#16242F;margin-bottom:3px;letter-spacing:-.01em;">O Hero</div>
+    <div style="font-size:12.5px;color:#6B7783;margin-bottom:20px;">de bloco lotado a número que respira</div>
+    <div style="display:flex;align-items:stretch;gap:14px;">
+      <div style="flex:1;">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#DC2626;margin-bottom:8px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#DC2626;"></span>Antes</div>
+        <div style="border:1px solid #E8EDF1;border-radius:16px;overflow:hidden;background:#FBFCFD;height:230px;">
+          <div style="padding:9px 11px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #F0F3F6;"><div style="width:16px;height:16px;border-radius:5px;background:#16242F;"></div><span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;color:#16242F;">Quanto.</span><span style="font-size:8px;color:#94A3B8;margin-left:auto;">sex, 13 jun</span></div>
+          <div style="padding:9px 11px;">
+            <div style="font-size:11px;font-weight:700;color:#16242F;">Boa noite!</div>
+            <div style="font-size:7.5px;font-weight:700;letter-spacing:.05em;color:#94A3B8;margin-top:3px;">PATRIMONIO TOTAL</div>
+            <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:25px;color:#16242F;letter-spacing:-.02em;line-height:1.05;">R$ 159.153<span style="font-size:13px;color:#94A3B8;">,53</span></div>
+            <div style="font-size:9px;color:#16A34A;font-weight:600;margin-top:1px;">+ R$ 58.335 (57,9%) sobre o aplicado</div>
+            <div style="font-size:8.5px;color:#92500A;margin-top:4px;border-left:2px solid #D97706;padding-left:5px;">+ R$ 4.111,32 em resgate (não contabilizado)</div>
+            <div style="border:1px solid #E8EDF1;border-radius:8px;padding:7px 8px;margin-top:7px;">
+              <div style="display:flex;justify-content:space-between;font-size:8.5px;color:#16242F;font-weight:600;">Saldos manuais<span>10 de 11 em dia</span></div>
+              <div style="height:4px;background:#E8EDF1;border-radius:2px;margin-top:4px;"><div style="width:91%;height:100%;background:#2A5A66;border-radius:2px;"></div></div>
+              <div style="font-size:8px;color:#B7791F;margin-top:4px;">● Onze · Icatu Vanguarda há 35 dias</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;color:#B6C0CA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div style="flex:1;">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16A34A;margin-bottom:8px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A;"></span>Depois</div>
+        <div style="border:1px solid #E8EDF1;border-radius:16px;overflow:hidden;height:230px;background:#1B4D57;display:flex;flex-direction:column;">
+          <div style="padding:11px 13px 0;display:flex;align-items:center;justify-content:space-between;"><span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#fff;">Quanto<span style="color:#6FB7AE;">.</span></span><div style="width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.3);"></div></div>
+          <div style="padding:14px 13px;">
+            <div style="font-size:9.5px;color:rgba(255,255,255,.7);">Boa noite, Luiz</div>
+            <div style="font-size:7.5px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-top:12px;">PATRIMÔNIO TOTAL</div>
+            <div style="display:flex;align-items:baseline;gap:1px;margin-top:5px;"><span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;color:#fff;align-self:flex-start;">R$</span><span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;color:#fff;letter-spacing:-.03em;">159.153</span><span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;color:rgba(255,255,255,.6);">,53</span></div>
+            <div style="margin-top:12px;"><span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.14);padding:4px 9px;border-radius:999px;font-size:9px;font-weight:600;color:#fff;">▲ 57,9% · +R$ 58.335</span></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:14px;"><span style="width:5px;height:5px;border-radius:50%;background:#7FE3B0;"></span><span style="font-size:8px;color:rgba(255,255,255,.6);">cotações há 4 min</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:12px;line-height:1.5;color:#54616D;margin-top:16px;background:#F6F8FA;border-radius:11px;padding:11px 13px;">5 informações empilhadas brigando por atenção → <b style="color:#16242F;">1 número soberano</b> + 1 chip de ganho. Resgate, frescor e alocação descem para cards.</div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:20px;padding:22px;">
+    <div style="font-weight:700;font-size:15px;color:#16242F;margin-bottom:3px;letter-spacing:-.01em;">A tab bar</div>
+    <div style="font-size:12.5px;color:#6B7783;margin-bottom:20px;">alvos maiores, sem "samba" no Safari</div>
+    <div style="display:flex;align-items:stretch;gap:14px;">
+      <div style="flex:1;">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#DC2626;margin-bottom:8px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#DC2626;"></span>Antes</div>
+        <div style="border:1px solid #E8EDF1;border-radius:16px;overflow:hidden;height:230px;background:#FBFCFD;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="padding:0 11px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:7px;"><div style="height:7px;width:60%;background:#EAEFF4;border-radius:3px;"></div><div style="height:7px;width:80%;background:#EAEFF4;border-radius:3px;"></div><div style="height:7px;width:45%;background:#EAEFF4;border-radius:3px;"></div></div>
+          <div style="height:36px;border-top:1px solid #E8EDF1;display:flex;background:#fff;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="width:13px;height:13px;border:1.4px solid #2A5A66;border-radius:3px;"></div><span style="font-size:6px;color:#2A5A66;">Hoje</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="width:13px;height:13px;border:1.4px solid #B6C0CA;border-radius:3px;"></div><span style="font-size:6px;color:#B6C0CA;">Carteira</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="width:13px;height:13px;border:1.4px solid #B6C0CA;border-radius:3px;"></div><span style="font-size:6px;color:#B6C0CA;">Histórico</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="width:13px;height:13px;border:1.4px solid #B6C0CA;border-radius:3px;"></div><span style="font-size:6px;color:#B6C0CA;">Importar</span></div>
+          </div>
+        </div>
+        <div style="font-size:8.5px;color:#94A3B8;margin-top:6px;text-align:center;">52px · ícones 20px</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#B6C0CA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div style="flex:1;">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#16A34A;margin-bottom:8px;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A;"></span>Depois</div>
+        <div style="border:1px solid #E8EDF1;border-radius:16px;overflow:hidden;height:230px;background:#FBFCFD;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="padding:0 11px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:7px;"><div style="height:7px;width:60%;background:#EAEFF4;border-radius:3px;"></div><div style="height:7px;width:80%;background:#EAEFF4;border-radius:3px;"></div><div style="height:7px;width:45%;background:#EAEFF4;border-radius:3px;"></div></div>
+          <div style="height:58px;box-shadow:0 -1px 0 #EDF1F5;display:flex;background:#fff;padding-bottom:10px;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#1B4D57" stroke="#1B4D57" stroke-width="1.6"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font-size:8px;font-weight:600;color:#1B4D57;">Hoje</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="13" rx="3"/></svg><span style="font-size:8px;color:#94A3B8;">Carteira</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/></svg><span style="font-size:8px;color:#94A3B8;">Histórico</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/></svg><span style="font-size:8px;color:#94A3B8;">Importar</span></div>
+          </div>
+        </div>
+        <div style="font-size:8.5px;color:#16A34A;margin-top:6px;text-align:center;font-weight:600;">64px + safe-area · ícones 24px</div>
+      </div>
+    </div>
+    <div style="font-size:12px;line-height:1.5;color:#54616D;margin-top:16px;background:#F6F8FA;border-radius:11px;padding:11px 13px;">Shell <b style="color:#16242F;">fixo</b> (header + tab travados, só o miolo rola com <code style="font-size:11px;background:#E8EDF1;padding:1px 4px;border-radius:4px;">overscroll-behavior:contain</code>) elimina o bounce do Safari. Alvos de 64px respeitam a safe-area.</div>
+  </div>
+
+</div>
+
+    <div style="display:flex;align-items:center;gap:16px;margin:54px 0 28px;">
+  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#1B4D57;background:#E0F2F1;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;">01</span>
+  <div>
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">As 4 telas</div>
+    <div style="font-size:13.5px;color:#6B7783;margin-top:2px;">Hoje · Carteira · Histórico · Importar — navegação por tab bar fixa.</div>
+  </div>
+  <div style="flex:1;height:1px;background:linear-gradient(90deg,#CDD6DE,transparent);"></div>
+</div>
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Hoje</span>
+    <span style="font-size:12.5px;color:#8A949E;">a resposta em 10 segundos</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#1B4D57;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#1B4D57;padding:6px 22px 0;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;color:#fff;letter-spacing:-.02em;">Quanto<span style="color:#6FB7AE;">.</span></span>
+        <button style="width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+
+      <div data-scroll="1" style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
+
+        <div style="background:#1B4D57;border-radius:0 0 30px 30px;padding:18px 24px 30px;">
+          <div style="font-size:14px;color:rgba(255,255,255,.72);font-weight:500;">Boa noite, Luiz</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:18px 0 6px;">Patrimônio total</div>
+          <div style="display:flex;align-items:baseline;gap:1px;color:#fff;">
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:25px;letter-spacing:-.02em;align-self:flex-start;margin-top:7px;">R$</span>
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:48px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;">159.153</span>
+            <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;color:rgba(255,255,255,.6);letter-spacing:-.02em;">,53</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;color:#fff;"><svg width="11" height="11" viewBox="0 0 12 12" fill="#7FE3B0"><path d="M6 1l5 8H1z"/></svg>57,9% <span style="color:rgba(255,255,255,.7);font-weight:500;">· +R$ 58.335</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:16px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#7FE3B0;animation:qPulse 2s ease-in-out infinite;"></span>
+            <span style="font-size:11.5px;color:rgba(255,255,255,.62);">cotações atualizadas há 4 min</span>
+          </div>
+        </div>
+
+        <div style="padding:16px 18px 22px;display:flex;flex-direction:column;gap:14px;">
+
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #EAEFF3;border-radius:13px;padding:11px 14px;animation:qFade .5s ease both .05s;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#D97706;flex:none;"></span>
+            <span style="font-size:13px;color:#16242F;font-weight:600;">+ R$ 4.111 em resgate</span>
+            <span style="font-size:12px;color:#8A949E;">não contabilizado</span>
+            <svg style="margin-left:auto;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6C0CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 8px rgba(16,32,44,.05),0 .5px 2px rgba(16,32,44,.04);animation:qFade .5s ease both .12s;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <span style="font-size:14px;font-weight:600;color:#16242F;">Saldos manuais</span>
+              <span style="font-size:13px;font-weight:600;color:#64748B;">10 de 11 em dia</span>
+            </div>
+            <div style="height:7px;border-radius:4px;background:#E8EEF2;overflow:hidden;margin-bottom:14px;"><div style="width:91%;height:100%;background:#1B4D57;border-radius:4px;animation:qFill 1s ease both .2s;"></div></div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FEF6EC;border-radius:11px;padding:10px 12px;cursor:pointer;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.4 3.9a2 2 0 00-3.4 0z"/></svg>
+              <div style="line-height:1.3;"><div style="font-size:12.5px;font-weight:600;color:#92500A;">Onze · Icatu Vanguarda</div><div style="font-size:11.5px;color:#B07A2A;">sem atualizar há 35 dias</div></div>
+              <span style="margin-left:auto;font-size:12px;font-weight:600;color:#D97706;display:flex;align-items:center;gap:3px;">atualizar <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+            </div>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:16px 18px 18px;box-shadow:0 2px 8px rgba(16,32,44,.05),0 .5px 2px rgba(16,32,44,.04);animation:qFade .5s ease both .19s;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="font-size:14px;font-weight:600;color:#16242F;">Alocação</span>
+              <div style="display:flex;background:#EEF2F6;border-radius:999px;padding:3px;">
+                <span style="font-size:11.5px;font-weight:600;color:#16242F;background:#fff;padding:4px 11px;border-radius:999px;box-shadow:0 1px 2px rgba(16,32,44,.08);">Instituição</span>
+                <span style="font-size:11.5px;font-weight:600;color:#8A949E;padding:4px 11px;">Classe</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:18px;">
+              <div style="position:relative;width:138px;height:138px;flex:none;">
+                <svg viewBox="0 0 160 160" width="138" height="138" style="transform-origin:80px 80px;animation:qDonut .7s cubic-bezier(.2,.7,.3,1) both .25s;">
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#14B8A6" stroke-width="17" stroke-dasharray="174 339" stroke-dashoffset="0"/>
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#F97316" stroke-width="17" stroke-dasharray="117 339" stroke-dashoffset="-176"/>
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#7C3AED" stroke-width="17" stroke-dasharray="42 339" stroke-dashoffset="-294"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;color:#9AA4AE;">TOTAL</span>
+                  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;color:#16242F;letter-spacing:-.02em;">R$ 159k</span>
+                </div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#14B8A6;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">Onze</span><span style="font-size:13px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 82.561</span></div>
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#F97316;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">Itaú</span><span style="font-size:13px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 55.925</span></div>
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#7C3AED;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">XP</span><span style="font-size:13px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 20.748</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1B4D57" stroke="#1B4D57" stroke-width="1.6" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Número-tese domina</b> — 48px Archivo, ganho num único chip; nada compete.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Hero respira</b> — frescor e alocação descem para cards brancos.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Status bar imersiva</b> em petróleo — sem faixa branca quebrando o topo.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Gestos</b> — pull-to-refresh renova cotações; toque na fatia abre tooltip.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Carteira</span>
+    <span style="font-size:12.5px;color:#8A949E;">agrupar, filtrar, gerenciar</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#16242F;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#16242F;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;padding:6px 20px 14px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #EEF2F6;">
+        <div>
+          <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">Carteira</div>
+          <div style="font-size:12.5px;color:#64748B;margin-top:2px;">15 ativos · <span style="font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 159.153</span></div>
+        </div>
+        <button style="width:38px;height:38px;border-radius:50%;border:1px solid #E2E8F0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+
+      <div data-scroll="1" style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
+
+        <div style="padding:14px 20px 8px;">
+          <div style="display:flex;background:#EEF2F6;border-radius:999px;padding:3px;margin-bottom:12px;">
+            <span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#16242F;background:#fff;padding:7px;border-radius:999px;box-shadow:0 1px 2px rgba(16,32,44,.08);">Por instituição</span>
+            <span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#8A949E;padding:7px;">Por classe</span>
+          </div>
+          <div data-scroll="1" style="display:flex;gap:7px;overflow-x:auto;margin:0 -20px;padding:0 20px 12px;">
+            <span style="flex:none;font-size:12.5px;font-weight:600;color:#fff;background:#1B4D57;padding:6px 14px;border-radius:999px;">Todos</span>
+            <span style="flex:none;font-size:12.5px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:6px 14px;border-radius:999px;">XP</span>
+            <span style="flex:none;font-size:12.5px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:6px 14px;border-radius:999px;">Itaú</span>
+            <span style="flex:none;font-size:12.5px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:6px 14px;border-radius:999px;">Onze</span>
+            <span style="flex:none;font-size:12.5px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:6px 14px;border-radius:999px;">Ações</span>
+            <span style="flex:none;font-size:12.5px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:6px 14px;border-radius:999px;">Fundos</span>
+          </div>
+          <div style="display:flex;height:8px;border-radius:5px;overflow:hidden;background:#E8EEF2;">
+            <div style="width:51.9%;background:#14B8A6;"></div>
+            <div style="width:35.1%;background:#F97316;"></div>
+            <div style="width:13%;background:#7C3AED;"></div>
+          </div>
+        </div>
+
+        <div style="padding:0 20px;">
+
+          <div style="display:flex;align-items:center;gap:9px;padding:16px 0 4px;">
+            <span style="width:22px;height:22px;border-radius:50%;background:#7C3AED;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">X</span>
+            <span style="font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#64748B;flex:1;">XP</span>
+            <span style="font-size:13px;font-weight:700;color:#16242F;font-variant-numeric:tabular-nums;">R$ 20.748</span>
+          </div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;color:#94A3B8;padding:10px 0 2px;">AÇÕES</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">CPLE3 · Copel</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#1B4D57;background:#E0F2F1;padding:2px 5px;border-radius:4px;">AUTO</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;font-variant-numeric:tabular-nums;">28 cotas · R$ 14,61</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 409</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+9,5%</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">ITSA4 · Itaúsa</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#1B4D57;background:#E0F2F1;padding:2px 5px;border-radius:4px;">AUTO</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;font-variant-numeric:tabular-nums;">27 cotas · R$ 12,90</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 348</div><div style="font-size:11.5px;font-weight:600;color:#DC2626;">−6,9%</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">RANI3 · Irani</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#1B4D57;background:#E0F2F1;padding:2px 5px;border-radius:4px;">AUTO</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;font-variant-numeric:tabular-nums;">41 cotas · R$ 7,95</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 326</div><div style="font-size:11.5px;font-weight:600;color:#DC2626;">−12,6%</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;color:#94A3B8;padding:12px 0 2px;">PREVIDÊNCIA</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">AZ Quest Luce Prev</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#16A34A;background:#E7F6EC;padding:2px 5px;border-radius:4px;">MANUAL</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;">atualizado há 2 dias</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 12.362</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+23,6%</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;color:#94A3B8;padding:12px 0 2px;">FUNDOS</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Western Asset US 500</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#16A34A;background:#E7F6EC;padding:2px 5px;border-radius:4px;">MANUAL</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;">atualizado há 2 dias</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 4.563</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+9,9%</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:9px;padding:20px 0 4px;border-top:1px solid #E8EEF2;margin-top:6px;">
+            <span style="width:22px;height:22px;border-radius:50%;background:#14B8A6;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">O</span>
+            <span style="font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#64748B;flex:1;">ONZE</span>
+            <span style="font-size:13px;font-weight:700;color:#16242F;font-variant-numeric:tabular-nums;">R$ 82.561</span>
+          </div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;color:#94A3B8;padding:10px 0 2px;">PREVIDÊNCIA</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Schroder Icatu Prev</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#16A34A;background:#E7F6EC;padding:2px 5px;border-radius:4px;">MANUAL</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;">atualizado há 2 dias</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 23.968</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;background:#FEFBF5;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:8px;">
+            <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Icatu Vanguarda Pós</span><span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:#D97706;background:#FBEBD7;padding:2px 5px;border-radius:4px;">MANUAL</span></div><div style="font-size:11.5px;color:#D97706;margin-top:2px;font-weight:600;">há 35 dias — atualize</div></div>
+            <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 50.161</div></div>
+            <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          </div>
+
+          <div style="margin:18px 0 0;border-top:1.5px dashed #D7DEE5;padding-top:14px;">
+            <div style="display:flex;align-items:center;gap:9px;padding-bottom:4px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 4v5h-5"/></svg>
+              <span style="font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#DC2626;flex:1;">EM RESGATE</span>
+              <span style="font-size:13px;font-weight:700;color:#16242F;font-variant-numeric:tabular-nums;">R$ 4.111</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F4F7;">
+              <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Selection RF Light</span><span style="font-size:9px;font-weight:700;color:#7C3AED;background:#F3EEFD;padding:2px 5px;border-radius:4px;">XP</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;">resgate solicitado</div></div>
+              <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#64748B;font-variant-numeric:tabular-nums;">R$ 1.099</div></div>
+              <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
+              <div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Legacy Capital</span><span style="font-size:9px;font-weight:700;color:#7C3AED;background:#F3EEFD;padding:2px 5px;border-radius:4px;">XP</span></div><div style="font-size:11.5px;color:#8A949E;margin-top:2px;">resgate solicitado</div></div>
+              <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#64748B;font-variant-numeric:tabular-nums;">R$ 1.999</div></div>
+              <button style="width:26px;height:26px;border:none;background:none;color:#B6C0CA;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+            </div>
+          </div>
+
+          <div style="height:24px;"></div>
+        </div>
+      </div>
+
+      <div style="position:absolute;right:18px;bottom:104px;width:56px;height:56px;border-radius:18px;background:#1B4D57;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px -4px rgba(27,77,87,.55);z-index:6;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#E0F2F1" stroke="#1B4D57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Dots de instituição coloridos</b> (XP roxo, Itaú laranja, Onze teal) — leitura instantânea do grupo.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Ativo vencido destacado</b> em amber inline, não só no card de frescor — ação onde o olho está.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Densidade calibrada</b> — meta em 1 linha, hairlines sutis; lista longa sem cansar.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Gesto:</b> swipe no ativo manual → atalho "atualizar saldo"; FAB 56px sempre alcançável.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Histórico</span>
+    <span style="font-size:12.5px;color:#8A949E;">a foto mensal do patrimônio</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#16242F;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#16242F;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;padding:6px 20px 14px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #EEF2F6;">
+        <div>
+          <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">Histórico</div>
+          <div style="font-size:12.5px;color:#64748B;margin-top:2px;">foto automática todo dia 1</div>
+        </div>
+        <button style="width:38px;height:38px;border-radius:50%;border:1px solid #E2E8F0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+
+      <div data-scroll="1" style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:16px 18px 24px;">
+
+        <div style="background:#1B4D57;border-radius:18px;padding:18px 18px 14px;color:#fff;position:relative;overflow:hidden;animation:qFade .5s ease both;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+            <div>
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.55);">EVOLUÇÃO · 6 MESES</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
+                <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;color:#7FE3B0;">+15,3%</span>
+                <span style="font-size:13px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;">+R$ 21.153</span>
+              </div>
+            </div>
+          </div>
+          <svg viewBox="0 0 300 130" width="100%" height="128" style="display:block;margin-top:4px;overflow:visible;">
+            <defs>
+              <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FE3B0" stop-opacity=".35"/><stop offset="100%" stop-color="#7FE3B0" stop-opacity="0"/></linearGradient>
+            </defs>
+            <path d="M24,110 L75,93.7 L126,77.4 L177,58.7 L228,39.5 L279,24 L279,122 L24,122 Z" fill="url(#histArea)"/>
+            <polyline points="24,110 75,93.7 126,77.4 177,58.7 228,39.5 279,24" fill="none" stroke="#7FE3B0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="320" stroke-dashoffset="320" style="animation:qDraw 1.2s ease both .2s;"/>
+            <circle cx="24" cy="110" r="3" fill="#1B4D57" stroke="#7FE3B0" stroke-width="2"/>
+            <circle cx="75" cy="93.7" r="3" fill="#1B4D57" stroke="#7FE3B0" stroke-width="2"/>
+            <circle cx="126" cy="77.4" r="3" fill="#1B4D57" stroke="#7FE3B0" stroke-width="2"/>
+            <circle cx="177" cy="58.7" r="3" fill="#1B4D57" stroke="#7FE3B0" stroke-width="2"/>
+            <circle cx="228" cy="39.5" r="3" fill="#1B4D57" stroke="#7FE3B0" stroke-width="2"/>
+            <circle cx="279" cy="24" r="5" fill="#7FE3B0" stroke="#fff" stroke-width="2"/>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.5);padding:0 6px;margin-top:2px;"><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid #EEF2F6;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Junho 2026</div><div style="font-size:11.5px;color:#94A3B8;">atual</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:#16242F;font-variant-numeric:tabular-nums;">R$ 159.153</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+2,5% · +R$ 3.853</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid #EEF2F6;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Maio 2026</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 155.300</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+3,1% · +R$ 4.700</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid #EEF2F6;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Abril 2026</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 150.600</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+2,8% · +R$ 4.100</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid #EEF2F6;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Março 2026</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 146.500</div><div style="font-size:11.5px;font-weight:600;color:#16A34A;">+3,2% · +R$ 4.500</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid #EEF2F6;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Fevereiro 2026</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 142.000</div><div style="font-size:11.5px;font-weight:600;color:#DC2626;">−1,4% · −R$ 2.000</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 4px;">
+            <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#16242F;">Janeiro 2026</div><div style="font-size:11.5px;color:#94A3B8;">primeira foto</div></div>
+            <div style="text-align:right;"><div style="font-size:15px;font-weight:600;color:#16242F;font-variant-numeric:tabular-nums;">R$ 144.000</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Gráfico em hero petróleo</b> com área translúcida e linha que se desenha ao abrir — sensação de movimento.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Resumo no topo</b> — variação total do período antes de mergulhar na lista.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Mês por extenso</b> + rendimento absoluto e %; meses negativos em vinho para honestidade.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Importar</span>
+    <span style="font-size:12.5px;color:#8A949E;">onboarding rápido via planilha</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#16242F;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#16242F;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;padding:6px 20px 16px;border-bottom:1px solid #EEF2F6;">
+        <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;margin-bottom:16px;">Importar</div>
+        <div style="display:flex;align-items:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="width:28px;height:28px;border-radius:50%;background:#1B4D57;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span><span style="font-size:10.5px;font-weight:600;color:#16242F;">Upload</span></div>
+          <div style="flex:1;height:2px;background:#E2E8F0;margin:0 6px;position:relative;top:-9px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="width:28px;height:28px;border-radius:50%;background:#EEF2F6;color:#94A3B8;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;">2</span><span style="font-size:10.5px;font-weight:500;color:#94A3B8;">Revisão</span></div>
+          <div style="flex:1;height:2px;background:#E2E8F0;margin:0 6px;position:relative;top:-9px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="width:28px;height:28px;border-radius:50%;background:#EEF2F6;color:#94A3B8;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span><span style="font-size:10.5px;font-weight:500;color:#94A3B8;">Confirmar</span></div>
+        </div>
+      </div>
+
+      <div data-scroll="1" style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:22px 20px 24px;">
+
+        <div style="border:2px dashed #C7D2DC;border-radius:20px;background:#fff;padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;animation:qFade .5s ease both;">
+          <div style="width:64px;height:64px;border-radius:20px;background:#E0F2F1;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+          </div>
+          <div style="font-size:15.5px;font-weight:700;color:#16242F;letter-spacing:-.01em;margin-bottom:5px;">Arraste sua planilha</div>
+          <div style="font-size:13px;color:#64748B;margin-bottom:18px;">ou toque para selecionar do dispositivo</div>
+          <button style="background:#1B4D57;color:#fff;border:none;font-size:13.5px;font-weight:600;padding:11px 22px;border-radius:10px;cursor:pointer;">Selecionar arquivo</button>
+          <div style="font-size:11.5px;color:#94A3B8;margin-top:14px;">aceita .xlsx e .xls · até 5 MB</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #EAEFF3;border-radius:14px;padding:14px 16px;margin-top:14px;cursor:pointer;">
+          <div style="width:40px;height:40px;border-radius:11px;background:#E7F6EC;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg></div>
+          <div style="flex:1;"><div style="font-size:13.5px;font-weight:600;color:#16242F;">Baixar template</div><div style="font-size:12px;color:#8A949E;">modelo com 7 abas pré-formatadas</div></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+        </div>
+
+        <div style="background:#F1F5F9;border-radius:14px;padding:14px 16px;margin-top:14px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#64748B;margin-bottom:10px;">O TEMPLATE TRAZ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Ações/FIIs</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Fundos</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Previdência</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Tesouro</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Renda Fixa</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Poupança</span>
+            <span style="font-size:11.5px;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:999px;">Cofrinhos</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#E0F2F1" stroke="#1B4D57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Stepper fixo</b> sempre visível — o usuário sabe onde está nas 3 etapas.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Template logo abaixo</b> da dropzone — remove o atrito do "não sei o formato".</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Loading honesto</b> ("processando planilha…") + contadores prontos/alertas/erros na revisão.</span></div>
+    </div>
+  </div>
+</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;margin:58px 0 28px;">
+  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#1B4D57;background:#E0F2F1;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;">02</span>
+  <div>
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">Sheets de ação</div>
+    <div style="font-size:13.5px;color:#6B7783;margin-top:2px;">Bottom sheets sobem sobre a tela — saldo rápido, cadastro, edição e upload.</div>
+  </div>
+  <div style="flex:1;height:1px;background:linear-gradient(90deg,#CDD6DE,transparent);"></div>
+</div>
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Sheet A · Saldo</span>
+    <span style="font-size:12.5px;color:#8A949E;">atualização em 5 segundos</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="position:absolute;inset:0;padding:60px 20px;opacity:.5;">
+        <div style="height:18px;width:120px;background:#D6DEE6;border-radius:6px;margin-bottom:24px;"></div>
+        <div style="height:34px;background:#E4EAF0;border-radius:999px;margin-bottom:18px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;margin-bottom:12px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;margin-bottom:12px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(13,28,38,.5);backdrop-filter:blur(2px);"></div>
+
+      <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:14px 22px 30px;box-shadow:0 -16px 48px -12px rgba(11,22,32,.4);animation:qFade .4s ease both;">
+        <div style="width:38px;height:4px;border-radius:99px;background:#D7DEE5;margin:0 auto 18px;"></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;">
+          <div>
+            <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:#16242F;letter-spacing:-.01em;">Icatu Vanguarda Pós</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#14B8A6;"></span><span style="font-size:12.5px;color:#64748B;">Onze · Previdência</span></div>
+          </div>
+          <button style="width:32px;height:32px;border-radius:50%;border:none;background:#F1F5F9;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;background:#FEF6EC;border-radius:11px;padding:10px 13px;margin-bottom:18px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span style="font-size:12.5px;color:#92500A;font-weight:600;">sem atualizar há 35 dias</span>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:8px;">Novo saldo</div>
+        <div style="border:1.5px solid #1B4D57;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;color:#64748B;">R$</span>
+          <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:28px;color:#16242F;letter-spacing:-.02em;font-variant-numeric:tabular-nums;">50.840,00</span>
+          <span style="width:2px;height:30px;background:#1B4D57;margin-left:2px;animation:qPulse 1.1s steps(1) infinite;"></span>
+        </div>
+        <div style="font-size:12px;color:#94A3B8;margin-bottom:22px;">último: R$ 50.160,95 · há 35 dias</div>
+
+        <button style="width:100%;background:#1B4D57;color:#fff;border:none;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Salvar saldo</button>
+        <div style="text-align:center;font-size:11.5px;color:#94A3B8;">o frescor renova automaticamente ao salvar</div>
+
+        <div style="height:46px;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:5px;border-radius:99px;background:#16242F;"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Input gigante</b> em foco com teclado decimal — o único campo que importa.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Último valor + idade</b> visíveis para conferência; haptic ao salvar.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Sheet C · Cadastro</span>
+    <span style="font-size:12.5px;color:#8A949E;">novo ativo pelo FAB</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="position:absolute;inset:0;padding:60px 20px;opacity:.5;">
+        <div style="height:18px;width:120px;background:#D6DEE6;border-radius:6px;margin-bottom:24px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;margin-bottom:12px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(13,28,38,.5);backdrop-filter:blur(2px);"></div>
+
+      <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;top:78px;background:#fff;border-radius:26px 26px 0 0;display:flex;flex-direction:column;box-shadow:0 -16px 48px -12px rgba(11,22,32,.4);animation:qFade .4s ease both;overflow:hidden;">
+        <div style="padding:14px 22px 6px;">
+          <div style="width:38px;height:4px;border-radius:99px;background:#D7DEE5;margin:0 auto 16px;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:#16242F;letter-spacing:-.01em;">Novo ativo</div>
+            <button style="width:32px;height:32px;border-radius:50%;border:none;background:#F1F5F9;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div data-scroll-inner style="flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px 22px 0;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:9px;">Instituição</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px;">
+            <span style="font-size:13px;font-weight:600;color:#fff;background:#1B4D57;padding:8px 16px;border-radius:999px;display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#fff;"></span>XP</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Itaú</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Onze</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Outros</span>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:9px;">Classe</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px;">
+            <span style="font-size:13px;font-weight:600;color:#fff;background:#1B4D57;padding:8px 16px;border-radius:999px;">Ações/FII</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Fundo</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Previdência</span>
+            <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:8px 16px;border-radius:999px;">Tesouro</span>
+          </div>
+
+          <div style="display:flex;background:#EEF2F6;border-radius:999px;padding:3px;margin-bottom:20px;">
+            <span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#16242F;background:#fff;padding:9px;border-radius:999px;box-shadow:0 1px 2px rgba(16,32,44,.08);">Automático · ticker B3</span>
+            <span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#8A949E;padding:9px;">Manual</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Nome</div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#16242F;background:#fff;">Vale ON</div></div>
+            <div style="display:flex;gap:10px;">
+              <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Ticker</div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#16242F;background:#fff;">VALE3</div></div>
+              <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Quantidade</div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#16242F;background:#fff;font-variant-numeric:tabular-nums;">50</div></div>
+            </div>
+            <div><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Valor aplicado <span style="color:#94A3B8;font-weight:400;">(opcional)</span></div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#94A3B8;background:#fff;">R$ 0,00</div></div>
+          </div>
+          <div style="height:18px;"></div>
+        </div>
+
+        <div style="padding:14px 22px 30px;border-top:1px solid #EEF2F6;">
+          <button style="width:100%;background:#1B4D57;color:#fff;border:none;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:pointer;">Adicionar ativo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Botão fixo no rodapé</b> da sheet — sempre alcançável mesmo com a lista de campos rolando.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Campos condicionais</b> — auto mostra ticker/qtd, manual mostra saldo; nada irrelevante na tela.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Aviso de duplicata</b> não-bloqueante se o nome lembra um ativo já existente.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Sheet B · Edição</span>
+    <span style="font-size:12.5px;color:#8A949E;">editar, resgatar, remover</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="position:absolute;inset:0;padding:60px 20px;opacity:.5;">
+        <div style="height:18px;width:120px;background:#D6DEE6;border-radius:6px;margin-bottom:24px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;margin-bottom:12px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(13,28,38,.5);backdrop-filter:blur(2px);"></div>
+
+      <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;top:78px;background:#fff;border-radius:26px 26px 0 0;display:flex;flex-direction:column;box-shadow:0 -16px 48px -12px rgba(11,22,32,.4);animation:qFade .4s ease both;overflow:hidden;">
+        <div style="padding:14px 22px 6px;">
+          <div style="width:38px;height:4px;border-radius:99px;background:#D7DEE5;margin:0 auto 16px;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:#16242F;letter-spacing:-.01em;">Editar ativo</div>
+            <button style="width:32px;height:32px;border-radius:50%;border:none;background:#F1F5F9;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px 22px 0;">
+          <div style="display:flex;flex-direction:column;gap:13px;">
+            <div><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Nome</div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#16242F;background:#fff;">AZ Quest Luce Icatu Prev</div></div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px;">Instituição</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:600;color:#fff;background:#1B4D57;padding:7px 14px;border-radius:999px;">XP</span>
+                <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:7px 14px;border-radius:999px;">Itaú</span>
+                <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:7px 14px;border-radius:999px;">Onze</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px;">Classe</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:600;color:#fff;background:#1B4D57;padding:7px 14px;border-radius:999px;">Previdência</span>
+                <span style="font-size:13px;font-weight:500;color:#475569;background:#fff;border:1px solid #E2E8F0;padding:7px 14px;border-radius:999px;">Fundo</span>
+              </div>
+            </div>
+            <div><div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">Valor aplicado</div><div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;font-size:14px;color:#16242F;background:#fff;font-variant-numeric:tabular-nums;">R$ 10.000,00</div></div>
+          </div>
+
+          <div style="height:1px;background:#EEF2F6;margin:20px 0;"></div>
+
+          <div style="background:#FEF2F2;border:1px solid #FBD9D9;border-radius:13px;padding:14px;">
+            <div style="font-size:13px;font-weight:600;color:#991B1B;margin-bottom:3px;">Remover este ativo?</div>
+            <div style="font-size:12px;color:#B45454;margin-bottom:12px;">O histórico de patrimônio não é afetado.</div>
+            <div style="display:flex;gap:9px;">
+              <button style="flex:1;background:#fff;border:1px solid #E2E8F0;color:#475569;font-size:13px;font-weight:600;padding:10px;border-radius:10px;cursor:pointer;">Cancelar</button>
+              <button style="flex:1;background:#DC2626;border:none;color:#fff;font-size:13px;font-weight:600;padding:10px;border-radius:10px;cursor:pointer;">Remover</button>
+            </div>
+          </div>
+          <div style="height:18px;"></div>
+        </div>
+
+        <div style="padding:14px 22px 30px;border-top:1px solid #EEF2F6;">
+          <button style="width:100%;background:#1B4D57;color:#fff;border:none;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:pointer;">Salvar alterações</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Remoção com confirmação inline</b> (não um alert nativo) — destrutivo, mas reversível e calmo.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Resgate com 3 desfechos</b> (remover / voltou a ativo / em andamento) aparece aqui quando aplicável.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Sheet D · Upload</span>
+    <span style="font-size:12.5px;color:#8A949E;">processando a planilha</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="position:absolute;inset:0;padding:60px 20px;opacity:.5;">
+        <div style="height:18px;width:120px;background:#D6DEE6;border-radius:6px;margin-bottom:24px;"></div>
+        <div style="height:34px;background:#E4EAF0;border-radius:8px;margin-bottom:18px;"></div>
+        <div style="height:60px;background:#EAEFF4;border-radius:12px;"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(13,28,38,.5);backdrop-filter:blur(2px);"></div>
+
+      <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:14px 22px 30px;box-shadow:0 -16px 48px -12px rgba(11,22,32,.4);animation:qFade .4s ease both;">
+        <div style="width:38px;height:4px;border-radius:99px;background:#D7DEE5;margin:0 auto 18px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+          <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:#16242F;letter-spacing:-.01em;">Importar planilha</div>
+          <button style="width:32px;height:32px;border-radius:50%;border:none;background:#F1F5F9;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:13px;border:1px solid #EAEFF3;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+          <div style="width:42px;height:42px;border-radius:11px;background:#E7F6EC;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
+          <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:600;color:#16242F;">Quanto_ativos.xlsx</div><div style="font-size:12px;color:#8A949E;">24 KB · 7 abas</div></div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+        </div>
+
+        <div style="background:#F1F5F9;border-radius:14px;padding:18px 16px;margin-bottom:20px;display:flex;flex-direction:column;align-items:center;">
+          <svg width="30" height="30" viewBox="0 0 50 50" style="margin-bottom:12px;"><circle cx="25" cy="25" r="20" fill="none" stroke="#DCE3EA" stroke-width="5"/><circle cx="25" cy="25" r="20" fill="none" stroke="#1B4D57" stroke-width="5" stroke-linecap="round" stroke-dasharray="40 126" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="-90 25 25" to="270 25 25" dur="0.9s" repeatCount="indefinite"/></circle></svg>
+          <div style="font-size:13.5px;font-weight:600;color:#16242F;margin-bottom:3px;">Processando planilha…</div>
+          <div style="font-size:12px;color:#64748B;">identificando tipos e instituições</div>
+        </div>
+
+        <button style="width:100%;background:#C7D2DC;color:#fff;border:none;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:default;">Processando…</button>
+
+        <div style="height:46px;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:5px;border-radius:99px;background:#16242F;"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Arquivo confirmado</b> com tamanho e nº de abas antes de processar — confiança.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Estado de loading</b> com spinner e mensagem — sem tela congelada durante o parse.</span></div>
+    </div>
+  </div>
+</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;margin:58px 0 28px;">
+  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:#1B4D57;background:#E0F2F1;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;">03</span>
+  <div>
+    <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">Estados</div>
+    <div style="font-size:13.5px;color:#6B7783;margin-top:2px;">Primeiro uso · sem conexão · ocultar valores — os momentos que definem confiança.</div>
+  </div>
+  <div style="flex:1;height:1px;background:linear-gradient(90deg,#CDD6DE,transparent);"></div>
+</div>
+    <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Vazio · Onboarding</span>
+    <span style="font-size:12.5px;color:#8A949E;">primeiro acesso</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#16242F;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#16242F;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;padding:6px 20px 14px;border-bottom:1px solid #EEF2F6;">
+        <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#16242F;letter-spacing:-.02em;">Carteira</div>
+        <div style="font-size:12.5px;color:#94A3B8;margin-top:2px;">nenhum ativo ainda</div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 30px;text-align:center;">
+        <div style="width:104px;height:104px;border-radius:30px;background:linear-gradient(160deg,#E0F2F1,#F0F8F7);display:flex;align-items:center;justify-content:center;margin-bottom:26px;position:relative;">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg>
+          <div style="position:absolute;right:-6px;top:-6px;width:34px;height:34px;border-radius:50%;background:#1B4D57;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px -3px rgba(27,77,87,.5);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;color:#16242F;letter-spacing:-.02em;margin-bottom:8px;">Vamos montar sua carteira</div>
+        <div style="font-size:13.5px;line-height:1.55;color:#64748B;max-width:250px;margin-bottom:28px;">Adicione um ativo de cada vez ou traga tudo de uma planilha. Em minutos você vê o seu número.</div>
+        <button style="width:100%;background:#1B4D57;color:#fff;border:none;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar primeiro ativo</button>
+        <button style="width:100%;background:#fff;color:#1B4D57;border:1px solid #CADBD9;font-size:15px;font-weight:600;padding:15px;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>Importar planilha</button>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#E0F2F1" stroke="#1B4D57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Dois caminhos claros</b> — manual ou planilha — em vez de só um botão genérico.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Copy que promete valor</b> ("em minutos você vê seu número") em vez de só "vazio".</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Snapshot automático</b> no 1º ativo — o histórico já começa a contar.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Offline · Erro</span>
+    <span style="font-size:12.5px;color:#8A949E;">PWA sem conexão</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#1B4D57;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor" opacity=".5"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="13" viewBox="0 0 16 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l14 12M8 11.5l.01 0M4 7a6 6 0 016-1.5"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#1B4D57;padding:6px 22px 0;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;color:#fff;letter-spacing:-.02em;">Quanto<span style="color:#6FB7AE;">.</span></span>
+        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);padding:6px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:#fff;"><svg width="13" height="13" viewBox="0 0 16 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l14 12M8 11.5l.01 0"/></svg>offline</span>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
+        <div style="background:#1B4D57;border-radius:0 0 30px 30px;padding:18px 24px 28px;">
+          <div style="font-size:14px;color:rgba(255,255,255,.72);font-weight:500;">Boa noite, Luiz</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:18px 0 6px;">Patrimônio total</div>
+          <div style="display:flex;align-items:baseline;gap:1px;color:#fff;">
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:25px;letter-spacing:-.02em;align-self:flex-start;margin-top:7px;">R$</span>
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:48px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;">159.153</span>
+            <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;color:rgba(255,255,255,.6);letter-spacing:-.02em;">,53</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:14px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#B7791F;"></span>
+            <span style="font-size:11.5px;color:rgba(255,255,255,.62);">valores salvos · não atualizados agora</span>
+          </div>
+        </div>
+
+        <div style="padding:16px 18px 22px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;gap:12px;background:#FEF6EC;border:1px solid #F6E4CC;border-radius:14px;padding:14px 16px;align-items:flex-start;animation:qFade .5s ease both;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px;"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.4 3.9a2 2 0 00-3.4 0z"/></svg>
+            <div style="flex:1;">
+              <div style="font-size:13.5px;font-weight:700;color:#92500A;margin-bottom:3px;">Você está sem conexão</div>
+              <div style="font-size:12.5px;line-height:1.5;color:#A06A1E;">Mostrando o último estado salvo de <b>13 jun, 21:47</b>. Cotações da B3 voltam assim que reconectar.</div>
+              <button style="margin-top:11px;background:#D97706;color:#fff;border:none;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 4v5h-5"/></svg>Tentar novamente</button>
+            </div>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 8px rgba(16,32,44,.05),0 .5px 2px rgba(16,32,44,.04);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Alocação</span><span style="font-size:11.5px;color:#94A3B8;">cache de 13 jun</span></div>
+            <div style="display:flex;height:9px;border-radius:5px;overflow:hidden;background:#E8EEF2;"><div style="width:51.9%;background:#14B8A6;opacity:.85;"></div><div style="width:35.1%;background:#F97316;opacity:.85;"></div><div style="width:13%;background:#7C3AED;opacity:.85;"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:#64748B;"><span>Onze · Itaú · XP</span><span style="font-weight:600;color:#16242F;">R$ 159.153</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1B4D57" stroke="#1B4D57" stroke-width="1.6" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Nunca tela em branco</b> — offline mostra o último número salvo, com data explícita.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Honestidade do dado</b> — ponto âmbar e selo "offline" deixam claro que não é tempo-real.</span></div>
+    </div>
+  </div>
+</div>
+      <div style="display:flex;flex-direction:column;gap:18px;width:384px;">
+  <div style="display:flex;align-items:baseline;gap:9px;">
+    <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;color:#16242F;letter-spacing:-.01em;">Ocultar valores</span>
+    <span style="font-size:12.5px;color:#8A949E;">privacidade em público</span>
+  </div>
+
+  <div style="width:384px;border-radius:48px;padding:7px;background:linear-gradient(165deg,#26303b,#0c1620);box-shadow:0 40px 80px -34px rgba(11,22,32,.5),0 12px 30px -14px rgba(11,22,32,.32);">
+    <div style="border-radius:41px;overflow:hidden;background:#F8FAFC;height:820px;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif;">
+
+      <div style="height:46px;flex:none;background:#1B4D57;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:5;">
+        <span style="font:600 14px 'Inter';color:#fff;letter-spacing:-.01em;">9:41</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:92px;height:25px;background:#0a121b;border-radius:15px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:#fff;">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5l2-2.4a3 3 0 00-4 0zM4 6.6l1.6 1.7a6 6 0 014.8 0L12 6.6a8.5 8.5 0 00-8 0zM1.2 3.6L2.8 5.3a11 11 0 0110.4 0l1.6-1.7a13.3 13.3 0 00-13.6 0z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#1B4D57;padding:6px 22px 0;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;color:#fff;letter-spacing:-.02em;">Quanto<span style="color:#6FB7AE;">.</span></span>
+        <button style="width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7a9.7 9.7 0 015 1.4M22 12s-3.5 7-10 7a9.7 9.7 0 01-5-1.4"/><path d="M9.5 9.5a3 3 0 004.2 4.2"/><path d="M2 2l20 20"/></svg>
+        </button>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;">
+        <div style="background:#1B4D57;border-radius:0 0 30px 30px;padding:18px 24px 28px;">
+          <div style="font-size:14px;color:rgba(255,255,255,.72);font-weight:500;">Boa noite, Luiz</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:18px 0 8px;">Patrimônio total</div>
+          <div style="display:flex;align-items:center;gap:4px;color:#fff;">
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:25px;letter-spacing:-.02em;">R$</span>
+            <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:44px;letter-spacing:.04em;line-height:1;">••••••</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:16px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);padding:6px 13px;border-radius:999px;font-size:14px;font-weight:700;color:#fff;letter-spacing:.06em;">••••</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:16px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 9.5a3 3 0 004.2 4.2M2 2l20 20M6.7 6.7A10.5 10.5 0 002 12s3.5 7 10 7a9.8 9.8 0 005.3-1.6"/></svg>
+            <span style="font-size:11.5px;color:rgba(255,255,255,.62);">valores ocultos · toque no olho para revelar</span>
+          </div>
+        </div>
+
+        <div style="padding:16px 18px 22px;display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 8px rgba(16,32,44,.05),0 .5px 2px rgba(16,32,44,.04);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Saldos manuais</span><span style="font-size:13px;font-weight:600;color:#64748B;">10 de 11 em dia</span></div>
+            <div style="height:7px;border-radius:4px;background:#E8EEF2;overflow:hidden;"><div style="width:91%;height:100%;background:#1B4D57;border-radius:4px;"></div></div>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:16px 18px 18px;box-shadow:0 2px 8px rgba(16,32,44,.05),0 .5px 2px rgba(16,32,44,.04);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><span style="font-size:14px;font-weight:600;color:#16242F;">Alocação</span><span style="font-size:11.5px;color:#94A3B8;">proporções preservadas</span></div>
+            <div style="display:flex;align-items:center;gap:18px;">
+              <div style="position:relative;width:128px;height:128px;flex:none;">
+                <svg viewBox="0 0 160 160" width="128" height="128" style="transform:rotate(-90deg);">
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#14B8A6" stroke-width="17" stroke-dasharray="174 339" stroke-dashoffset="0"/>
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#F97316" stroke-width="17" stroke-dasharray="117 339" stroke-dashoffset="-176"/>
+                  <circle cx="80" cy="80" r="54" fill="none" stroke="#7C3AED" stroke-width="17" stroke-dasharray="42 339" stroke-dashoffset="-294"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;color:#9AA4AE;">TOTAL</span><span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;color:#16242F;letter-spacing:.04em;">••••</span></div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#14B8A6;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">Onze</span><span style="font-size:13px;font-weight:700;color:#16242F;letter-spacing:.04em;">••••</span></div>
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#F97316;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">Itaú</span><span style="font-size:13px;font-weight:700;color:#16242F;letter-spacing:.04em;">••••</span></div>
+                <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:#7C3AED;"></span><span style="font-size:13px;color:#334155;font-weight:500;flex:1;">XP</span><span style="font-size:13px;font-weight:700;color:#16242F;letter-spacing:.04em;">••••</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;background:#fff;box-shadow:0 -1px 0 #EDF1F5,0 -10px 28px -18px rgba(16,32,44,.2);padding:9px 12px 24px;display:flex;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1B4D57" stroke="#1B4D57" stroke-width="1.6" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg><span style="font:600 11px 'Inter';color:#1B4D57;">Hoje</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M16 12h2.5M2.5 10h19"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Carteira</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 6-7"/><path d="M18 8h3v3"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Histórico</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span style="font:500 11px 'Inter';color:#94A3B8;">Importar</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E5EBF0;border-radius:16px;padding:15px 17px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1B4D57;margin-bottom:11px;">Melhorias</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Donut mantém as proporções</b> — você lê a alocação sem revelar valores absolutos.</span></div>
+      <div style="display:flex;gap:9px;align-items:flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:12.5px;line-height:1.45;color:#3F4A55;"><b style="color:#16242F;">Toggle persistente</b> (localStorage) — fica oculto entre sessões até você revelar.</span></div>
+    </div>
+  </div>
+</div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){ return {}; }
+}
+</script>
+</body>
+</html>

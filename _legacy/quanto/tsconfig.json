@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "lib": ["ESNext"],
+    "types": ["@cloudflare/workers-types"],
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*.ts", "apps/**/*.ts", "packages/contracts/**/*.ts", "packages/domain/**/*.ts"],
+  "exclude": ["node_modules"]
+}

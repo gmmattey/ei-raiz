@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 100 100" width="512" height="512">
+  <!-- background -->
+  <rect width="100" height="100" rx="24" fill="#16242F"/>
+  <!-- Q arc -->
+  <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00"
+        fill="none" stroke="#FBFCFD" stroke-width="9"
+        stroke-linecap="round"/>
+  <!-- ascending bars (Q tail) -->
+  <rect x="66.5" y="56.0" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+    <rect x="74.5" y="48.0" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+    <rect x="82.5" y="40.0" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+</svg>

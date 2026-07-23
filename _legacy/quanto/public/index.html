@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111318">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Quanto">
+  <title>Quanto</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/quanto-icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/quanto-icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <svg viewBox="0 0 100 100" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <span class="login-wordmark">Quanto<em>.</em></span>
+    </div>
+    <p class="login-subtitle">Quanto você tem, de fato.</p>
+
+    <div id="login-form">
+      <div class="login-field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="email" placeholder="seu@email.com">
+      </div>
+      <div class="login-field">
+        <label for="login-password">Senha</label>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="sua senha">
+      </div>
+      <button class="btn-primary login-btn" id="login-btn">Entrar</button>
+      <div class="login-switch">Não tem conta? <a href="#" id="show-register">Criar conta</a></div>
+      <div class="login-switch"><a href="#" id="show-recover">Esqueci minha senha</a></div>
+    </div>
+
+    <div id="register-form" style="display:none">
+      <div class="login-field">
+        <label for="reg-name">Nome</label>
+        <input id="reg-name" type="text" autocomplete="name" placeholder="seu nome">
+      </div>
+      <div class="login-field">
+        <label for="reg-email">Email</label>
+        <input id="reg-email" type="email" autocomplete="email" placeholder="seu@email.com">
+      </div>
+      <div class="login-field">
+        <label for="reg-cpf">CPF <span class="field-hint">para recuperar a senha</span></label>
+        <input id="reg-cpf" type="text" inputmode="numeric" placeholder="000.000.000-00">
+      </div>
+      <div class="login-field">
+        <label for="reg-birth">Data de nascimento <span class="field-hint">para recuperar a senha</span></label>
+        <input id="reg-birth" type="date">
+      </div>
+      <div class="login-field">
+        <label for="reg-password">Senha</label>
+        <input id="reg-password" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+      </div>
+      <button class="btn-primary login-btn" id="register-btn">Criar conta</button>
+      <div class="login-switch">Já tem conta? <a href="#" id="show-login">Entrar</a> · <a href="#" id="show-recover-from-reg">Esqueci a senha</a></div>
+    </div>
+
+    <div id="recover-form" style="display:none">
+      <div class="login-field">
+        <label for="rec-email">Email</label>
+        <input id="rec-email" type="email" autocomplete="email" placeholder="seu@email.com">
+      </div>
+      <div class="login-field">
+        <label for="rec-cpf">CPF</label>
+        <input id="rec-cpf" type="text" inputmode="numeric" placeholder="000.000.000-00">
+      </div>
+      <div class="login-field">
+        <label for="rec-birth">Data de nascimento</label>
+        <input id="rec-birth" type="date" autocomplete="bday">
+      </div>
+      <div class="login-field">
+        <label for="rec-password">Nova senha</label>
+        <input id="rec-password" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+      </div>
+      <button class="btn-primary login-btn" id="recover-btn">Redefinir senha</button>
+      <div class="login-switch">Lembrou a senha? <a href="#" id="show-login-from-recover">Entrar</a></div>
+    </div>
+
+    <div class="login-error" id="login-error" style="display:none"></div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+
+  <header class="app-header">
+    <div class="header-brand">
+      <svg viewBox="0 0 100 100" width="28" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="100" height="100" rx="24" fill="#16242F"/>
+        <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+        <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+        <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+        <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+      </svg>
+      <span class="wordmark">Quanto<em>.</em></span>
+    </div>
+    <div class="header-right">
+      <span class="greeting-name" id="greeting-name"></span>
+      <button class="header-action dark-btn" id="dark-btn" aria-label="Alternar modo escuro">
+        <svg id="dark-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        <svg id="dark-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+      <button class="logout-btn" id="logout-btn" aria-label="Sair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+      <button class="eye-btn" id="eye-btn" aria-label="Ocultar valores">
+        <svg id="eye-icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <svg id="eye-icon-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="screens">
+    <div class="ptr-indicator" id="ptr-indicator">
+      <svg class="ptr-spinner" width="24" height="24" viewBox="0 0 50 50">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="var(--muted)" stroke-width="4"/>
+        <circle cx="25" cy="25" r="20" fill="none" stroke="var(--petro)" stroke-width="4"
+          stroke-linecap="round" stroke-dasharray="40 126"
+          transform="rotate(-90 25 25)">
+          <animateTransform attributeName="transform" type="rotate"
+            from="-90 25 25" to="270 25 25" dur="0.9s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+
+    <section class="screen" id="tela-hoje">
+      <div class="hero-skeleton" id="hero-skeleton">
+        <div class="skeleton" style="width:140px;height:16px;margin-bottom:12px"></div>
+        <div class="skeleton" style="width:60%;height:36px;margin-bottom:10px"></div>
+        <div class="skeleton" style="width:200px;height:14px;margin-bottom:24px"></div>
+        <div class="skeleton" style="width:100%;height:64px;border-radius:12px;margin-bottom:16px"></div>
+        <div class="skeleton" style="width:100%;height:180px;border-radius:12px"></div>
+      </div>
+      <div class="hero" id="hoje-hero">
+        <div id="hoje-greeting" class="hoje-greeting"></div>
+        <div class="kpi-label">Patrimônio total</div>
+        <div class="kpi-num" id="kpi-num">
+          <span class="v" id="kpi-inteiro">—</span><small class="v kpi-cents" id="kpi-centavos"></small>
+        </div>
+        <div class="kpi-delta v" id="kpi-delta"></div>
+        <div id="gross-wealth-wrap" hidden>
+          + <span id="gross-wealth">–</span> em bens → patrimônio total
+        </div>
+        <div class="redeem-note v" id="redeem-note" style="display:none"></div>
+        <div class="kpi-updated" id="kpi-updated"></div>
+      </div>
+
+      <div class="offline-banner" id="offline-banner" style="display:none">
+        <strong>Você está sem conexão</strong>
+        <p>Mostrando o último estado salvo. Cotações voltam assim que reconectar.</p>
+        <button id="offline-retry">↺ Tentar novamente</button>
+      </div>
+
+      <div class="fresh-card" id="fresh-card">
+        <div class="fresh-top">
+          <span class="fresh-title">Saldos manuais</span>
+          <span class="fresh-count" id="fresh-count"></span>
+        </div>
+        <div class="fresh-bar-track"><div class="fresh-bar-fill" id="fresh-bar-fill"></div></div>
+        <div class="fresh-warn" id="fresh-warn" style="display:none"></div>
+      </div>
+
+      <section class="benchmarks-bar card" id="benchmarks-bar" hidden>
+        <div class="benchmarks-label">Referências de mercado</div>
+        <div class="benchmarks-values">
+          <span class="bm-item"><span class="bm-name">CDI</span> <span class="bm-value" id="bm-cdi">–</span></span>
+          <span class="bm-sep">·</span>
+          <span class="bm-item"><span class="bm-name">SELIC</span> <span class="bm-value" id="bm-selic">–</span></span>
+          <span class="bm-sep">·</span>
+          <span class="bm-item"><span class="bm-name">IPCA 12m</span> <span class="bm-value" id="bm-ipca">–</span></span>
+        </div>
+        <span class="benchmarks-date" id="bm-date"></span>
+      </section>
+
+      <div class="alloc-header" id="hoje-alloc-header">
+        <span class="sec-title">Alocação</span>
+        <div class="toggle-pill">
+          <button class="toggle-pill-btn sel" id="dt-inst" data-mode="institution">Instituição</button>
+          <button class="toggle-pill-btn" id="dt-class" data-mode="class">Classe</button>
+        </div>
+      </div>
+
+      <div class="donut-wrap" id="donut-wrap">
+        <div class="donut-container">
+          <svg id="donut-svg" viewBox="0 0 160 160" width="160" height="160"></svg>
+          <div class="donut-center" id="donut-center">
+            <div class="dc-label">Total</div>
+            <div class="dc-val v" id="dc-val">—</div>
+          </div>
+        </div>
+      </div>
+      <div id="donut-legend" class="donut-legend"></div>
+      <div class="quote-info" id="quote-info" style="display:none"></div>
+      <button class="btn-analyze" id="btn-analyze-portfolio" style="display:none">✦ Analisar carteira</button>
+
+      <div class="empty-state" id="hoje-empty" style="display:none">
+        <div class="empty-icon">
+          <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="24" cy="24" r="20"/>
+            <path d="M16 28s2-4 8-4 8 4 8 4"/>
+            <line x1="18" y1="19" x2="18" y2="19.5"/>
+            <line x1="30" y1="19" x2="30" y2="19.5"/>
+          </svg>
+        </div>
+        <p class="empty-title">Carteira vazia</p>
+        <p class="empty-desc">Adicione seus ativos para ver o patrimônio consolidado.</p>
+        <button class="btn-primary" id="hoje-add-btn">Adicionar ativo</button>
+        <button class="btn-ghost" id="hoje-import-btn">Importar planilha</button>
+      </div>
+    </section>
+
+    <section class="screen" id="tela-carteira" style="display:none">
+      <div class="page-header">
+        <div class="page-header-left">
+          <svg viewBox="0 0 100 100" width="28" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="100" height="100" rx="24" fill="#16242F"/>
+            <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+            <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+            <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+            <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+          </svg>
+          <h1 class="page-title">Carteira</h1>
+        </div>
+        <div class="page-sub">
+          <span id="cart-count">0 ativos</span><br>
+          <strong class="v" id="cart-total"></strong>
+        </div>
+      </div>
+
+      <div class="toggle-pill" style="margin-bottom:12px">
+        <button class="toggle-pill-btn sel" id="ct-inst" data-mode="institution">Por instituição</button>
+        <button class="toggle-pill-btn" id="ct-class" data-mode="class">Por classe</button>
+      </div>
+
+      <div class="cart-search-wrap">
+        <input class="cart-search" id="cart-search" type="search" placeholder="Buscar ativo..." autocomplete="off">
+      </div>
+      <div class="filter-chips" id="cart-chips" role="group" aria-label="Filtros"></div>
+      <div class="stacked-bar" id="cart-bar"></div>
+      <div id="cart-list"></div>
+
+      <div class="empty-state" id="cart-empty" style="display:none">
+        <p class="empty-title">Nenhum ativo ainda</p>
+        <p class="empty-desc">Adicione manualmente ou importe uma planilha existente.</p>
+        <button class="btn-primary" id="cart-add-first">Adicionar ativo</button>
+        <button class="btn-ghost" id="cart-import-btn">Importar planilha</button>
+      </div>
+
+      <div class="empty-filter" id="cart-filter-empty" style="display:none">
+        <p>Nenhum ativo com esse filtro.</p>
+        <button class="btn-ghost" id="cart-clear-filter">Limpar filtro</button>
+      </div>
+
+      <button class="fab" id="fab-add" aria-label="Adicionar ativo">+</button>
+    </section>
+
+    <section class="screen" id="tela-historico" style="display:none">
+      <div class="page-header">
+        <div class="page-header-left">
+          <svg viewBox="0 0 100 100" width="28" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="100" height="100" rx="24" fill="#16242F"/>
+            <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+            <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+            <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+            <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+          </svg>
+          <h1 class="page-title">Histórico</h1>
+        </div>
+        <span class="page-sub-right">foto automática todo dia 1</span>
+      </div>
+
+      <div class="chart-card" id="chart-card" style="display:none">
+        <div class="chart-card-label">Evolução do patrimônio</div>
+        <div class="chart-wrap">
+          <svg id="hist-svg" viewBox="0 0 320 110" width="100%" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2A5A66" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#2A5A66" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chart-tip" id="chart-tip"></div>
+        </div>
+      </div>
+
+      <div class="hist-selic-cap" id="hist-selic-cap" hidden></div>
+      <div id="hist-list"></div>
+
+      <div class="hist-note">Foto tirada automaticamente pelo servidor no dia 1 de cada mês.</div>
+
+      <div class="empty-state" id="hist-empty" style="display:none">
+        <p>O histórico começa após o primeiro mês.</p>
+      </div>
+    </section>
+
+    <section class="screen" id="tela-importar" style="display:none">
+      <div class="page-header">
+        <div class="page-header-left">
+          <svg viewBox="0 0 100 100" width="28" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="100" height="100" rx="24" fill="#16242F"/>
+            <path d="M 50.80,63.92 A 22,22 0 1,1 66.00,43.00" fill="none" stroke="#FBFCFD" stroke-width="9" stroke-linecap="round"/>
+            <rect x="66.5" y="56" width="6.5" height="11" rx="2" fill="#2A5A66"/>
+            <rect x="74.5" y="48" width="6.5" height="19" rx="2" fill="#2A5A66"/>
+            <rect x="82.5" y="40" width="6.5" height="27" rx="2" fill="#1F7A4D"/>
+          </svg>
+          <h1 class="page-title">Importar</h1>
+        </div>
+        <span class="page-sub-right">planilha de ativos</span>
+      </div>
+
+      <div class="wizard-steps">
+        <div class="wstep active" id="ws-1"><span class="wstep-num">1</span>Upload</div>
+        <div class="wstep" id="ws-2"><span class="wstep-num">2</span>Revisão</div>
+        <div class="wstep" id="ws-3"><span class="wstep-num">3</span>Confirmar</div>
+      </div>
+
+      <div id="imp-step1">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="dropzone-text">Arraste sua planilha ou toque para selecionar</div>
+          <div class="dropzone-hint">Aceita .xlsx e .xls</div>
+          <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+        </div>
+        <div class="file-selected" id="file-info" style="display:none">
+          <div class="file-name" id="file-name"></div>
+          <div class="file-size" id="file-size"></div>
+        </div>
+        <div id="imp-processing" style="display:none">
+          <div class="loading-bar">
+            <div class="loading-pulse"></div>
+          </div>
+          <div class="loading-text">Processando planilha...</div>
+        </div>
+        <div id="btn-process" style="display:none">
+          <button class="btn-primary" id="process-btn">Processar arquivo</button>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          <a class="template-link" href="/template-quanto.xlsx" download="template-quanto.xlsx" target="_blank" rel="noopener">Baixar template modelo</a>
+        </div>
+      </div>
+
+      <div id="imp-step2" style="display:none">
+        <div class="imp-file-info" id="imp-file-info"></div>
+        <div id="imp-review-list"></div>
+        <div class="imp-counts" id="imp-counts"></div>
+        <button class="btn-primary" id="imp-continue-btn">Continuar</button>
+        <button class="btn-ghost" id="imp-back-btn">Voltar</button>
+      </div>
+
+      <div id="imp-step3" style="display:none">
+        <div class="confirm-summary" id="imp-summary"></div>
+        <div class="confirm-breakdown" id="imp-breakdown"></div>
+        <div class="confirm-desc">Os ativos serão adicionados à sua carteira. Itens com erro serão ignorados.</div>
+        <button class="btn-primary" id="imp-confirm-btn">Confirmar importação</button>
+        <button class="btn-ghost" id="imp-review-back-btn">Voltar para revisão</button>
+      </div>
+    </section>
+
+    <section id="screen-detail" class="screen" style="display:none" aria-label="Detalhe do Ativo">
+      <div class="detail-header">
+        <button class="btn-back" id="detail-back-btn">← Voltar</button>
+        <button class="btn-text-petro" id="detail-edit-btn">Editar</button>
+      </div>
+      <div id="detail-body" class="detail-body"></div>
+    </section>
+
+    <section id="tela-bens" class="screen" style="display:none" aria-label="Bens e Garantias">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title">Bens e Garantias</h1>
+        </div>
+        <span class="page-sub-right">FGTS · Imóveis · Veículos</span>
+      </div>
+      <div id="bens-body"></div>
+      <div class="empty-state" id="bens-empty" style="display:none">
+        <p class="empty-title">Nenhum bem registrado</p>
+        <p class="empty-desc">Registre seu FGTS, imóveis e veículos para ver o patrimônio bruto.</p>
+        <button class="btn-primary" id="bens-add-first">Adicionar bem</button>
+      </div>
+      <button class="fab" id="fab-bem-add" aria-label="Adicionar bem">+</button>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" role="tablist">
+    <button class="tab-item active" id="tab-hoje" data-tab="hoje" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span>Hoje</span>
+    </button>
+    <button class="tab-item" id="tab-carteira" data-tab="carteira" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 14h.01M11 14h2"/></svg>
+      <span>Carteira</span>
+    </button>
+    <button class="tab-item" id="tab-historico" data-tab="historico" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L9 12l4 4 7-9"/></svg>
+      <span>Histórico</span>
+    </button>
+    <button class="tab-item" id="tab-bens" data-tab="bens" role="tab" aria-selected="false">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>
+      <span>Bens</span>
+    </button>
+    <button class="tab-item" id="tab-importar" data-tab="importar" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Importar</span>
+    </button>
+  </nav>
+
+</div>
+
+<div class="sheet-overlay" id="sheet-overlay"></div>
+
+<div class="sheet" id="sheet-saldo" role="dialog" aria-modal="true" aria-label="Atualizar saldo">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sh-saldo-title">Atualizar saldo</div>
+    <div class="sheet-sub" id="sh-saldo-sub"></div>
+  </div>
+  <div class="sh-label">Saldo atual no app da instituição</div>
+  <div class="sh-input-wrap">
+    <span class="sh-prefix">R$</span>
+    <input class="sh-input" id="sh-saldo-input" type="text" inputmode="decimal" placeholder="0,00">
+  </div>
+  <div class="sh-hint" id="sh-saldo-hint"></div>
+  <button class="btn-primary" id="sh-saldo-save">Salvar saldo</button>
+  <button class="btn-ghost" id="sh-saldo-cancel">Cancelar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-edit" role="dialog" aria-modal="true" aria-label="Editar ativo">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sh-edit-title"></div>
+    <div class="sheet-sub" id="sh-edit-sub"></div>
+  </div>
+
+  <div id="sh-edit-normal">
+    <div class="sh-edit-balance-row" id="sh-edit-balance-row" style="display:none">
+      <div class="sh-edit-balance-label">Saldo atual</div>
+      <div class="sh-edit-balance-val v" id="sh-edit-balance-val">—</div>
+      <button class="btn-ghost btn-sm" id="sh-edit-update-saldo">Atualizar saldo</button>
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-edit-name">Nome do ativo</label>
+      <input class="sh-field-input" id="sh-edit-name" type="text" placeholder="Nome do ativo">
+    </div>
+    <div class="sh-label">Instituição</div>
+    <div class="chips" id="sh-edit-inst-chips">
+      <button class="chip sel" data-val="XP">XP</button>
+      <button class="chip" data-val="ITAU">Itaú</button>
+      <button class="chip" data-val="ONZE">Onze</button>
+      <button class="chip" data-val="OUTROS">Outros</button>
+    </div>
+    <div class="inst-name-row" id="sh-edit-inst-name-row">
+      <div class="sh-field">
+        <label class="sh-label" for="sh-edit-inst-name">Nome da instituição</label>
+        <input class="sh-field-input" id="sh-edit-inst-name" type="text" placeholder="ex: Nubank, BTG">
+      </div>
+    </div>
+    <div class="sh-label">Classe</div>
+    <div class="chips" id="sh-edit-class-chips">
+      <button class="chip sel" data-val="ACAO">Ação</button>
+      <button class="chip" data-val="FII">FII</button>
+      <button class="chip" data-val="FUNDO">Fundo</button>
+      <button class="chip" data-val="PREVIDENCIA">Previdência</button>
+      <button class="chip" data-val="TESOURO">Tesouro</button>
+      <button class="chip" data-val="RF">RF</button>
+      <button class="chip" data-val="POUPANCA">Poupança</button>
+      <button class="chip" data-val="COFRINHO">Cofrinho</button>
+    </div>
+    <div class="sh-field" id="sh-edit-ticker-row">
+      <label class="sh-label" for="sh-edit-ticker">Ticker B3</label>
+      <input class="sh-field-input" id="sh-edit-ticker" type="text" placeholder="ex: PETR4" style="text-transform:uppercase">
+    </div>
+    <div class="sh-field" id="sh-edit-qty-row">
+      <label class="sh-label" for="sh-edit-qty">Quantidade</label>
+      <input class="sh-field-input" id="sh-edit-qty" type="text" inputmode="decimal" placeholder="ex: 100">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-edit-invested">Valor aplicado (custo total)</label>
+      <input class="sh-field-input" id="sh-edit-invested" type="text" inputmode="decimal">
+    </div>
+    <button class="btn-primary" id="sh-edit-save">Salvar alterações</button>
+    <div class="sh-divider"></div>
+    <div class="confirm-area" id="sh-edit-confirm" style="display:none">
+      <div class="confirm-box">
+        <p>Remover? O histórico não será afetado.</p>
+        <div class="confirm-btns">
+          <button class="cb-cancel" id="sh-edit-confirm-cancel">Cancelar</button>
+          <button class="cb-confirm" id="sh-edit-confirm-ok">Remover</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-danger" id="sh-edit-remove">Remover ativo</button>
+  </div>
+
+  <div id="sh-edit-redeeming" style="display:none">
+    <div class="redeem-question">O que você quer fazer com essa saída?</div>
+    <button class="redeem-opt danger" id="sh-redeem-remove">
+      Concluir venda<small>Registre data e valor bruto da saída</small>
+    </button>
+    <button class="redeem-opt positive" id="sh-redeem-back">
+      Voltou para ativo<small>Status volta para ativo, atualize o saldo</small>
+    </button>
+    <button class="redeem-opt" id="sh-redeem-keep">
+      Ainda em andamento<small>Fecha sem alterar</small>
+    </button>
+  </div>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-add" role="dialog" aria-modal="true" aria-label="Adicionar ativo">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Adicionar ativo</div>
+    <div class="sheet-sub">preencha e salve</div>
+  </div>
+  <div class="sh-label">Instituição</div>
+  <div class="chips" id="sh-add-inst-chips">
+    <button class="chip sel" data-val="XP">XP</button>
+    <button class="chip" data-val="ITAU">Itaú</button>
+    <button class="chip" data-val="ONZE">Onze</button>
+    <button class="chip" data-val="OUTROS">Outros</button>
+  </div>
+  <div class="inst-name-row" id="sh-add-inst-name-row">
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-inst-name">Nome da instituição</label>
+      <input class="sh-field-input" id="sh-add-inst-name" type="text" placeholder="ex: Nubank, BTG">
+    </div>
+  </div>
+  <div class="sh-label">Classe</div>
+  <div class="chips" id="sh-add-class-chips">
+    <button class="chip sel" data-val="ACAO">Ação</button>
+    <button class="chip" data-val="FII">FII</button>
+    <button class="chip" data-val="FUNDO">Fundo</button>
+    <button class="chip" data-val="PREVIDENCIA">Previdência</button>
+    <button class="chip" data-val="TESOURO">Tesouro</button>
+    <button class="chip" data-val="RF">RF</button>
+    <button class="chip" data-val="POUPANCA">Poupança</button>
+    <button class="chip" data-val="COFRINHO">Cofrinho</button>
+  </div>
+  <div id="sh-add-fields-auto" style="display:none">
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-auto-name">Nome</label>
+      <input class="sh-field-input" id="sh-add-auto-name" type="text" placeholder="ex: Petrobras PN">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-ticker">Ticker B3</label>
+      <input class="sh-field-input" id="sh-add-ticker" type="text" placeholder="ex: PETR4" style="text-transform:uppercase">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-qty">Quantidade</label>
+      <input class="sh-field-input" id="sh-add-qty" type="text" inputmode="decimal" placeholder="ex: 100">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-auto-invested">Valor aplicado total</label>
+      <input class="sh-field-input" id="sh-add-auto-invested" type="text" inputmode="decimal" placeholder="ex: 3200,00">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-purchase-date">Data da compra</label>
+      <input class="sh-field-input" id="sh-add-purchase-date" type="date">
+    </div>
+  </div>
+  <div id="sh-add-fields-manual">
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-manual-name">Nome</label>
+      <input class="sh-field-input" id="sh-add-manual-name" type="text" placeholder="ex: Fundo Kinea RF">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-balance">Saldo atual (do app)</label>
+      <input class="sh-field-input" id="sh-add-balance" type="text" inputmode="decimal" placeholder="ex: 10800,00">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-manual-invested">Valor aplicado total</label>
+      <input class="sh-field-input" id="sh-add-manual-invested" type="text" inputmode="decimal" placeholder="ex: 10000,00">
+    </div>
+  </div>
+  <div id="sh-add-fields-cvm" style="display:none">
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-fund-search">Nome do fundo ou CNPJ</label>
+      <input class="sh-field-input" id="sh-add-fund-search" type="text" placeholder="ex: Icatu Vanguarda ou 12.345.678/0001-90" autocomplete="off">
+      <div class="fund-results" id="sh-add-fund-results" style="display:none"></div>
+    </div>
+    <div class="sh-field" id="sh-add-fund-selected" style="display:none">
+      <div class="fund-selected-name" id="sh-add-fund-name"></div>
+      <div class="fund-selected-cnpj" id="sh-add-fund-cnpj"></div>
+      <button class="btn-ghost btn-sm" id="sh-add-fund-clear" type="button">Trocar fundo</button>
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-cvm-balance">Saldo atual (do app da gestora)</label>
+      <input class="sh-field-input" id="sh-add-cvm-balance" type="text" inputmode="decimal" placeholder="ex: 10800,00">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-add-cvm-invested">Valor aplicado total</label>
+      <input class="sh-field-input" id="sh-add-cvm-invested" type="text" inputmode="decimal" placeholder="ex: 10000,00">
+    </div>
+  </div>
+  <div class="dup-warn" id="sh-add-dup-warn" style="display:none"></div>
+  <button class="btn-primary" id="sh-add-save">Adicionar ativo</button>
+  <button class="btn-ghost" id="sh-add-cancel">Cancelar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-aporte" role="dialog" aria-modal="true" aria-label="Registrar aporte">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Registrar Aporte</div>
+    <div class="sheet-sub" id="sh-aporte-sub"></div>
+  </div>
+  <div class="sh-label">Valor do aporte</div>
+  <div class="sh-input-wrap">
+    <span class="sh-prefix">R$</span>
+    <input class="sh-input" id="sh-aporte-amount" type="text" inputmode="decimal" placeholder="0,00">
+  </div>
+  <div class="sh-field" style="margin-top:12px">
+    <label class="sh-label" for="sh-aporte-date">Data</label>
+    <input class="sh-field-input" id="sh-aporte-date" type="date">
+  </div>
+  <div class="sh-field" id="sh-aporte-qty-row" style="display:none">
+    <label class="sh-label" for="sh-aporte-qty" id="sh-aporte-qty-label">Quantidade comprada</label>
+    <input class="sh-field-input" id="sh-aporte-qty" type="text" inputmode="decimal" placeholder="ex: 10">
+  </div>
+  <div class="sh-field">
+    <label class="sh-label" for="sh-aporte-note">Observação <span class="field-hint">opcional</span></label>
+    <input class="sh-field-input" id="sh-aporte-note" type="text" placeholder="ex: comprei na baixa" maxlength="200">
+  </div>
+  <div class="sh-hint" id="sh-aporte-err" style="display:none;color:var(--vinho)"></div>
+  <button class="btn-primary" id="sh-aporte-save">Registrar aporte</button>
+  <button class="btn-ghost" id="sh-aporte-cancel">Cancelar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-sale" role="dialog" aria-modal="true" aria-label="Concluir venda">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Concluir venda</div>
+    <div class="sheet-sub" id="sh-sale-sub"></div>
+  </div>
+  <div class="confirm-desc">A posição sairá do patrimônio atual, mas o histórico será preservado.</div>
+  <div class="sh-field">
+    <label class="sh-label" for="sh-sale-date">Data da venda</label>
+    <input class="sh-field-input" id="sh-sale-date" type="date">
+  </div>
+  <div class="sh-label">Valor bruto da venda</div>
+  <div class="sh-input-wrap">
+    <span class="sh-prefix">R$</span>
+    <input class="sh-input" id="sh-sale-gross" type="text" inputmode="decimal" placeholder="0,00">
+  </div>
+  <div class="sh-field">
+    <label class="sh-label" for="sh-sale-note">Observação <span class="field-hint">opcional</span></label>
+    <input class="sh-field-input" id="sh-sale-note" type="text" placeholder="ex: venda total para rebalancear" maxlength="200">
+  </div>
+  <div class="sh-hint" id="sh-sale-err" style="display:none;color:var(--vinho)"></div>
+  <button class="btn-primary" id="sh-sale-save">Concluir venda</button>
+  <button class="btn-ghost" id="sh-sale-cancel">Cancelar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-bem" role="dialog" aria-modal="true" aria-label="Adicionar bem">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sh-bem-title">Adicionar Bem</div>
+    <div class="sheet-sub">FGTS, Imóvel ou Veículo</div>
+  </div>
+  <div class="sh-label">Tipo</div>
+  <div class="chips" id="sh-bem-type-chips">
+    <button class="bem-type-chip chip" data-type="FGTS">FGTS</button>
+    <button class="bem-type-chip chip" data-type="IMOVEL">Imóvel</button>
+    <button class="bem-type-chip chip" data-type="VEICULO">Veículo</button>
+  </div>
+  <div class="sh-field">
+    <label class="sh-label" for="sh-bem-name">Nome</label>
+    <input class="sh-field-input" id="sh-bem-name" type="text" placeholder="ex: FGTS Empresa ABC">
+  </div>
+  <div class="sh-label">Valor estimado</div>
+  <div class="sh-input-wrap">
+    <span class="sh-prefix">R$</span>
+    <input class="sh-input" id="sh-bem-value" type="text" inputmode="decimal" placeholder="0,00">
+  </div>
+  <div id="sh-bem-fields-fgts" style="display:none">
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-employer">Empregador <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-employer" type="text" placeholder="ex: Empresa ABC">
+    </div>
+  </div>
+  <div id="sh-bem-fields-imovel" style="display:none">
+    <div class="sh-label">Tipo de imóvel</div>
+    <div class="chips" id="sh-bem-property-chips">
+      <button class="chip" data-val="APARTAMENTO">Apartamento</button>
+      <button class="chip" data-val="CASA">Casa</button>
+      <button class="chip" data-val="TERRENO">Terreno</button>
+      <button class="chip" data-val="SALA_COMERCIAL">Sala Comercial</button>
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-area">Área (m²) <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-area" type="text" inputmode="decimal" placeholder="ex: 78">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-city">Cidade <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-city" type="text" placeholder="ex: São Paulo">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-state">Estado (UF) <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-state" type="text" placeholder="SP" maxlength="2" style="text-transform:uppercase">
+    </div>
+    <div class="sh-field">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)">
+        <input type="checkbox" id="sh-bem-financed"> Ainda financiado
+      </label>
+    </div>
+  </div>
+  <div id="sh-bem-fields-veiculo" style="display:none">
+    <div class="sh-label">Tipo de veículo</div>
+    <div class="chips" id="sh-bem-vehicle-chips">
+      <button class="chip" data-val="CARRO">Carro</button>
+      <button class="chip" data-val="MOTO">Moto</button>
+      <button class="chip" data-val="UTILITARIO">Utilitário</button>
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-brand">Marca <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-brand" type="text" placeholder="ex: Honda">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-model">Modelo <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-model" type="text" placeholder="ex: Civic">
+    </div>
+    <div class="sh-field">
+      <label class="sh-label" for="sh-bem-year">Ano <span class="field-hint">opcional</span></label>
+      <input class="sh-field-input" id="sh-bem-year" type="text" inputmode="numeric" placeholder="ex: 2020">
+    </div>
+  </div>
+  <div class="sh-field">
+    <label class="sh-label" for="sh-bem-notes">Observação <span class="field-hint">opcional</span></label>
+    <input class="sh-field-input" id="sh-bem-notes" type="text" placeholder="" maxlength="500">
+  </div>
+  <div class="sh-hint" id="sh-bem-err" style="display:none;color:var(--vinho)"></div>
+  <button class="btn-primary" id="sh-bem-save">Salvar bem</button>
+  <button class="btn-ghost" id="sh-bem-cancel">Cancelar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="sheet" id="sheet-analyze" role="dialog" aria-modal="true" aria-label="Análise IA">
+  <div class="sheet-drag"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sh-analyze-title">Análise da Carteira</div>
+  </div>
+  <div id="sh-analyze-body">
+    <div id="sh-analyze-loading" style="text-align:center;padding:24px;color:var(--slate)">
+      <div class="loading-spinner" style="margin:0 auto 12px"></div>
+      <div>Analisando...</div>
+    </div>
+    <div id="sh-analyze-result" style="display:none"></div>
+  </div>
+  <div id="sh-analyze-disclaimer" class="analyze-disclaimer" style="display:none"></div>
+  <button class="btn-ghost" id="sh-analyze-close">Fechar</button>
+  <div class="home-indicator"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<script defer src="/app.js"></script>
+</body>
+</html>
