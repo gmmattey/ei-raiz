@@ -16,9 +16,10 @@ name: Ingestão CVM (diária)
 # Base URL padrão: EI_API_URL secret (se ausente, usa o default do script).
 
 on:
-  schedule:
-    # Todo dia às 02:00 BRT (UTC-3) = 05:00 UTC.
-    - cron: "0 5 * * *"
+  # Schedule desativado em 2026-07-23: EI_ADMIN_TOKEN expirado, falhando
+  # com 401 (nao_autenticado) todo dia. Reativar após renovar o secret.
+  # schedule:
+  #   - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
       mes:
