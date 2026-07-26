@@ -76,6 +76,13 @@ const paraAlocacaoSaida = (linhas: LinhaAlocacao[]): AlocacaoClasse[] => {
   return base.map((b, i) => ({ ...b, pesoPct: calculado[i].pesoPct }));
 };
 
+const normalizarCnpjPatrimonial = (valor: string): string | null => {
+  const cnpj = valor.replace(/\D/g, '');
+  return cnpj.length === 14 ? cnpj : null;
+};
+
+const aceitaCnpj = (tipo: TipoItemPatrimonio): boolean => tipo === 'fundo' || tipo === 'previdencia';
+
 export const servicoPatrimonio = (bd: Bd) => {
   const repo = repositorioPatrimonio(bd);
 
@@ -140,9 +147,23 @@ export const servicoPatrimonio = (bd: Bd) => {
 
     async criarItem(usuarioId: string, e: ItemPatrimonioCriarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {
       if (!e.tipo || !e.nome) return erro('dados_incompletos', 'Tipo e nome são obrigatórios', 400);
+      let ativoId = e.ativoId ?? null;
+      if (e.cnpj !== undefined && e.cnpj !== null) {
+        if (!aceitaCnpj(e.tipo)) return erro('cnpj_tipo_invalido', 'CNPJ só pode ser usado em fundos ou previdência', 400);
+        const cnpj = normalizarCnpjPatrimonial(e.cnpj);
+        if (!cnpj) return erro('cnpj_invalido', 'Informe um CNPJ com 14 dígitos', 400);
+        const existente = await repo.buscarAtivoPorCnpj(cnpj);
+        if (existente) ativoId = existente.id;
+        else {
+          await repo.inserirAtivoComCnpj(gerarId(), cnpj, e.tipo, e.nome);
+          const criado = await repo.buscarAtivoPorCnpj(cnpj);
+          if (!criado) return erro('ativo_nao_encontrado', 'Não foi possível vincular o CNPJ ao ativo', 500);
+          ativoId = criado.id;
+        }
+      }
       const id = gerarId();
       await repo.inserirItem(
-        id, usuarioId, e.ativoId ?? null, e.tipo, 'manual', e.nome,
+        id, usuarioId, ativoId, e.tipo, 'manual', e.nome,
         e.quantidade ?? null, e.precoMedioBrl ?? null, e.valorAtualBrl ?? null,
         e.moeda ?? 'BRL', JSON.stringify(e.dadosJson ?? {}),
       );
@@ -152,8 +173,27 @@ export const servicoPatrimonio = (bd: Bd) => {
     async atualizarItem(usuarioId: string, id: string, e: ItemPatrimonioAtualizarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {
       const atual = await repo.buscarItemBruto(usuarioId, id);
       if (!atual) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
+      let ativoId: string | null | undefined;
+      if (e.cnpj !== undefined) {
+        if (e.cnpj === null || e.cnpj.trim() === '') ativoId = null;
+        else {
+          const tipo = e.tipo ?? atual.tipo as TipoItemPatrimonio;
+          if (!aceitaCnpj(tipo)) return erro('cnpj_tipo_invalido', 'CNPJ só pode ser usado em fundos ou previdência', 400);
+          const cnpj = normalizarCnpjPatrimonial(e.cnpj);
+          if (!cnpj) return erro('cnpj_invalido', 'Informe um CNPJ com 14 dígitos', 400);
+          const existente = await repo.buscarAtivoPorCnpj(cnpj);
+          if (existente) ativoId = existente.id;
+          else {
+            await repo.inserirAtivoComCnpj(gerarId(), cnpj, tipo, e.nome ?? atual.nome);
+            const criado = await repo.buscarAtivoPorCnpj(cnpj);
+            if (!criado) return erro('ativo_nao_encontrado', 'Não foi possível vincular o CNPJ ao ativo', 500);
+            ativoId = criado.id;
+          }
+        }
+      }
       await repo.atualizarItem(id, usuarioId, {
         ...e,
+        ativoId,
         dadosJson: e.dadosJson !== undefined ? JSON.stringify(e.dadosJson) : undefined,
       });
       return this.obterItem(usuarioId, id);
