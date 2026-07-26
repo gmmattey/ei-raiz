@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -19,6 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.VisualTransformation
 import io.savro.designsystem.tema.SavroThemeTokens
 
@@ -68,6 +72,7 @@ fun SavroButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
+    loadingStateDescription: String,
     style: SavroButtonStyle = SavroButtonStyle.Primary,
 ) {
     val effectiveEnabled = enabled && !loading
@@ -90,13 +95,19 @@ fun SavroButton(
 
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier
+            .heightIn(min = SavroThemeTokens.components.buttonMinHeight)
+            .semantics { if (loading) stateDescription = loadingStateDescription },
         enabled = effectiveEnabled,
         colors = colors,
         shape = MaterialTheme.shapes.small,
     ) {
         if (loading) {
-            CircularProgressIndicator(color = loadingColor)
+            CircularProgressIndicator(
+                modifier = Modifier.size(SavroThemeTokens.components.buttonLoadingIndicatorSize),
+                color = loadingColor,
+                strokeWidth = SavroThemeTokens.components.buttonLoadingIndicatorStroke,
+            )
         } else {
             Text(text = label, style = MaterialTheme.typography.labelLarge)
         }

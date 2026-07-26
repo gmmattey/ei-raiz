@@ -61,6 +61,10 @@ internal object SavroPrimitiveElevation {
     val Level3 = 3.dp
 }
 
+internal object SavroPrimitiveStroke {
+    val Stroke2 = 2.dp
+}
+
 @Immutable
 data class SavroSpacing(
     val xxs: Dp,
@@ -95,6 +99,19 @@ data class SavroElevations(val card: Dp, val floating: Dp)
 internal val DefaultSavroElevations = SavroElevations(
     card = SavroPrimitiveElevation.Level1,
     floating = SavroPrimitiveElevation.Level3,
+)
+
+@Immutable
+data class SavroComponentMetrics(
+    val buttonMinHeight: Dp,
+    val buttonLoadingIndicatorSize: Dp,
+    val buttonLoadingIndicatorStroke: Dp,
+)
+
+internal val DefaultSavroComponentMetrics = SavroComponentMetrics(
+    buttonMinHeight = SavroPrimitiveSpace.Space48,
+    buttonLoadingIndicatorSize = SavroPrimitiveSpace.Space20,
+    buttonLoadingIndicatorStroke = SavroPrimitiveStroke.Stroke2,
 )
 
 @Immutable

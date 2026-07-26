@@ -55,6 +55,36 @@ Não há preview de pressionado: o estado transitório de interação não é de
 
 `#4772F5` é preservado como primitivo de marca e no gradiente. Como branco sobre ele mede 3,99:1, `ColorScheme.primary` usa `#3A5FE0`, que mede 5,11:1 com o conteúdo branco e satisfaz AA para o rótulo normal de botão. O teste `SavroTokensTest.primaryActionMeetsAaContrastWithPrimaryContent` bloqueia regressão. As sombras não traziam valor numérico verificável nos ZIPs; `SavroPrimitiveElevation` usa a aproximação explícita M3 de 1dp para card e 3dp para superfície flutuante, sem reutilizar raios como elevação.
 
+## Evidência visual em AVD
+
+As imagens abaixo foram capturadas no AVD `Pixel_10_Pro`, API do ambiente local, com o APK `devDebug` instalado. O AVD `Pixel_10` com 1,5 GB e renderer SwiftShader iniciou, mas ficou instável com indicadores animados; a captura verificável foi repetida no AVD alternativo. Nenhum ZIP, asset ou extração foi versionado.
+
+| Evidência | Cobertura | Arquivo |
+|---|---|---|
+| Topo e controles | tema, card, botão normal/desabilitado/loading/destrutivo, campo normal/erro e chips selecionado/não selecionado | `evidencias/117-J/avd-topo-controles.png` |
+| Estados e privacidade | loading, vazio, erro, offline e máscara; a imagem mostra somente `Conteúdo oculto`, nunca o valor de fixture | `evidencias/117-J/avd-estados-e-mascara.png` |
+| Fonte ampliada | mesma vitrine com `font_scale` do Android em 1,3 | `evidencias/117-J/avd-fonte-130.png` |
+
+![Topo e controles](../evidencias/117-J/avd-topo-controles.png)
+
+![Estados e máscara](../evidencias/117-J/avd-estados-e-mascara.png)
+
+![Fonte ampliada](../evidencias/117-J/avd-fonte-130.png)
+
+### Comparação contra as referências
+
+| Aspecto | Referência aplicável | Evidência Compose | Resultado |
+|---|---|---|---|
+| Fundo, superfície e gradiente | `Novo Esquilo.zip` prevalece para mobile | fundo navy, cards/superfícies azulados e ação primária azul | compatível; o gradiente foi tokenizado, mas não aplicado artificialmente a uma tela técnica |
+| Tipografia e escala | DS Esquilo | Manrope nos títulos e Inter no corpo; screenshot em 130% mantém leitura e espaçamento | compatível |
+| Botões, campo e chip | DS Esquilo | variantes e estados aparecem no AVD; loading conserva a altura de 48dp e usa indicador tokenizado | compatível |
+| Estados genéricos | ambos os ZIPs | loading, vazio, erro, offline e máscara exibidos sem dado financeiro | compatível, sem implementar jornada de produto |
+| Marca, navegação e landing | conflito identificado na auditoria | nenhuma marca Esquilo/7A, logo, navegação ou tela de produto foi renderizada | deliberadamente excluído; identidade Savro visual continua pendente |
+
+Além da evidência visual, `SavroPrivacyMaskInstrumentedTest` prova que o texto sensível não existe na árvore semântica quando oculto. `verifyDesignSystemTokens` permite literais somente em `SavroTokens.kt` e `SavroTheme.kt`; `SavroComponentsPreview.kt` é a única exceção de preview nomeada, e qualquer novo arquivo, inclusive em `tema/`, é verificado.
+
+O teste instrumentado foi compilado e enviado ao AVD `Pixel_10_Pro`, mas `connectedDebugAndroidTest` não concluiu em cinco minutos e não produziu XML de resultado; o runner/emulador permaneceu sem resposta. Portanto, essa execução não é declarada verde. As demais verificações Gradle desta entrega passaram e a prova visual do AVD foi capturada separadamente.
+
 ## Matriz tela → feature → componentes → estados → issue
 
 | Tela/jornada do protótipo | Feature futura | Primitivas compartilhadas | Estados observados | Issue responsável |

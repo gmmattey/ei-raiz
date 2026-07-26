@@ -20,6 +20,7 @@ private val LocalSavroOpacity = staticCompositionLocalOf { DefaultSavroOpacity }
 private val LocalSavroElevations = staticCompositionLocalOf { DefaultSavroElevations }
 private val LocalSavroGradients = staticCompositionLocalOf { DefaultSavroGradients }
 private val LocalSavroSemanticColors = staticCompositionLocalOf { DefaultSavroSemanticColors }
+private val LocalSavroComponentMetrics = staticCompositionLocalOf { DefaultSavroComponentMetrics }
 
 @Composable
 fun SavroTheme(content: @Composable () -> Unit) {
@@ -29,6 +30,7 @@ fun SavroTheme(content: @Composable () -> Unit) {
         LocalSavroElevations provides DefaultSavroElevations,
         LocalSavroGradients provides DefaultSavroGradients,
         LocalSavroSemanticColors provides DefaultSavroSemanticColors,
+        LocalSavroComponentMetrics provides DefaultSavroComponentMetrics,
     ) {
         MaterialTheme(
             colorScheme = SavroDarkColorScheme,
@@ -50,4 +52,6 @@ object SavroThemeTokens {
         @Composable @ReadOnlyComposable get() = LocalSavroGradients.current
     val colors: SavroSemanticColors
         @Composable @ReadOnlyComposable get() = LocalSavroSemanticColors.current
+    val components: SavroComponentMetrics
+        @Composable @ReadOnlyComposable get() = LocalSavroComponentMetrics.current
 }

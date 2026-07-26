@@ -25,6 +25,13 @@ private val allowedProductionDependencies = mapOf(
 )
 
 private val designSystemSourceDirectory = "core/designsystem/src/main"
+private val canonicalDesignSystemTokenFiles = setOf(
+    "core/designsystem/src/main/java/io/savro/designsystem/tema/SavroTokens.kt",
+    "core/designsystem/src/main/java/io/savro/designsystem/tema/SavroTheme.kt",
+)
+private val canonicalDesignSystemPreviewFiles = setOf(
+    "core/designsystem/src/main/java/io/savro/designsystem/componentes/SavroComponentsPreview.kt",
+)
 private val forbiddenDesignSystemComponentLiterals = listOf(
     Regex("Color\\s*\\("),
     Regex("Color\\."),
@@ -160,8 +167,8 @@ tasks.register("verifyDesignSystemTokens") {
             .filter { file ->
                 file.isFile &&
                     file.extension == "kt" &&
-                    !file.invariantSeparatorsPath.contains("/tema/") &&
-                    !file.name.endsWith("Preview.kt")
+                    file.relativeTo(rootProject.projectDir).invariantSeparatorsPath !in canonicalDesignSystemTokenFiles &&
+                    file.relativeTo(rootProject.projectDir).invariantSeparatorsPath !in canonicalDesignSystemPreviewFiles
             }
             .flatMap { file ->
                 file.readLines().mapIndexedNotNull { index, line ->

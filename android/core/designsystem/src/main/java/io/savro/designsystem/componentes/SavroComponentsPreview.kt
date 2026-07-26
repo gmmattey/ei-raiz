@@ -15,10 +15,10 @@ import io.savro.designsystem.tema.SavroThemeTokens
 @Composable
 private fun ButtonVariantsPreview() = SavroPreview {
     Column(verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
-        SavroButton(label = "Padrão", onClick = {}, modifier = Modifier.fillMaxWidth())
-        SavroButton(label = "Desabilitado", onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth())
-        SavroButton(label = "Carregando", onClick = {}, loading = true, modifier = Modifier.fillMaxWidth())
-        SavroButton(label = "Erro", onClick = {}, style = SavroButtonStyle.Destructive, modifier = Modifier.fillMaxWidth())
+        SavroButton(label = "Padrão", onClick = {}, loadingStateDescription = "", modifier = Modifier.fillMaxWidth())
+        SavroButton(label = "Desabilitado", onClick = {}, enabled = false, loadingStateDescription = "", modifier = Modifier.fillMaxWidth())
+        SavroButton(label = "Carregando", onClick = {}, loading = true, loadingStateDescription = "Carregando", modifier = Modifier.fillMaxWidth())
+        SavroButton(label = "Erro", onClick = {}, loadingStateDescription = "", style = SavroButtonStyle.Destructive, modifier = Modifier.fillMaxWidth())
     }
 }
 
