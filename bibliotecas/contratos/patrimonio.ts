@@ -6,6 +6,7 @@ export type TipoItemPatrimonio =
 
 export type OrigemItemPatrimonio = 'manual' | 'importacao' | 'vinculo_corretora' | 'sincronizado';
 export type EstadoValorPatrimonial = 'cotacao' | 'manual' | 'indisponivel';
+export type LifecycleItemPatrimonio = 'ativo' | 'em_resgate' | 'em_saida' | 'vendido' | 'encerrado' | 'arquivado';
 
 export type TipoAporte = 'aporte' | 'retirada' | 'transferencia' | 'ajuste';
 export type TipoMovimentoPatrimonial = 'compra' | 'venda' | 'aporte' | 'retirada' | 'transferencia' | 'resgate' | 'ajuste' | 'correcao';
@@ -14,6 +15,9 @@ export interface ItemPatrimonioSaida {
   id: string;
   usuarioId: string;
   ativoId: string | null;
+  corretoraId: string | null;
+  corretoraNome: string | null;
+  lifecycleStatus: LifecycleItemPatrimonio;
   tipo: TipoItemPatrimonio;
   origem: OrigemItemPatrimonio;
   nome: string;
@@ -39,6 +43,8 @@ export interface ItemPatrimonioSaida {
 
 export interface ItemPatrimonioCriarEntrada {
   ativoId?: string | null;
+  corretoraId?: string | null;
+  lifecycleStatus?: LifecycleItemPatrimonio;
   cnpj?: string | null;
   tipo: TipoItemPatrimonio;
   nome: string;
@@ -51,6 +57,8 @@ export interface ItemPatrimonioCriarEntrada {
 
 export interface ItemPatrimonioAtualizarEntrada {
   cnpj?: string | null;
+  corretoraId?: string | null;
+  lifecycleStatus?: LifecycleItemPatrimonio;
   tipo?: TipoItemPatrimonio;
   nome?: string;
   quantidade?: number | null;
