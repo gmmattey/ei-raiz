@@ -8,6 +8,7 @@ import type {
   ImportacaoSaida, ImportacaoCriarEntrada, ImportacaoConfirmarSaida,
   MovimentoPatrimonialSaida, TipoMovimentoPatrimonial,
   ReconstrucaoHistoricoSaida,
+  LifecycleItemPatrimonio,
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
@@ -30,6 +31,9 @@ const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida =
     id: l.item_id,
     usuarioId: l.usuario_id,
     ativoId: l.ativo_id,
+    corretoraId: l.corretora_id,
+    corretoraNome: l.corretora_nome,
+    lifecycleStatus: l.lifecycle_status as LifecycleItemPatrimonio,
     tipo: l.tipo as TipoItemPatrimonio,
     origem: l.origem as OrigemItemPatrimonio,
     nome: l.nome,
@@ -285,7 +289,7 @@ export const servicoPatrimonio = (bd: Bd) => {
       const id = gerarId();
       const dadosJson = JSON.stringify(e.dadosJson ?? {});
       await repo.inserirItemComMovimento(
-        id, usuarioId, ativoId, e.tipo, 'manual', e.nome,
+        id, usuarioId, ativoId, e.corretoraId ?? null, e.lifecycleStatus ?? 'ativo', e.tipo, 'manual', e.nome,
         e.quantidade ?? null, e.precoMedioBrl ?? null, e.valorAtualBrl ?? null,
         e.moeda ?? 'BRL', dadosJson,
         gerarId(), tipoMovimentoInicial(e.tipo), new Date().toISOString().slice(0, 10),

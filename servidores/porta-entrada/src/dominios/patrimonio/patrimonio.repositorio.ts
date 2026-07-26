@@ -20,6 +20,9 @@ export interface LinhaPosicao {
   origem: string;
   nome: string;
   ativo_id: string | null;
+  corretora_id: string | null;
+  corretora_nome: string | null;
+  lifecycle_status: string;
   ticker: string | null;
   cnpj: string | null;
   classe: string | null;
@@ -164,7 +167,8 @@ export const repositorioPatrimonio = (bd: Bd) => ({
   async posicoes(usuarioId: string): Promise<LinhaPosicao[]> {
     return bd.consultar<LinhaPosicao>(
       `SELECT
-         i.id AS item_id, i.usuario_id, i.tipo, i.origem, i.nome, i.ativo_id,
+         i.id AS item_id, i.usuario_id, i.tipo, i.origem, i.nome, i.ativo_id, i.corretora_id,
+         c.nome AS corretora_nome, i.lifecycle_status,
          a.ticker, a.cnpj, a.classe, a.subclasse, i.quantidade, i.preco_medio_brl,
          COALESCE(c_cvm.preco_brl, c_brapi.preco_brl) AS preco_atual_brl,
          COALESCE(c_cvm.cotado_em, c_brapi.cotado_em) AS preco_atualizado_em,
@@ -187,6 +191,7 @@ export const repositorioPatrimonio = (bd: Bd) => ({
          i.criado_em, i.atualizado_em
        FROM patrimonio_itens i
        LEFT JOIN ativos a ON a.id = i.ativo_id
+       LEFT JOIN corretoras c ON c.id = i.corretora_id
        LEFT JOIN ativos_cotacoes_cache c_cvm ON c_cvm.ativo_id = i.ativo_id AND c_cvm.fonte = 'cvm'
        LEFT JOIN ativos_cotacoes_cache c_brapi ON c_brapi.ativo_id = i.ativo_id AND c_brapi.fonte = 'brapi'
        WHERE i.usuario_id = ? AND i.esta_ativo = 1
@@ -240,20 +245,20 @@ export const repositorioPatrimonio = (bd: Bd) => ({
   },
 
   async inserirItem(
-    id: string, usuarioId: string, ativoId: string | null, tipo: string, origem: string,
+    id: string, usuarioId: string, ativoId: string | null, corretoraId: string | null, lifecycleStatus: string, tipo: string, origem: string,
     nome: string, quantidade: number | null, precoMedioBrl: number | null, valorAtualBrl: number | null,
     moeda: string, dadosJson: string,
   ): Promise<void> {
     await bd.executar(
       `INSERT INTO patrimonio_itens
-         (id, usuario_id, ativo_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      id, usuarioId, ativoId, tipo, origem, nome, quantidade, precoMedioBrl, valorAtualBrl, moeda, dadosJson,
+         (id, usuario_id, ativo_id, corretora_id, lifecycle_status, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, usuarioId, ativoId, corretoraId, lifecycleStatus, tipo, origem, nome, quantidade, precoMedioBrl, valorAtualBrl, moeda, dadosJson,
     );
   },
 
   async inserirItemComMovimento(
-    id: string, usuarioId: string, ativoId: string | null, tipo: string, origem: string,
+    id: string, usuarioId: string, ativoId: string | null, corretoraId: string | null, lifecycleStatus: string, tipo: string, origem: string,
     nome: string, quantidade: number | null, precoMedioBrl: number | null, valorAtualBrl: number | null,
     moeda: string, dadosJson: string,
     movimentoId: string, tipoMovimento: string, dataMovimento: string,
@@ -261,9 +266,9 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     await bd.emLote([
       {
         sql: `INSERT INTO patrimonio_itens
-                (id, usuario_id, ativo_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        valores: [id, usuarioId, ativoId, tipo, origem, nome, quantidade, precoMedioBrl, valorAtualBrl, moeda, dadosJson],
+                (id, usuario_id, ativo_id, corretora_id, lifecycle_status, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        valores: [id, usuarioId, ativoId, corretoraId, lifecycleStatus, tipo, origem, nome, quantidade, precoMedioBrl, valorAtualBrl, moeda, dadosJson],
       },
       {
         sql: `INSERT INTO patrimonio_movimentos
@@ -278,6 +283,7 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     id: string, usuarioId: string,
     campos: {
       ativoId?: string | null;
+      corretoraId?: string | null; lifecycleStatus?: string;
       tipo?: string; nome?: string; quantidade?: number | null;
       precoMedioBrl?: number | null; valorAtualBrl?: number | null;
       moeda?: string; estaAtivo?: boolean; dadosJson?: string;
@@ -287,6 +293,8 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     const vals: unknown[] = [];
     const set = (col: string, v: unknown) => { partes.push(`${col} = ?`); vals.push(v); };
     if (campos.ativoId !== undefined) set('ativo_id', campos.ativoId);
+    if (campos.corretoraId !== undefined) set('corretora_id', campos.corretoraId);
+    if (campos.lifecycleStatus !== undefined) set('lifecycle_status', campos.lifecycleStatus);
     if (campos.tipo !== undefined) set('tipo', campos.tipo);
     if (campos.nome !== undefined) set('nome', campos.nome);
     if (campos.quantidade !== undefined) set('quantidade', campos.quantidade);
@@ -308,6 +316,7 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     id: string, usuarioId: string,
     campos: {
       ativoId?: string | null;
+      corretoraId?: string | null; lifecycleStatus?: string;
       tipo?: string; nome?: string; quantidade?: number | null;
       precoMedioBrl?: number | null; valorAtualBrl?: number | null;
       moeda?: string; estaAtivo?: boolean; dadosJson?: string;
@@ -318,6 +327,8 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     const vals: unknown[] = [];
     const set = (col: string, v: unknown) => { partes.push(`${col} = ?`); vals.push(v); };
     if (campos.ativoId !== undefined) set('ativo_id', campos.ativoId);
+    if (campos.corretoraId !== undefined) set('corretora_id', campos.corretoraId);
+    if (campos.lifecycleStatus !== undefined) set('lifecycle_status', campos.lifecycleStatus);
     if (campos.tipo !== undefined) set('tipo', campos.tipo);
     if (campos.nome !== undefined) set('nome', campos.nome);
     if (campos.quantidade !== undefined) set('quantidade', campos.quantidade);
