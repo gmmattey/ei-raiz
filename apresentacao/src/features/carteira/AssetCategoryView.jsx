@@ -99,8 +99,12 @@ function adaptarItemCategoria(item, categoriaLegacy) {
     rentabilidadeDesdeAquisicaoPct: item.rentabilidadePct,
     rentabilidade_desde_aquisicao_pct: item.rentabilidadePct,
     rentabilidadeConfiavel: item.rentabilidadePct != null,
-    statusAtualizacao: item.precoAtualBrl != null ? "atualizado" : "indisponivel",
-    status_atualizacao: item.precoAtualBrl != null ? "atualizado" : "indisponivel",
+    estadoValor: item.estadoValor ?? (item.precoAtualBrl != null ? "cotacao" : "indisponivel"),
+    fonteCotacao: item.fonteCotacao ?? null,
+    cotacaoReferenciaEm: item.cotacaoReferenciaEm ?? null,
+    cotacaoAtualizadaEm: item.cotacaoAtualizadaEm ?? null,
+    statusAtualizacao: item.estadoValor === "manual" ? "manual" : item.precoAtualBrl != null ? "atualizado" : "indisponivel",
+    status_atualizacao: item.estadoValor === "manual" ? "manual" : item.precoAtualBrl != null ? "atualizado" : "indisponivel",
     statusPrecoMedio: "confiavel",
     plataforma: null,
     vencimento: null,
@@ -316,6 +320,16 @@ function StatusPrecoMedioBadge({ status }) {
   );
 }
 
+function TextoFrescor({ asset }) {
+  if (asset.estadoValor === "manual") return <p className="text-[10px] text-[#9A6A16] font-medium">Valor manual</p>;
+  if (asset.estadoValor === "indisponivel" || asset.precoAtual == null) return <p className="text-[10px] text-[#0B1218]/40 font-medium">Sem cotação</p>;
+  const fonte = asset.fonteCotacao ? asset.fonteCotacao.toUpperCase() : "Mercado";
+  const referencia = asset.cotacaoReferenciaEm ?? asset.cotacaoAtualizadaEm;
+  const data = referencia ? new Date(referencia.length === 10 ? `${referencia}T12:00:00` : referencia) : null;
+  const rotuloData = data && !Number.isNaN(data.getTime()) ? ` · ref. ${data.toLocaleDateString("pt-BR")}` : "";
+  return <p className="text-[10px] text-[#1A7A45] font-medium">{fonte}{rotuloData}</p>;
+}
+
 function AssetRow({ asset, categoria, ocultarValores, navigate }) {
   const valorAtual = asset.valorAtual ?? 0;
   const precoMedio = asset.precoMedio ?? asset.preco_medio ?? 0;
@@ -380,7 +394,7 @@ function AssetRow({ asset, categoria, ocultarValores, navigate }) {
             </div>
             <div>
               <p className="font-['Sora'] text-sm font-bold text-[#0B1218]">{asset.nome || asset.ticker}</p>
-              <p className="text-[10px] text-[#0B1218]/40 font-medium">Fundo de Investimento</p>
+              <TextoFrescor asset={asset} />
             </div>
           </div>
         </td>
