@@ -208,8 +208,9 @@ A consolidação estará concluída quando:
 - existir somente um cálculo para cada indicador;
 - raiz for o único runtime e deploy;
 - nenhuma dependência apontar para `_legacy`;
-- toda funcionalidade relevante do Quanto e Vera estiver classificada;
-- patrimônio da Home, Carteira, Histórico, Score e Vera derivar da mesma fonte;
+- toda funcionalidade relevante do Quanto estiver classificada (Vera removida do produto em
+  2026-07-26, ver §11.3 — critério não se aplica mais);
+- patrimônio da Home, Carteira, Histórico e Score derivar da mesma fonte;
 - testes cobrirem isolamento por usuário e cálculos financeiros;
 - jobs críticos estiverem operacionais e observáveis;
 - documentação antiga conflitante estiver marcada como revogada.
@@ -274,7 +275,32 @@ Gemini → Claude → fallback de regras). Relevância direta: é a origem conce
 | `src/lib/studio/` (renderer.ts, store.ts) | Apenas referência | Sandbox de prototipagem visual, não avaliado em profundidade — sem sinal de valor de produto |
 | `.wrangler/state`, `esquilo_master_pack.zip`, `server.log`, scripts `test-*.sh`/`test-*.ts` na raiz do pacote | Descartado | Artefatos operacionais do protótipo, sem valor de produto ou histórico |
 
-### 11.3 Decisão já registrada (não reaberta aqui)
+### 11.3 Vera removida do produto (executado em 2026-07-26)
+
+Atualização de 2026-07-26: a decisão registrada abaixo (histórico, sessão anterior) mudou de
+"manter o domínio ativo sobre dados canônicos" para **remoção completa**, autorizada explicitamente
+pelo Luiz. Executado nesta sessão:
+
+- Backend: rota `POST /api/decisoes/vera/mensagens` removida de `decisoes.rotas.ts`; método
+  `servicoDecisoes.veraEnviarMensagem` (e os helpers exclusivos `montarPromptSistema`,
+  `respostaDeterministica`, `moeda`) removidos de `decisoes.servico.ts`; binding `AI` removido de
+  `Env` (`infra/bd.ts`) — não estava configurado em `wrangler.toml`, então a IA sempre operava em
+  fallback determinístico em produção.
+- `contexto-financeiro.ts` (cálculo puro de confiança/versão do resumo patrimonial, criado no PR
+  #168) **mantido** — é consumido por `decisoes.servico.criar` (simulações), não só pela Vera.
+- Frontend: hook `useVeraEvaluation` (no-op desde a sessão anterior) deletado, junto com toda
+  ramificação condicional `veraPayload`/`veraSections` em `Insights.jsx` e `InsightsMobile.jsx` —
+  as telas agora renderizam só o fallback (resumo canônico), que já era o único caminho real em
+  produção. Cliente HTTP `enviarMensagemVera` removido de `cliente-api/decisoes.ts` (sem
+  consumidor).
+- Contratos: `VeraMensagemEntrada`/`VeraMensagemSaida` removidos de `bibliotecas/contratos/decisoes.ts`.
+  `ConfiancaContextoFinanceiro` mantido (usado por simulações).
+- Banco: nenhuma tabela/coluna exclusiva de Vera existia no schema canônico (confirmado por grep
+  em `infra/banco/migrations/`) — sem migration de remoção necessária.
+- Testes: `decisoes.servico.test.ts` — os 6 testes de `veraEnviarMensagem` removidos; mantido o
+  teste de `criar` (simulação com contexto financeiro).
+
+Decisão original (contexto, sessão anterior), preservada como histórico:
 
 O domínio `decisoes/vera` vivo hoje em `servidores/porta-entrada/src/dominios/decisoes/` **não foi
 tocado, removido ou marcado como legado** nesta sessão — a decisão do Luiz é que a Vera é

@@ -8,7 +8,6 @@ import { ApiError, patrimonioApi, telemetriaApi } from '../../cliente-api';
 import { cache } from '../../utils/cache';
 import { useNavigate } from 'react-router-dom';
 import { useModoVisualizacao } from '../../context/ModoVisualizacaoContext';
-import { useVeraEvaluation } from './hooks/useVeraEvaluation';
 
 const moeda = (v) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -207,7 +206,6 @@ const composirResumoCanonico = (resumo, score) => {
 export default function Insights() {
   const navigate = useNavigate();
   const { ocultarValores } = useModoVisualizacao();
-  const { veraPayload, avaliar: avaliarComVera } = useVeraEvaluation();
   const [loading, setLoading] = useState(() => !cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL));
   const [error, setError] = useState('');
   const [resumo, setResumo] = useState(() => cache.get(INSIGHTS_CACHE_KEY, INSIGHTS_CACHE_TTL) ?? null);
@@ -249,11 +247,6 @@ export default function Insights() {
           nome: 'insight_opened',
           dadosJson: { score: dados?.scoreUnificado?.score ?? 0 },
         }).catch(() => null);
-
-        // Trigger Vera evaluation in background
-        if (ativo) {
-          void avaliarComVera(dados);
-        }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/', { replace: true });
@@ -265,7 +258,7 @@ export default function Insights() {
       }
     })();
     return () => { ativo = false; };
-  }, [navigate, avaliarComVera]);
+  }, [navigate]);
 
   const cards = useMemo(() => {
     if (!resumo) return [];
@@ -328,18 +321,6 @@ export default function Insights() {
     return lista;
   }, [resumo]);
 
-  const parseVeraBody = (body) => {
-    if (!body) return { problem: '', why: '', how: '' };
-    const sections = body.split(/\n\n+/);
-    return {
-      problem: sections[0] || '',
-      why: sections[1] || '',
-      how: sections[2] || '',
-    };
-  };
-
-  const veraSections = veraPayload ? parseVeraBody(veraPayload.body) : { problem: '', why: '', how: '' };
-
   const confiancaDiagnostico = resumo?.confiancaDiagnostico || resumo?.confianca_diagnostico || 'alta';
   const atualizacaoMercado = resumo?.atualizacaoMercado || resumo?.atualizacao_mercado;
   const dadosMercadoSessao = resumo?.dadosMercadoSessao || resumo?.dados_mercado_sessao;
@@ -387,78 +368,39 @@ export default function Insights() {
 
         {!loading && !error && resumo && !semBaseInsights && (
           <div className="space-y-12">
-            {/* Row 1: 3 Vera Insight Cards */}
-            {veraPayload && (
-              <div className="space-y-4">
-                {/* Card 1: Problem */}
-                {veraSections.problem && (
-                  <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
-                    <p className="text-xs text-[#0B1218]">{veraSections.problem}</p>
-                  </div>
-                )}
+            {/* Row 1: Diagnóstico consolidado */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {resumo.riscoPrincipal && (
+                <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.riscoPrincipal.titulo}</h3>
+                  <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.riscoPrincipal.descricao}</p>
+                </div>
+              )}
 
-                {/* Card 2: Why */}
-                {veraSections.why && (
-                  <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
-                    <p className="text-xs text-[#0B1218]">{veraSections.why}</p>
-                  </div>
-                )}
+              {resumo.diagnostico && (
+                <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">
+                    {resumo.diagnostico.titulo || resumo.diagnosticoFinal?.titulo || 'Análise de risco'}
+                  </h3>
+                  <p className="text-xs text-[#0B1218]/70 flex-grow">
+                    {resumo.diagnostico.resumo || resumo.diagnosticoFinal?.resumo || resumo.diagnostico.descricao}
+                  </p>
+                </div>
+              )}
 
-                {/* Card 3: How */}
-                {veraSections.how && (
-                  <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
-                    <p className="text-xs text-[#0B1218]">{veraSections.how}</p>
-                  </div>
-                )}
-              </div>
-            )}
+              {resumo.acaoPrioritaria && (
+                <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
+                  <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.acaoPrioritaria.titulo}</h3>
+                  <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.acaoPrioritaria.descricao}</p>
+                </div>
+              )}
+            </div>
 
-            {/* Fallback to resumo if no veraPayload */}
-            {!veraPayload && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {resumo.riscoPrincipal && (
-                  <div className="border border-[#E85C5C]/30 bg-white rounded-xl p-6 flex flex-col">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E85C5C] mb-2">O Problema</p>
-                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.riscoPrincipal.titulo}</h3>
-                    <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.riscoPrincipal.descricao}</p>
-                  </div>
-                )}
-
-                {resumo.diagnostico && (
-                  <div className="border border-[#B8880A]/30 bg-white rounded-xl p-6 flex flex-col">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#B8880A] mb-2">Por Que Importa</p>
-                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">
-                      {resumo.diagnostico.titulo || resumo.diagnosticoFinal?.titulo || 'Análise de risco'}
-                    </h3>
-                    <p className="text-xs text-[#0B1218]/70 flex-grow">
-                      {resumo.diagnostico.resumo || resumo.diagnosticoFinal?.resumo || resumo.diagnostico.descricao}
-                    </p>
-                  </div>
-                )}
-
-                {resumo.acaoPrioritaria && (
-                  <div className="border border-[#1A7A45]/30 bg-white rounded-xl p-6 flex flex-col">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#1A7A45] mb-2">O que Fazer</p>
-                    <h3 className="font-['Sora'] text-base font-bold text-[#0B1218] mb-3">{resumo.acaoPrioritaria.titulo}</h3>
-                    <p className="text-xs text-[#0B1218]/70 flex-grow">{resumo.acaoPrioritaria.descricao}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Row 2: Vera Full Explanation */}
-            {veraPayload?.title && (
-              <div className="bg-white rounded-xl p-8 border border-[var(--border-color)]">
-                <h2 className="font-['Sora'] text-xl font-bold text-[#0B1218] mb-4">{veraPayload.title}</h2>
-                <p className="text-sm text-[#0B1218]/70 leading-relaxed">{veraPayload.body}</p>
-              </div>
-            )}
-
-            {/* Row 2: Fallback Detailed Explanation */}
-            {!veraPayload && resumo.diagnosticoFinal?.mensagem && (
+            {/* Row 2: Explicação detalhada */}
+            {resumo.diagnosticoFinal?.mensagem && (
               <div className="bg-white rounded-xl p-8 border border-[var(--border-color)]">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#0B1218] mb-4">O que você precisa saber</h2>
                 <p className="text-sm text-[#0B1218]/70 leading-relaxed mb-6">
@@ -499,7 +441,7 @@ export default function Insights() {
                   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
                 });
               };
-              const temOrigem = timestampScore || timestampCotacoes || fontesCotacoes.length > 0 || veraPayload;
+              const temOrigem = timestampScore || timestampCotacoes || fontesCotacoes.length > 0;
               if (!temOrigem) return null;
               return (
                 <div className="rounded-xl border border-[var(--border-color)] bg-white p-6 space-y-3">
@@ -536,18 +478,6 @@ export default function Insights() {
                         <span className="text-[#0B1218]/70">
                           {coberturaCotacoes.toFixed(0)}%
                           {fontesCotacoes.length > 0 && ` · ${fontesCotacoes.join(', ')}`}
-                        </span>
-                      </div>
-                    )}
-                    {veraPayload && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#0B1218]/50">Narrativa</span>
-                        <span className="text-[#0B1218]/70">
-                          {veraPayload.source === 'cloudflare' ? 'Vera · Cloudflare' :
-                           veraPayload.source === 'openai' ? 'Vera · OpenAI' :
-                           veraPayload.source === 'gemini' ? 'Vera · Gemini' :
-                           veraPayload.source === 'anthropic' ? 'Vera · Claude' :
-                           'Vera IA'}
                         </span>
                       </div>
                     )}

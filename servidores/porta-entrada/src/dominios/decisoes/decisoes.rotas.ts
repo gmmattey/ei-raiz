@@ -11,7 +11,7 @@ export async function rotearDecisoes(
   sessao: ContextoSessao | null,
 ): Promise<ServiceResponse<unknown>> {
   if (!sessao) return erro('nao_autenticado', 'Sessão não encontrada', 401);
-  const servico = servicoDecisoes(criarBd(env), env);
+  const servico = servicoDecisoes(criarBd(env));
   const metodo = request.method.toUpperCase();
 
   if (caminho === '/api/decisoes/simulacoes' && metodo === 'GET') return servico.listar(sessao.usuarioId);
@@ -20,10 +20,6 @@ export async function rotearDecisoes(
   }
   const mSim = caminho.match(/^\/api\/decisoes\/simulacoes\/([^/]+)$/);
   if (mSim && metodo === 'GET') return servico.obter(sessao.usuarioId, mSim[1]);
-
-  if (caminho === '/api/decisoes/vera/mensagens' && metodo === 'POST') {
-    return servico.veraEnviarMensagem(sessao.usuarioId, await lerJson(request) as never);
-  }
 
   return caminho.startsWith('/api/decisoes') ? naoEncontrado() : metodoNaoPermitido(metodo);
 }

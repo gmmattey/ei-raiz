@@ -1,8 +1,6 @@
 import type {
   SimulacaoSaida,
   SimulacaoCriarEntrada,
-  VeraMensagemEntrada,
-  VeraMensagemSaida,
   TipoSimulacao,
 } from "@ei/contratos";
 import { apiRequest } from "./http";
@@ -17,13 +15,6 @@ export function obterSimulacao(id: string): Promise<SimulacaoSaida> {
 
 export function criarSimulacao(entrada: SimulacaoCriarEntrada): Promise<SimulacaoSaida> {
   return apiRequest<SimulacaoSaida>("/api/decisoes/simulacoes", {
-    method: "POST",
-    body: JSON.stringify(entrada),
-  });
-}
-
-export function enviarMensagemVera(entrada: VeraMensagemEntrada): Promise<VeraMensagemSaida> {
-  return apiRequest<VeraMensagemSaida>("/api/decisoes/vera/mensagens", {
     method: "POST",
     body: JSON.stringify(entrada),
   });

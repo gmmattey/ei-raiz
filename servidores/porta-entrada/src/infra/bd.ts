@@ -14,7 +14,6 @@ export type Env = {
   EMAIL_FROM?: string;
   WEB_BASE_URL?: string;
   CORS_ALLOWED_ORIGINS?: string;
-  AI?: { run(model: string, entrada: unknown): Promise<unknown> };
 };
 
 export interface Bd {
