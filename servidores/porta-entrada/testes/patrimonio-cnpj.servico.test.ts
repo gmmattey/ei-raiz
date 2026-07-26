@@ -106,8 +106,10 @@ test('confirma um lote criando a posição canônica uma única vez', async () =
   assert.equal(resultado.dados.itensCriados, 1);
   assert.equal(resultado.dados.itensRejeitados, 0);
   assert.match(lotes[0][0].sql, /INSERT INTO patrimonio_itens/);
-  assert.match(lotes[0][1].sql, /resultado = 'aceito'/);
-  assert.match(lotes[0][2].sql, /INSERT INTO patrimonio_fila_reconstrucao/);
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_movimentos/);
+  assert.equal(lotes[0][1].valores[4], 1);
+  assert.match(lotes[0][2].sql, /resultado = 'aceito'/);
+  assert.match(lotes[0][3].sql, /INSERT INTO patrimonio_fila_reconstrucao/);
 });
 
 test('confirma fundo importado vinculando seu CNPJ ao catálogo canônico', async () => {
@@ -131,6 +133,7 @@ test('confirma fundo importado vinculando seu CNPJ ao catálogo canônico', asyn
   assert.equal(lotes[0][0].valores[1], '12345678000190');
   assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_itens/);
   assert.equal(lotes[0][1].valores[2], lotes[0][0].valores[0]);
+  assert.match(lotes[0][2].sql, /INSERT INTO patrimonio_movimentos/);
 });
 
 test('expõe valor calculado e frescor da cotação no contrato patrimonial', async () => {

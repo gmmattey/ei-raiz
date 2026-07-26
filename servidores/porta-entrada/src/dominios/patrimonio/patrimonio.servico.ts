@@ -115,6 +115,7 @@ type ItemImportado = {
   quantidade: number | null;
   precoMedioBrl: number | null;
   valorAtualBrl: number | null;
+  data: string;
   dadosJson: string;
 };
 
@@ -128,6 +129,11 @@ const textoObrigatorio = (valor: unknown): string | null => {
   return texto || null;
 };
 
+const dataImportada = (...valores: unknown[]): string => {
+  const data = valores.map(textoObrigatorio).find((valor) => /^\d{4}-\d{2}-\d{2}$/.test(valor ?? ''));
+  return data ?? new Date().toISOString().slice(0, 10);
+};
+
 const materializarItemImportado = (dados: Record<string, unknown>): ItemImportado | null => {
   const aba = textoObrigatorio(dados.aba);
   const bruto = JSON.stringify(dados);
@@ -137,7 +143,7 @@ const materializarItemImportado = (dados: Record<string, unknown>): ItemImportad
     if (!ticker || !quantidade) return null;
     const precoMedioBrl = numeroPositivo(dados.precoMedio);
     const valorAtualBrl = numeroPositivo(dados.valorTotal) ?? (precoMedioBrl ? quantidade * precoMedioBrl : null);
-    return { tipo: 'acao', nome: textoObrigatorio(dados.nome) ?? ticker, cnpj: null, quantidade, precoMedioBrl, valorAtualBrl, dadosJson: bruto };
+    return { tipo: 'acao', nome: textoObrigatorio(dados.nome) ?? ticker, cnpj: null, quantidade, precoMedioBrl, valorAtualBrl, data: dataImportada(dados.dataCompra), dadosJson: bruto };
   }
   const mapeamento: Record<string, TipoItemPatrimonio> = {
     fundos: 'fundo', previdencia: 'previdencia', renda_fixa: 'renda_fixa',
@@ -156,7 +162,10 @@ const materializarItemImportado = (dados: Record<string, unknown>): ItemImportad
   if (!nome || !valorAtualBrl) return null;
   const cnpjBruto = textoObrigatorio(dados.cnpj);
   const cnpj = cnpjBruto && aceitaCnpj(tipo) ? normalizarCnpjPatrimonial(cnpjBruto) : null;
-  return { tipo, nome, cnpj, quantidade: null, precoMedioBrl: null, valorAtualBrl, dadosJson: bruto };
+  return {
+    tipo, nome, cnpj, quantidade: null, precoMedioBrl: null, valorAtualBrl,
+    data: dataImportada(dados.dataAplicacao, dados.dataInicio), dadosJson: bruto,
+  };
 };
 
 export const servicoPatrimonio = (bd: Bd) => {
@@ -388,7 +397,7 @@ export const servicoPatrimonio = (bd: Bd) => {
         const chavesLinhas = new Set<string>();
         const ativosPorCnpj = new Map<string, string>();
         const ativosNovos: { id: string; cnpj: string; tipo: TipoItemPatrimonio; nome: string }[] = [];
-        const itensAceitos: { linhaId: string; item: ItemImportado }[] = [];
+        const itensAceitos: { linhaId: string; linhaNumero: number; item: ItemImportado }[] = [];
         let aceitos = 0;
         let rejeitados = 0;
         for (const linha of linhas) {
@@ -406,7 +415,7 @@ export const servicoPatrimonio = (bd: Bd) => {
           }
           chavesLinhas.add(chaveLinha);
           aceitos += 1;
-          itensAceitos.push({ linhaId: linha.id, item });
+          itensAceitos.push({ linhaId: linha.id, linhaNumero: linha.linha, item });
         }
         for (const { item } of itensAceitos) {
           if (!item.cnpj || ativosPorCnpj.has(item.cnpj)) continue;
@@ -424,13 +433,23 @@ export const servicoPatrimonio = (bd: Bd) => {
             valores: [ativo.id, ativo.cnpj, ativo.nome, ativo.tipo],
           });
         }
-        for (const { linhaId, item } of itensAceitos) {
+        for (const { linhaId, linhaNumero, item } of itensAceitos) {
           const ativoId = item.cnpj ? ativosPorCnpj.get(item.cnpj) ?? null : null;
+          const itemId = gerarId();
           operacoes.push({
             sql: `INSERT INTO patrimonio_itens
                     (id, usuario_id, ativo_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
                   VALUES (?, ?, ?, ?, 'importacao', ?, ?, ?, ?, 'BRL', ?)`,
-            valores: [gerarId(), usuarioId, ativoId, item.tipo, item.nome, item.quantidade, item.precoMedioBrl, item.valorAtualBrl, item.dadosJson],
+            valores: [itemId, usuarioId, ativoId, item.tipo, item.nome, item.quantidade, item.precoMedioBrl, item.valorAtualBrl, item.dadosJson],
+          });
+          const tipoMovimento = item.tipo === 'acao' ? 'compra'
+            : ['fundo', 'previdencia', 'renda_fixa', 'poupanca'].includes(item.tipo) ? 'aporte'
+              : 'ajuste';
+          operacoes.push({
+            sql: `INSERT INTO patrimonio_movimentos
+                    (id, usuario_id, item_id, importacao_id, linha_importacao, tipo, quantidade, valor_brl, data, origem, dados_json)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'importacao', ?)`,
+            valores: [gerarId(), usuarioId, itemId, id, linhaNumero, tipoMovimento, item.quantidade, item.valorAtualBrl, item.data, item.dadosJson],
           });
           operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'aceito' WHERE id = ?`, valores: [linhaId] });
         }
