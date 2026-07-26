@@ -116,6 +116,19 @@ export interface LinhaImportacao {
 }
 
 export const repositorioPatrimonio = (bd: Bd) => ({
+  async buscarAtivoPorCnpj(cnpj: string) {
+    return bd.primeiro<{ id: string }>(`SELECT id FROM ativos WHERE cnpj = ? LIMIT 1`, cnpj);
+  },
+
+  async inserirAtivoComCnpj(id: string, cnpj: string, tipo: string, nome: string): Promise<void> {
+    await bd.executar(
+      `INSERT INTO ativos (id, cnpj, nome, tipo)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(cnpj) DO NOTHING`,
+      id, cnpj, nome, tipo,
+    );
+  },
+
   async resumo(usuarioId: string) {
     return bd.primeiro<LinhaResumo>(
       `SELECT * FROM vw_patrimonio_resumo WHERE usuario_id = ? LIMIT 1`,
@@ -179,6 +192,7 @@ export const repositorioPatrimonio = (bd: Bd) => ({
   async atualizarItem(
     id: string, usuarioId: string,
     campos: {
+      ativoId?: string | null;
       tipo?: string; nome?: string; quantidade?: number | null;
       precoMedioBrl?: number | null; valorAtualBrl?: number | null;
       moeda?: string; estaAtivo?: boolean; dadosJson?: string;
@@ -187,6 +201,7 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     const partes: string[] = [];
     const vals: unknown[] = [];
     const set = (col: string, v: unknown) => { partes.push(`${col} = ?`); vals.push(v); };
+    if (campos.ativoId !== undefined) set('ativo_id', campos.ativoId);
     if (campos.tipo !== undefined) set('tipo', campos.tipo);
     if (campos.nome !== undefined) set('nome', campos.nome);
     if (campos.quantidade !== undefined) set('quantidade', campos.quantidade);

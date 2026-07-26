@@ -32,6 +32,7 @@ export interface ItemPatrimonioSaida {
 
 export interface ItemPatrimonioCriarEntrada {
   ativoId?: string | null;
+  cnpj?: string | null;
   tipo: TipoItemPatrimonio;
   nome: string;
   quantidade?: number | null;
@@ -42,6 +43,7 @@ export interface ItemPatrimonioCriarEntrada {
 }
 
 export interface ItemPatrimonioAtualizarEntrada {
+  cnpj?: string | null;
   tipo?: TipoItemPatrimonio;
   nome?: string;
   quantidade?: number | null;
