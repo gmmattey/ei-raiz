@@ -16,11 +16,23 @@ import { gerarId } from '../../infra/bd';
 import { erro, sucesso, type ServiceError, type ServiceResponse } from '../../infra/http';
 import { calcularAlocacao } from './calculos/alocacao';
 import {
+  avaliarConfiancaContextoFinanceiro, versaoContextoFinanceiro,
+  type ConfiancaContextoFinanceiro,
+} from './calculos/contexto-financeiro';
+import {
   repositorioPatrimonio, type LinhaAlocacao, type LinhaAporte,
   type LinhaEvolucao, type LinhaPosicao, type LinhaResumo, type LinhaScoreAtual,
   type LinhaMovimentoPatrimonial,
 } from './patrimonio.repositorio';
 import { reconstruirHistoricoPorMovimentosUsuario } from '../../jobs/historico-mensal.job';
+
+export interface ContextoFinanceiroSaida {
+  resumo: PatrimonioResumoSaida;
+  confianca: ConfiancaContextoFinanceiro;
+  motivos: string[];
+  versao: string;
+  geradoEm: string;
+}
 
 const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida => {
   const valor = l.valor_atual_brl ?? 0;
@@ -443,6 +455,22 @@ export const servicoPatrimonio = (bd: Bd) => {
           faixa: h.faixa as ScoreFaixa,
         })).reverse(),
         calculadoEm: atual?.calculado_em ?? null,
+      });
+    },
+
+    // Contexto financeiro canônico consumido por Score, simulações e Vera.
+    // Nunca recalcula totais — só embrulha o resumo já canônico com
+    // confiança e versão, para diagnóstico/IA não fingirem precisão.
+    async contextoFinanceiro(usuarioId: string): Promise<ServiceResponse<ContextoFinanceiroSaida>> {
+      const resumoResp = await this.resumo(usuarioId);
+      if (!resumoResp.ok) return resumoResp;
+      const diagnostico = avaliarConfiancaContextoFinanceiro(resumoResp.dados);
+      return sucesso({
+        resumo: resumoResp.dados,
+        confianca: diagnostico.confianca,
+        motivos: diagnostico.motivos,
+        versao: versaoContextoFinanceiro(resumoResp.dados),
+        geradoEm: new Date().toISOString(),
       });
     },
 
