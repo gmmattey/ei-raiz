@@ -104,6 +104,15 @@ export interface MovimentoPatrimonialSaida {
   criadoEm: string;
 }
 
+export interface MovimentoPatrimonialCriarEntrada {
+  itemId: string;
+  tipo: TipoMovimentoPatrimonial;
+  quantidade?: number | null;
+  valorBrl?: number | null;
+  data: string;
+  dadosJson?: Record<string, unknown>;
+}
+
 export interface HistoricoMensalItem {
   anoMes: string;
   patrimonioBrutoBrl: number;

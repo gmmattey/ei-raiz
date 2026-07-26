@@ -9,6 +9,7 @@ import type {
   MovimentoPatrimonialSaida, TipoMovimentoPatrimonial,
   ReconstrucaoHistoricoSaida,
   LifecycleItemPatrimonio,
+  MovimentoPatrimonialCriarEntrada,
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
@@ -279,6 +280,17 @@ export const servicoPatrimonio = (bd: Bd) => {
       if (!item) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
       const movimentos = await repo.listarMovimentosItem(usuarioId, itemId);
       return sucesso({ itens: movimentos.map(paraMovimentoSaida) });
+    },
+
+    async criarMovimento(usuarioId: string, e: MovimentoPatrimonialCriarEntrada): Promise<ServiceResponse<MovimentoPatrimonialSaida>> {
+      if (!e.itemId || !e.tipo || !e.data) return erro('dados_incompletos', 'itemId, tipo e data são obrigatórios', 400);
+      const item = await repo.buscarItemBruto(usuarioId, e.itemId);
+      if (!item) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
+      const id = gerarId();
+      await repo.inserirMovimento(id, usuarioId, e.itemId, e.tipo, e.quantidade ?? null, e.valorBrl ?? null, e.data, JSON.stringify(e.dadosJson ?? {}));
+      const movimento = (await repo.listarMovimentosItem(usuarioId, e.itemId)).find((linha) => linha.id === id);
+      if (!movimento) return erro('movimento_nao_encontrado', 'Movimento recém-criado não encontrado', 500);
+      return sucesso(paraMovimentoSaida(movimento));
     },
 
     async reconstruirHistorico(usuarioId: string): Promise<ServiceResponse<ReconstrucaoHistoricoSaida>> {
