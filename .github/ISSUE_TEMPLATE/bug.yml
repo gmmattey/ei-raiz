@@ -1,0 +1,88 @@
+name: Bug
+description: Registrar comportamento incorreto ou regressão
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: resumo
+    attributes:
+      label: Resumo
+      description: O que está errado?
+    validations:
+      required: true
+
+  - type: textarea
+    id: atual
+    attributes:
+      label: Comportamento atual
+      description: O que acontece hoje?
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamento esperado
+      description: O que deveria acontecer?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Acesse...
+        2. Faça...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidências
+      description: Logs, screenshots, vídeo ou mensagem de erro. Remova dados sensíveis.
+
+  - type: dropdown
+    id: ambiente
+    attributes:
+      label: Ambiente
+      options:
+        - Produção
+        - Desenvolvimento local
+        - CI
+        - Mais de um ambiente
+        - Não identificado
+    validations:
+      required: true
+
+  - type: textarea
+    id: impacto
+    attributes:
+      label: Impacto
+      description: Quem é afetado e existe alguma alternativa temporária?
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critérios de aceite da correção
+      placeholder: |
+        - [ ] O problema não é mais reproduzido.
+        - [ ] Existe teste cobrindo a regressão.
+        - [ ] Fluxos relacionados continuam funcionando.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: seguranca
+    attributes:
+      label: Verificação
+      options:
+        - label: As evidências não contêm senha, token ou dado financeiro sensível.
+          required: true
+        - label: Verifiquei que não existe outra issue para o mesmo bug.
+          required: true
