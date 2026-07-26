@@ -26,7 +26,7 @@ export async function atualizarMercadoJob(env: Env): Promise<void> {
   const expira = new Date(Date.now() + 5 * 60_000).toISOString();
 
   for (const ativo of ativos) {
-    const preco = await buscarPreco(ativo, env);
+    const preco = await buscarPreco(ativo, env, bd);
     if (preco == null) continue;
     await bd.executar(
       `INSERT INTO ativos_cotacoes_cache (ativo_id, fonte, cotado_em, preco_brl, expira_em, dados_json)
@@ -52,7 +52,14 @@ function fontePara(tipo: string): string {
   return 'manual';
 }
 
-async function buscarPreco(ativo: LinhaAtivoUsado, env: Env): Promise<number | null> {
+async function buscarPreco(ativo: LinhaAtivoUsado, env: Env, bd: ReturnType<typeof criarBd>): Promise<number | null> {
+  if (ativo.tipo === 'fundo' && ativo.cnpj) {
+    const cota = await bd.primeiro<{ valor_cota: number }>(
+      `SELECT valor_cota FROM fundos_cvm_cotas WHERE cnpj = ? ORDER BY data DESC LIMIT 1`,
+      ativo.cnpj.replace(/\D/g, ''),
+    );
+    return cota?.valor_cota ?? null;
+  }
   if (ativo.ticker && (env.BRAPI_TOKEN || env.BRAPI_BASE_URL)) {
     const base = env.BRAPI_BASE_URL ?? 'https://brapi.dev/api';
     const url = `${base}/quote/${encodeURIComponent(ativo.ticker)}?token=${env.BRAPI_TOKEN ?? ''}`;

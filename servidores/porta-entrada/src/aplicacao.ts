@@ -26,6 +26,14 @@ export const ROTAS_PUBLICAS = new Set<string>([
 
 export const PREFIXOS_MERCADO_PUBLICO = ['/api/mercado/ativos', '/api/mercado/fundos-cvm'];
 
+export function ehTokenServicoCvm(request: Request, env: Env, caminho: string): boolean {
+  if (!caminho.startsWith('/api/admin/cvm/')) return false;
+  if (!env.ADMIN_TOKEN) return false;
+  const token = request.headers.get('x-admin-token');
+  const autorizacao = request.headers.get('authorization');
+  return token === env.ADMIN_TOKEN || autorizacao === `Bearer ${env.ADMIN_TOKEN}`;
+}
+
 export function ehRotaPublica(caminho: string): boolean {
   if (ROTAS_PUBLICAS.has(caminho)) return true;
   if (PREFIXOS_MERCADO_PUBLICO.some((p) => caminho.startsWith(p))) return true;

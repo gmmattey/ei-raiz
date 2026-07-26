@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 
 import type { Env } from "./infra/bd";
 import type { ServiceResponse } from "./infra/http";
-import { ehRotaPublica, resolverSessao, rotear } from "./aplicacao";
+import { ehRotaPublica, ehTokenServicoCvm, resolverSessao, rotear } from "./aplicacao";
 import { atualizarMercadoJob } from "./jobs/mercado-atualizar.job";
 import { historicoMensalJob } from "./jobs/historico-mensal.job";
 import { patrimonioReconstruirJob } from "./jobs/patrimonio-reconstruir.job";
@@ -62,7 +62,13 @@ export default {
 
     try {
       const sessao = await resolverSessao(request, env);
-      if (!ehRotaPublica(pathname) && !sessao) {
+      const apresentaTokenServicoCvm = pathname.startsWith('/api/admin/cvm/') && (
+        request.headers.has('x-admin-token') || request.headers.has('authorization')
+      );
+      if (!ehRotaPublica(pathname) && !ehTokenServicoCvm(request, env, pathname) && !sessao) {
+        if (apresentaTokenServicoCvm) {
+          return responderJson({ ok: false, erro: { codigo: 'token_servico_cvm_invalido', mensagem: 'Token de serviço CVM inválido' } }, 401);
+        }
         if (!extrairToken(request)) {
           return responderJson({ ok: false, erro: { codigo: "nao_autenticado", mensagem: "Token ausente" } }, 401);
         }
