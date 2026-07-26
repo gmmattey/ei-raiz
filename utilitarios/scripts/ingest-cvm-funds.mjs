@@ -152,7 +152,7 @@ async function apiJson(path, opts = {}) {
 }
 
 async function abrirRun(referenciaAnoMes) {
-  const dados = await apiJson("/api/admin/cvm/runs", {
+  const dados = await apiJson("/api/admin/cvm/execucoes", {
     method: "POST",
     body: JSON.stringify({ referenciaAnoMes, origemExecucao }),
   });
@@ -160,16 +160,24 @@ async function abrirRun(referenciaAnoMes) {
 }
 
 async function atualizarRun(runId, patch) {
-  return apiJson(`/api/admin/cvm/runs/${runId}`, {
+  return apiJson(`/api/admin/cvm/execucoes/${runId}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
 }
 
 async function postarLoteCotas(runId, itens) {
-  const dados = await apiJson("/api/admin/fundos/cvm/ingerir-cotas", {
+  const dados = await apiJson("/api/admin/cvm/cotas", {
     method: "POST",
-    body: JSON.stringify({ itens, runId }),
+    body: JSON.stringify({
+      execucaoId: runId,
+      itens: itens.map((item) => ({
+        cnpj: item.cnpj,
+        data: item.dataRef,
+        valorCota: item.vlQuota,
+        ...(item.vlPatrimLiq == null ? {} : { patrimonioLiquidoBrl: item.vlPatrimLiq }),
+      })),
+    }),
   });
   return dados;
 }
@@ -262,9 +270,8 @@ async function ingerirMes(anoMes) {
   } catch (err) {
     console.error(`  Falha no download: ${err.message}`);
     await atualizarRun(runId, {
-      status: "failed",
+      status: "falhou",
       erroResumo: `download: ${err.message}`.slice(0, 500),
-      finalizar: true,
     });
     return { ok: false, runId, motivo: "download" };
   }
@@ -299,12 +306,11 @@ async function ingerirMes(anoMes) {
     }
 
     await atualizarRun(runId, {
-      status: "completed",
+      status: "concluido",
       arquivosProcessados: 1,
       registrosLidos: totalLidos,
       registrosValidos: totalValidos,
       registrosInvalidos: totalInvalidos,
-      finalizar: true,
     });
 
     console.log(
@@ -314,13 +320,12 @@ async function ingerirMes(anoMes) {
   } catch (err) {
     console.error(`\n  ✖ Falha na ingestão ${anoMes}: ${err.message}`);
     await atualizarRun(runId, {
-      status: "failed",
+      status: "falhou",
       arquivosProcessados: 1,
       registrosLidos: totalLidos,
       registrosValidos: totalValidos,
       registrosInvalidos: totalInvalidos,
       erroResumo: `${err.message}`.slice(0, 500),
-      finalizar: true,
     });
     return { ok: false, runId, motivo: "processamento", erro: err.message };
   } finally {
