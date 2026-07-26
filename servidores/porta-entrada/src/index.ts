@@ -21,16 +21,22 @@ const PREFIXOS_VALIDOS = [
   "/api/telemetria",
 ];
 
-const cabecalhosCors = (): Record<string, string> => ({
-  "access-control-allow-origin": "*",
+export const cabecalhosCors = (request: Request, env: Env): Record<string, string> => {
+  const origem = request.headers.get('origin');
+  const permitidas = (env.CORS_ALLOWED_ORIGINS ?? env.WEB_BASE_URL ?? '')
+    .split(',').map((item) => item.trim()).filter(Boolean);
+  const origemPermitida = origem !== null && permitidas.includes(origem);
+  return {
+  ...(origemPermitida ? { 'access-control-allow-origin': origem, vary: 'origin' } : {}),
   "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
   "access-control-allow-headers": "authorization,content-type",
-});
+  };
+};
 
-const responderJson = (carga: unknown, status = 200): Response =>
+const responderJson = (carga: unknown, status: number, cors: Record<string, string>): Response =>
   new Response(JSON.stringify(carga), {
     status,
-    headers: { ...cabecalhosCors(), "content-type": "application/json; charset=utf-8" },
+    headers: { ...cors, "content-type": "application/json; charset=utf-8" },
   });
 
 const extrairToken = (request: Request): string | null => {
@@ -48,17 +54,21 @@ function prefixoValido(caminho: string): boolean {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const { pathname } = new URL(request.url);
+    const cors = cabecalhosCors(request, env);
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: cabecalhosCors() });
+      if (request.headers.has('origin') && !cors['access-control-allow-origin']) {
+        return new Response(null, { status: 403 });
+      }
+      return new Response(null, { status: 204, headers: cors });
     }
 
     if (!pathname.startsWith("/api/")) {
-      return responderJson({ ok: false, erro: { codigo: "rota_invalida", mensagem: "Prefixo de rota inválido" } }, 404);
+      return responderJson({ ok: false, erro: { codigo: "rota_invalida", mensagem: "Prefixo de rota inválido" } }, 404, cors);
     }
 
     if (!prefixoValido(pathname)) {
-      return responderJson({ ok: false, erro: { codigo: "rota_invalida", mensagem: "Prefixo de rota inválido" } }, 404);
+      return responderJson({ ok: false, erro: { codigo: "rota_invalida", mensagem: "Prefixo de rota inválido" } }, 404, cors);
     }
 
     try {
@@ -68,31 +78,31 @@ export default {
       );
       if (!ehRotaPublica(pathname) && !ehTokenServicoCvm(request, env, pathname) && !sessao) {
         if (apresentaTokenServicoCvm) {
-          return responderJson({ ok: false, erro: { codigo: 'token_servico_cvm_invalido', mensagem: 'Token de serviço CVM inválido' } }, 401);
+          return responderJson({ ok: false, erro: { codigo: 'token_servico_cvm_invalido', mensagem: 'Token de serviço CVM inválido' } }, 401, cors);
         }
         if (!extrairToken(request)) {
-          return responderJson({ ok: false, erro: { codigo: "nao_autenticado", mensagem: "Token ausente" } }, 401);
+          return responderJson({ ok: false, erro: { codigo: "nao_autenticado", mensagem: "Token ausente" } }, 401, cors);
         }
-        return responderJson({ ok: false, erro: { codigo: "nao_autenticado", mensagem: "Sessão inválida" } }, 401);
+        return responderJson({ ok: false, erro: { codigo: "nao_autenticado", mensagem: "Sessão inválida" } }, 401, cors);
       }
 
       const resultado: ServiceResponse<unknown> = await rotear(pathname, request, env, sessao);
       if (!resultado.ok) {
         return responderJson(
           { ok: false, erro: { codigo: resultado.codigo, mensagem: resultado.mensagem, detalhes: resultado.detalhes } },
-          resultado.status,
+          resultado.status, cors,
         );
       }
-      return responderJson({ ok: true, dados: resultado.dados }, 200);
+      return responderJson({ ok: true, dados: resultado.dados }, 200, cors);
     } catch (error) {
       if (error instanceof ZodError) {
         return responderJson(
           { ok: false, erro: { codigo: "validacao", mensagem: "Payload inválido", detalhes: error.flatten() } },
-          422,
+          422, cors,
         );
       }
       console.error("erro_gateway", error);
-      return responderJson({ ok: false, erro: { codigo: "erro_interno", mensagem: "Falha interna no gateway" } }, 500);
+      return responderJson({ ok: false, erro: { codigo: "erro_interno", mensagem: "Falha interna no gateway" } }, 500, cors);
     } finally {
       void ctx;
     }

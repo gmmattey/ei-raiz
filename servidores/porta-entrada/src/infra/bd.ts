@@ -13,6 +13,7 @@ export type Env = {
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   WEB_BASE_URL?: string;
+  CORS_ALLOWED_ORIGINS?: string;
   AI?: { run(model: string, entrada: unknown): Promise<unknown> };
 };
 
