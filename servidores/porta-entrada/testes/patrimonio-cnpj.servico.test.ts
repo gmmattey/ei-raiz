@@ -62,6 +62,32 @@ test('cadastro manual de ação cria movimento de compra na mesma operação', a
   assert.equal(lotes[0][1].valores[5], 20);
 });
 
+test('correção manual de valor cria movimento atômico com estado anterior e novo', async () => {
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
+  const bd = {
+    consultar: async () => [{
+      item_id: 'item-1', usuario_id: 'usuario-1', tipo: 'acao', origem: 'manual', nome: 'Ação teste', ativo_id: null,
+      ticker: null, cnpj: null, classe: null, subclasse: null, quantidade: 2, preco_medio_brl: 10,
+      valor_atual_brl: 25, preco_atual_brl: null, preco_atualizado_em: null, preco_fonte: null,
+      rentabilidade_pct: null, criado_em: '2026-07-26', atualizado_em: '2026-07-26',
+    }],
+    primeiro: async () => ({ id: 'item-1', quantidade: 2, preco_medio_brl: 10, valor_atual_brl: 20, nome: 'Ação teste', tipo: 'acao' }),
+    executar: async () => ({ sucesso: true, linhasAfetadas: 1 }),
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
+  };
+  const resultado = await servicoPatrimonio(bd).atualizarItem('usuario-1', 'item-1', { valorAtualBrl: 25 });
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  assert.match(lotes[0][0].sql, /UPDATE patrimonio_itens/);
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_movimentos/);
+  assert.equal(lotes[0][1].valores[3], 2);
+  assert.equal(lotes[0][1].valores[4], 25);
+  assert.deepEqual(JSON.parse(lotes[0][1].valores[6] as string), {
+    tipo: 'correcao_manual',
+    anterior: { quantidade: 2, precoMedioBrl: 10, valorAtualBrl: 20 },
+    novo: { quantidade: 2, precoMedioBrl: 10, valorAtualBrl: 25 },
+  });
+});
+
 test('rejeita CNPJ fora de fundo ou previdência', async () => {
   const bd = { consultar: async () => [], primeiro: async () => null, executar: async () => ({ sucesso: true, linhasAfetadas: 0 }), emLote: async () => {} };
   const resultado = await servicoPatrimonio(bd).criarItem('usuario-1', {

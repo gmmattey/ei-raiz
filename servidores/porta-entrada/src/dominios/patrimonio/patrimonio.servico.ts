@@ -308,11 +308,26 @@ export const servicoPatrimonio = (bd: Bd) => {
           }
         }
       }
-      await repo.atualizarItem(id, usuarioId, {
+      const campos = {
         ...e,
         ativoId,
         dadosJson: e.dadosJson !== undefined ? JSON.stringify(e.dadosJson) : undefined,
-      });
+      };
+      const alteraValor = e.quantidade !== undefined || e.precoMedioBrl !== undefined || e.valorAtualBrl !== undefined;
+      if (alteraValor) {
+        const quantidade = e.quantidade !== undefined ? e.quantidade : atual.quantidade;
+        const valorBrl = e.valorAtualBrl !== undefined ? e.valorAtualBrl : atual.valor_atual_brl;
+        await repo.atualizarItemComMovimento(id, usuarioId, campos, {
+          id: gerarId(), quantidade, valorBrl, data: new Date().toISOString().slice(0, 10),
+          dadosJson: JSON.stringify({
+            tipo: 'correcao_manual',
+            anterior: { quantidade: atual.quantidade, precoMedioBrl: atual.preco_medio_brl, valorAtualBrl: atual.valor_atual_brl },
+            novo: { quantidade, precoMedioBrl: e.precoMedioBrl !== undefined ? e.precoMedioBrl : atual.preco_medio_brl, valorAtualBrl: valorBrl },
+          }),
+        });
+      } else {
+        await repo.atualizarItem(id, usuarioId, campos);
+      }
       return this.obterItem(usuarioId, id);
     },
 
