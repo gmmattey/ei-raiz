@@ -2,6 +2,7 @@ import org.gradle.api.artifacts.ProjectDependency
 
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.jvm) apply false
@@ -15,11 +16,33 @@ private val pureModulePaths = setOf(
 )
 
 private val allowedProductionDependencies = mapOf(
-    ":app" to emptySet<String>(),
+    ":app" to setOf(":core:designsystem"),
     ":core:common" to emptySet<String>(),
     ":core:model" to emptySet<String>(),
     ":core:testing" to emptySet<String>(),
+    ":core:designsystem" to emptySet<String>(),
     ":domain:patrimonio" to setOf(":core:common", ":core:model"),
+)
+
+private val designSystemSourceDirectory = "core/designsystem/src/main"
+private val canonicalDesignSystemTokenFiles = setOf(
+    "core/designsystem/src/main/java/io/savro/designsystem/tema/SavroTokens.kt",
+    "core/designsystem/src/main/java/io/savro/designsystem/tema/SavroTheme.kt",
+)
+private val canonicalDesignSystemPreviewFiles = setOf(
+    "core/designsystem/src/main/java/io/savro/designsystem/componentes/SavroComponentsPreview.kt",
+)
+private val forbiddenDesignSystemComponentLiterals = listOf(
+    Regex("Color\\s*\\("),
+    Regex("Color\\."),
+    Regex("0x[0-9a-fA-F]+"),
+    Regex("\\b\\d+(?:\\.\\d+)?\\.dp\\b"),
+    Regex("\\b\\d+(?:\\.\\d+)?\\.sp\\b"),
+    Regex("RoundedCornerShape\\s*\\("),
+    Regex("FontWeight\\."),
+    Regex("alpha\\s*=\\s*\\d"),
+    Regex("\\.copy\\s*\\(.*alpha\\s*="),
+    Regex("durationMillis\\s*=\\s*\\d"),
 )
 
 private val forbiddenPureSourceReferences = listOf(
@@ -132,8 +155,41 @@ tasks.register("verifyArchitecture") {
     }
 }
 
+tasks.register("verifyDesignSystemTokens") {
+    group = "verification"
+    description = "Impede literais visuais em componentes do design system Savro."
+
+    doLast {
+        val sourceDirectory = rootProject.file(designSystemSourceDirectory)
+        if (!sourceDirectory.exists()) return@doLast
+
+        val violations = sourceDirectory.walkTopDown()
+            .filter { file ->
+                file.isFile &&
+                    file.extension == "kt" &&
+                    file.relativeTo(rootProject.projectDir).invariantSeparatorsPath !in canonicalDesignSystemTokenFiles &&
+                    file.relativeTo(rootProject.projectDir).invariantSeparatorsPath !in canonicalDesignSystemPreviewFiles
+            }
+            .flatMap { file ->
+                file.readLines().mapIndexedNotNull { index, line ->
+                    if (forbiddenDesignSystemComponentLiterals.any { it.containsMatchIn(line) }) {
+                        "${file.relativeTo(rootProject.projectDir)}:${index + 1}: $line"
+                    } else {
+                        null
+                    }
+                }
+            }
+            .toList()
+
+        check(violations.isEmpty()) {
+            "Componentes do design system não podem conter literais visuais:\n${violations.joinToString("\n") { "- $it" }}"
+        }
+    }
+}
+
 tasks.register("check") {
     group = "verification"
     description = "Executa as verificações arquiteturais do projeto Android."
     dependsOn(tasks.named("verifyArchitecture"))
+    dependsOn(tasks.named("verifyDesignSystemTokens"))
 }
