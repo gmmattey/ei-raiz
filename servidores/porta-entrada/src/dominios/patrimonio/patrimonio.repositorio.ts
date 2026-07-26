@@ -292,10 +292,18 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     );
   },
 
-  async inserirImportacao(id: string, usuarioId: string, origem: string): Promise<void> {
+  async inserirImportacao(id: string, usuarioId: string, origem: string, chaveIdempotencia: string): Promise<void> {
     await bd.executar(
-      `INSERT INTO importacoes (id, usuario_id, origem, status) VALUES (?, ?, ?, 'pendente')`,
-      id, usuarioId, origem,
+      `INSERT INTO importacoes (id, usuario_id, origem, status, chave_idempotencia) VALUES (?, ?, ?, 'pendente', ?)`,
+      id, usuarioId, origem, chaveIdempotencia,
+    );
+  },
+
+  async buscarImportacaoPorChave(usuarioId: string, chaveIdempotencia: string) {
+    return bd.primeiro<LinhaImportacao>(
+      `SELECT id, usuario_id, origem, status, iniciado_em, concluido_em
+         FROM importacoes WHERE usuario_id = ? AND chave_idempotencia = ? LIMIT 1`,
+      usuarioId, chaveIdempotencia,
     );
   },
 
