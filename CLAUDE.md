@@ -108,8 +108,7 @@ src/
 │   │   └── calculos/         # score.ts, rentabilidade.ts, alocacao.ts
 │   ├── mercado/              # Catálogo de ativos, cotações, CVM, FIPE
 │   │   └── provedores/       # brapi.ts, cvm.ts, fipe.ts
-│   ├── decisoes/             # Simulações e Vera (IA)
-│   │   └── vera/
+│   ├── decisoes/             # Simulações
 │   ├── admin/                # Painel operacional interno
 │   └── telemetria/           # Eventos de produto
 └── jobs/
@@ -120,7 +119,7 @@ src/
 
 ---
 
-## API Pública — 36 Endpoints
+## API Pública — 35 Endpoints
 
 ### auth (7)
 ```
@@ -172,12 +171,11 @@ GET    /api/mercado/ativos/:ticker/historico
 GET    /api/mercado/fundos-cvm/:cnpj
 ```
 
-### decisoes (4)
+### decisoes (3)
 ```
 GET    /api/decisoes/simulacoes
 POST   /api/decisoes/simulacoes
 GET    /api/decisoes/simulacoes/:id
-POST   /api/decisoes/vera/mensagens
 ```
 
 ### telemetria (1) — público
@@ -277,7 +275,6 @@ src/
 | **CVM / dados.cvm.gov.br** | Cadastro e cotas de fundos de investimento | Público, sem auth |
 | **FIPE** (`parallelum.com.br`) | Tabela FIPE para veículos | Público, sem auth |
 | **Google Apps Script** | Webhook de e-mail para recuperação de senha | `GOOGLE_APPS_SCRIPT_WEBHOOK_URL` em `wrangler.toml` |
-| **Cloudflare AI** | Vera (assistente IA financeiro) | Binding `AI` no Worker |
 
 ---
 
@@ -350,7 +347,7 @@ usuario.ts     UsuarioSaida, PreferenciasSaida
 perfil.ts      PerfilFinanceiroEntrada, PerfilFinanceiroSaida
 patrimonio.ts  PatrimonioResumoSaida, PatrimonioItemSaida, PatrimonioScoreSaida, ...
 mercado.ts     AtivoSaida, CotacaoSaida, FundoCvmSaida
-decisoes.ts    SimulacaoEntrada, SimulacaoSaida, VeraMensagemEntrada
+decisoes.ts    SimulacaoEntrada, SimulacaoSaida
 admin.ts       AdminUsuarioSaida, AdminAuditoriaSaida
 telemetria.ts  TelemetriaEventoEntrada
 ```
