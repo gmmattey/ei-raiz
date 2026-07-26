@@ -26,3 +26,14 @@ test('aceita cota CVM com patrimônio líquido negativo', async () => {
   assert.equal(resultado.ok, true);
   assert.equal(lotes[0][1].valores[3], -10);
 });
+
+test('retorna somente CNPJs válidos usados pelo patrimônio', async () => {
+  const bd = {
+    consultar: async () => [{ cnpj: '12.345.678/0001-90' }, { cnpj: 'invalido' }],
+    primeiro: async () => null,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 0 }),
+    emLote: async () => {},
+  };
+  const resultado = await servicoCvmIngestao(bd).listarCnpjsAlvo();
+  assert.deepEqual(resultado, { ok: true, dados: { cnpjs: ['12345678000190'] } });
+});

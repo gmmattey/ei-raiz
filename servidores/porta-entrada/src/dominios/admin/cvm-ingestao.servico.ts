@@ -35,6 +35,10 @@ export function normalizarDataCvm(valor: string): string | null {
 }
 
 export const servicoCvmIngestao = (bd: Bd) => ({
+  async listarCnpjsAlvo(): Promise<ServiceResponse<{ cnpjs: string[] }>> {
+    return sucesso({ cnpjs: await repositorioCvmIngestao(bd).listarCnpjsAlvo() });
+  },
+
   async abrirExecucao(entrada: ExecucaoCvmEntrada): Promise<ServiceResponse<{ id: string }>> {
     const id = gerarId();
     await repositorioCvmIngestao(bd).criarExecucao(id, JSON.stringify(entrada));

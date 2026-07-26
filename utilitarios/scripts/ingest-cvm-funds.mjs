@@ -45,7 +45,7 @@ import { dirname } from "node:path";
 
 const API_BASE_URL = (process.env.EI_API_URL || "https://ei-api-gateway.giammattey-luiz.workers.dev").replace(/\/$/, "");
 const ADMIN_TOKEN = process.env.EI_ADMIN_TOKEN;
-const TAMANHO_LOTE = 4000; // endpoint aceita até 5000, deixa margem
+const TAMANHO_LOTE = 500;
 const TMP_DIR = ".tmp-cvm";
 
 const args = new Map();
@@ -135,20 +135,31 @@ async function fetchComRetry(url, opts = {}, tentativas = 3) {
 }
 
 async function apiJson(path, opts = {}) {
-  const res = await fetchComRetry(`${API_BASE_URL}${path}`, {
-    ...opts,
-    headers: {
-      ...(opts.headers ?? {}),
-      "content-type": "application/json",
-      authorization: `Bearer ${ADMIN_TOKEN}`,
-      "x-admin-token": ADMIN_TOKEN,
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body?.ok) {
-    throw new Error(`${opts.method || "GET"} ${path} falhou (${res.status}): ${JSON.stringify(body).slice(0, 300)}`);
+  for (let tentativa = 0; tentativa < 4; tentativa += 1) {
+    const res = await fetchComRetry(`${API_BASE_URL}${path}`, {
+      ...opts,
+      headers: {
+        ...(opts.headers ?? {}),
+        "content-type": "application/json",
+        authorization: `Bearer ${ADMIN_TOKEN}`,
+        "x-admin-token": ADMIN_TOKEN,
+      },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body?.ok) return body.dados;
+    if (![429, 503, 504].includes(res.status) || tentativa === 3) {
+      throw new Error(`${opts.method || "GET"} ${path} falhou (${res.status}): ${JSON.stringify(body).slice(0, 300)}`);
+    }
+    const esperaMs = 1_000 * 2 ** tentativa;
+    console.warn(`  ${path} respondeu ${res.status}; nova tentativa em ${esperaMs}ms`);
+    await new Promise((resolve) => setTimeout(resolve, esperaMs));
   }
-  return body.dados;
+  throw new Error(`${opts.method || "GET"} ${path} excedeu tentativas`);
+}
+
+async function listarCnpjsAlvo() {
+  const dados = await apiJson('/api/admin/cvm/cnpjs-alvo');
+  return new Set((dados.cnpjs ?? []).map(normalizarCnpj).filter(Boolean));
 }
 
 async function abrirRun(referenciaAnoMes) {
@@ -261,8 +272,14 @@ async function ingerirMes(anoMes) {
 
   console.log(`\n▶ Ingestão CVM ${anoMes} (origem=${origemExecucao})`);
 
+  const cnpjsAlvo = await listarCnpjsAlvo();
   const runId = await abrirRun(anoMes);
   console.log(`  runId=${runId}`);
+  if (cnpjsAlvo.size === 0) {
+    await atualizarRun(runId, { status: 'concluido', arquivosProcessados: 0, registrosLidos: 0, registrosValidos: 0, registrosInvalidos: 0 });
+    console.log('  Nenhum fundo ativo com CNPJ; ingestão não necessária.');
+    return { ok: true, runId, totalLidos: 0, totalValidos: 0, totalInvalidos: 0 };
+  }
 
   let caminhoLocal;
   try {
@@ -287,6 +304,7 @@ async function ingerirMes(anoMes) {
       totalLidos += 1;
       const parsed = parseLinhaCvm(row);
       if (!parsed.ok) { totalInvalidos += 1; continue; }
+      if (!cnpjsAlvo.has(parsed.item.cnpj)) continue;
       lote.push(parsed.item);
       if (lote.length >= TAMANHO_LOTE) {
         const r = await postarLoteCotas(runId, lote);
