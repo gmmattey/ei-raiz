@@ -8,6 +8,19 @@ export interface CotaCvmPersistida {
 }
 
 export const repositorioCvmIngestao = (bd: Bd) => ({
+  async listarCnpjsAlvo(): Promise<string[]> {
+    const linhas = await bd.consultar<{ cnpj: string }>(
+      `SELECT DISTINCT a.cnpj
+         FROM ativos a
+         INNER JOIN patrimonio_itens p ON p.ativo_id = a.id
+        WHERE p.esta_ativo = 1
+          AND a.tipo IN ('fundo', 'previdencia')
+          AND a.cnpj IS NOT NULL
+          AND length(trim(a.cnpj)) > 0`,
+    );
+    return linhas.map((linha) => linha.cnpj.replace(/\D/g, '')).filter((cnpj) => cnpj.length === 14);
+  },
+
   async criarExecucao(id: string, parametrosJson: string): Promise<void> {
     await bd.executar(
       `INSERT INTO cvm_execucoes (id, modo, status, parametros_json)

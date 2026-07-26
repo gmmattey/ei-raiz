@@ -51,6 +51,9 @@ export async function rotearAdmin(
   if (tokenServicoCvm && caminho === '/api/admin/cvm/execucoes' && metodo === 'POST') {
     return cvm.abrirExecucao(execucaoSchema.parse(await lerJson(request)));
   }
+  if (tokenServicoCvm && caminho === '/api/admin/cvm/cnpjs-alvo' && metodo === 'GET') {
+    return cvm.listarCnpjsAlvo();
+  }
   if (tokenServicoCvm && caminho === '/api/admin/cvm/cotas' && metodo === 'POST') {
     const entrada = cotasSchema.parse(await lerJson(request));
     return cvm.ingerirCotas(entrada.execucaoId, entrada.itens);
