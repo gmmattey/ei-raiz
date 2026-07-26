@@ -5,6 +5,7 @@
 
 import type { Env } from '../infra/bd';
 import { agora, criarBd } from '../infra/bd';
+import { reconstruirHistoricoDeMovimentos, type MovimentoHistorico } from './patrimonio-historico.movimentos';
 
 interface LinhaUsuario {
   id: string;
@@ -23,6 +24,10 @@ interface LinhaConfianca {
   itens_cotacao_expirada: number;
 }
 
+interface LinhaContagemItens {
+  total_itens: number;
+}
+
 export async function historicoMensalJob(env: Env): Promise<void> {
   const bd = criarBd(env);
   const usuarios = await bd.consultar<LinhaUsuario>(`SELECT id FROM usuarios`);
@@ -32,6 +37,46 @@ export async function historicoMensalJob(env: Env): Promise<void> {
   const timestamp = agora();
 
   for (const u of usuarios) {
+    const [movimentos, itens] = await Promise.all([
+      bd.consultar<MovimentoHistorico>(
+        `SELECT m.item_id, i.tipo AS item_tipo, m.tipo, m.valor_brl, m.data, m.criado_em
+           FROM patrimonio_movimentos m
+           INNER JOIN patrimonio_itens i ON i.id = m.item_id
+          WHERE m.usuario_id = ?
+          ORDER BY m.data ASC, m.criado_em ASC`,
+        u.id,
+      ),
+      bd.primeiro<LinhaContagemItens>(
+        `SELECT COUNT(*) AS total_itens FROM patrimonio_itens WHERE usuario_id = ?`, u.id,
+      ),
+    ]);
+    const historicoReconstruido = reconstruirHistoricoDeMovimentos(
+      movimentos,
+      anoMes,
+      itens?.total_itens ?? 0,
+    );
+    for (const item of historicoReconstruido) {
+      await bd.executar(
+        `INSERT INTO patrimonio_historico_mensal (
+            usuario_id, ano_mes, patrimonio_bruto_brl, patrimonio_liquido_brl,
+            divida_brl, aporte_mes_brl, rentabilidade_mes_pct, eh_confiavel,
+            dados_json, atualizado_em
+          ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
+         ON CONFLICT(usuario_id, ano_mes) DO UPDATE SET
+            patrimonio_bruto_brl = excluded.patrimonio_bruto_brl,
+            patrimonio_liquido_brl = excluded.patrimonio_liquido_brl,
+            divida_brl = excluded.divida_brl,
+            aporte_mes_brl = excluded.aporte_mes_brl,
+            rentabilidade_mes_pct = NULL,
+            eh_confiavel = excluded.eh_confiavel,
+            dados_json = excluded.dados_json,
+            atualizado_em = excluded.atualizado_em`,
+        u.id, item.anoMes, item.patrimonioBrutoBrl, item.patrimonioLiquidoBrl,
+        item.dividaBrl, item.aporteMesBrl, item.ehConfiavel ? 1 : 0,
+        item.dadosJson, timestamp,
+      );
+    }
+
     const resumo = await bd.primeiro<LinhaResumo>(
       `SELECT patrimonio_bruto_brl, divida_brl, patrimonio_liquido_brl, aporte_mes_brl
          FROM vw_patrimonio_resumo WHERE usuario_id = ?`,
