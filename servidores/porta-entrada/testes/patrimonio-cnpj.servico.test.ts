@@ -107,6 +107,7 @@ test('confirma um lote criando a posição canônica uma única vez', async () =
   assert.equal(resultado.dados.itensRejeitados, 0);
   assert.match(lotes[0][0].sql, /INSERT INTO patrimonio_itens/);
   assert.match(lotes[0][1].sql, /resultado = 'aceito'/);
+  assert.match(lotes[0][2].sql, /INSERT INTO patrimonio_fila_reconstrucao/);
 });
 
 test('confirma fundo importado vinculando seu CNPJ ao catálogo canônico', async () => {
