@@ -74,3 +74,15 @@ backups/
 
 # Cache local de tooling de agente
 .impeccable/
+
+# Android native bootstrap local outputs
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+android/hs_err_pid*.log
+android/*.hprof
+android/captures/
+android/**/*.apk
+android/**/*.aab
+android/**/*.apks
