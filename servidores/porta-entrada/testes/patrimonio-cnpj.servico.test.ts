@@ -4,10 +4,11 @@ import { servicoPatrimonio } from '../src/dominios/patrimonio/patrimonio.servico
 
 test('vincula um fundo manual ao ativo canônico pelo CNPJ', async () => {
   const execucoes: { sql: string; valores: unknown[] }[] = [];
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
   let buscasAtivo = 0;
   const bd = {
     consultar: async () => [{
-      item_id: execucoes.at(-1)?.valores[0], usuario_id: 'usuario-1', tipo: 'fundo', origem: 'manual', nome: 'Fundo teste',
+      item_id: lotes[0]?.[0].valores[0], usuario_id: 'usuario-1', tipo: 'fundo', origem: 'manual', nome: 'Fundo teste',
       ativo_id: 'ativo-1', ticker: null, cnpj: '12345678000190', classe: null, subclasse: null,
       quantidade: 1, preco_medio_brl: 10, valor_atual_brl: 10, preco_atual_brl: 10,
       preco_atualizado_em: null, preco_fonte: null, rentabilidade_pct: null,
@@ -21,7 +22,7 @@ test('vincula um fundo manual ao ativo canônico pelo CNPJ', async () => {
       execucoes.push({ sql, valores });
       return { sucesso: true, linhasAfetadas: 1 };
     },
-    emLote: async () => {},
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
   };
 
   const resultado = await servicoPatrimonio(bd).criarItem('usuario-1', {
@@ -31,8 +32,34 @@ test('vincula um fundo manual ao ativo canônico pelo CNPJ', async () => {
   assert.equal(resultado.ok, true, JSON.stringify(resultado));
   assert.match(execucoes[0].sql, /INSERT INTO ativos/);
   assert.equal(execucoes[0].valores[1], '12345678000190');
-  assert.match(execucoes[1].sql, /INSERT INTO patrimonio_itens/);
-  assert.equal(execucoes[1].valores[2], execucoes[0].valores[0]);
+  assert.match(lotes[0][0].sql, /INSERT INTO patrimonio_itens/);
+  assert.equal(lotes[0][0].valores[2], execucoes[0].valores[0]);
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_movimentos/);
+  assert.equal(lotes[0][1].valores[3], 'aporte');
+});
+
+test('cadastro manual de ação cria movimento de compra na mesma operação', async () => {
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
+  const bd = {
+    consultar: async () => [{
+      item_id: lotes[0]?.[0].valores[0] ?? 'item-1', usuario_id: 'usuario-1', tipo: 'acao', origem: 'manual', nome: 'Ação teste',
+      ativo_id: null, ticker: null, cnpj: null, classe: null, subclasse: null, quantidade: 2,
+      preco_medio_brl: 10, valor_atual_brl: 20, preco_atual_brl: null, preco_atualizado_em: null,
+      preco_fonte: null, rentabilidade_pct: null, criado_em: '2026-07-26', atualizado_em: '2026-07-26',
+    }],
+    primeiro: async () => null,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 1 }),
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
+  };
+  const resultado = await servicoPatrimonio(bd).criarItem('usuario-1', {
+    tipo: 'acao', nome: 'Ação teste', quantidade: 2, precoMedioBrl: 10, valorAtualBrl: 20,
+  });
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  assert.match(lotes[0][0].sql, /INSERT INTO patrimonio_itens/);
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_movimentos/);
+  assert.equal(lotes[0][1].valores[3], 'compra');
+  assert.equal(lotes[0][1].valores[4], 2);
+  assert.equal(lotes[0][1].valores[5], 20);
 });
 
 test('rejeita CNPJ fora de fundo ou previdência', async () => {
