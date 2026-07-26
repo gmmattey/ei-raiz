@@ -342,8 +342,24 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     ]);
   },
 
-  async removerItem(id: string, usuarioId: string): Promise<void> {
-    await bd.executar(`DELETE FROM patrimonio_itens WHERE id = ? AND usuario_id = ?`, id, usuarioId);
+  async desativarItemComMovimento(
+    id: string, usuarioId: string,
+    movimento: { id: string; quantidade: number | null; valorBrl: number | null; data: string; dadosJson: string },
+  ): Promise<void> {
+    await bd.emLote([
+      {
+        sql: `UPDATE patrimonio_itens
+                SET esta_ativo = 0, atualizado_em = datetime('now')
+              WHERE id = ? AND usuario_id = ?`,
+        valores: [id, usuarioId],
+      },
+      {
+        sql: `INSERT INTO patrimonio_movimentos
+                (id, usuario_id, item_id, tipo, quantidade, valor_brl, data, origem, dados_json)
+              VALUES (?, ?, ?, 'retirada', ?, ?, ?, 'manual', ?)`,
+        valores: [movimento.id, usuarioId, id, movimento.quantidade, movimento.valorBrl, movimento.data, movimento.dadosJson],
+      },
+    ]);
   },
 
   async listarAportes(usuarioId: string, limite = 200): Promise<LinhaAporte[]> {
