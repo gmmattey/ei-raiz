@@ -39,26 +39,28 @@ export async function atualizarMercadoJob(env: Env): Promise<void> {
       ativo.id,
       fontePara(ativo.tipo),
       timestamp,
-      preco,
+      preco.valor,
       expira,
-      JSON.stringify({ origem: 'job', tipo: ativo.tipo }),
+      JSON.stringify({ origem: 'job', tipo: ativo.tipo, referenciaEm: preco.referenciaEm ?? timestamp }),
     );
   }
 }
 
 function fontePara(tipo: string): string {
-  if (tipo === 'fundo') return 'cvm';
+  if (tipo === 'fundo' || tipo === 'previdencia') return 'cvm';
   if (tipo === 'acao' || tipo === 'fii' || tipo === 'etf') return 'brapi';
   return 'manual';
 }
 
-async function buscarPreco(ativo: LinhaAtivoUsado, env: Env, bd: ReturnType<typeof criarBd>): Promise<number | null> {
-  if (ativo.tipo === 'fundo' && ativo.cnpj) {
-    const cota = await bd.primeiro<{ valor_cota: number }>(
-      `SELECT valor_cota FROM fundos_cvm_cotas WHERE cnpj = ? ORDER BY data DESC LIMIT 1`,
+async function buscarPreco(
+  ativo: LinhaAtivoUsado, env: Env, bd: ReturnType<typeof criarBd>,
+): Promise<{ valor: number; referenciaEm?: string } | null> {
+  if ((ativo.tipo === 'fundo' || ativo.tipo === 'previdencia') && ativo.cnpj) {
+    const cota = await bd.primeiro<{ valor_cota: number; data: string }>(
+      `SELECT valor_cota, data FROM fundos_cvm_cotas WHERE cnpj = ? ORDER BY data DESC LIMIT 1`,
       ativo.cnpj.replace(/\D/g, ''),
     );
-    return cota?.valor_cota ?? null;
+    return cota ? { valor: cota.valor_cota, referenciaEm: cota.data } : null;
   }
   if (ativo.ticker && (env.BRAPI_TOKEN || env.BRAPI_BASE_URL)) {
     const base = env.BRAPI_BASE_URL ?? 'https://brapi.dev/api';
@@ -68,7 +70,7 @@ async function buscarPreco(ativo: LinhaAtivoUsado, env: Env, bd: ReturnType<type
       if (!resp.ok) return null;
       const dados = await resp.json() as { results?: Array<{ regularMarketPrice?: number }> };
       const preco = dados.results?.[0]?.regularMarketPrice;
-      return typeof preco === 'number' ? preco : null;
+      return typeof preco === 'number' ? { valor: preco } : null;
     } catch {
       return null;
     }

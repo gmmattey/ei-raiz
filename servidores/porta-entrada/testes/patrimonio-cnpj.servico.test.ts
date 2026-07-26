@@ -43,3 +43,26 @@ test('rejeita CNPJ fora de fundo ou previdência', async () => {
   assert.equal(resultado.ok, false);
   assert.equal(resultado.codigo, 'cnpj_tipo_invalido');
 });
+
+test('expõe valor calculado e frescor da cotação no contrato patrimonial', async () => {
+  const bd = {
+    consultar: async () => [{
+      item_id: 'item-1', usuario_id: 'usuario-1', tipo: 'fundo', origem: 'manual', nome: 'Fundo teste',
+      ativo_id: 'ativo-1', ticker: null, cnpj: '12345678000190', classe: null, subclasse: null,
+      quantidade: 10, preco_medio_brl: 9, valor_atual_brl: 125, preco_atual_brl: 12.5,
+      preco_atualizado_em: '2026-07-25T10:00:00.000Z', preco_fonte: 'cvm',
+      preco_referencia_em: '2026-07-24', preco_expira_em: '2026-07-25T10:05:00.000Z',
+      rentabilidade_pct: 38.8, criado_em: '2026-07-25', atualizado_em: '2026-07-25',
+    }],
+    primeiro: async () => null,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 0 }),
+    emLote: async () => {},
+  };
+  const resultado = await servicoPatrimonio(bd).listarItens('usuario-1');
+  assert.equal(resultado.ok, true);
+  if (!resultado.ok) return;
+  assert.deepEqual(resultado.dados.itens[0].estadoValor, 'cotacao');
+  assert.equal(resultado.dados.itens[0].valorAtualBrl, 125);
+  assert.equal(resultado.dados.itens[0].fonteCotacao, 'cvm');
+  assert.equal(resultado.dados.itens[0].cotacaoReferenciaEm, '2026-07-24');
+});
