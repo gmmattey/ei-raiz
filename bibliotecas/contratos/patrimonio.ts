@@ -8,6 +8,7 @@ export type OrigemItemPatrimonio = 'manual' | 'importacao' | 'vinculo_corretora'
 export type EstadoValorPatrimonial = 'cotacao' | 'manual' | 'indisponivel';
 
 export type TipoAporte = 'aporte' | 'retirada' | 'transferencia' | 'ajuste';
+export type TipoMovimentoPatrimonial = 'compra' | 'venda' | 'aporte' | 'retirada' | 'transferencia' | 'resgate' | 'ajuste' | 'correcao';
 
 export interface ItemPatrimonioSaida {
   id: string;
@@ -78,6 +79,21 @@ export interface AporteCriarEntrada {
   valorBrl: number;
   data: string;
   descricao?: string | null;
+}
+
+export interface MovimentoPatrimonialSaida {
+  id: string;
+  usuarioId: string;
+  itemId: string;
+  importacaoId: string | null;
+  linhaImportacao: number | null;
+  tipo: TipoMovimentoPatrimonial;
+  quantidade: number | null;
+  valorBrl: number | null;
+  data: string;
+  origem: OrigemItemPatrimonio;
+  dadosJson: Record<string, unknown>;
+  criadoEm: string;
 }
 
 export interface HistoricoMensalItem {

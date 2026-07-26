@@ -158,3 +158,24 @@ test('expõe valor calculado e frescor da cotação no contrato patrimonial', as
   assert.equal(resultado.dados.itens[0].fonteCotacao, 'cvm');
   assert.equal(resultado.dados.itens[0].cotacaoReferenciaEm, '2026-07-24');
 });
+
+test('lista somente os movimentos do item do usuário autenticado', async () => {
+  const bd = {
+    consultar: async (sql: string) => sql.includes('FROM patrimonio_movimentos') ? [{
+      id: 'movimento-1', usuario_id: 'usuario-1', item_id: 'item-1', importacao_id: 'importacao-1', linha_importacao: 3,
+      tipo: 'compra', quantidade: 10, valor_brl: 300, data: '2026-07-20', origem: 'importacao',
+      dados_json: '{"aba":"acoes"}', criado_em: '2026-07-20T10:00:00.000Z',
+    }] : [],
+    primeiro: async (sql: string) => sql.includes('FROM patrimonio_itens') ? { id: 'item-1' } : null,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 0 }),
+    emLote: async () => {},
+  };
+  const resultado = await servicoPatrimonio(bd).listarMovimentosItem('usuario-1', 'item-1');
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  if (!resultado.ok) return;
+  assert.deepEqual(resultado.dados.itens[0], {
+    id: 'movimento-1', usuarioId: 'usuario-1', itemId: 'item-1', importacaoId: 'importacao-1', linhaImportacao: 3,
+    tipo: 'compra', quantidade: 10, valorBrl: 300, data: '2026-07-20', origem: 'importacao',
+    dadosJson: { aba: 'acoes' }, criadoEm: '2026-07-20T10:00:00.000Z',
+  });
+});
