@@ -39,13 +39,14 @@ export async function patrimonioReconstruirJob(env: Env): Promise<void> {
         `SELECT p.id, p.quantidade, p.preco_medio_brl,
                 (SELECT preco_brl FROM ativos_cotacoes_cache c WHERE c.ativo_id = p.ativo_id ORDER BY cotado_em DESC LIMIT 1) AS preco_atual_brl
            FROM patrimonio_itens p
-          WHERE p.usuario_id = ? AND p.esta_ativo = 1`,
+          WHERE p.usuario_id = ? AND p.esta_ativo = 1 AND p.quantidade IS NOT NULL`,
         tarefa.usuario_id,
       );
 
       for (const item of itens) {
-        const preco = item.preco_atual_brl ?? item.preco_medio_brl ?? 0;
-        const quantidade = item.quantidade ?? 0;
+        const preco = item.preco_atual_brl ?? item.preco_medio_brl;
+        const quantidade = item.quantidade;
+        if (preco === null || quantidade === null) continue;
         const valor = quantidade * preco;
         await bd.executar(
           `UPDATE patrimonio_itens SET valor_atual_brl = ?, atualizado_em = ? WHERE id = ?`,
