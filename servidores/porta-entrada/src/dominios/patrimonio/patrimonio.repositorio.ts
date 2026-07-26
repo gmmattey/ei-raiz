@@ -304,6 +304,44 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     );
   },
 
+  async atualizarItemComMovimento(
+    id: string, usuarioId: string,
+    campos: {
+      ativoId?: string | null;
+      tipo?: string; nome?: string; quantidade?: number | null;
+      precoMedioBrl?: number | null; valorAtualBrl?: number | null;
+      moeda?: string; estaAtivo?: boolean; dadosJson?: string;
+    },
+    movimento: { id: string; quantidade: number | null; valorBrl: number | null; data: string; dadosJson: string },
+  ): Promise<void> {
+    const partes: string[] = [];
+    const vals: unknown[] = [];
+    const set = (col: string, v: unknown) => { partes.push(`${col} = ?`); vals.push(v); };
+    if (campos.ativoId !== undefined) set('ativo_id', campos.ativoId);
+    if (campos.tipo !== undefined) set('tipo', campos.tipo);
+    if (campos.nome !== undefined) set('nome', campos.nome);
+    if (campos.quantidade !== undefined) set('quantidade', campos.quantidade);
+    if (campos.precoMedioBrl !== undefined) set('preco_medio_brl', campos.precoMedioBrl);
+    if (campos.valorAtualBrl !== undefined) set('valor_atual_brl', campos.valorAtualBrl);
+    if (campos.moeda !== undefined) set('moeda', campos.moeda);
+    if (campos.estaAtivo !== undefined) set('esta_ativo', campos.estaAtivo ? 1 : 0);
+    if (campos.dadosJson !== undefined) set('dados_json', campos.dadosJson);
+    partes.push("atualizado_em = datetime('now')");
+    vals.push(id, usuarioId);
+    await bd.emLote([
+      {
+        sql: `UPDATE patrimonio_itens SET ${partes.join(', ')} WHERE id = ? AND usuario_id = ?`,
+        valores: vals,
+      },
+      {
+        sql: `INSERT INTO patrimonio_movimentos
+                (id, usuario_id, item_id, tipo, quantidade, valor_brl, data, origem, dados_json)
+              VALUES (?, ?, ?, 'correcao', ?, ?, ?, 'manual', ?)`,
+        valores: [movimento.id, usuarioId, id, movimento.quantidade, movimento.valorBrl, movimento.data, movimento.dadosJson],
+      },
+    ]);
+  },
+
   async removerItem(id: string, usuarioId: string): Promise<void> {
     await bd.executar(`DELETE FROM patrimonio_itens WHERE id = ? AND usuario_id = ?`, id, usuarioId);
   },
