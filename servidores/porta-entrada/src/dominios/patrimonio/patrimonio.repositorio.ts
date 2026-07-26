@@ -252,6 +252,28 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     );
   },
 
+  async inserirItemComMovimento(
+    id: string, usuarioId: string, ativoId: string | null, tipo: string, origem: string,
+    nome: string, quantidade: number | null, precoMedioBrl: number | null, valorAtualBrl: number | null,
+    moeda: string, dadosJson: string,
+    movimentoId: string, tipoMovimento: string, dataMovimento: string,
+  ): Promise<void> {
+    await bd.emLote([
+      {
+        sql: `INSERT INTO patrimonio_itens
+                (id, usuario_id, ativo_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        valores: [id, usuarioId, ativoId, tipo, origem, nome, quantidade, precoMedioBrl, valorAtualBrl, moeda, dadosJson],
+      },
+      {
+        sql: `INSERT INTO patrimonio_movimentos
+                (id, usuario_id, item_id, tipo, quantidade, valor_brl, data, origem, dados_json)
+              VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)`,
+        valores: [movimentoId, usuarioId, id, tipoMovimento, quantidade, valorAtualBrl, dataMovimento, dadosJson],
+      },
+    ]);
+  },
+
   async atualizarItem(
     id: string, usuarioId: string,
     campos: {

@@ -108,6 +108,12 @@ const normalizarCnpjPatrimonial = (valor: string): string | null => {
 
 const aceitaCnpj = (tipo: TipoItemPatrimonio): boolean => tipo === 'fundo' || tipo === 'previdencia';
 
+const tipoMovimentoInicial = (tipo: TipoItemPatrimonio): TipoMovimentoPatrimonial => {
+  if (tipo === 'acao' || tipo === 'fii' || tipo === 'etf' || tipo === 'cripto') return 'compra';
+  if (tipo === 'fundo' || tipo === 'previdencia' || tipo === 'renda_fixa' || tipo === 'poupanca' || tipo === 'caixa') return 'aporte';
+  return 'ajuste';
+};
+
 const serializarEstavel = (valor: unknown): string => {
   if (Array.isArray(valor)) return `[${valor.map(serializarEstavel).join(',')}]`;
   if (valor && typeof valor === 'object') {
@@ -271,10 +277,12 @@ export const servicoPatrimonio = (bd: Bd) => {
         }
       }
       const id = gerarId();
-      await repo.inserirItem(
+      const dadosJson = JSON.stringify(e.dadosJson ?? {});
+      await repo.inserirItemComMovimento(
         id, usuarioId, ativoId, e.tipo, 'manual', e.nome,
         e.quantidade ?? null, e.precoMedioBrl ?? null, e.valorAtualBrl ?? null,
-        e.moeda ?? 'BRL', JSON.stringify(e.dadosJson ?? {}),
+        e.moeda ?? 'BRL', dadosJson,
+        gerarId(), tipoMovimentoInicial(e.tipo), new Date().toISOString().slice(0, 10),
       );
       return this.obterItem(usuarioId, id);
     },
