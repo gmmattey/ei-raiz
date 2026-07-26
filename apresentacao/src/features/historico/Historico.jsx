@@ -67,6 +67,7 @@ export default function Historico() {
             dataRef: anoMesParaData(p.anoMes),
             valorTotal: Number(p.patrimonioBrutoBrl ?? 0),
             variacaoPercentual: Number(p.rentabilidadeMesPct ?? 0),
+            ehConfiavel: p.ehConfiavel !== false,
           }))
           .filter((item) => {
             if (!item.dataRef) return false;
@@ -154,6 +155,7 @@ export default function Historico() {
                       <p className="text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-tight">
                         Variação {ocultarValores ? '••••••••' : `${snap.variacaoPercentual >= 0 ? '+' : ''}${snap.variacaoPercentual.toFixed(2)}%`}
                       </p>
+                      {!snap.ehConfiavel && <p className="text-[10px] text-[#9A6A16] font-bold uppercase tracking-tight">Dados incompletos ou desatualizados</p>}
                     </div>
                     <p className="font-['Sora'] text-sm font-bold">{ocultarValores ? '••••••••' : moeda(snap.valorTotal)}</p>
                   </div>
