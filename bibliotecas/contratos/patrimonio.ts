@@ -110,6 +110,11 @@ export interface HistoricoMensalSaida {
   itens: HistoricoMensalItem[];
 }
 
+export interface ReconstrucaoHistoricoSaida {
+  mesesReconstruidos: number;
+  mesesConfiaveis: number;
+}
+
 export interface AlocacaoClasse {
   tipo: string;
   classe: string | null;

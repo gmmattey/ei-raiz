@@ -7,6 +7,7 @@ import type {
   TipoItemPatrimonio, OrigemItemPatrimonio,
   ImportacaoSaida, ImportacaoCriarEntrada, ImportacaoConfirmarSaida,
   MovimentoPatrimonialSaida, TipoMovimentoPatrimonial,
+  ReconstrucaoHistoricoSaida,
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
@@ -17,6 +18,7 @@ import {
   type LinhaEvolucao, type LinhaPosicao, type LinhaResumo, type LinhaScoreAtual,
   type LinhaMovimentoPatrimonial,
 } from './patrimonio.repositorio';
+import { reconstruirHistoricoPorMovimentosUsuario } from '../../jobs/historico-mensal.job';
 
 const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida => {
   const valor = l.valor_atual_brl ?? 0;
@@ -258,6 +260,10 @@ export const servicoPatrimonio = (bd: Bd) => {
       if (!item) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
       const movimentos = await repo.listarMovimentosItem(usuarioId, itemId);
       return sucesso({ itens: movimentos.map(paraMovimentoSaida) });
+    },
+
+    async reconstruirHistorico(usuarioId: string): Promise<ServiceResponse<ReconstrucaoHistoricoSaida>> {
+      return sucesso(await reconstruirHistoricoPorMovimentosUsuario(bd, usuarioId));
     },
 
     async criarItem(usuarioId: string, e: ItemPatrimonioCriarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {
