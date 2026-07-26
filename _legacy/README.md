@@ -10,8 +10,19 @@ deste repositório (`esquilo-wallet`, ex-`ei-raiz`). Histórico de cada um foi i
 | `v1/` | `esquilo-invest` | Gen 1 — dashboard financeiro em Google Apps Script |
 | `v2/` | `Esquilo-Invest-2.0` | Gen 2 — Apps Script + BigQuery + MVP Flutter ("Pocket Ops") |
 | `bridge/` | `Quebra_Nozes` | Ponte de transição do legado Apps Script pro Cloudflare/D1 (não chegou a virar produto integrado) |
-| `vera-insights/` | `vera-insights` | Protótipo standalone da plataforma de IA financeira Vera — hoje esse conceito vive como o domínio `decisoes/vera` na raiz deste repo |
+| `vera-insights/` | `vera-insights` | Protótipo standalone da plataforma de IA financeira Vera. Vera foi descontinuada como produto e removida da raiz em 2026-07-26 (ver `documentacao/consolidacao/AUDITORIA_CONSOLIDACAO_PRODUTO_UNICO.md` §11.6) |
 | `quanto/` | `Quanto` (nunca publicado no GitHub, só clone local) | Consolidação de patrimônio pessoal — produto separado do Esquilo Invest/Wallet, mas mesmo domínio (patrimônio, ativos, importação). Fora do foco 7ALabs desde 2026-07-10 |
 
 Cada pasta preserva a estrutura interna do repo original. Não há build/CI configurado pra nada
 aqui dentro — é referência histórica, não código ativo.
+
+## Congelado (2026-07-26)
+
+O inventário item a item dos cinco legados acima está completo — ver
+`documentacao/consolidacao/AUDITORIA_CONSOLIDACAO_PRODUTO_UNICO.md` §11 (issue #115, fechada).
+
+**Esta pasta é somente leitura a partir daqui.** Nenhum arquivo dentro de `_legacy/` deve ser
+editado, movido ou ter conteúdo novo adicionado — mudanças aqui só devem acontecer por engano ou
+para extrair algo pontual já classificado como "Pendente" no inventário (nesse caso, o código nasce
+de novo na raiz, não é editado aqui). Se uma PR tocar em `_legacy/`, é sinal de alerta: revisar com
+atenção antes de aprovar.
