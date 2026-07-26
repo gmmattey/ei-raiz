@@ -12,7 +12,7 @@ import type {
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
-import { erro, sucesso, type ServiceResponse } from '../../infra/http';
+import { erro, sucesso, type ServiceError, type ServiceResponse } from '../../infra/http';
 import { calcularAlocacao } from './calculos/alocacao';
 import {
   repositorioPatrimonio, type LinhaAlocacao, type LinhaAporte,
@@ -118,6 +118,21 @@ const tipoMovimentoInicial = (tipo: TipoItemPatrimonio): TipoMovimentoPatrimonia
   if (tipo === 'acao' || tipo === 'fii' || tipo === 'etf' || tipo === 'cripto') return 'compra';
   if (tipo === 'fundo' || tipo === 'previdencia' || tipo === 'renda_fixa' || tipo === 'poupanca' || tipo === 'caixa') return 'aporte';
   return 'ajuste';
+};
+
+const lifecyclesValidos = new Set<LifecycleItemPatrimonio>(['ativo', 'em_resgate', 'em_saida', 'vendido', 'encerrado', 'arquivado']);
+
+const validarCustodiaELifecycle = async (
+  repo: ReturnType<typeof repositorioPatrimonio>, usuarioId: string,
+  corretoraId: string | null | undefined, lifecycleStatus: unknown,
+): Promise<ServiceError | null> => {
+  if (lifecycleStatus !== undefined && !lifecyclesValidos.has(lifecycleStatus as LifecycleItemPatrimonio)) {
+    return erro('lifecycle_invalido', 'Status patrimonial inválido', 400);
+  }
+  if (corretoraId && !(await repo.usuarioPossuiCorretora(usuarioId, corretoraId))) {
+    return erro('corretora_nao_vinculada', 'A corretora não está vinculada ao usuário', 400);
+  }
+  return null;
 };
 
 const serializarEstavel = (valor: unknown): string => {
@@ -272,6 +287,8 @@ export const servicoPatrimonio = (bd: Bd) => {
 
     async criarItem(usuarioId: string, e: ItemPatrimonioCriarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {
       if (!e.tipo || !e.nome) return erro('dados_incompletos', 'Tipo e nome são obrigatórios', 400);
+      const custodia = await validarCustodiaELifecycle(repo, usuarioId, e.corretoraId, e.lifecycleStatus);
+      if (custodia) return custodia;
       let ativoId = e.ativoId ?? null;
       if (e.cnpj !== undefined && e.cnpj !== null) {
         if (!aceitaCnpj(e.tipo)) return erro('cnpj_tipo_invalido', 'CNPJ só pode ser usado em fundos ou previdência', 400);
@@ -300,6 +317,8 @@ export const servicoPatrimonio = (bd: Bd) => {
     async atualizarItem(usuarioId: string, id: string, e: ItemPatrimonioAtualizarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {
       const atual = await repo.buscarItemBruto(usuarioId, id);
       if (!atual) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
+      const custodia = await validarCustodiaELifecycle(repo, usuarioId, e.corretoraId, e.lifecycleStatus);
+      if (custodia) return custodia;
       let ativoId: string | null | undefined;
       if (e.cnpj !== undefined) {
         if (e.cnpj === null || e.cnpj.trim() === '') ativoId = null;
