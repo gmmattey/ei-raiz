@@ -467,11 +467,16 @@ Evite:
 - dividir uma decisão de produto entre agentes;
 - usar subagentes apenas para parecer que houve mais trabalho.
 
+Agentes disponíveis:
+
+- **Davi**: explora o código e mapeia dependências em modo somente leitura.
+- **Augusto**: revisa o diff, os riscos e os testes em modo somente leitura.
+
 Para alterações grandes, prefira:
 
-1. um agente explorador em modo somente leitura;
+1. Davi explorando em modo somente leitura;
 2. o agente principal implementando;
-3. um agente revisor em modo somente leitura.
+3. Augusto revisando em modo somente leitura.
 
 ## 17. Proibições
 
