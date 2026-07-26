@@ -17,6 +17,12 @@ interface LinhaResumo {
   aporte_mes_brl: number | null;
 }
 
+interface LinhaConfianca {
+  total_itens: number;
+  itens_sem_valor: number;
+  itens_cotacao_expirada: number;
+}
+
 export async function historicoMensalJob(env: Env): Promise<void> {
   const bd = criarBd(env);
   const usuarios = await bd.consultar<LinhaUsuario>(`SELECT id FROM usuarios`);
@@ -33,18 +39,42 @@ export async function historicoMensalJob(env: Env): Promise<void> {
     );
     if (!resumo) continue;
 
+    const confianca = await bd.primeiro<LinhaConfianca>(
+      `SELECT
+          COUNT(*) AS total_itens,
+          SUM(CASE WHEN i.valor_atual_brl IS NULL THEN 1 ELSE 0 END) AS itens_sem_valor,
+          SUM(CASE WHEN i.quantidade IS NOT NULL AND i.ativo_id IS NOT NULL
+                    AND NOT EXISTS (
+                      SELECT 1 FROM ativos_cotacoes_cache c
+                       WHERE c.ativo_id = i.ativo_id AND c.expira_em >= ?
+                    )
+                   THEN 1 ELSE 0 END) AS itens_cotacao_expirada
+         FROM patrimonio_itens i WHERE i.usuario_id = ? AND i.esta_ativo = 1`,
+      timestamp, u.id,
+    );
+    const itensSemValor = confianca?.itens_sem_valor ?? 0;
+    const itensCotacaoExpirada = confianca?.itens_cotacao_expirada ?? 0;
+    const ehConfiavel = itensSemValor === 0 && itensCotacaoExpirada === 0 ? 1 : 0;
+    const dadosJson = JSON.stringify({
+      totalItens: confianca?.total_itens ?? 0,
+      itensSemValor,
+      itensCotacaoExpirada,
+    });
+
     await bd.executar(
       `INSERT INTO patrimonio_historico_mensal (
           usuario_id, ano_mes,
           patrimonio_bruto_brl, patrimonio_liquido_brl, divida_brl,
           aporte_mes_brl, rentabilidade_mes_pct, eh_confiavel,
           dados_json, atualizado_em
-        ) VALUES (?, ?, ?, ?, ?, ?, NULL, 1, '{}', ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
        ON CONFLICT(usuario_id, ano_mes) DO UPDATE SET
          patrimonio_bruto_brl = excluded.patrimonio_bruto_brl,
          patrimonio_liquido_brl = excluded.patrimonio_liquido_brl,
          divida_brl = excluded.divida_brl,
          aporte_mes_brl = excluded.aporte_mes_brl,
+         eh_confiavel = excluded.eh_confiavel,
+         dados_json = excluded.dados_json,
          atualizado_em = excluded.atualizado_em`,
       u.id,
       anoMes,
@@ -52,6 +82,8 @@ export async function historicoMensalJob(env: Env): Promise<void> {
       resumo.patrimonio_liquido_brl ?? 0,
       resumo.divida_brl ?? 0,
       resumo.aporte_mes_brl ?? 0,
+      ehConfiavel,
+      dadosJson,
       timestamp,
     );
   }

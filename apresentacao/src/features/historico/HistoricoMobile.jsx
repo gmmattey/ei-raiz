@@ -70,6 +70,7 @@ export default function HistoricoMobile() {
             dataRef: anoMesParaData(p.anoMes),
             valorTotal: Number(p.patrimonioBrutoBrl ?? 0),
             variacaoPercentual: Number(p.rentabilidadeMesPct ?? 0),
+            ehConfiavel: p.ehConfiavel !== false,
           }))
           .filter((item) => {
             if (!item.dataRef) return false;
@@ -196,6 +197,7 @@ export default function HistoricoMobile() {
                           ? 'Variação ••••'
                           : `Variação ${Number(snap.variacaoPercentual ?? 0) >= 0 ? '+' : ''}${Number(snap.variacaoPercentual ?? 0).toFixed(2)}%`}
                       </p>
+                      {!snap.ehConfiavel && <p className="text-[10px] font-semibold uppercase text-[#9A6A16]">Dados incompletos ou desatualizados</p>}
                     </div>
                     <p className="font-['Sora'] text-[12px] font-bold text-[var(--text-primary)]">
                       {ocultarValores ? '••••••' : moeda(snap.valorTotal)}
