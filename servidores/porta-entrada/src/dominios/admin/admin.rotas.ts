@@ -17,7 +17,7 @@ const cotasSchema = z.object({
     cnpj: z.string().min(1),
     data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     valorCota: z.number().positive(),
-    patrimonioLiquidoBrl: z.number().nonnegative().optional(),
+    patrimonioLiquidoBrl: z.number().finite().optional(),
   })).min(1).max(5000),
 });
 
