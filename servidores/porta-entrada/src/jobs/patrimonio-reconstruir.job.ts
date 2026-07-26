@@ -17,15 +17,16 @@ interface LinhaItemComPreco {
   preco_atual_brl: number | null;
 }
 
-export async function patrimonioReconstruirJob(env: Env): Promise<void> {
+export async function patrimonioReconstruirJob(env: Env): Promise<number> {
   const bd = criarBd(env);
   const fila = await bd.consultar<LinhaFila>(
     `SELECT id, usuario_id FROM patrimonio_fila_reconstrucao
       WHERE status = 'pendente' ORDER BY agendado_em ASC LIMIT 50`,
   );
-  if (fila.length === 0) return;
+  if (fila.length === 0) return 0;
 
   const timestamp = agora();
+  let processadas = 0;
 
   for (const tarefa of fila) {
     try {
@@ -34,6 +35,7 @@ export async function patrimonioReconstruirJob(env: Env): Promise<void> {
         timestamp,
         tarefa.id,
       );
+      processadas += 1;
 
       const itens = await bd.consultar<LinhaItemComPreco>(
         `SELECT p.id, p.quantidade, p.preco_medio_brl,
@@ -70,4 +72,5 @@ export async function patrimonioReconstruirJob(env: Env): Promise<void> {
       );
     }
   }
+  return processadas;
 }
