@@ -5,7 +5,7 @@ import type {
   PatrimonioResumoSaida, AlocacaoClasse,
   PatrimonioScoreSaida, ScoreFaixa, ScorePilar,
   TipoItemPatrimonio, OrigemItemPatrimonio,
-  ImportacaoSaida, ImportacaoCriarEntrada,
+  ImportacaoSaida, ImportacaoCriarEntrada, ImportacaoConfirmarSaida,
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
@@ -106,6 +106,54 @@ const chaveIdempotenciaImportacao = async (itens: ImportacaoCriarEntrada['itens'
   const conteudo = serializarEstavel(itens.map(({ linha, tipo, dadosJson }) => ({ linha, tipo, dadosJson })));
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(conteudo));
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
+type ItemImportado = {
+  tipo: TipoItemPatrimonio;
+  nome: string;
+  quantidade: number | null;
+  precoMedioBrl: number | null;
+  valorAtualBrl: number | null;
+  dadosJson: string;
+};
+
+const numeroPositivo = (valor: unknown): number | null => {
+  const numero = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(numero) && numero > 0 ? numero : null;
+};
+
+const textoObrigatorio = (valor: unknown): string | null => {
+  const texto = typeof valor === 'string' ? valor.trim() : '';
+  return texto || null;
+};
+
+const materializarItemImportado = (dados: Record<string, unknown>): ItemImportado | null => {
+  const aba = textoObrigatorio(dados.aba);
+  const bruto = JSON.stringify(dados);
+  if (aba === 'acoes') {
+    const ticker = textoObrigatorio(dados.ticker);
+    const quantidade = numeroPositivo(dados.quantidade);
+    if (!ticker || !quantidade) return null;
+    const precoMedioBrl = numeroPositivo(dados.precoMedio);
+    const valorAtualBrl = numeroPositivo(dados.valorTotal) ?? (precoMedioBrl ? quantidade * precoMedioBrl : null);
+    return { tipo: 'acao', nome: textoObrigatorio(dados.nome) ?? ticker, quantidade, precoMedioBrl, valorAtualBrl, dadosJson: bruto };
+  }
+  const mapeamento: Record<string, TipoItemPatrimonio> = {
+    fundos: 'fundo', previdencia: 'previdencia', renda_fixa: 'renda_fixa',
+    imoveis: 'imovel', veiculos: 'veiculo', poupanca: 'poupanca',
+  };
+  const tipo = aba ? mapeamento[aba] : undefined;
+  if (!tipo) return null;
+  const nome = textoObrigatorio(dados.nome)
+    ?? textoObrigatorio(dados.descricao)
+    ?? textoObrigatorio(dados.instituicao)
+    ?? (tipo === 'veiculo' ? [textoObrigatorio(dados.montadora), textoObrigatorio(dados.modelo)].filter(Boolean).join(' ') : null);
+  const valorAtualBrl = numeroPositivo(dados.valorAplicado)
+    ?? numeroPositivo(dados.valorEstimado)
+    ?? numeroPositivo(dados.valorReferencia)
+    ?? numeroPositivo(dados.valorAtual);
+  if (!nome || !valorAtualBrl) return null;
+  return { tipo, nome, quantidade: null, precoMedioBrl: null, valorAtualBrl, dadosJson: bruto };
 };
 
 export const servicoPatrimonio = (bd: Bd) => {
@@ -316,6 +364,59 @@ export const servicoPatrimonio = (bd: Bd) => {
         iniciadoEm: l.iniciado_em,
         concluidoEm: l.concluido_em,
       });
+    },
+
+    async confirmarImportacao(usuarioId: string, id: string): Promise<ServiceResponse<ImportacaoConfirmarSaida>> {
+      const importacao = await repo.buscarImportacao(id, usuarioId);
+      if (!importacao) return erro('importacao_nao_encontrada', 'Importação não encontrada', 404);
+      const resumoExistente = await repo.resumoItensImportacao(id);
+      if (importacao.status === 'confirmado') {
+        const existente = await this.obterImportacao(usuarioId, id);
+        if (!existente.ok) return existente;
+        return sucesso({ importacao: existente.dados, itensCriados: resumoExistente.aceitos, itensRejeitados: resumoExistente.rejeitados });
+      }
+      if (!(await repo.reservarImportacao(id, usuarioId))) {
+        return erro('importacao_em_processamento', 'Importação já está sendo confirmada', 409);
+      }
+
+      try {
+        const linhas = await repo.listarItensImportacao(id);
+        const operacoes: { sql: string; valores: unknown[] }[] = [];
+        const chavesLinhas = new Set<string>();
+        let aceitos = 0;
+        let rejeitados = 0;
+        for (const linha of linhas) {
+          let dados: Record<string, unknown> | null = null;
+          try { dados = JSON.parse(linha.dados_json) as Record<string, unknown>; } catch { dados = null; }
+          const item = dados ? materializarItemImportado(dados) : null;
+          const chaveLinha = item ? serializarEstavel({
+            tipo: item.tipo, nome: item.nome.toLocaleUpperCase('pt-BR'), quantidade: item.quantidade,
+            precoMedioBrl: item.precoMedioBrl, valorAtualBrl: item.valorAtualBrl,
+          }) : null;
+          if (!item || !chaveLinha || chavesLinhas.has(chaveLinha)) {
+            rejeitados += 1;
+            operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'rejeitado' WHERE id = ?`, valores: [linha.id] });
+            continue;
+          }
+          chavesLinhas.add(chaveLinha);
+          aceitos += 1;
+          operacoes.push({
+            sql: `INSERT INTO patrimonio_itens
+                    (id, usuario_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
+                  VALUES (?, ?, ?, 'importacao', ?, ?, ?, ?, 'BRL', ?)`,
+            valores: [gerarId(), usuarioId, item.tipo, item.nome, item.quantidade, item.precoMedioBrl, item.valorAtualBrl, item.dadosJson],
+          });
+          operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'aceito' WHERE id = ?`, valores: [linha.id] });
+        }
+        await bd.emLote(operacoes);
+        await repo.concluirImportacao(id, usuarioId);
+        const confirmada = await this.obterImportacao(usuarioId, id);
+        if (!confirmada.ok) return confirmada;
+        return sucesso({ importacao: confirmada.dados, itensCriados: aceitos, itensRejeitados: rejeitados });
+      } catch (causa) {
+        await repo.falharImportacao(id, usuarioId);
+        throw causa;
+      }
     },
   };
 };

@@ -81,16 +81,16 @@ export default function ImportarMobile() {
     if (!preview || isConfirmando) return;
     setIsConfirmando(true);
     try {
-      await patrimonioApi.obterImportacao(preview.importacaoId).catch(() => null);
+      const confirmacao = await patrimonioApi.confirmarImportacao(preview.importacaoId);
       await telemetriaApi.registrarEvento({
         nome: 'import_confirmed',
-        dadosJson: { importacaoId: preview.importacaoId, itensValidos: preview.totalItens },
+        dadosJson: { importacaoId: preview.importacaoId, itensValidos: confirmacao.itensCriados },
       }).catch(() => null);
       invalidarCacheUsuario();
       localStorage.setItem('hasSeenPreInsight', 'true');
       navigate('/home', {
         replace: true,
-        state: { showSuccessImport: true, importedItems: preview.totalItens, importacaoId: preview.importacaoId },
+        state: { showSuccessImport: true, importedItems: confirmacao.itensCriados, importacaoId: preview.importacaoId },
       });
     } catch {
       setErro('Falha ao confirmar. Tente novamente.');

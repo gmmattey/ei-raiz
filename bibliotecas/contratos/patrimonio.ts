@@ -155,3 +155,9 @@ export interface ImportacaoItemEntrada {
   tipo: string;
   dadosJson: Record<string, unknown>;
 }
+
+export interface ImportacaoConfirmarSaida {
+  importacao: ImportacaoSaida;
+  itensCriados: number;
+  itensRejeitados: number;
+}

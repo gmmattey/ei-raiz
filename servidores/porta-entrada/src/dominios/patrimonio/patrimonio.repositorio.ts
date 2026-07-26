@@ -117,6 +117,14 @@ export interface LinhaImportacao {
   concluido_em: string | null;
 }
 
+export interface LinhaItemImportacao {
+  id: string;
+  linha: number;
+  tipo: string;
+  resultado: string;
+  dados_json: string;
+}
+
 export const repositorioPatrimonio = (bd: Bd) => ({
   async buscarAtivoPorCnpj(cnpj: string) {
     return bd.primeiro<{ id: string }>(`SELECT id FROM ativos WHERE cnpj = ? LIMIT 1`, cnpj);
@@ -320,5 +328,49 @@ export const repositorioPatrimonio = (bd: Bd) => ({
          FROM importacoes WHERE id = ? AND usuario_id = ? LIMIT 1`,
       id, usuarioId,
     );
+  },
+
+  async listarItensImportacao(importacaoId: string): Promise<LinhaItemImportacao[]> {
+    return bd.consultar<LinhaItemImportacao>(
+      `SELECT id, linha, tipo, resultado, dados_json
+         FROM importacao_itens WHERE importacao_id = ? ORDER BY linha ASC`,
+      importacaoId,
+    );
+  },
+
+  async reservarImportacao(id: string, usuarioId: string): Promise<boolean> {
+    const resultado = await bd.executar(
+      `UPDATE importacoes SET status = 'validado'
+         WHERE id = ? AND usuario_id = ? AND status IN ('pendente', 'falhou')`,
+      id, usuarioId,
+    );
+    return resultado.linhasAfetadas === 1;
+  },
+
+  async concluirImportacao(id: string, usuarioId: string): Promise<void> {
+    await bd.executar(
+      `UPDATE importacoes SET status = 'confirmado', concluido_em = datetime('now')
+         WHERE id = ? AND usuario_id = ?`,
+      id, usuarioId,
+    );
+  },
+
+  async falharImportacao(id: string, usuarioId: string): Promise<void> {
+    await bd.executar(
+      `UPDATE importacoes SET status = 'falhou' WHERE id = ? AND usuario_id = ?`,
+      id, usuarioId,
+    );
+  },
+
+  async resumoItensImportacao(importacaoId: string): Promise<{ aceitos: number; rejeitados: number }> {
+    const linhas = await bd.consultar<{ resultado: string; quantidade: number }>(
+      `SELECT resultado, COUNT(*) AS quantidade FROM importacao_itens
+         WHERE importacao_id = ? GROUP BY resultado`,
+      importacaoId,
+    );
+    return {
+      aceitos: linhas.find((linha) => linha.resultado === 'aceito')?.quantidade ?? 0,
+      rejeitados: linhas.find((linha) => linha.resultado === 'rejeitado')?.quantidade ?? 0,
+    };
   },
 });
