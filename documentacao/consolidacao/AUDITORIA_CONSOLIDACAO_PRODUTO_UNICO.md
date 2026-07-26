@@ -275,7 +275,71 @@ Gemini → Claude → fallback de regras). Relevância direta: é a origem conce
 | `src/lib/studio/` (renderer.ts, store.ts) | Apenas referência | Sandbox de prototipagem visual, não avaliado em profundidade — sem sinal de valor de produto |
 | `.wrangler/state`, `esquilo_master_pack.zip`, `server.log`, scripts `test-*.sh`/`test-*.ts` na raiz do pacote | Descartado | Artefatos operacionais do protótipo, sem valor de produto ou histórico |
 
-### 11.3 Vera removida do produto (executado em 2026-07-26)
+### 11.3 `_legacy/v2` — Esquilo Invest v2 (Apps Script + BigQuery + app mobile Flutter)
+
+8.5 MB, 160 arquivos. Segunda geração do mesmo produto de v1 (mesma base Apps Script/Planilha),
+mas com Decision Engine mais elaborado, previdência e pré-ordens como categorias próprias,
+sincronização estruturada com BigQuery e uma tentativa de app mobile nativo em Flutter
+(`mobile_app/`) além de um frontend Cloudflare separado (`frontend/cloudflare/`). Ver
+`docs/functional/functional_overview_legacy.md` e `docs/technical/technical_overview_legacy.md`
+para a descrição completa do runtime.
+
+| Item | Classificação | Destino / evidência |
+|---|---|---|
+| Consolidação por categoria (ações, fundos, previdência, pré-ordens, aportes) com Decision Engine (score, ranking, plano de ação, alertas) | Absorvido | Mesmo padrão já coberto em v1 (§11.1) — `patrimonio_itens`, `vw_patrimonio_resumo`, `calculos/score.ts`. Previdência já é tipo de `patrimonio_itens` (`tipo = 'previdencia'`) |
+| Pré-ordens (ordem tática planejada, não executada: tipo, ativo, quantidade, preço-alvo, validade) | Descartado | Fora do escopo do produto — consolidação patrimonial sem simulação de ordem de compra/venda futura, mesma decisão já tomada para recomendação tática em v1/vera-insights |
+| App mobile nativo em Flutter (`mobile_app/lib/`: dashboard, categoria, detalhe de holding, tema próprio) | Descartado | Stack incompatível — o épico #116/#117 já decidiu Android nativo em **Kotlin/Jetpack Compose**, não Flutter. Sem valor de porte de código, só de referência de fluxo (ver item de UX abaixo) |
+| Fluxo de dashboard mobile: abas Home/Portfolio/Intelligence/Profile, ring de alocação, cards táticos | Apenas referência | UX offline-first de app nativo é relevante para #117/#120 (Home/Carteira/Detalhe/Histórico locais), mas como inspiração de fluxo, não código — Flutter não é portável para Compose |
+| Sincronização com BigQuery por aba (leitura/escrita por tabela, compatibilidade por nome de cabeçalho) | Descartado | Sem consumidor no produto atual; a raiz não tem pipeline de BI externo e a direção do produto (épico #116) é local-first, não data warehouse |
+| Exportação/importação CSV e exportação PDF do dashboard | **Pendente** (documentado como stub incompleto no próprio legado) | Raiz não tem exportação PDF de patrimônio. Importação (CSV/XLSX/OFX) já é escopo explícito de #119. Exportação PDF sem issue aberta hoje — não implementado |
+| `Rebranding/` (tentativa de extrair frontend Apps Script para Cloudflare Pages estático) | Apenas referência | Precursor direto do que virou `_legacy/bridge` (ver §11.4) — mesma tentativa de migração, mais completa lá |
+| Frontend HTML único acoplado ao backend Apps Script (`google.script.run`) | Descartado | Arquitetura incompatível com o runtime atual (React/Vite + Workers) — decisão já registrada em `docs/20_product/o_que_manter_do_legado.md` do próprio bridge (§11.4): "não manter Apps Script como base nova" |
+| `docs/Critica e Decisoes.md`, `docs/Arquitetura e Fluxos.md` (autocrítica arquitetural da própria geração v2) | Apenas referência | Material de processo, sem funcionalidade de produto a extrair |
+
+### 11.4 `_legacy/bridge` — pacote de migração Apps Script → Cloudflare/D1
+
+6.3 MB, 564 arquivos — majoritariamente documentação de processo (`docs/`, 18 subpastas) mais três
+starters de código nunca produtivizados (`04_STARTER_BACKEND/`) e um pacote `OLD/` com material
+ainda mais antigo. É a tentativa mais madura, entre os legados, de planejar a própria migração para
+o que hoje é a raiz — vale mais pelas decisões de produto registradas em `docs/product/` e
+`docs/20_product/` do que pelo código.
+
+| Item | Classificação | Destino / evidência |
+|---|---|---|
+| `docs/20_product/o_que_manter_do_legado.md` — lista curada do que preservar (home, carteira por categoria/ativo, detalhe, score, alertas, plano de ação, IA, histórico, preview antes de persistir importação) | Absorvido | Todos os itens dessa lista já existem na raiz, exceto alertas (ver linha própria abaixo) e plano de ação (ver linha própria abaixo) |
+| `esquilo_extraction_engine` — extração de lançamentos de extrato/documento via IA com schema JSON estrito (`document`, `entries[]`, confiança, `sourceTrace`, múltiplos `parserMode`) | **Pendente, sem issue aberta** | Import da raiz (`patrimonio/importacoes`) e o escopo de #119 cobrem CSV/XLSX/OFX processados no aparelho, mas nenhum cobre extração assistida por IA de documento (PDF/imagem de extrato). Funcionalidade de valor real não coberta hoje — sinalizado, não implementado nem virou issue |
+| `docs/product/alerts_and_notifications_mvp.md` — alertas com condição objetiva (queda de ativo, fundo abaixo do CDI, concentração >50%, falta de aporte), canal Telegram/e-mail, IA só traduz texto | Pendente | Mesma lacuna de v1/vera-insights (alerta de risco, §11.1/§11.2) — hoje coberta pelo escopo de **#128** (alertas locais), que já inclui concentração, dívida e perda relevante. Não duplicar: é o mesmo gap, agora com issue |
+| `docs/product/goal_engine_rules.md` — motor de metas determinístico (aporte × meses × fator de rendimento por perfil, camadas por "maturidade") | Pendente | Mesmo gap de `VeraCoreEngine.evaluateGoals` já registrado em §11.2 — hoje coberto pelo escopo de **#127** (simulações locais). Não duplicar |
+| `docs/product/score_and_profile_rules.md` — score com pilar extra "adequação à realidade" (cruza `toleranciaRisco`/renda do perfil com a composição real da carteira, penaliza incoerência) | **Pendente, sem issue aberta** | `calculos/score.ts` da raiz tem 4 pilares (disciplina, proteção, diversificação, endividamento) calculados só a partir do patrimônio — nenhum pilar cruza o resultado com `perfis_financeiros.toleranciaRisco`/objetivos para penalizar desalinhamento. Mais próximo do escopo de **#126** (diagnósticos determinísticos), mas #126 não menciona explicitamente esse cruzamento perfil×carteira — sinalizado, não uma issue existente |
+| `docs/product/maturity_points_rules.md` — pontuação 0-3 de "prontidão" do usuário (organização, consistência de aporte, coerência da carteira), usada para liberar complexidade de metas gradualmente | **Pendente, sem issue aberta** | Sem equivalente na raiz. Documento é explícito que "não é gamificação" — é regra de personalização de UX. Relevante apenas se/quando #127 (simulações) for implementado, como forma de não expor complexidade cedo demais — não é bloqueio, só contexto para quando a issue for trabalhada |
+| `docs/product/bonus_and_engagement_rules.md` — feedback contextual sem pontos/ranking (destaque de consistência de aporte, evolução de score, correção de risco) | Descartado | UX de reforço positivo pontual, sem modelo de dados associado — baixo valor isolado; se recriado, nasce como copy dentro de Insights, não como feature de backend |
+| `resumo.acaoPrioritaria` / `resumo.insightPrincipal` em `Insights.jsx`/`InsightsMobile.jsx` (campo já existe no frontend, mas `composirResumoCanonico` sempre preenche como `null`) | **Achado nesta sessão, fora do escopo de `_legacy`** | Não é gap de legado — é código morto na raiz: a UI já tem layout pronto para "plano de ação prioritário" citado como valor a manter em `o_que_manter_do_legado.md`, mas o backend nunca alimenta esse campo. Documentado aqui porque apareceu durante a auditoria; não corrigido nesta sessão (fora do escopo de #115) |
+| `database/d1/schema.sql`, `packages/contracts/`, `backend/modules/*_service.ts` (users, portfolios, positions, imports, snapshots, analyses/insights) | Substituído | Mesmo modelo de domínio, já implementado e mais maduro na raiz (`patrimonio_itens`, `patrimonio_aportes`, `patrimonio_historico_mensal`, `decisoes_simulacoes`) |
+| `OLD/` (pacotes de prompt para Codex, boards visuais, banco legado, mocks) | Descartado | Material de processo de uma migração que não aconteceu como planejada ali — sem funcionalidade de produto isolada a extrair além do que já está nas linhas acima |
+
+### 11.5 `_legacy/quanto` — consolidação patrimonial enxuta (Cloudflare Workers + Hono + D1)
+
+6.3 MB, 228 arquivos. Já tem síntese em nível de matriz nas §§3-6 deste documento (fonte da decisão
+de absorção seletiva da Onda 1, #111). Esta seção fecha o inventário item a item exigido por #115,
+sem repetir o que §§3-6 já registraram.
+
+| Item | Classificação | Destino / evidência |
+|---|---|---|
+| CRUD de ativo com saldo manual (previdência, cofrinhos, poupança) + cotação automática (BRAPI/CVM) | Absorvido | `patrimonio_itens` (`origem = 'manual'` vs. vinculado a `ativo_id`) + `dominios/mercado/provedores/{brapi,cvm}.ts` — Onda 1 |
+| Lifecycle de ativo (`asset_lifecycle_events`: iniciar saída, cancelar saída, concluir venda) | Absorvido | `patrimonio_itens.lifecycle_status` (`ativo`, `em_resgate`, `em_saida`, `vendido`, `encerrado`, `arquivado`) — migration `105_lifecycle_e_custodia_patrimonial.sql`, PRs #163/#164 |
+| Custódia/instituição por posição (`institution_name` livre no Quanto) | Absorvido | `patrimonio_itens.corretora_id` → `corretoras`, mesma migration `105` — fecha o gap descrito em §6.2 deste documento |
+| Snapshot mensal automático (cron dia 1) | Absorvido | `patrimonio_historico_mensal` + `jobs/historico-mensal.job.ts` (cron `0 3 * * *`) |
+| Import de planilha XLSX (wizard upload → parse → revisão → confirmar) | Absorvido | `patrimonio/importacoes` (`POST /api/patrimonio/importacoes` + `.../confirmar`), fluxo idempotente — migration `101_importacoes_idempotentes.sql` |
+| Ocultar valores (privacidade em público) | Absorvido | `ModoVisualizacaoContext.jsx` + `ValorOcultavel.jsx`, já citado em §11.1 |
+| **Frescor por instituição** (indicador de quando cada saldo manual foi confirmado pela última vez, por instituição) | **Pendente — não confirmado como absorvido, ao contrário do que o histórico da sessão anterior presumia** | Verificado nesta sessão: não existe coluna equivalente a `saldo_confirmado_em`/timestamp de confirmação manual em `patrimonio_itens` (só `atualizado_em`, genérico, que muda a cada edição de qualquer campo — não é "usuário confirmou que o saldo ainda está correto"). O que **foi** absorvido na Onda 1 é outra coisa: frescor do **resumo/score** (PR #145, `contexto-financeiro.ts`, `sem_dados/parcial/defasada/atual`) e frescor de **cotações** (PR #146). Granularidade por item/instituição não tem equivalente hoje. Mais próximo do escopo de #126 (diagnósticos: "detectar dados antigos, incompletos"), mas não é um item explícito lá — sinalizado, sem issue própria |
+| `macro_cache` (SELIC, CDI, IPCA-12m via BRAPI, cron) | **Pendente, sem issue direta** | Sem equivalente na raiz — nem tabela nem endpoint de indicadores macro. Mais próximo de **#124** (distribuir catálogos/cotações públicas, que já cita "indicadores aprovados" no escopo), mas #124 não nomeia SELIC/CDI/IPCA explicitamente — sinalizado como candidato, não decidido |
+| `POST /api/import/analyze` (classificação de linha de importação via IA, degradável) | **Pendente, mesmo padrão de `_legacy/bridge`** | Mesmo gap do `esquilo_extraction_engine` (§11.4) — classificação/extração assistida por IA no fluxo de importação. Um único achado visto em duas gerações diferentes, não dois separados |
+| `POST /api/ai/analyze` (análise contextual textual via IA sobre o patrimônio) | Descartado | Equivalente funcional da Vera/`decisoes/vera`, removida do produto nesta sessão (§11.6) — mesma decisão se aplica |
+| Anti-escopo explícito do Quanto (`CLAUDE.md` do legado): sem proventos/dividendos/IR/come-cotas, sem metas/rebalanceamento/recomendações, sem Open Finance, sem push, sem simuladores, sem chatbot generalista | Apenas referência | Registra uma tensão de produto: o Quanto decidiu conscientemente **não** ter metas/simuladores/alertas, enquanto o épico #116 (#127 simulações, #128 alertas) vai na direção oposta. Não é gap a preencher — é contexto para quem for implementar #127/#128 saber que já houve uma decisão consciente em sentido contrário numa geração anterior, e por quê (produto enxuto, "faz uma coisa bem") |
+| `legacy/ei-raiz-reference/` (cópia congelada do Esquilo Invest dentro do próprio Quanto) | Descartado | Cópia de um legado dentro de outro legado — sem valor adicional além do que já está em `_legacy/v1`/`_legacy/v2` |
+| Dark mode automático (`prefers-color-scheme`) | **Pendente, sem issue direta** | Raiz não tem dark mode hoje (só tema claro). Baixo custo, sem issue aberta cobrindo tema — sinalizado |
+
+### 11.6 Vera removida do produto (executado em 2026-07-26)
 
 Atualização de 2026-07-26: a decisão registrada abaixo (histórico, sessão anterior) mudou de
 "manter o domínio ativo sobre dados canônicos" para **remoção completa**, autorizada explicitamente
@@ -308,24 +372,46 @@ descontinuada **como produto**, não uma instrução para desmontar o código at
 arquitetura (o que fazer com `decisoes/vera` daqui para frente) já está fora do escopo mecânico
 desta issue e cabe ao Luiz decidir quando quiser, conforme registrado no fechamento de #114.
 
-### 11.4 Padrão que se repete entre gerações
+### 11.7 Padrão que se repete entre gerações
 
-Tanto v1 quanto vera-insights, de formas diferentes, tinham **concentração de risco (por ativo ou
-por Herfindahl) e alerta de risco** que a raiz não tem hoje. É a mesma lacuna vista duas vezes, não
-dois achados separados — se for priorizado, é uma única evolução do pilar "diversificação" de
-`calculos/score.ts` (ou um pilar novo), não duas issues.
+- **Concentração de risco (por ativo ou por Herfindahl) e alerta de risco**: v1, vera-insights e
+  bridge, de formas diferentes, tinham esse conceito e a raiz não tem hoje. Mesma lacuna vista três
+  vezes, não achados separados — hoje coberta pelo escopo de **#126** (diagnósticos) e **#128**
+  (alertas locais), que nasceram depois desta auditoria começar e já fecham a lacuna com issue.
+- **Motor de metas/simulação determinístico** (PMT financeiro): vera-insights (`evaluateGoals`) e
+  bridge (`goal_engine_rules.md`) descreveram o mesmo motor de duas formas diferentes. Coberto por
+  **#127** (simulações locais).
+- **Extração/classificação de lançamento assistida por IA**: bridge (`esquilo_extraction_engine`,
+  PDF/imagem de extrato) e quanto (`POST /api/import/analyze`) descrevem a mesma capacidade em dois
+  produtos diferentes. **Sem issue aberta cobrindo isso hoje** — sinalizado uma única vez em §11.4
+  e §11.5, não duas.
+- **Companion de IA sobre o patrimônio** (Vera standalone, `/api/analyze` de v1/v2, `/api/ai/analyze`
+  do Quanto): três gerações chegaram à mesma ideia por caminhos diferentes; a raiz teve sua versão
+  (`decisoes/vera`) descontinuada e removida nesta sessão (§11.6) — decisão do Luiz, não lacuna.
 
-### 11.5 Trabalho restante da Onda 5 (não feito nesta sessão)
+### 11.8 Fechamento da Onda 5 — cinco legados inventariados, `_legacy` congelado
 
-- **`_legacy/v2`** (8.5 MB, 160 arquivos — Apps Script + BigQuery + app mobile Flutter) — não
-  inventariado.
-- **`_legacy/bridge`** (6.3 MB, 564 arquivos — pacote de migração Apps Script → Cloudflare/D1,
-  majoritariamente documentação de processo) — não inventariado.
-- **`_legacy/quanto`** (6.3 MB, 228 arquivos — app paralelo completo com backend, ingestão,
-  frontend e testes próprios) — já tem síntese em nível de matriz nas §§3-6 deste documento, mas
-  **não tem inventário item a item com ponteiro para código/contrato/teste/issue**, que é o que o
-  critério de aceite de #115 exige. Precisa de uma passada dedicada.
-- **Congelamento de `_legacy`** (CODEOWNERS ou nota read-only) — não aplicado ainda. Só deve ser
-  feito depois que os três legados acima também estiverem inventariados, para não travar um
-  ajuste de nota/classificação no meio do trabalho.
-- **Fechamento de #115** — não fazer até os cinco legados estarem cobertos e `_legacy` congelado.
+Cobertura completa: `_legacy/v1` e `_legacy/vera-insights` na sessão anterior (PR #169); `_legacy/v2`,
+`_legacy/bridge` e `_legacy/quanto` nesta sessão (§§11.3-11.5). Vera removida do produto nesta sessão
+(§11.6, PR #170).
+
+Itens sinalizados como **pendentes sem issue aberta** (não decididos, não implementados, registrados
+para o Luiz/Claudete avaliarem quando fizer sentido):
+- Extração/classificação de lançamento assistida por IA no fluxo de importação (§11.4, §11.5).
+- Pilar de score "adequação à realidade" (cruzar `toleranciaRisco`/perfil com a composição real da
+  carteira) (§11.4).
+- "Maturity points" — pontuação de prontidão do usuário para liberar complexidade de metas
+  gradualmente (§11.4), relevante só quando #127 avançar.
+- Frescor por instituição em nível de item (quando cada saldo manual foi confirmado) — granularidade
+  hoje ausente, distinta do frescor de score/cotação já absorvido (§11.5).
+- Indicadores macro (SELIC/CDI/IPCA) (§11.5), candidato a entrar no escopo de #124.
+- Exportação de patrimônio em PDF (§11.3).
+- Dark mode (§11.5).
+- `resumo.acaoPrioritaria`/`resumo.insightPrincipal` nunca preenchidos pelo backend — código morto
+  na raiz encontrado durante a auditoria, não um gap de legado (§11.4).
+
+Nenhum desses itens virou issue nesta sessão — critério do Luiz: "se for algo valioso sem issue
+nenhuma cobrindo, sinalize claramente no documento... criar issue nova é decisão da Claudete, não
+sua".
+
+`_legacy` congelado nesta sessão: ver `_legacy/README.md`.
