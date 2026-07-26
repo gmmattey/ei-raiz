@@ -5,24 +5,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import io.savro.designsystem.tema.SavroTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SavroBootstrap()
+            SavroTheme {
+                SavroBootstrap()
+            }
         }
     }
 }
 
 @Composable
 private fun SavroBootstrap() {
-    Text(text = "Savro bootstrap")
+    Text(text = stringResource(R.string.savro_bootstrap))
 }
 
 @Preview
 @Composable
 private fun SavroBootstrapPreview() {
-    SavroBootstrap()
+    SavroTheme {
+        SavroBootstrap()
+    }
 }

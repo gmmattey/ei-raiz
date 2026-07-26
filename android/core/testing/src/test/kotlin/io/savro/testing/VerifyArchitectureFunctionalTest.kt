@@ -70,6 +70,18 @@ class VerifyArchitectureFunctionalTest {
         assertTrue(result.output.contains("android."))
     }
 
+    @Test
+    fun rejectsVisualLiteralInDesignSystemComponent() {
+        val fixture = copyAndroidProject()
+        val source = fixture.resolve("core/designsystem/src/main/java/io/savro/designsystem/componentes/Violacao.kt")
+        Files.createDirectories(source.parent)
+        Files.writeString(source, "import androidx.compose.ui.unit.dp\nval invalid = 16.dp\n")
+
+        val result = runTask(fixture, "verifyDesignSystemTokens").buildAndFail()
+
+        assertTrue(result.output.contains("literais visuais"))
+    }
+
     private fun copyAndroidProject(): Path {
         val destination = temporaryFolder.newFolder("fixture").toPath()
         val source = Path.of(requireNotNull(System.getProperty("savro.android.root")))
@@ -97,6 +109,10 @@ class VerifyArchitectureFunctionalTest {
     private fun runVerifier(projectDirectory: Path): GradleRunner = GradleRunner.create()
         .withProjectDir(projectDirectory.toFile())
         .withArguments("--stacktrace", "verifyArchitecture")
+
+    private fun runTask(projectDirectory: Path, task: String): GradleRunner = GradleRunner.create()
+        .withProjectDir(projectDirectory.toFile())
+        .withArguments("--stacktrace", task)
 
     private fun appendTo(file: Path, content: String) {
         Files.writeString(file, "${System.lineSeparator()}$content${System.lineSeparator()}")
