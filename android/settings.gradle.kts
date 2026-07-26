@@ -16,3 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "savro-android"
 include(":app")
+include(":core:common")
+include(":core:model")
+include(":core:testing")
+include(":domain:patrimonio")
