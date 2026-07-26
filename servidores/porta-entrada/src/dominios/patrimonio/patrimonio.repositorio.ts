@@ -252,6 +252,10 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     );
   },
 
+  async inserirMovimento(id: string, usuarioId: string, itemId: string, tipo: string, quantidade: number | null, valorBrl: number | null, data: string, dadosJson: string): Promise<void> {
+    await bd.executar(`INSERT INTO patrimonio_movimentos (id, usuario_id, item_id, tipo, quantidade, valor_brl, data, origem, dados_json) VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)`, id, usuarioId, itemId, tipo, quantidade, valorBrl, data, dadosJson);
+  },
+
   async inserirItem(
     id: string, usuarioId: string, ativoId: string | null, corretoraId: string | null, lifecycleStatus: string, tipo: string, origem: string,
     nome: string, quantidade: number | null, precoMedioBrl: number | null, valorAtualBrl: number | null,

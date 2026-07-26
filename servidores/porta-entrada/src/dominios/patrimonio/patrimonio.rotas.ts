@@ -22,6 +22,7 @@ export async function rotearPatrimonio(
 
   const mMovimentosItem = caminho.match(/^\/api\/patrimonio\/itens\/([^/]+)\/movimentos$/);
   if (mMovimentosItem && metodo === 'GET') return servico.listarMovimentosItem(sessao.usuarioId, mMovimentosItem[1]);
+  if (caminho === '/api/patrimonio/movimentos' && metodo === 'POST') return servico.criarMovimento(sessao.usuarioId, await lerJson(request) as never);
 
   const mItem = caminho.match(/^\/api\/patrimonio\/itens\/([^/]+)$/);
   if (mItem) {
