@@ -6,6 +6,7 @@ import type {
   PatrimonioScoreSaida, ScoreFaixa, ScorePilar,
   TipoItemPatrimonio, OrigemItemPatrimonio,
   ImportacaoSaida, ImportacaoCriarEntrada, ImportacaoConfirmarSaida,
+  MovimentoPatrimonialSaida, TipoMovimentoPatrimonial,
 } from '@ei/contratos';
 import type { Bd } from '../../infra/bd';
 import { gerarId } from '../../infra/bd';
@@ -14,6 +15,7 @@ import { calcularAlocacao } from './calculos/alocacao';
 import {
   repositorioPatrimonio, type LinhaAlocacao, type LinhaAporte,
   type LinhaEvolucao, type LinhaPosicao, type LinhaResumo, type LinhaScoreAtual,
+  type LinhaMovimentoPatrimonial,
 } from './patrimonio.repositorio';
 
 const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida => {
@@ -59,6 +61,21 @@ const paraAporteSaida = (l: LinhaAporte): AporteSaida => ({
   data: l.data,
   descricao: l.descricao,
   origem: l.origem,
+  criadoEm: l.criado_em,
+});
+
+const paraMovimentoSaida = (l: LinhaMovimentoPatrimonial): MovimentoPatrimonialSaida => ({
+  id: l.id,
+  usuarioId: l.usuario_id,
+  itemId: l.item_id,
+  importacaoId: l.importacao_id,
+  linhaImportacao: l.linha_importacao,
+  tipo: l.tipo as TipoMovimentoPatrimonial,
+  quantidade: l.quantidade,
+  valorBrl: l.valor_brl,
+  data: l.data,
+  origem: l.origem as OrigemItemPatrimonio,
+  dadosJson: JSON.parse(l.dados_json) as Record<string, unknown>,
   criadoEm: l.criado_em,
 });
 
@@ -228,6 +245,13 @@ export const servicoPatrimonio = (bd: Bd) => {
       const alvo = posicoes.find((p) => p.item_id === id);
       if (!alvo) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
       return sucesso(paraItemSaida(alvo, total));
+    },
+
+    async listarMovimentosItem(usuarioId: string, itemId: string): Promise<ServiceResponse<{ itens: MovimentoPatrimonialSaida[] }>> {
+      const item = await repo.buscarItemBruto(usuarioId, itemId);
+      if (!item) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
+      const movimentos = await repo.listarMovimentosItem(usuarioId, itemId);
+      return sucesso({ itens: movimentos.map(paraMovimentoSaida) });
     },
 
     async criarItem(usuarioId: string, e: ItemPatrimonioCriarEntrada): Promise<ServiceResponse<ItemPatrimonioSaida>> {

@@ -125,6 +125,21 @@ export interface LinhaItemImportacao {
   dados_json: string;
 }
 
+export interface LinhaMovimentoPatrimonial {
+  id: string;
+  usuario_id: string;
+  item_id: string;
+  importacao_id: string | null;
+  linha_importacao: number | null;
+  tipo: string;
+  quantidade: number | null;
+  valor_brl: number | null;
+  data: string;
+  origem: string;
+  dados_json: string;
+  criado_em: string;
+}
+
 export const repositorioPatrimonio = (bd: Bd) => ({
   async buscarAtivoPorCnpj(cnpj: string) {
     return bd.primeiro<{ id: string }>(`SELECT id FROM ativos WHERE cnpj = ? LIMIT 1`, cnpj);
@@ -210,6 +225,17 @@ export const repositorioPatrimonio = (bd: Bd) => ({
     return bd.primeiro<LinhaItemPatrimonio>(
       `SELECT * FROM patrimonio_itens WHERE usuario_id = ? AND id = ? LIMIT 1`,
       usuarioId, id,
+    );
+  },
+
+  async listarMovimentosItem(usuarioId: string, itemId: string, limite = 200): Promise<LinhaMovimentoPatrimonial[]> {
+    return bd.consultar<LinhaMovimentoPatrimonial>(
+      `SELECT id, usuario_id, item_id, importacao_id, linha_importacao, tipo, quantidade,
+              valor_brl, data, origem, dados_json, criado_em
+         FROM patrimonio_movimentos
+        WHERE usuario_id = ? AND item_id = ?
+        ORDER BY data DESC, criado_em DESC LIMIT ?`,
+      usuarioId, itemId, limite,
     );
   },
 
