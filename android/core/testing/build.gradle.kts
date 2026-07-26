@@ -1,5 +1,15 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
-// Este módulo é suporte de teste. Nenhum módulo de produção pode declará-lo em api/implementation.
+dependencies {
+    testImplementation(gradleTestKit())
+    testImplementation(libs.junit)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnit()
+    systemProperty("savro.android.root", rootProject.projectDir.absolutePath)
+}

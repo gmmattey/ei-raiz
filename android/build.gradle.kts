@@ -112,7 +112,7 @@ tasks.register("verifyArchitecture") {
 
         pureModulePaths.forEach { modulePath ->
             val project = project(modulePath)
-            val kotlinSources = project.fileTree("src") {
+            val kotlinSources = project.fileTree("src/main") {
                 include("**/*.kt")
             }
 
