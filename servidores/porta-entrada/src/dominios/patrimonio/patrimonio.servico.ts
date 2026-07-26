@@ -434,6 +434,20 @@ export const servicoPatrimonio = (bd: Bd) => {
           });
           operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'aceito' WHERE id = ?`, valores: [linhaId] });
         }
+        if (aceitos > 0) {
+          operacoes.push({
+            sql: `INSERT INTO patrimonio_fila_reconstrucao (id, usuario_id, motivo, status)
+                  VALUES (?, ?, 'importacao_confirmada', 'pendente')
+                  ON CONFLICT(usuario_id) DO UPDATE SET
+                    motivo = excluded.motivo,
+                    status = 'pendente',
+                    agendado_em = datetime('now'),
+                    iniciado_em = NULL,
+                    processado_em = NULL,
+                    erro = NULL`,
+            valores: [gerarId(), usuarioId],
+          });
+        }
         await bd.emLote(operacoes);
         await repo.concluirImportacao(id, usuarioId);
         const confirmada = await this.obterImportacao(usuarioId, id);
