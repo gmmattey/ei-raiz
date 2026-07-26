@@ -144,6 +144,14 @@ export interface LinhaMovimentoPatrimonial {
 }
 
 export const repositorioPatrimonio = (bd: Bd) => ({
+  async usuarioPossuiCorretora(usuarioId: string, corretoraId: string): Promise<boolean> {
+    return (await bd.primeiro<{ id: string }>(
+      `SELECT id FROM usuario_plataformas
+        WHERE usuario_id = ? AND corretora_id = ? AND status = 'ativa' LIMIT 1`,
+      usuarioId, corretoraId,
+    )) !== null;
+  },
+
   async buscarAtivoPorCnpj(cnpj: string) {
     return bd.primeiro<{ id: string }>(`SELECT id FROM ativos WHERE cnpj = ? LIMIT 1`, cnpj);
   },
