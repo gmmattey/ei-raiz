@@ -44,6 +44,41 @@ test('rejeita CNPJ fora de fundo ou previdência', async () => {
   assert.equal(resultado.codigo, 'cnpj_tipo_invalido');
 });
 
+test('reenvio do mesmo lote reutiliza a importação sem gravar linhas novamente', async () => {
+  const importacoes = new Map<string, { id: string; usuario_id: string; origem: string; status: string; iniciado_em: string; concluido_em: null; chave: string }>();
+  let itensInseridos = 0;
+  const bd = {
+    consultar: async () => [],
+    primeiro: async (_sql: string, ...valores: unknown[]) => {
+      const [primeiro, segundo] = valores;
+      if (_sql.includes('chave_idempotencia')) {
+        return [...importacoes.values()].find((importacao) => importacao.usuario_id === primeiro && importacao.chave === segundo) ?? null;
+      }
+      return importacoes.get(primeiro as string) ?? null;
+    },
+    executar: async (sql: string, ...valores: unknown[]) => {
+      if (sql.includes('INSERT INTO importacoes')) {
+        const [id, usuarioId, origem, chave] = valores as string[];
+        importacoes.set(id, { id, usuario_id: usuarioId, origem, status: 'pendente', iniciado_em: '2026-07-26', concluido_em: null, chave });
+      }
+      if (sql.includes('INSERT INTO importacao_itens')) itensInseridos += 1;
+      return { sucesso: true, linhasAfetadas: 1 };
+    },
+    emLote: async () => {},
+  };
+  const servico = servicoPatrimonio(bd);
+  const entrada = { origem: 'carteira.xlsx', itens: [{ linha: 1, tipo: 'desconhecido', dadosJson: { aba: 'acoes', ticker: 'PETR4', quantidade: 10 } }] };
+
+  const primeiro = await servico.criarImportacao('usuario-1', entrada);
+  const segundo = await servico.criarImportacao('usuario-1', entrada);
+
+  assert.equal(primeiro.ok, true, JSON.stringify(primeiro));
+  assert.equal(segundo.ok, true, JSON.stringify(segundo));
+  if (!primeiro.ok || !segundo.ok) return;
+  assert.equal(segundo.dados.id, primeiro.dados.id);
+  assert.equal(itensInseridos, 1);
+});
+
 test('expõe valor calculado e frescor da cotação no contrato patrimonial', async () => {
   const bd = {
     consultar: async () => [{

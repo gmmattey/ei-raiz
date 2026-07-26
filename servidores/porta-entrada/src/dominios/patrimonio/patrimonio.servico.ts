@@ -91,6 +91,23 @@ const normalizarCnpjPatrimonial = (valor: string): string | null => {
 
 const aceitaCnpj = (tipo: TipoItemPatrimonio): boolean => tipo === 'fundo' || tipo === 'previdencia';
 
+const serializarEstavel = (valor: unknown): string => {
+  if (Array.isArray(valor)) return `[${valor.map(serializarEstavel).join(',')}]`;
+  if (valor && typeof valor === 'object') {
+    const entradas = Object.entries(valor as Record<string, unknown>)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([chave, item]) => `${JSON.stringify(chave)}:${serializarEstavel(item)}`);
+    return `{${entradas.join(',')}}`;
+  }
+  return JSON.stringify(valor);
+};
+
+const chaveIdempotenciaImportacao = async (itens: ImportacaoCriarEntrada['itens']): Promise<string> => {
+  const conteudo = serializarEstavel(itens.map(({ linha, tipo, dadosJson }) => ({ linha, tipo, dadosJson })));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(conteudo));
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
 export const servicoPatrimonio = (bd: Bd) => {
   const repo = repositorioPatrimonio(bd);
 
@@ -275,8 +292,11 @@ export const servicoPatrimonio = (bd: Bd) => {
 
     async criarImportacao(usuarioId: string, e: ImportacaoCriarEntrada): Promise<ServiceResponse<ImportacaoSaida>> {
       if (!e.origem || !Array.isArray(e.itens)) return erro('dados_incompletos', 'origem e itens são obrigatórios', 400);
+      const chaveIdempotencia = await chaveIdempotenciaImportacao(e.itens);
+      const existente = await repo.buscarImportacaoPorChave(usuarioId, chaveIdempotencia);
+      if (existente) return this.obterImportacao(usuarioId, existente.id);
       const id = gerarId();
-      await repo.inserirImportacao(id, usuarioId, e.origem);
+      await repo.inserirImportacao(id, usuarioId, e.origem, chaveIdempotencia);
       for (const item of e.itens) {
         await repo.inserirItemImportacao(
           gerarId(), id, item.linha, item.tipo, JSON.stringify(item.dadosJson ?? {}),
