@@ -26,7 +26,9 @@ jobs:
 
       - name: Run typecheck
         run: npm run typecheck
-        continue-on-error: true
+
+      - name: Run API tests
+        run: npm run test:api
 
       - name: Deploy Frontend to Cloudflare Pages
         run: npm run deploy:web
