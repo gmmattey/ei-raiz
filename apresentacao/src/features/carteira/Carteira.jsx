@@ -70,8 +70,12 @@ function adaptarItem(item) {
     rentabilidadeDesdeAquisicaoPct: item.rentabilidadePct,
     rentabilidade_desde_aquisicao_pct: item.rentabilidadePct,
     rentabilidadeConfiavel: item.rentabilidadePct != null,
-    statusAtualizacao: temCotacao ? "atualizado" : "indisponivel",
-    status_atualizacao: temCotacao ? "atualizado" : "indisponivel",
+    estadoValor: item.estadoValor ?? (temCotacao ? "cotacao" : "indisponivel"),
+    fonteCotacao: item.fonteCotacao ?? null,
+    cotacaoReferenciaEm: item.cotacaoReferenciaEm ?? null,
+    cotacaoAtualizadaEm: item.cotacaoAtualizadaEm ?? null,
+    statusAtualizacao: item.estadoValor === "manual" ? "manual" : temCotacao ? "atualizado" : "indisponivel",
+    status_atualizacao: item.estadoValor === "manual" ? "manual" : temCotacao ? "atualizado" : "indisponivel",
     statusPrecoMedio: "confiavel",
     plataforma: "N/A",
   };
@@ -112,6 +116,24 @@ const calcularValorAplicado = (asset) => {
   const qtd = Number(asset?.quantidade ?? 0);
   const preco = Number(asset?.precoMedio ?? asset?.preco_medio ?? 0);
   return qtd > 0 && preco > 0 ? qtd * preco : Number(asset?.valorAtual ?? asset?.valor ?? 0);
+};
+
+const formatarReferencia = (valor) => {
+  if (!valor) return null;
+  const data = new Date(valor.length === 10 ? `${valor}T12:00:00` : valor);
+  return Number.isNaN(data.getTime()) ? null : data.toLocaleDateString("pt-BR");
+};
+
+const RotuloFrescor = ({ asset }) => {
+  if (asset.estadoValor === "manual" || asset.statusAtualizacao === "manual") {
+    return <p className="text-[10px] text-[#9A6A16] font-medium mt-1">Valor confirmado manualmente</p>;
+  }
+  if (asset.estadoValor === "indisponivel" || !asset.precoAtual) {
+    return <p className="text-[10px] text-[#0B1218]/40 font-medium mt-1">Sem cotação disponível</p>;
+  }
+  const fonte = asset.fonteCotacao ? asset.fonteCotacao.toUpperCase() : "Mercado";
+  const referencia = formatarReferencia(asset.cotacaoReferenciaEm ?? asset.cotacaoAtualizadaEm);
+  return <p className="text-[10px] text-[#1A7A45] font-medium mt-1">{fonte}{referencia ? ` · ref. ${referencia}` : ""}</p>;
 };
 
 const TooltipDonut = ({ active, payload, ocultarValores = false }) => {
@@ -349,6 +371,7 @@ const AssetCard = ({ asset, navigate, ocultarValores = false }) => {
         <div>
           <p className="font-['Sora'] text-base font-bold text-[#0B1218]">{asset.ticker}</p>
           <p className="text-[10px] text-[#0B1218]/40 font-medium truncate max-w-[160px]">{asset.nome}</p>
+          <RotuloFrescor asset={asset} />
         </div>
         {perc != null ? (
           <div className={`flex items-center gap-0.5 text-[11px] font-bold ${corRetorno}`}>
@@ -452,7 +475,10 @@ const AssetRow = React.memo(({ asset, categoria, navigate, ocultarValores, isLas
   if (isFundoOuRendaFixa) {
     return (
       <tr className={`${rowBorderClass} hover:bg-[#FAFAFA] transition-colors`}>
-        <td className="py-4 px-4 text-sm font-semibold">{asset.nome || asset.ticker}</td>
+        <td className="py-4 px-4 text-sm font-semibold">
+          <span>{asset.nome || asset.ticker}</span>
+          <RotuloFrescor asset={asset} />
+        </td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : moeda(valorAtual)}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : `${(asset.participacao ?? 0).toFixed(2)}%`}</td>
         <td className="py-4 px-4 text-sm">{ocultarValores ? "••••••••" : (rentabilidadeIndisponivel ? "—" : `${rentabilidade >= 0 ? "+" : ""}${rentabilidade.toFixed(2)}%`)}</td>

@@ -69,6 +69,22 @@ const TIPO_LABELS = {
 
 const getTipoLabel = (tipo) => TIPO_LABELS[tipo] || 'Outros';
 
+const textoFrescorAtivo = (ativo) => {
+  if (ativo?.estadoValor === 'manual') return 'Valor manual';
+  if (ativo?.estadoValor === 'indisponivel' || ativo?.precoAtualBrl == null) {
+    return 'Sem cotação';
+  }
+
+  const fonte = ativo.fonteCotacao ? ativo.fonteCotacao.toUpperCase() : 'Mercado';
+  const referencia = ativo.cotacaoReferenciaEm ?? ativo.cotacaoAtualizadaEm;
+  if (!referencia) return fonte;
+
+  const data = new Date(referencia.length === 10 ? `${referencia}T12:00:00` : referencia);
+  return Number.isNaN(data.getTime())
+    ? fonte
+    : `${fonte} · ref. ${data.toLocaleDateString('pt-BR')}`;
+};
+
 /**
  * Converte avaliação (% vs benchmark) em classificação qualitativa
  * BOM: >= 5%, NEUTRO: -5% a 5%, RUIM: < -5%
@@ -735,6 +751,7 @@ export default function HomeLobby() {
                             <div className="min-w-0">
                               <p className="text-sm font-semibold truncate">{ativo.nome}</p>
                               <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.ticker}</p>
+                              <p className="text-[10px] text-[var(--text-muted)] truncate">{textoFrescorAtivo(ativo)}</p>
                             </div>
                             {/* VALOR ATUAL */}
                             <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
@@ -792,12 +809,13 @@ export default function HomeLobby() {
                         const r = rentabilidadePct(ativo);
                         return (
                           <button key={ativo.id} onClick={() => navigate(`/ativo/${ativo.ticker}`)}
-                            className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left h-12"
+                            className="w-full grid gap-2 px-2 py-2.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors text-left"
                             style={{ gridTemplateColumns: '1fr 72px 60px 40px' }}>
                             {/* ATIVO */}
                             <div className="min-w-0">
                               <p className="text-sm font-semibold truncate">{ativo.ticker}</p>
                               <p className="text-[11px] text-[var(--text-muted)] truncate">{ativo.nome}</p>
+                              <p className="text-[10px] text-[var(--text-muted)] truncate">{textoFrescorAtivo(ativo)}</p>
                             </div>
                             {/* VALOR ATUAL */}
                             <p className="text-sm font-semibold text-center self-center whitespace-nowrap">
