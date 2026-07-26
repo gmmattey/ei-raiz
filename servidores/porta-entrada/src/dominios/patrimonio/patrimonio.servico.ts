@@ -111,6 +111,7 @@ const chaveIdempotenciaImportacao = async (itens: ImportacaoCriarEntrada['itens'
 type ItemImportado = {
   tipo: TipoItemPatrimonio;
   nome: string;
+  cnpj: string | null;
   quantidade: number | null;
   precoMedioBrl: number | null;
   valorAtualBrl: number | null;
@@ -136,7 +137,7 @@ const materializarItemImportado = (dados: Record<string, unknown>): ItemImportad
     if (!ticker || !quantidade) return null;
     const precoMedioBrl = numeroPositivo(dados.precoMedio);
     const valorAtualBrl = numeroPositivo(dados.valorTotal) ?? (precoMedioBrl ? quantidade * precoMedioBrl : null);
-    return { tipo: 'acao', nome: textoObrigatorio(dados.nome) ?? ticker, quantidade, precoMedioBrl, valorAtualBrl, dadosJson: bruto };
+    return { tipo: 'acao', nome: textoObrigatorio(dados.nome) ?? ticker, cnpj: null, quantidade, precoMedioBrl, valorAtualBrl, dadosJson: bruto };
   }
   const mapeamento: Record<string, TipoItemPatrimonio> = {
     fundos: 'fundo', previdencia: 'previdencia', renda_fixa: 'renda_fixa',
@@ -153,7 +154,9 @@ const materializarItemImportado = (dados: Record<string, unknown>): ItemImportad
     ?? numeroPositivo(dados.valorReferencia)
     ?? numeroPositivo(dados.valorAtual);
   if (!nome || !valorAtualBrl) return null;
-  return { tipo, nome, quantidade: null, precoMedioBrl: null, valorAtualBrl, dadosJson: bruto };
+  const cnpjBruto = textoObrigatorio(dados.cnpj);
+  const cnpj = cnpjBruto && aceitaCnpj(tipo) ? normalizarCnpjPatrimonial(cnpjBruto) : null;
+  return { tipo, nome, cnpj, quantidade: null, precoMedioBrl: null, valorAtualBrl, dadosJson: bruto };
 };
 
 export const servicoPatrimonio = (bd: Bd) => {
@@ -383,6 +386,9 @@ export const servicoPatrimonio = (bd: Bd) => {
         const linhas = await repo.listarItensImportacao(id);
         const operacoes: { sql: string; valores: unknown[] }[] = [];
         const chavesLinhas = new Set<string>();
+        const ativosPorCnpj = new Map<string, string>();
+        const ativosNovos: { id: string; cnpj: string; tipo: TipoItemPatrimonio; nome: string }[] = [];
+        const itensAceitos: { linhaId: string; item: ItemImportado }[] = [];
         let aceitos = 0;
         let rejeitados = 0;
         for (const linha of linhas) {
@@ -400,13 +406,33 @@ export const servicoPatrimonio = (bd: Bd) => {
           }
           chavesLinhas.add(chaveLinha);
           aceitos += 1;
+          itensAceitos.push({ linhaId: linha.id, item });
+        }
+        for (const { item } of itensAceitos) {
+          if (!item.cnpj || ativosPorCnpj.has(item.cnpj)) continue;
+          const existente = await repo.buscarAtivoPorCnpj(item.cnpj);
+          if (existente) ativosPorCnpj.set(item.cnpj, existente.id);
+          else {
+            const ativoId = gerarId();
+            ativosPorCnpj.set(item.cnpj, ativoId);
+            ativosNovos.push({ id: ativoId, cnpj: item.cnpj, tipo: item.tipo, nome: item.nome });
+          }
+        }
+        for (const ativo of ativosNovos) {
+          operacoes.push({
+            sql: `INSERT INTO ativos (id, cnpj, nome, tipo) VALUES (?, ?, ?, ?)`,
+            valores: [ativo.id, ativo.cnpj, ativo.nome, ativo.tipo],
+          });
+        }
+        for (const { linhaId, item } of itensAceitos) {
+          const ativoId = item.cnpj ? ativosPorCnpj.get(item.cnpj) ?? null : null;
           operacoes.push({
             sql: `INSERT INTO patrimonio_itens
-                    (id, usuario_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
-                  VALUES (?, ?, ?, 'importacao', ?, ?, ?, ?, 'BRL', ?)`,
-            valores: [gerarId(), usuarioId, item.tipo, item.nome, item.quantidade, item.precoMedioBrl, item.valorAtualBrl, item.dadosJson],
+                    (id, usuario_id, ativo_id, tipo, origem, nome, quantidade, preco_medio_brl, valor_atual_brl, moeda, dados_json)
+                  VALUES (?, ?, ?, ?, 'importacao', ?, ?, ?, ?, 'BRL', ?)`,
+            valores: [gerarId(), usuarioId, ativoId, item.tipo, item.nome, item.quantidade, item.precoMedioBrl, item.valorAtualBrl, item.dadosJson],
           });
-          operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'aceito' WHERE id = ?`, valores: [linha.id] });
+          operacoes.push({ sql: `UPDATE importacao_itens SET resultado = 'aceito' WHERE id = ?`, valores: [linhaId] });
         }
         await bd.emLote(operacoes);
         await repo.concluirImportacao(id, usuarioId);

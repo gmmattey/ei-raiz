@@ -109,6 +109,29 @@ test('confirma um lote criando a posição canônica uma única vez', async () =
   assert.match(lotes[0][1].sql, /resultado = 'aceito'/);
 });
 
+test('confirma fundo importado vinculando seu CNPJ ao catálogo canônico', async () => {
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
+  const importacao = { id: 'importacao-2', usuario_id: 'usuario-1', origem: 'fundos.xlsx', status: 'pendente', iniciado_em: '2026-07-26', concluido_em: null };
+  const bd = {
+    consultar: async (sql: string) => sql.includes('ORDER BY linha')
+      ? [{ id: 'linha-fundo', linha: 1, tipo: 'desconhecido', resultado: 'pendente', dados_json: JSON.stringify({
+        aba: 'fundos', nome: 'Fundo CVM', cnpj: '12.345.678/0001-90', valorAplicado: 500,
+      }) }]
+      : [],
+    primeiro: async (sql: string) => sql.includes('FROM ativos') ? null : importacao,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 1 }),
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
+  };
+
+  const resultado = await servicoPatrimonio(bd).confirmarImportacao('usuario-1', 'importacao-2');
+
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  assert.match(lotes[0][0].sql, /INSERT INTO ativos/);
+  assert.equal(lotes[0][0].valores[1], '12345678000190');
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_itens/);
+  assert.equal(lotes[0][1].valores[2], lotes[0][0].valores[0]);
+});
+
 test('expõe valor calculado e frescor da cotação no contrato patrimonial', async () => {
   const bd = {
     consultar: async () => [{
