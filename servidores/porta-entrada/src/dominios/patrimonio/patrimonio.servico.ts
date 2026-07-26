@@ -334,7 +334,15 @@ export const servicoPatrimonio = (bd: Bd) => {
     async removerItem(usuarioId: string, id: string): Promise<ServiceResponse<{ removido: true }>> {
       const atual = await repo.buscarItemBruto(usuarioId, id);
       if (!atual) return erro('item_nao_encontrado', 'Item de patrimônio não encontrado', 404);
-      await repo.removerItem(id, usuarioId);
+      await repo.desativarItemComMovimento(id, usuarioId, {
+        id: gerarId(), quantidade: atual.quantidade, valorBrl: atual.valor_atual_brl,
+        data: new Date().toISOString().slice(0, 10),
+        dadosJson: JSON.stringify({
+          tipo: 'baixa_manual',
+          quantidade: atual.quantidade,
+          valorAtualBrl: atual.valor_atual_brl,
+        }),
+      });
       return sucesso({ removido: true });
     },
 

@@ -88,6 +88,26 @@ test('correção manual de valor cria movimento atômico com estado anterior e n
   });
 });
 
+test('baixa de item preserva o histórico com retirada em vez de excluir a posição', async () => {
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
+  const bd = {
+    consultar: async () => [],
+    primeiro: async () => ({ id: 'item-1', quantidade: 2, preco_medio_brl: 10, valor_atual_brl: 25, nome: 'Ação teste', tipo: 'acao' }),
+    executar: async () => ({ sucesso: true, linhasAfetadas: 1 }),
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
+  };
+  const resultado = await servicoPatrimonio(bd).removerItem('usuario-1', 'item-1');
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  assert.match(lotes[0][0].sql, /esta_ativo = 0/);
+  assert.doesNotMatch(lotes[0][0].sql, /DELETE FROM patrimonio_itens/);
+  assert.match(lotes[0][1].sql, /INSERT INTO patrimonio_movimentos/);
+  assert.equal(lotes[0][1].valores[3], 2);
+  assert.equal(lotes[0][1].valores[4], 25);
+  assert.deepEqual(JSON.parse(lotes[0][1].valores[6] as string), {
+    tipo: 'baixa_manual', quantidade: 2, valorAtualBrl: 25,
+  });
+});
+
 test('rejeita CNPJ fora de fundo ou previdência', async () => {
   const bd = { consultar: async () => [], primeiro: async () => null, executar: async () => ({ sucesso: true, linhasAfetadas: 0 }), emLote: async () => {} };
   const resultado = await servicoPatrimonio(bd).criarItem('usuario-1', {
