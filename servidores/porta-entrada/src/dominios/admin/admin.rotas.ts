@@ -68,6 +68,7 @@ export async function rotearAdmin(
   if (caminho === '/api/admin/usuarios' && metodo === 'GET') return servico.listarUsuarios(sessao.email);
   if (caminho === '/api/admin/auditoria' && metodo === 'GET') return servico.auditoria(sessao.email);
   if (caminho === '/api/admin/cvm' && metodo === 'GET') return servico.ingestoesCvm(sessao.email);
+  if (caminho === '/api/admin/jobs' && metodo === 'GET') return servico.execucoesJobs(sessao.email);
 
   return caminho.startsWith('/api/admin') ? naoEncontrado() : metodoNaoPermitido(metodo);
 }

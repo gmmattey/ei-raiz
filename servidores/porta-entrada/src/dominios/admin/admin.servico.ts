@@ -1,12 +1,13 @@
 import type {
   AdminEntrarEntrada, AdminUsuarioSaida, AdminAuditoriaItem, AdminIngestaoCvmItem,
   TokenSaida, IngestaoCvmModo, IngestaoCvmStatus,
+  AdminJobExecucaoItem,
 } from '@ei/contratos';
 import type { Bd, Env } from '../../infra/bd';
 import { emitirToken, validarSenha } from '../../infra/cripto';
 import { erro, sucesso, type ServiceResponse } from '../../infra/http';
 import { repositorioAuth } from '../auth/auth.repositorio';
-import { repositorioAdmin, type LinhaAuditoria, type LinhaIngestaoCvm } from './admin.repositorio';
+import { repositorioAdmin, type LinhaAuditoria, type LinhaIngestaoCvm, type LinhaJobExecucao } from './admin.repositorio';
 
 const paraAuditoria = (l: LinhaAuditoria): AdminAuditoriaItem => ({
   id: l.id,
@@ -27,6 +28,11 @@ const paraIngestao = (l: LinhaIngestaoCvm): AdminIngestaoCvmItem => ({
   parametrosJson: (() => { try { return JSON.parse(l.parametros_json); } catch { return {}; } })(),
   resultadoJson: (() => { try { return JSON.parse(l.resultado_json); } catch { return {}; } })(),
   erro: l.erro,
+});
+
+const paraExecucaoJob = (l: LinhaJobExecucao): AdminJobExecucaoItem => ({
+  id: l.id, nome: l.nome, status: l.status as AdminJobExecucaoItem['status'], iniciadoEm: l.iniciado_em,
+  concluidoEm: l.concluido_em, duracaoMs: l.duracao_ms, volume: l.volume, erro: l.erro,
 });
 
 export const servicoAdmin = (bd: Bd, env: Env) => {
@@ -65,6 +71,11 @@ export const servicoAdmin = (bd: Bd, env: Env) => {
       if (!(await repo.ehAdmin(sessaoEmail))) return erro('sem_permissao', 'Acesso administrativo negado', 403);
       const linhas = await repo.ingestoesCvm();
       return sucesso({ itens: linhas.map(paraIngestao) });
+    },
+
+    async execucoesJobs(sessaoEmail: string): Promise<ServiceResponse<{ itens: AdminJobExecucaoItem[] }>> {
+      if (!(await repo.ehAdmin(sessaoEmail))) return erro('sem_permissao', 'Acesso administrativo negado', 403);
+      return sucesso({ itens: (await repo.execucoesJobs()).map(paraExecucaoJob) });
     },
   };
 };

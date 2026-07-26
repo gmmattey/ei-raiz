@@ -36,3 +36,14 @@ export interface AdminIngestaoCvmItem {
   resultadoJson: Record<string, unknown>;
   erro: string | null;
 }
+
+export interface AdminJobExecucaoItem {
+  id: string;
+  nome: string;
+  status: 'executando' | 'concluido' | 'falhou';
+  iniciadoEm: string;
+  concluidoEm: string | null;
+  duracaoMs: number | null;
+  volume: number | null;
+  erro: string | null;
+}

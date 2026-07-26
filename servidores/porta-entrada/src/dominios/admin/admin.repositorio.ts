@@ -29,6 +29,11 @@ export interface LinhaIngestaoCvm {
   erro: string | null;
 }
 
+export interface LinhaJobExecucao {
+  id: string; nome: string; status: string; iniciado_em: string; concluido_em: string | null;
+  duracao_ms: number | null; volume: number | null; erro: string | null;
+}
+
 export const repositorioAdmin = (bd: Bd) => ({
   async ehAdmin(email: string): Promise<boolean> {
     const l = await bd.primeiro<{ email: string }>(
@@ -57,6 +62,13 @@ export const repositorioAdmin = (bd: Bd) => ({
     return bd.consultar<LinhaIngestaoCvm>(
       `SELECT * FROM vw_admin_ingestao_cvm ORDER BY iniciado_em DESC LIMIT ?`,
       limite,
+    );
+  },
+
+  async execucoesJobs(limite = 50): Promise<LinhaJobExecucao[]> {
+    return bd.consultar<LinhaJobExecucao>(
+      `SELECT id, nome, status, iniciado_em, concluido_em, duracao_ms, volume, erro
+         FROM job_execucoes ORDER BY iniciado_em DESC LIMIT ?`, limite,
     );
   },
 
