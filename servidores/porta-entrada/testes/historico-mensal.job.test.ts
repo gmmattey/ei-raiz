@@ -10,7 +10,7 @@ test('snapshot mensal reduz a confiança quando há cotação expirada', async (
       return {
         bind(...valores: unknown[]) {
           return {
-            all: async () => ({ results: [{ id: 'usuario-1' }] }),
+            all: async () => ({ results: sql.includes('FROM patrimonio_movimentos') ? [] : [{ id: 'usuario-1' }] }),
             first: async () => sql.includes('vw_patrimonio_resumo')
               ? { patrimonio_bruto_brl: 100, patrimonio_liquido_brl: 100, divida_brl: 0, aporte_mes_brl: 0 }
               : { total_itens: 2, itens_sem_valor: 0, itens_cotacao_expirada: 1 },
