@@ -5,6 +5,7 @@ export type TipoItemPatrimonio =
   | 'caixa' | 'poupanca' | 'imovel' | 'veiculo' | 'divida' | 'outro';
 
 export type OrigemItemPatrimonio = 'manual' | 'importacao' | 'vinculo_corretora' | 'sincronizado';
+export type EstadoValorPatrimonial = 'cotacao' | 'manual' | 'indisponivel';
 
 export type TipoAporte = 'aporte' | 'retirada' | 'transferencia' | 'ajuste';
 
@@ -23,6 +24,11 @@ export interface ItemPatrimonioSaida {
   precoMedioBrl: number | null;
   precoAtualBrl: number | null;
   valorAtualBrl: number | null;
+  estadoValor: EstadoValorPatrimonial;
+  fonteCotacao: string | null;
+  cotacaoAtualizadaEm: string | null;
+  cotacaoReferenciaEm: string | null;
+  cotacaoExpiraEm: string | null;
   rentabilidadePct: number | null;
   pesoPct: number | null;
   moeda: string;

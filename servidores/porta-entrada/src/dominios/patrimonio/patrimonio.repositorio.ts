@@ -30,6 +30,8 @@ export interface LinhaPosicao {
   preco_atual_brl: number | null;
   preco_atualizado_em: string | null;
   preco_fonte: string | null;
+  preco_referencia_em: string | null;
+  preco_expira_em: string | null;
   rentabilidade_pct: number | null;
   criado_em: string;
   atualizado_em: string;
@@ -138,7 +140,34 @@ export const repositorioPatrimonio = (bd: Bd) => ({
 
   async posicoes(usuarioId: string): Promise<LinhaPosicao[]> {
     return bd.consultar<LinhaPosicao>(
-      `SELECT * FROM vw_patrimonio_posicoes WHERE usuario_id = ? ORDER BY valor_atual_brl DESC, nome`,
+      `SELECT
+         i.id AS item_id, i.usuario_id, i.tipo, i.origem, i.nome, i.ativo_id,
+         a.ticker, a.cnpj, a.classe, a.subclasse, i.quantidade, i.preco_medio_brl,
+         COALESCE(c_cvm.preco_brl, c_brapi.preco_brl) AS preco_atual_brl,
+         COALESCE(c_cvm.cotado_em, c_brapi.cotado_em) AS preco_atualizado_em,
+         COALESCE(c_cvm.fonte, c_brapi.fonte) AS preco_fonte,
+         COALESCE(json_extract(c_cvm.dados_json, '$.referenciaEm'), json_extract(c_brapi.dados_json, '$.referenciaEm')) AS preco_referencia_em,
+         COALESCE(c_cvm.expira_em, c_brapi.expira_em) AS preco_expira_em,
+         CASE
+           WHEN i.quantidade IS NOT NULL AND COALESCE(c_cvm.preco_brl, c_brapi.preco_brl) IS NOT NULL
+             THEN i.quantidade * COALESCE(c_cvm.preco_brl, c_brapi.preco_brl)
+           ELSE i.valor_atual_brl
+         END AS valor_atual_brl,
+         CASE
+           WHEN i.preco_medio_brl IS NULL OR i.preco_medio_brl = 0 THEN NULL
+           WHEN COALESCE(c_cvm.preco_brl, c_brapi.preco_brl) IS NOT NULL
+             THEN ((COALESCE(c_cvm.preco_brl, c_brapi.preco_brl) - i.preco_medio_brl) / i.preco_medio_brl) * 100
+           WHEN i.valor_atual_brl IS NOT NULL AND i.quantidade IS NOT NULL AND i.quantidade <> 0
+             THEN (((i.valor_atual_brl / i.quantidade) - i.preco_medio_brl) / i.preco_medio_brl) * 100
+           ELSE NULL
+         END AS rentabilidade_pct,
+         i.criado_em, i.atualizado_em
+       FROM patrimonio_itens i
+       LEFT JOIN ativos a ON a.id = i.ativo_id
+       LEFT JOIN ativos_cotacoes_cache c_cvm ON c_cvm.ativo_id = i.ativo_id AND c_cvm.fonte = 'cvm'
+       LEFT JOIN ativos_cotacoes_cache c_brapi ON c_brapi.ativo_id = i.ativo_id AND c_brapi.fonte = 'brapi'
+       WHERE i.usuario_id = ? AND i.esta_ativo = 1
+       ORDER BY valor_atual_brl DESC, i.nome`,
       usuarioId,
     );
   },

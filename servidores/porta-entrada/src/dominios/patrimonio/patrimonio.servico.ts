@@ -19,6 +19,9 @@ import {
 const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida => {
   const valor = l.valor_atual_brl ?? 0;
   const peso = totalBrl > 0 ? (valor / totalBrl) * 100 : null;
+  const estadoValor = l.preco_atual_brl !== null && l.quantidade !== null
+    ? 'cotacao'
+    : l.valor_atual_brl !== null ? 'manual' : 'indisponivel';
   return {
     id: l.item_id,
     usuarioId: l.usuario_id,
@@ -34,6 +37,11 @@ const paraItemSaida = (l: LinhaPosicao, totalBrl: number): ItemPatrimonioSaida =
     precoMedioBrl: l.preco_medio_brl,
     precoAtualBrl: l.preco_atual_brl,
     valorAtualBrl: l.valor_atual_brl,
+    estadoValor,
+    fonteCotacao: l.preco_fonte,
+    cotacaoAtualizadaEm: l.preco_atualizado_em,
+    cotacaoReferenciaEm: l.preco_referencia_em ?? l.preco_atualizado_em,
+    cotacaoExpiraEm: l.preco_expira_em,
     rentabilidadePct: l.rentabilidade_pct,
     pesoPct: peso,
     moeda: 'BRL',
