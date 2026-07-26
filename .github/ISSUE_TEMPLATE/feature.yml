@@ -1,0 +1,103 @@
+name: Feature
+description: Criar ou evoluir uma funcionalidade do Esquilo Wallet
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema
+      description: Qual problema do usuário ou do produto precisa ser resolvido?
+      placeholder: Descreva o problema, sem antecipar apenas a solução.
+    validations:
+      required: true
+
+  - type: textarea
+    id: resultado
+    attributes:
+      label: Resultado esperado
+      description: O que deverá ser verdadeiro quando esta feature estiver concluída?
+    validations:
+      required: true
+
+  - type: textarea
+    id: comportamento
+    attributes:
+      label: Comportamento funcional
+      description: Descreva o comportamento por fluxo ou tela.
+      placeholder: |
+        - Ao entrar...
+        - Quando os dados estiverem carregando...
+        - Quando não houver dados...
+        - Em caso de erro...
+        - Após concluir...
+    validations:
+      required: true
+
+  - type: textarea
+    id: escopo
+    attributes:
+      label: Escopo
+      placeholder: |
+        Inclui:
+        - ...
+
+        Não inclui:
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critérios de aceite
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Dependências e referências
+      description: Issues, documentos, APIs, designs ou decisões relacionadas.
+
+  - type: dropdown
+    id: camadas
+    attributes:
+      label: Principal camada afetada
+      options:
+        - Frontend
+        - Backend
+        - Frontend e backend
+        - Banco de dados
+        - Contratos compartilhados
+        - Infraestrutura
+        - Documentação
+        - Ainda precisa de análise
+    validations:
+      required: true
+
+  - type: textarea
+    id: validacao
+    attributes:
+      label: Validação esperada
+      description: Como será comprovado que a implementação funciona?
+      placeholder: Testes automatizados, cenário manual, evidência visual ou outro método.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pronto
+    attributes:
+      label: Pronta para desenvolvimento
+      options:
+        - label: O problema e o resultado esperado estão claros.
+          required: true
+        - label: O escopo e os critérios de aceite estão definidos.
+          required: true
+        - label: Não encontrei outra issue cobrindo a mesma necessidade.
+          required: true

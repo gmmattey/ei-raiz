@@ -1,0 +1,53 @@
+name: Validação de Pull Request
+
+on:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Typecheck, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar tipos
+        run: npm run typecheck
+
+      - name: Executar testes da API
+        run: npm run test:api
+
+      - name: Gerar build
+        run: npm run build
+
+      - name: Impedir alterações em legado
+        shell: bash
+        run: |
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -q '^_legacy/'; then
+            echo "::error::Esta PR altera _legacy/, que é somente leitura."
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep '^_legacy/'
+            exit 1
+          fi
