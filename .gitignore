@@ -71,3 +71,6 @@ tmp/
 
 # Backups de banco (dumps locais)
 backups/
+
+# Cache local de tooling de agente
+.impeccable/

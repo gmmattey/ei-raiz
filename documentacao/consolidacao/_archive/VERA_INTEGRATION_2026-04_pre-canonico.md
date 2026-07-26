@@ -1,3 +1,12 @@
+> **Arquivado em 2026-07-26 (Onda 4 da consolidação, issue #114).** Descreve uma
+> arquitetura anterior ao backend rebuild canônico (`POST /api/vera/avaliar`,
+> `veraBridge.ts`, cascata de provedores de IA, `VeraCard.jsx`) que não existe
+> mais no runtime. O backend canônico só expõe `POST /api/decisoes/vera/mensagens`
+> (chat), consumindo o contexto financeiro canônico do domínio `patrimonio`
+> (ver `servicoPatrimonio.contextoFinanceiro` e `decisoes.servico.ts`).
+> `VeraCard.jsx` foi removido por não ser importado por nenhuma tela. Documento
+> mantido apenas como referência histórica — não reflete o comportamento atual.
+
 # Integração Vera - Página de Insights
 
 ## Overview
