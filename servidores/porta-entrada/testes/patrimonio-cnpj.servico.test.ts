@@ -252,3 +252,25 @@ test('lista somente os movimentos do item do usuário autenticado', async () => 
     dadosJson: { aba: 'acoes' }, criadoEm: '2026-07-20T10:00:00.000Z',
   });
 });
+
+test('reconstrói somente o histórico do usuário autenticado', async () => {
+  const execucoes: { sql: string; valores: unknown[] }[] = [];
+  const bd = {
+    consultar: async (sql: string) => sql.includes('FROM patrimonio_movimentos') ? [{
+      item_id: 'item-1', item_tipo: 'acao', tipo: 'compra', valor_brl: 100, data: '2026-01-10', criado_em: '2026-01-10T10:00:00Z',
+    }] : [],
+    primeiro: async () => ({ total_itens: 1 }),
+    executar: async (sql: string, ...valores: unknown[]) => {
+      execucoes.push({ sql, valores });
+      return { sucesso: true, linhasAfetadas: 1 };
+    },
+    emLote: async () => {},
+  };
+  const resultado = await servicoPatrimonio(bd).reconstruirHistorico('usuario-1');
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  if (!resultado.ok) return;
+  assert.equal(resultado.dados.mesesReconstruidos, 6);
+  assert.equal(resultado.dados.mesesConfiaveis, 6);
+  assert.equal(execucoes.length, 6);
+  assert.ok(execucoes.every((execucao) => execucao.valores[0] === 'usuario-1'));
+});

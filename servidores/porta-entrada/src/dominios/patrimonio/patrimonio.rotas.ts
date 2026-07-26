@@ -41,6 +41,7 @@ export async function rotearPatrimonio(
   if (mAporte && metodo === 'DELETE') return servico.removerAporte(sessao.usuarioId, mAporte[1]);
 
   if (caminho === '/api/patrimonio/historico' && metodo === 'GET') return servico.historico(sessao.usuarioId);
+  if (caminho === '/api/patrimonio/historico/reconstruir' && metodo === 'POST') return servico.reconstruirHistorico(sessao.usuarioId);
   if (caminho === '/api/patrimonio/score' && metodo === 'GET') return servico.score(sessao.usuarioId);
 
   if (caminho === '/api/patrimonio/importacoes' && metodo === 'POST') {
