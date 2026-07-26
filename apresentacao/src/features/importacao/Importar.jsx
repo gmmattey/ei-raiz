@@ -168,14 +168,12 @@ export default function Importar({ embedded = false }) {
       const linhasValidas = (preview.itens ?? [])
         .filter((item) => item.status === 'ok')
         .map((item) => item.linha);
-      // Backend canônico já ingere os itens na criação; confirmação é apenas
-      // sinalização local + telemetria.
-      await patrimonioApi.obterImportacao(preview.importacaoId).catch(() => null);
+      const confirmacao = await patrimonioApi.confirmarImportacao(preview.importacaoId);
       await telemetriaApi.registrarEvento({
         nome: 'import_confirmed',
         dadosJson: {
           importacaoId: preview.importacaoId,
-          itensValidos: linhasValidas.length,
+          itensValidos: confirmacao.itensCriados,
         },
       }).catch(() => null);
       invalidarCacheUsuario();
@@ -184,7 +182,7 @@ export default function Importar({ embedded = false }) {
         replace: true,
         state: {
           showSuccessImport: true,
-          importedItems: linhasValidas.length,
+          importedItems: confirmacao.itensCriados,
           importacaoId: preview.importacaoId,
         },
       });

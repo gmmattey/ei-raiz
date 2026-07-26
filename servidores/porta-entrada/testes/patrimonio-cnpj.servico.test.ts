@@ -79,6 +79,36 @@ test('reenvio do mesmo lote reutiliza a importação sem gravar linhas novamente
   assert.equal(itensInseridos, 1);
 });
 
+test('confirma um lote criando a posição canônica uma única vez', async () => {
+  const lotes: { sql: string; valores: unknown[] }[][] = [];
+  const importacao = {
+    id: 'importacao-1', usuario_id: 'usuario-1', origem: 'carteira.xlsx', status: 'pendente',
+    iniciado_em: '2026-07-26', concluido_em: null,
+  };
+  const bd = {
+    consultar: async (sql: string) => {
+      if (sql.includes('FROM importacao_itens') && sql.includes('ORDER BY linha')) {
+        return [{ id: 'linha-1', linha: 1, tipo: 'desconhecido', resultado: 'pendente', dados_json: JSON.stringify({
+          aba: 'acoes', ticker: 'PETR4', nome: 'Petrobras PN', quantidade: 10, precoMedio: 30, valorTotal: 320,
+        }) }];
+      }
+      return [];
+    },
+    primeiro: async () => importacao,
+    executar: async () => ({ sucesso: true, linhasAfetadas: 1 }),
+    emLote: async (operacoes: { sql: string; valores: unknown[] }[]) => { lotes.push(operacoes); },
+  };
+
+  const resultado = await servicoPatrimonio(bd).confirmarImportacao('usuario-1', 'importacao-1');
+
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+  if (!resultado.ok) return;
+  assert.equal(resultado.dados.itensCriados, 1);
+  assert.equal(resultado.dados.itensRejeitados, 0);
+  assert.match(lotes[0][0].sql, /INSERT INTO patrimonio_itens/);
+  assert.match(lotes[0][1].sql, /resultado = 'aceito'/);
+});
+
 test('expõe valor calculado e frescor da cotação no contrato patrimonial', async () => {
   const bd = {
     consultar: async () => [{

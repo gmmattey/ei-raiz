@@ -9,6 +9,7 @@ import type {
   PatrimonioScoreSaida,
   ImportacaoSaida,
   ImportacaoCriarEntrada,
+  ImportacaoConfirmarSaida,
 } from "@ei/contratos";
 import { apiRequest } from "./http";
 
@@ -78,4 +79,10 @@ export function criarImportacao(entrada: ImportacaoCriarEntrada): Promise<Import
 
 export function obterImportacao(id: string): Promise<ImportacaoSaida> {
   return apiRequest<ImportacaoSaida>(`/api/patrimonio/importacoes/${encodeURIComponent(id)}`, { method: "GET" });
+}
+
+export function confirmarImportacao(id: string): Promise<ImportacaoConfirmarSaida> {
+  return apiRequest<ImportacaoConfirmarSaida>(`/api/patrimonio/importacoes/${encodeURIComponent(id)}/confirmar`, {
+    method: "POST",
+  });
 }

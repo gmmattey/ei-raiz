@@ -45,6 +45,8 @@ export async function rotearPatrimonio(
   }
   const mImp = caminho.match(/^\/api\/patrimonio\/importacoes\/([^/]+)$/);
   if (mImp && metodo === 'GET') return servico.obterImportacao(sessao.usuarioId, mImp[1]);
+  const mConfirmarImportacao = caminho.match(/^\/api\/patrimonio\/importacoes\/([^/]+)\/confirmar$/);
+  if (mConfirmarImportacao && metodo === 'POST') return servico.confirmarImportacao(sessao.usuarioId, mConfirmarImportacao[1]);
 
   return caminho.startsWith('/api/patrimonio') ? naoEncontrado() : metodoNaoPermitido(metodo);
 }
