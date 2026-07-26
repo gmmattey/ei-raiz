@@ -6,6 +6,7 @@ import { ehRotaPublica, ehTokenServicoCvm, resolverSessao, rotear } from "./apli
 import { atualizarMercadoJob } from "./jobs/mercado-atualizar.job";
 import { historicoMensalJob } from "./jobs/historico-mensal.job";
 import { patrimonioReconstruirJob } from "./jobs/patrimonio-reconstruir.job";
+import { executarJobMonitorado } from "./jobs/observabilidade.job";
 
 export type { Env };
 
@@ -99,13 +100,19 @@ export default {
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     if (event.cron === "0 3 * * *") {
-      ctx.waitUntil(historicoMensalJob(env).catch(() => {}));
+      ctx.waitUntil(executarJobMonitorado(env, 'historico_mensal', () => historicoMensalJob(env)).catch((causa) => {
+        console.error('cron_historico_mensal_falhou', causa);
+      }));
       return;
     }
     if (event.cron === "*/30 * * * *") {
-      ctx.waitUntil(patrimonioReconstruirJob(env).catch(() => {}));
+      ctx.waitUntil(executarJobMonitorado(env, 'patrimonio_reconstrucao', () => patrimonioReconstruirJob(env)).catch((causa) => {
+        console.error('cron_patrimonio_reconstrucao_falhou', causa);
+      }));
       return;
     }
-    ctx.waitUntil(atualizarMercadoJob(env).catch(() => {}));
+    ctx.waitUntil(executarJobMonitorado(env, 'mercado_atualizar', () => atualizarMercadoJob(env)).catch((causa) => {
+      console.error('cron_mercado_atualizar_falhou', causa);
+    }));
   },
 };

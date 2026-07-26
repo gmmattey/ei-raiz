@@ -11,7 +11,7 @@ interface LinhaAtivoUsado {
   tipo: string;
 }
 
-export async function atualizarMercadoJob(env: Env): Promise<void> {
+export async function atualizarMercadoJob(env: Env): Promise<number> {
   const bd = criarBd(env);
   const ativos = await bd.consultar<LinhaAtivoUsado>(
     `SELECT DISTINCT a.id, a.ticker, a.cnpj, a.tipo
@@ -20,11 +20,12 @@ export async function atualizarMercadoJob(env: Env): Promise<void> {
       WHERE p.esta_ativo = 1`,
   );
 
-  if (ativos.length === 0) return;
+  if (ativos.length === 0) return 0;
 
   const timestamp = agora();
   const expira = new Date(Date.now() + 5 * 60_000).toISOString();
 
+  let atualizados = 0;
   for (const ativo of ativos) {
     const preco = await buscarPreco(ativo, env, bd);
     if (preco == null) continue;
@@ -43,7 +44,9 @@ export async function atualizarMercadoJob(env: Env): Promise<void> {
       expira,
       JSON.stringify({ origem: 'job', tipo: ativo.tipo, referenciaEm: preco.referenciaEm ?? timestamp }),
     );
+    atualizados += 1;
   }
+  return atualizados;
 }
 
 function fontePara(tipo: string): string {

@@ -75,16 +75,18 @@ export async function reconstruirHistoricoPorMovimentosUsuario(
   };
 }
 
-export async function historicoMensalJob(env: Env): Promise<void> {
+export async function historicoMensalJob(env: Env): Promise<number> {
   const bd = criarBd(env);
   const usuarios = await bd.consultar<LinhaUsuario>(`SELECT id FROM usuarios`);
-  if (usuarios.length === 0) return;
+  if (usuarios.length === 0) return 0;
 
   const anoMes = new Date().toISOString().slice(0, 7);
   const timestamp = agora();
+  let gravacoes = 0;
 
   for (const u of usuarios) {
-    await reconstruirHistoricoPorMovimentosUsuario(bd, u.id, anoMes, timestamp);
+    const reconstruido = await reconstruirHistoricoPorMovimentosUsuario(bd, u.id, anoMes, timestamp);
+    gravacoes += reconstruido.mesesReconstruidos;
 
     const resumo = await bd.primeiro<LinhaResumo>(
       `SELECT patrimonio_bruto_brl, divida_brl, patrimonio_liquido_brl, aporte_mes_brl
@@ -140,5 +142,7 @@ export async function historicoMensalJob(env: Env): Promise<void> {
       dadosJson,
       timestamp,
     );
+    gravacoes += 1;
   }
+  return gravacoes;
 }
