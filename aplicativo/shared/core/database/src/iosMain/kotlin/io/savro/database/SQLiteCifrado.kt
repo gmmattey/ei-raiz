@@ -1,6 +1,6 @@
 package io.savro.database
 
-import cocoapods.SQLCipher.sqlite3
+import cnames.structs.sqlite3
 import cocoapods.SQLCipher.sqlite3_changes
 import cocoapods.SQLCipher.sqlite3_close
 import cocoapods.SQLCipher.sqlite3_errmsg
@@ -18,6 +18,8 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.asStableRef
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.plus
+import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.toKString
@@ -141,6 +143,7 @@ internal class SQLiteCifrado private constructor(private val db: CPointer<sqlite
                     diretorioSavro,
                     withIntermediateDirectories = true,
                     attributes = null,
+                    error = null,
                 )
             }
             return "$diretorioSavro/$nomeArquivo"
@@ -165,8 +168,8 @@ private fun callbackDeLinha(
     val linhas = dados?.asStableRef<MutableList<Map<String, String?>>>()?.get() ?: return 0
     val linha = mutableMapOf<String, String?>()
     for (indice in 0 until numeroDeColunas) {
-        val nomeColuna = nomesDasColunas?.get(indice)?.toKString() ?: continue
-        linha[nomeColuna] = valores?.get(indice)?.toKString()
+        val nomeColuna = nomesDasColunas?.plus(indice)?.pointed?.value?.toKString() ?: continue
+        linha[nomeColuna] = valores?.plus(indice)?.pointed?.value?.toKString()
     }
     linhas.add(linha)
     return 0

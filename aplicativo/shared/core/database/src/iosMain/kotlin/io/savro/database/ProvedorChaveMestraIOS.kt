@@ -15,6 +15,7 @@ import platform.CoreFoundation.CFTypeRef
 import platform.CoreFoundation.CFTypeRefVar
 import platform.Foundation.NSData
 import platform.Foundation.NSMutableDictionary
+import platform.Foundation.NSString
 import platform.Foundation.create
 import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
@@ -75,16 +76,16 @@ class ProvedorChaveMestraIOS(
 
     private fun consultaBase(): NSMutableDictionary {
         val consulta = NSMutableDictionary()
-        consulta.setObject(kSecClassGenericPassword, forKey = kSecClass)
-        consulta.setObject(servico, forKey = kSecAttrService)
-        consulta.setObject(conta, forKey = kSecAttrAccount)
+        consulta.setObject(kSecClassGenericPassword, forKey = kSecClass as NSString)
+        consulta.setObject(servico, forKey = kSecAttrService as NSString)
+        consulta.setObject(conta, forKey = kSecAttrAccount as NSString)
         return consulta
     }
 
     private fun lerChaveDoKeychain(): ByteArray? = memScoped {
         val consulta = consultaBase()
-        consulta.setObject(true, forKey = kSecReturnData)
-        consulta.setObject(kSecMatchLimitOne, forKey = kSecMatchLimit)
+        consulta.setObject(true, forKey = kSecReturnData as NSString)
+        consulta.setObject(kSecMatchLimitOne, forKey = kSecMatchLimit as NSString)
 
         val resultadoPonteiro = alloc<CFTypeRefVar>()
         @Suppress("UNCHECKED_CAST")
@@ -103,9 +104,9 @@ class ProvedorChaveMestraIOS(
     private fun gerarNovaChaveERegistrar(): ByteArray {
         val novaChave = gerarBytesAleatorios(TAMANHO_CHAVE_BYTES)
         val consulta = consultaBase()
-        consulta.setObject(novaChave.toNSData(), forKey = kSecValueData)
-        consulta.setObject(kSecAttrAccessibleWhenUnlockedThisDeviceOnly, forKey = kSecAttrAccessible)
-        consulta.setObject(false, forKey = kSecAttrSynchronizable)
+        consulta.setObject(novaChave.toNSData(), forKey = kSecValueData as NSString)
+        consulta.setObject(kSecAttrAccessibleWhenUnlockedThisDeviceOnly, forKey = kSecAttrAccessible as NSString)
+        consulta.setObject(false, forKey = kSecAttrSynchronizable as NSString)
 
         @Suppress("UNCHECKED_CAST")
         val status = SecItemAdd(consulta as CFDictionaryRef, null)

@@ -37,5 +37,5 @@ class SQLCipherRepositorioItensPatrimoniaisContratoTest : RepositorioItensPatrim
     }
 
     private fun caminhoTemporario(): String =
-        NSTemporaryDirectory() + "savro-teste-" + NSUUID().UUIDString() + ".db"
+        NSTemporaryDirectory() + "savro-teste-" + NSUUID().UUIDString + ".db"
 }

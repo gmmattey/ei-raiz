@@ -9,6 +9,7 @@ import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
 import io.savro.model.TipoItemPatrimonial
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
