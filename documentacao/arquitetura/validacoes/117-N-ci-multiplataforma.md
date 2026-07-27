@@ -147,4 +147,33 @@ Primeira tentativa dessa correção (commit `6b4a721`) escreveu a chave **sem as
 inteiro: `xcodebuild: error: ... The project 'iosApp' is damaged and cannot be opened due to a parse
 error.` — chave de build setting condicional (com `[`, `]`, `=`, `*`) precisa estar entre aspas nesse
 formato de plist; sem aspas, o parser tenta tokenizar cada caractere especial como se fosse
-sintaxe do arquivo. Corrigido citando a chave inteira.
+sintaxe do arquivo. Corrigido citando a chave inteira (commit `6d6cf03`).
+
+## Terceira falha real — símbolo indefinido no link do app (SDK do Xcode desatualizado)
+
+Com o parse do projeto e a exclusão de `x86_64` corrigidos, a compilação avançou até o link real do
+binário `iosApp` (não mais o link do framework KMP nem a etapa de sync de recursos) e falhou assim:
+
+```
+ld: warning: Could not find or use auto-linked framework 'UIUtilities': framework 'UIUtilities' not found
+Undefined symbols for architecture arm64:
+  "_OBJC_CLASS_$_UIViewLayoutRegion", referenced from:
+       in SavroApp[25](CMPLayoutRegion.o)
+ld: symbol(s) not found for architecture arm64
+clang: error: linker command failed with exit code 1
+```
+
+Causa raiz: o runner `macos-14` seleciona por padrão o Xcode 15.4 (`xcode-select`), cujo SDK
+`iphonesimulator17.5` não contém a classe privada `UIViewLayoutRegion`/framework `UIUtilities` —
+símbolo que o runtime nativo iOS do Compose Multiplatform 1.11.1 (`CMPLayoutRegion.o`) referencia
+diretamente. Não é bug no código do app nem no `commonMain`: é incompatibilidade entre a versão de
+Xcode/SDK ativa no runner e a versão do Compose Multiplatform usada pelo projeto, que já espera uma
+API de UIKit mais recente (disponível a partir do SDK iOS 18, ou seja, Xcode 16+).
+
+Correção: novo step "Selecionar Xcode mais recente disponível no runner" no job `ios-xcode-macos`,
+antes de qualquer build. Descobre dinamicamente a versão mais nova de Xcode já instalada em
+`/Applications/Xcode_*.app` no próprio runner (`ls | sort -V | tail -n 1`) e troca via
+`sudo xcode-select -s`, sem fixar um número de versão exato — os runners hospedados da GitHub trazem
+várias versões de Xcode pré-instaladas e a mais recente muda a cada atualização de imagem; hardcodar
+uma versão quebraria de novo no futuro. `xcodebuild -version` roda logo em seguida só para deixar
+registrado no log qual versão foi selecionada.

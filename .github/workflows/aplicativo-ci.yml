@@ -160,6 +160,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
+      # O runner macos-14 tem várias versões de Xcode instaladas em /Applications, mas o
+      # xcode-select padrão aponta pra uma versão antiga (15.4, SDK iphonesimulator17.5) cujo
+      # UIKit não tem a classe privada UIViewLayoutRegion/framework UIUtilities que o runtime
+      # nativo do Compose Multiplatform 1.11.x referencia — o link do app (não o link do
+      # framework KMP em si) falha com "Undefined symbols ... UIViewLayoutRegion". Seleciona a
+      # versão de Xcode mais recente já instalada no runner (sem fixar número exato, que muda a
+      # cada atualização de imagem da GitHub) pra ter um SDK com essa classe disponível.
+      - name: Selecionar Xcode mais recente disponível no runner
+        run: |
+          latest_xcode=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
+          echo "Selecionando $latest_xcode"
+          sudo xcode-select -s "$latest_xcode"
+          xcodebuild -version
+
       - name: Configurar JDK 17
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
