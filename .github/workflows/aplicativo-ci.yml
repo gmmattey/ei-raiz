@@ -1,28 +1,28 @@
-name: Android CI
+name: Aplicativo CI
 
 on:
   pull_request:
     branches: [master]
     paths:
-      - "android/**"
-      - ".github/workflows/android-ci.yml"
+      - "aplicativo/**"
+      - ".github/workflows/aplicativo-ci.yml"
   workflow_dispatch:
 
 concurrency:
-  group: android-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: aplicativo-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  android:
-    name: Validar Android
+  aplicativo:
+    name: Validar aplicativo KMP
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     defaults:
       run:
-        working-directory: android
+        working-directory: aplicativo
 
     steps:
       - name: Checkout
@@ -49,11 +49,15 @@ jobs:
       - name: Verificar arquitetura e tokens
         run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens
 
-      - name: Executar testes JVM e TestKit
-        run: ./gradlew --no-daemon --stacktrace :core:testing:test :core:designsystem:check
+      - name: Executar testes comuns e TestKit
+        run: ./gradlew --no-daemon --stacktrace :shared:core:testing:testDebugUnitTest :shared:core:designsystem:testDebugUnitTest :androidApp:testDevDebugUnitTest
 
       - name: Executar lint do app e design system
-        run: ./gradlew --no-daemon --stacktrace :app:lintDevDebug :core:designsystem:lintDebug
+        run: ./gradlew --no-daemon --stacktrace :androidApp:lintDevDebug :shared:core:designsystem:lintDebug
 
       - name: Gerar APK devDebug
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDevDebug
+        run: ./gradlew --no-daemon --stacktrace :androidApp:assembleDevDebug
+
+      # Compila os klibs de iOS; o link do framework e o build do Xcode exigem runner macOS (#195).
+      - name: Compilar alvos iOS (klib)
+        run: ./gradlew --no-daemon --stacktrace :shared:app:compileKotlinIosArm64 :shared:app:compileKotlinIosSimulatorArm64
