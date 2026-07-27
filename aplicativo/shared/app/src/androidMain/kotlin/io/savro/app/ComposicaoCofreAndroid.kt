@@ -5,6 +5,7 @@ import androidx.fragment.app.FragmentActivity
 import io.savro.database.ProvedorChaveMestraAndroid
 import io.savro.database.RelogioDoSistemaAndroid
 import io.savro.database.RepositorioItensPatrimoniaisRoom
+import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.security.AutenticadorBiometricoAndroid
 import io.savro.security.GerenciadorCofre
 import io.savro.security.PreferenciasCofreAndroid
@@ -30,19 +31,20 @@ class ComposicaoCofreAndroid(activity: FragmentActivity) {
 
     val autenticador = AutenticadorBiometricoAndroid(context)
 
-    val gerenciadorCofre: GerenciadorCofre = run {
-        val provedorChaveMestra = ProvedorChaveMestraAndroid(context)
-        val repositorio = RepositorioItensPatrimoniaisRoom(context, provedorChaveMestra)
-        val preferencias = PreferenciasCofreAndroid(context)
-        GerenciadorCofre(
-            provedorChaveMestra = provedorChaveMestra,
-            repositorio = repositorio,
-            autenticador = autenticador,
-            preferencias = preferencias,
-            relogio = RelogioDoSistemaAndroid,
-            escopo = escopo,
-        )
-    }
+    private val provedorChaveMestra = ProvedorChaveMestraAndroid(context)
+    private val repositorio = RepositorioItensPatrimoniaisRoom(context, provedorChaveMestra)
+
+    val gerenciadorCofre: GerenciadorCofre = GerenciadorCofre(
+        provedorChaveMestra = provedorChaveMestra,
+        repositorio = repositorio,
+        autenticador = autenticador,
+        preferencias = PreferenciasCofreAndroid(context),
+        relogio = RelogioDoSistemaAndroid,
+        escopo = escopo,
+    )
+
+    /** Cadastro manual de patrimônio (issue #119) — mesma conexão de banco do [gerenciadorCofre]. */
+    val servicoPatrimonio = ServicoPatrimonio(repositorio, RelogioDoSistemaAndroid)
 
     init {
         autenticador.vincularAtividade(activity)

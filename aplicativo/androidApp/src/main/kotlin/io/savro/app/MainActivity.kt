@@ -28,7 +28,7 @@ class MainActivity : FragmentActivity() {
         val composicao = ComposicaoCofreAndroid(this).also { composicaoCofre = it }
 
         setContent {
-            SavroApp(gerenciador = composicao.gerenciadorCofre)
+            SavroApp(gerenciador = composicao.gerenciadorCofre, servicoPatrimonio = composicao.servicoPatrimonio)
         }
     }
 

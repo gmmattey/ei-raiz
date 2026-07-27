@@ -39,9 +39,6 @@ import io.savro.app.recursos.configuracao_protecao_estado_ativada
 import io.savro.app.recursos.configuracao_protecao_estado_desativada
 import io.savro.app.recursos.configuracao_protecao_permitir_credencial
 import io.savro.app.recursos.configuracao_protecao_titulo
-import io.savro.app.recursos.home_botao_protecao
-import io.savro.app.recursos.home_subtitulo
-import io.savro.app.recursos.home_titulo
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
 import io.savro.designsystem.componentes.SavroFilterChip
@@ -50,6 +47,7 @@ import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
 import io.savro.designsystem.componentes.SavroTextStyle
 import io.savro.designsystem.tema.SavroThemeTokens
+import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.security.EstadoCofre
 import io.savro.security.GerenciadorCofre
 import io.savro.security.PoliticaProtecao
@@ -58,7 +56,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Despacha a UI a partir do [EstadoCofre] atual — os 8 estados obrigatórios da #118. */
 @Composable
-internal fun TelaCofre(gerenciador: GerenciadorCofre) {
+internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
     val estado by gerenciador.estado.collectAsState()
     val escopo = rememberCoroutineScope()
 
@@ -69,7 +67,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre) {
             message = stringResource(Res.string.cofre_descriptografando_mensagem),
         )
 
-        EstadoCofre.Desbloqueado -> TelaHome(gerenciador)
+        EstadoCofre.Desbloqueado -> TelaHome(gerenciador, servicoPatrimonio)
 
         is EstadoCofre.CredencialInvalida -> SavroStatePanel(
             state = SavroState.Error,
@@ -143,12 +141,13 @@ private fun BotaoTentarNovamente(gerenciador: GerenciadorCofre) {
 }
 
 /**
- * Destino mínimo pós-onboarding/desbloqueio (#118 não implementa telas patrimoniais — isso é
- * #119/#120). Único ponto funcional além do placeholder: acesso a ativar/alterar/remover a
- * proteção, exigido pelos critérios de aceite.
+ * Destino pós-onboarding/desbloqueio: cadastro manual de patrimônio (#119) é a experiência
+ * principal do app hoje — Home/Patrimônio definitivas com gráficos e resumo consolidado são a
+ * #120, fora do escopo aqui. Acesso a ativar/alterar/remover a proteção do cofre (#118) continua
+ * disponível a partir daqui.
  */
 @Composable
-private fun TelaHome(gerenciador: GerenciadorCofre) {
+private fun TelaHome(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
     var mostrarConfiguracaoProtecao by remember { mutableStateOf(false) }
 
     if (mostrarConfiguracaoProtecao) {
@@ -156,20 +155,10 @@ private fun TelaHome(gerenciador: GerenciadorCofre) {
         return
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.lg),
-    ) {
-        SavroText(stringResource(Res.string.home_titulo), style = SavroTextStyle.Headline)
-        SavroText(stringResource(Res.string.home_subtitulo), style = SavroTextStyle.Body)
-        SavroButton(
-            label = stringResource(Res.string.home_botao_protecao),
-            onClick = { mostrarConfiguracaoProtecao = true },
-            style = SavroButtonStyle.Secondary,
-            loadingStateDescription = "",
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
+    TelaPatrimonio(
+        servico = servicoPatrimonio,
+        aoAbrirConfiguracaoProtecao = { mostrarConfiguracaoProtecao = true },
+    )
 }
 
 /** Permite ativar, alterar e remover a proteção do cofre (#118, critério de aceite obrigatório). */

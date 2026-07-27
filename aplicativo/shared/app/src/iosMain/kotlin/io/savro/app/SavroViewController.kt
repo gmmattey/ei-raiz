@@ -12,7 +12,12 @@ import platform.UIKit.UIViewController
  */
 @Suppress("FunctionName")
 fun SavroAppViewController(): UIViewController =
-    ComposeUIViewController { SavroApp(gerenciador = ComposicaoCofreIOS.gerenciadorCofre) }
+    ComposeUIViewController {
+        SavroApp(
+            gerenciador = ComposicaoCofreIOS.gerenciadorCofre,
+            servicoPatrimonio = ComposicaoCofreIOS.servicoPatrimonio,
+        )
+    }
 
 /**
  * Exposto para `iOSApp.swift` acompanhar `scenePhase` e chamar
