@@ -116,11 +116,11 @@ Mesmo processo usado para `SAVRO_DESIGN_SYSTEM.md`:
    inteiro só quando for implementar a tela específica; para checar mudança estrutural, grep no
    conteúdo por título de seção (`font-family:var(--font-display)`) em vez de reler tudo.
 4. Antes de implementar qualquer tela, comparar o protótipo atual com o comportamento/telas já
-   existentes no `apresentacao/` (React) e no `android/` — não copiar 1:1 sem adaptar aos contratos,
+   existentes no `apresentacao/` (React) e no `aplicativo/` (KMP) — não copiar 1:1 sem adaptar aos contratos,
    nomenclatura de domínio e camadas definidas no `AGENTS.md`.
 5. Sem polling automático — resync manual antes de tarefas de UI que dependam de fidelidade visual.
 
 ## Observação — nenhuma implementação feita
 
 Esta sincronização é só documentação/referência, igual ao design system. Nenhuma tela do
-`apresentacao/` ou `android/` foi alterada.
+`apresentacao/` ou `aplicativo/` foi alterada.

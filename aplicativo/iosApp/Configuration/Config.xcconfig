@@ -1,0 +1,7 @@
+// Identidade técnica do host iOS (ADR-002). O sufixo `.dev` é aplicado na configuração Debug,
+// espelhando o applicationIdSuffix do Android.
+APP_NAME = Savro
+BUNDLE_ID = io.savro.app
+
+// Preenchido localmente ou pela CI de assinatura; não versionar Team ID real.
+TEAM_ID =

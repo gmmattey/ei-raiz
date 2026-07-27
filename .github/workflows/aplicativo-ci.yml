@@ -1,0 +1,63 @@
+name: Aplicativo CI
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "aplicativo/**"
+      - ".github/workflows/aplicativo-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: aplicativo-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  aplicativo:
+    name: Validar aplicativo KMP
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Validar Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Verificar arquitetura e tokens
+        run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens
+
+      - name: Executar testes comuns e TestKit
+        run: ./gradlew --no-daemon --stacktrace :shared:core:testing:testDebugUnitTest :shared:core:designsystem:testDebugUnitTest :androidApp:testDevDebugUnitTest
+
+      - name: Executar lint do app e design system
+        run: ./gradlew --no-daemon --stacktrace :androidApp:lintDevDebug :shared:core:designsystem:lintDebug
+
+      - name: Gerar APK devDebug
+        run: ./gradlew --no-daemon --stacktrace :androidApp:assembleDevDebug
+
+      # Compila os klibs de iOS; o link do framework e o build do Xcode exigem runner macOS (#195).
+      - name: Compilar alvos iOS (klib)
+        run: ./gradlew --no-daemon --stacktrace :shared:app:compileKotlinIosArm64 :shared:app:compileKotlinIosSimulatorArm64

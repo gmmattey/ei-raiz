@@ -8,8 +8,8 @@
 **Project ID:** `abe5910f-d043-47ec-a4df-2bff8715cf39` — nome no claude.ai: "Esquilo Wallet Design System"
 
 Esse projeto é a **fonte única de verdade** do design system do produto (rebrand: **Esquilo Wallet/Invest → Savro**),
-cobrindo web (React) e a base visual que a frente Android/Compose (`android/`, projeto "Savro" já em
-desenvolvimento) também segue.
+cobrindo web (React) e a base visual que a frente Android/iOS em Compose Multiplatform
+(`aplicativo/`, projeto "Savro" já em desenvolvimento) também segue.
 
 ---
 
@@ -116,6 +116,6 @@ em 2026-07-27). Para pegar a versão mais atual antes de qualquer trabalho de UI
 ## Observação — divergência com telas/componentes existentes
 
 Não foi feita nenhuma refatoração de UI nesta sincronização (fora de escopo). Telas e componentes já
-implementados no `apresentacao/` (React) e no `android/` ainda podem referenciar a paleta/nome antigo
+implementados no `apresentacao/` (React) e no `aplicativo/` (KMP) ainda podem referenciar a paleta/nome antigo
 "Esquilo Invest" — alinhar ao Savro é trabalho de implementação separado, a ser planejado como tarefa
 própria.
