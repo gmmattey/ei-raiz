@@ -1,3 +1,5 @@
+> **Superado em 2026-07-27.** Marca vigente é **Savro** — ver `SAVRO_DESIGN_SYSTEM.md` neste diretório.
+
 # Design System - Especificação de Componentes
 
 ## ÍNDICE
