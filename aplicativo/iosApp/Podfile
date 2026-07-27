@@ -1,0 +1,14 @@
+platform :ios, '15.0'
+
+target 'iosApp' do
+  use_frameworks!
+
+  # SavroApp.framework (:shared:app, KMP) faz cinterop com SQLCipher via CocoaPods
+  # (:shared:core:database/build.gradle.kts, `cocoapods { pod("SQLCipher") }`) — isso resolve o
+  # pod só para o build Gradle/KMP (cinterop + link do framework em si). O projeto Xcode nativo
+  # `iosApp.xcodeproj` não sabe disso: os símbolos C do SQLCipher (`sqlite3_*`) ficam
+  # "auto-linked", esperando que o app consumidor final também linke a biblioteca — sem este
+  # Podfile, o link final do executável falha com "Undefined symbols" (#118, achado real da CI
+  # macOS, não hipotético). Mesma versão declarada no lado Gradle (4.9.0).
+  pod 'SQLCipher', '~> 4.9.0'
+end

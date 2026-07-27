@@ -231,14 +231,23 @@ jobs:
       - name: Linkar framework KMP (SavroApp, simulador)
         run: ./gradlew --no-daemon --stacktrace :shared:app:linkDebugFrameworkIosSimulatorArm64
 
+      # `iosApp.xcodeproj` não tem integração CocoaPods própria — o Podfile (#118) declara o
+      # SQLCipher que o SavroApp.framework espera "auto-linked" no executável final (ver
+      # comentário no Podfile). `pod install` gera o `.xcworkspace` que o xcodebuild abaixo usa.
+      - name: Instalar CocoaPods (SQLCipher)
+        working-directory: aplicativo/iosApp
+        run: pod install --repo-update
+
       # Build do iosApp para simulador, sem assinatura/certificado (CODE_SIGNING_ALLOWED=NO),
       # cobrindo o critério de aceite "o projeto iOS compila em simulador no runner macOS" e
       # validando a integração Gradle -> Xcode (a build phase do target roda
       # `./gradlew :shared:app:embedAndSignAppleFrameworkForXcode` de novo, agora via Xcode).
+      # `-workspace`, não `-project`, a partir do Podfile (#118) — o workspace gerado pelo
+      # `pod install` inclui o target `iosApp` original e o `Pods.xcodeproj`.
       - name: Build do iosApp para simulador (sem assinatura)
         run: |
           xcodebuild \
-            -project iosApp/iosApp.xcodeproj \
+            -workspace iosApp/iosApp.xcworkspace \
             -scheme iosApp \
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \
