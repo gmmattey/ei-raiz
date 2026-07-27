@@ -54,11 +54,34 @@ private sealed class DestinoPatrimonio {
     data object Lista : DestinoPatrimonio()
     data class Formulario(val itemIdEmEdicao: String?) : DestinoPatrimonio()
     data class Ajuste(val itemId: String) : DestinoPatrimonio()
+
+    /**
+     * Serialização mínima para [rememberSaveable] — sem isso, `destino` reseta para [Lista] em
+     * qualquer recriação de processo (Android) ou perda de estado em memória (iOS), mesmo que o
+     * rascunho do formulário em si (`RascunhoFormularioItem`) sobreviva: sem saber que o destino
+     * era o formulário, a tela nunca chega a restaurá-lo (achado da revisão da fatia iOS, #119).
+     */
+    fun paraChave(): String = when (this) {
+        Lista -> ""
+        is Formulario -> "formulario:${itemIdEmEdicao.orEmpty()}"
+        is Ajuste -> "ajuste:$itemId"
+    }
+
+    companion object {
+        fun deChave(chave: String): DestinoPatrimonio = when {
+            chave.isEmpty() -> Lista
+            chave.startsWith("formulario:") -> Formulario(chave.removePrefix("formulario:").takeIf { it.isNotEmpty() })
+            chave.startsWith("ajuste:") -> Ajuste(chave.removePrefix("ajuste:"))
+            else -> Lista
+        }
+    }
 }
 
 @Composable
 internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProtecao: () -> Unit) {
-    var destino by remember { mutableStateOf<DestinoPatrimonio>(DestinoPatrimonio.Lista) }
+    var destino by rememberSaveable(
+        stateSaver = Saver(save = { it.paraChave() }, restore = { DestinoPatrimonio.deChave(it) }),
+    ) { mutableStateOf<DestinoPatrimonio>(DestinoPatrimonio.Lista) }
 
     LaunchedEffect(servico) { servico.carregar() }
 
@@ -217,10 +240,15 @@ private fun ItemPatrimonialCard(
 
 /**
  * Formulário de criação/edição (issue #119). [rememberSaveable] com [RascunhoFormularioItem]
- * como serializador guarda o rascunho através de recriação de processo/Activity no Android; a
- * mesma chamada em Compose Multiplatform depende do host iOS registrar um `SaveableStateRegistry`
- * equivalente para sobreviver a transições de cena — contrato e adapter descritos na issue #119
- * (parte entregue por Igor no `iosMain`).
+ * como serializador guarda o rascunho através de recriação de Activity no Android (via
+ * `SavedStateRegistry` nativo) e, no iOS, através de qualquer recomposição enquanto o app segue
+ * vivo (background→foreground, cofre relockar/desbloquear) — o `ComposeUIViewController` do host
+ * iOS não precisou de adapter nativo adicional; decisão e motivo documentados em
+ * `SavroViewController.kt`/`SavroAppViewController()` (investigação de Igor, #119). `destino`, em
+ * [TelaPatrimonio], também usa `rememberSaveable` — sem isso, a navegação até o formulário se
+ * perderia antes mesmo do rascunho importar. Em ambas as plataformas, só a morte total do processo
+ * pelo sistema operacional (não coberta por nenhum `Saver` em memória) ainda perde o rascunho —
+ * risco de arquitetura registrado, não exclusivo de nenhuma plataforma.
  */
 @Composable
 private fun TelaFormularioItem(
