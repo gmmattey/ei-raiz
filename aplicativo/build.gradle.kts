@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.ksp) apply false
 }
 
 /** Módulos compartilhados KMP verificados por source set. */
@@ -15,6 +16,7 @@ private val sharedModulePaths = listOf(
     ":shared:core:model",
     ":shared:core:testing",
     ":shared:core:designsystem",
+    ":shared:core:database",
     ":shared:domain:patrimonio",
     ":shared:app",
 )
@@ -33,12 +35,21 @@ private val allowedProductionDependencies = mapOf(
         ":shared:core:common",
         ":shared:core:model",
         ":shared:core:designsystem",
+        ":shared:core:database",
         ":shared:domain:patrimonio",
     ),
     ":shared:core:common" to emptySet<String>(),
     ":shared:core:model" to emptySet<String>(),
+    // :core:testing hospeda fakes/fixtures reutilizáveis (RepositorioItensPatrimoniaisContratoTeste
+    // + FakeRepositorioItensPatrimoniais); precisa conhecer o contrato e o modelo que testa, mas
+    // continua sem runtime de produção (Room, SQLCipher, Keystore, Keychain) — só o contrato KMP.
     ":shared:core:testing" to emptySet<String>(),
     ":shared:core:designsystem" to setOf(":shared:core:common"),
+    ":shared:core:database" to setOf(
+        ":shared:core:common",
+        ":shared:core:model",
+        ":shared:domain:patrimonio",
+    ),
     ":shared:domain:patrimonio" to setOf(":shared:core:common", ":shared:core:model"),
 )
 
