@@ -145,6 +145,13 @@ jobs:
       # Pega quebra de compilação (tipagem, expect/actual, dependência proibida) sem precisar de
       # macOS. Não faz link do framework nem valida o projeto Xcode — isso é o job
       # "ios-xcode-macos", que exige runner macOS de verdade.
+      #
+      # Cobertura conhecida desde a #180: :shared:core:database usa cinterop CocoaPods (pod
+      # SQLCipher) nos alvos iOS. Cinterop com pods não compila fora de host mac — o Gradle pula
+      # (SKIPPED) os alvos iOS desse módulo aqui, silenciosamente, em vez de falhar. Isso é
+      # aceitável hoje porque :shared:app ainda não depende de :shared:core:database (ver 117-O);
+      # o dia em que passar a depender, este job deixa de pegar erro de tipagem do iosMain daquele
+      # módulo — só o job "ios-xcode-macos" (abaixo) continua cobrindo de verdade.
       - name: Compilar alvos iOS (klib, sem link)
         run: ./gradlew --no-daemon --stacktrace :shared:app:compileKotlinIosArm64 :shared:app:compileKotlinIosSimulatorArm64
 
@@ -188,6 +195,17 @@ jobs:
 
       - name: Configurar cache do Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # :shared:core:database usa cinterop CocoaPods (pod SQLCipher) nos alvos iOS — só compila
+      # (e só resolve o pod via `pod install`) em host mac, por isso o job "ios-compilacao-linux"
+      # pula esse módulo (ver comentário lá). Este é o primeiro ponto real de validação do
+      # Kotlin/cinterop escrito na #180 (ProvedorChaveMestraIOS, SQLiteCifrado,
+      # RepositorioItensPatrimoniaisSQLCipher) — nunca compilado antes deste job rodar.
+      - name: Compilar e testar :shared:core:database no simulador iOS
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:core:database:compileKotlinIosSimulatorArm64 \
+            :shared:core:database:iosSimulatorArm64Test
 
       # Só o link real de framework (iosSimulatorArm64) exige host macOS; em Linux essa tarefa
       # fica SKIPPED. Roda isolado antes do Xcode pra falhar rápido e com log específico se o

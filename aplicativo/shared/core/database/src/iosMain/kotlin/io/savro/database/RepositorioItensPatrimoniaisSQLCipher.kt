@@ -1,0 +1,246 @@
+package io.savro.database
+
+import io.savro.common.Relogio
+import io.savro.common.Resultado
+import io.savro.domain.patrimonio.ErroRepositorio
+import io.savro.domain.patrimonio.ProvedorChaveMestra
+import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
+import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
+import io.savro.model.ItemPatrimonial
+import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoItemPatrimonial
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/**
+ * Implementação iOS de [RepositorioItensPatrimoniais]: SQLCipher nativo via cinterop
+ * ([SQLiteCifrado]), schema/migrations espelhando 1:1 [SavroRoomDatabase] do Android — mesmo
+ * formato lógico (ADR-002, "Persistência cifrada multiplataforma"), engines físicas diferentes.
+ *
+ * Ver aviso de risco em [SQLiteCifrado] — esta classe herda a mesma pendência de validação (CI
+ * macOS, não compilada localmente).
+ */
+class RepositorioItensPatrimoniaisSQLCipher(
+    private val provedorChaveMestra: ProvedorChaveMestra,
+    private val relogio: Relogio,
+    private val nomeArquivoBanco: String = EsquemaSavro.NOME_BANCO,
+    private val caminhoPersonalizado: String? = null,
+) : RepositorioItensPatrimoniais {
+
+    private val mutex = Mutex()
+
+    @Volatile
+    private var banco: SQLiteCifrado? = null
+
+    override suspend fun abrir(): Resultado<MetadadosBancoLocal, ErroRepositorio> = mutex.withLock {
+        banco?.let {
+            return@withLock Resultado.Sucesso(MetadadosBancoLocal(EsquemaSavro.VERSAO_ATUAL, contar(it)))
+        }
+
+        when (val resultadoChave = provedorChaveMestra.obterOuCriarChave()) {
+            is Resultado.Falha -> Resultado.Falha(resultadoChave.erro)
+            is Resultado.Sucesso -> abrirComChave(resultadoChave.valor)
+        }
+    }
+
+    private fun abrirComChave(chave: ByteArray): Resultado<MetadadosBancoLocal, ErroRepositorio> {
+        val caminho = caminhoPersonalizado ?: SQLiteCifrado.caminhoPadrao(nomeArquivoBanco)
+        return try {
+            val instancia = SQLiteCifrado.abrir(caminho, chave)
+            try {
+                aplicarSchemaEMigrations(instancia)
+                val total = contar(instancia)
+                banco = instancia
+                Resultado.Sucesso(MetadadosBancoLocal(EsquemaSavro.VERSAO_ATUAL, total))
+            } catch (excecao: Exception) {
+                instancia.fechar()
+                mapearExcecaoDeAbertura(excecao)
+            }
+        } catch (excecao: Exception) {
+            mapearExcecaoDeAbertura(excecao)
+        } finally {
+            chave.fill(0)
+        }
+    }
+
+    override suspend fun fechar() {
+        mutex.withLock {
+            banco?.fechar()
+            banco = null
+        }
+    }
+
+    override suspend fun inserir(item: ItemPatrimonial): Resultado<ItemPatrimonial, ErroRepositorio> =
+        comBancoAberto { db ->
+            val agora = relogio.agoraEmEpocaMs()
+            val itemComTimestamps = item.copy(criadoEmEpocaMs = agora, atualizadoEmEpocaMs = agora)
+            db.executar(sqlInserir(itemComTimestamps))
+            Resultado.Sucesso(itemComTimestamps)
+        }
+
+    override suspend fun atualizar(item: ItemPatrimonial): Resultado<ItemPatrimonial, ErroRepositorio> =
+        comBancoAberto { db ->
+            val itemAtualizado = item.copy(atualizadoEmEpocaMs = relogio.agoraEmEpocaMs())
+            db.executar(sqlAtualizar(itemAtualizado))
+            if (db.linhasAfetadas() == 0) {
+                Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(item.id))
+            } else {
+                Resultado.Sucesso(itemAtualizado)
+            }
+        }
+
+    override suspend fun excluir(id: String): Resultado<Unit, ErroRepositorio> = comBancoAberto { db ->
+        db.executar("DELETE FROM itens_patrimoniais WHERE id = '${id.escapado()}'")
+        if (db.linhasAfetadas() == 0) {
+            Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(id))
+        } else {
+            Resultado.Sucesso(Unit)
+        }
+    }
+
+    override suspend fun buscarPorId(id: String): Resultado<ItemPatrimonial?, ErroRepositorio> =
+        comBancoAberto { db ->
+            val linhas = db.consultar("SELECT * FROM itens_patrimoniais WHERE id = '${id.escapado()}' LIMIT 1")
+            Resultado.Sucesso(linhas.firstOrNull()?.let(::linhaParaItem))
+        }
+
+    override suspend fun listarTodos(): Resultado<List<ItemPatrimonial>, ErroRepositorio> =
+        comBancoAberto { db ->
+            val linhas = db.consultar("SELECT * FROM itens_patrimoniais ORDER BY criado_em_epoca_ms ASC")
+            Resultado.Sucesso(linhas.map(::linhaParaItem))
+        }
+
+    override suspend fun executarEmTransacao(
+        bloco: suspend TransacaoItensPatrimoniais.() -> Unit,
+    ): Resultado<Unit, ErroRepositorio> {
+        val instancia = banco ?: return Resultado.Falha(
+            ErroRepositorio.FalhaAbertura("Repositório chamado antes de abrir()"),
+        )
+        instancia.executar("BEGIN IMMEDIATE")
+        return try {
+            TransacaoItensPatrimoniaisSQLCipher(instancia, relogio).bloco()
+            instancia.executar("COMMIT")
+            Resultado.Sucesso(Unit)
+        } catch (excecao: Exception) {
+            runCatching { instancia.executar("ROLLBACK") }
+            Resultado.Falha(ErroRepositorio.FalhaTransacao(excecao.message ?: "Transação revertida"))
+        }
+    }
+
+    private inline fun <T> comBancoAberto(
+        operacao: (SQLiteCifrado) -> Resultado<T, ErroRepositorio>,
+    ): Resultado<T, ErroRepositorio> {
+        val instancia = banco ?: return Resultado.Falha(
+            ErroRepositorio.FalhaAbertura("Repositório chamado antes de abrir()"),
+        )
+        return operacao(instancia)
+    }
+
+    private fun contar(db: SQLiteCifrado): Int =
+        db.consultar("SELECT COUNT(*) AS total FROM itens_patrimoniais").firstOrNull()
+            ?.get("total")?.toIntOrNull() ?: 0
+
+    /**
+     * `PRAGMA user_version` guarda a versão do schema — equivalente lógico ao mecanismo de
+     * versão do Room, mas nativo do SQLite/SQLCipher. Uma migration real por
+     * [EsquemaSavro.migracoes]; hoje só existe 1→2.
+     */
+    private fun aplicarSchemaEMigrations(db: SQLiteCifrado) {
+        val versaoAtual = db.consultar("PRAGMA user_version").firstOrNull()
+            ?.get("user_version")?.toIntOrNull() ?: 0
+
+        if (versaoAtual == 0) {
+            db.executar(
+                """
+                CREATE TABLE IF NOT EXISTS itens_patrimoniais (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  tipo TEXT NOT NULL,
+                  nome TEXT NOT NULL,
+                  valor_centavos INTEGER NOT NULL,
+                  instituicao TEXT,
+                  observacao TEXT,
+                  criado_em_epoca_ms INTEGER NOT NULL,
+                  atualizado_em_epoca_ms INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.executar("PRAGMA user_version = ${EsquemaSavro.VERSAO_ATUAL}")
+            return
+        }
+
+        if (versaoAtual < EsquemaSavro.VERSAO_ATUAL) {
+            if (versaoAtual < 2) {
+                db.executar("ALTER TABLE itens_patrimoniais ADD COLUMN observacao TEXT")
+            }
+            db.executar("PRAGMA user_version = ${EsquemaSavro.VERSAO_ATUAL}")
+        }
+    }
+
+    private fun mapearExcecaoDeAbertura(excecao: Exception): Resultado<MetadadosBancoLocal, ErroRepositorio> {
+        val mensagem = excecao.message?.lowercase().orEmpty()
+        return if ("encrypted" in mensagem || "not a database" in mensagem) {
+            Resultado.Falha(ErroRepositorio.ChaveInvalida("Chave incorreta ou arquivo corrompido"))
+        } else {
+            Resultado.Falha(ErroRepositorio.FalhaAbertura(excecao.message ?: excecao.toString()))
+        }
+    }
+
+    private class TransacaoItensPatrimoniaisSQLCipher(
+        private val db: SQLiteCifrado,
+        private val relogio: Relogio,
+    ) : TransacaoItensPatrimoniais {
+        override suspend fun inserir(item: ItemPatrimonial) {
+            val agora = relogio.agoraEmEpocaMs()
+            db.executar(sqlInserir(item.copy(criadoEmEpocaMs = agora, atualizadoEmEpocaMs = agora)))
+        }
+
+        override suspend fun atualizar(item: ItemPatrimonial) {
+            db.executar(sqlAtualizar(item.copy(atualizadoEmEpocaMs = relogio.agoraEmEpocaMs())))
+            check(db.linhasAfetadas() > 0) { "Item '${item.id}' não encontrado na transação" }
+        }
+
+        override suspend fun excluir(id: String) {
+            db.executar("DELETE FROM itens_patrimoniais WHERE id = '${id.escapado()}'")
+            check(db.linhasAfetadas() > 0) { "Item '$id' não encontrado na transação" }
+        }
+    }
+}
+
+private fun String.escapado(): String = replace("'", "''")
+
+private fun linhaParaItem(linha: Map<String, String?>): ItemPatrimonial = ItemPatrimonial(
+    id = linha.getValue("id") ?: error("linha sem id"),
+    tipo = TipoItemPatrimonial.valueOf(linha.getValue("tipo") ?: error("linha sem tipo")),
+    nome = linha.getValue("nome") ?: error("linha sem nome"),
+    valorCentavos = linha.getValue("valor_centavos")?.toLong() ?: 0,
+    instituicao = linha["instituicao"],
+    observacao = linha["observacao"],
+    criadoEmEpocaMs = linha.getValue("criado_em_epoca_ms")?.toLong() ?: 0,
+    atualizadoEmEpocaMs = linha.getValue("atualizado_em_epoca_ms")?.toLong() ?: 0,
+)
+
+private fun sqlInserir(item: ItemPatrimonial): String = """
+    INSERT INTO itens_patrimoniais
+        (id, tipo, nome, valor_centavos, instituicao, observacao, criado_em_epoca_ms, atualizado_em_epoca_ms)
+    VALUES (
+        '${item.id.escapado()}',
+        '${item.tipo.name}',
+        '${item.nome.escapado()}',
+        ${item.valorCentavos},
+        ${item.instituicao?.let { "'${it.escapado()}'" } ?: "NULL"},
+        ${item.observacao?.let { "'${it.escapado()}'" } ?: "NULL"},
+        ${item.criadoEmEpocaMs},
+        ${item.atualizadoEmEpocaMs}
+    )
+""".trimIndent()
+
+private fun sqlAtualizar(item: ItemPatrimonial): String = """
+    UPDATE itens_patrimoniais SET
+        tipo = '${item.tipo.name}',
+        nome = '${item.nome.escapado()}',
+        valor_centavos = ${item.valorCentavos},
+        instituicao = ${item.instituicao?.let { "'${it.escapado()}'" } ?: "NULL"},
+        observacao = ${item.observacao?.let { "'${it.escapado()}'" } ?: "NULL"},
+        atualizado_em_epoca_ms = ${item.atualizadoEmEpocaMs}
+    WHERE id = '${item.id.escapado()}'
+""".trimIndent()
