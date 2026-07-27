@@ -1,8 +1,20 @@
 <resources>
-    <string name="savro_bootstrap">Savro — evidência técnica</string>
-    <string name="evidence_card_title">Superfície e card</string>
+    <string name="savro_bootstrap">Catálogo técnico Savro</string>
+    <string name="catalogo_secao_tipografia">Tipografia</string>
+    <string name="catalogo_secao_superficies">Superfícies e cards</string>
+    <string name="catalogo_secao_botoes">Botões</string>
+    <string name="catalogo_secao_campos">Campos de texto</string>
+    <string name="catalogo_secao_chips">Chips de filtro</string>
+    <string name="catalogo_secao_divisor">Divisor</string>
+    <string name="catalogo_secao_estados">Painéis de estado</string>
+    <string name="catalogo_secao_privacidade">Máscara de privacidade</string>
+    <string name="evidence_card_title">Card padrão</string>
     <string name="evidence_card_body">Amostra técnica sem dado patrimonial.</string>
-    <string name="evidence_button_normal">Botão normal</string>
+    <string name="catalogo_card_erro_titulo">Card de erro</string>
+    <string name="catalogo_card_offline_titulo">Card offline</string>
+    <string name="catalogo_card_oculto_titulo">Card oculto</string>
+    <string name="evidence_button_normal">Botão primário</string>
+    <string name="catalogo_button_secundario">Botão secundário</string>
     <string name="evidence_button_disabled">Botão desabilitado</string>
     <string name="evidence_button_loading">Botão carregando</string>
     <string name="evidence_button_destructive">Botão destrutivo</string>
@@ -13,10 +25,12 @@
     <string name="evidence_field_error_support">Mensagem de validação</string>
     <string name="evidence_chip_selected">Selecionado</string>
     <string name="evidence_chip_unselected">Não selecionado</string>
+    <string name="catalogo_chip_desabilitado">Desabilitado</string>
     <string name="evidence_state_loading">Carregando</string>
     <string name="evidence_state_empty">Vazio</string>
     <string name="evidence_state_error">Erro</string>
     <string name="evidence_state_offline">Offline</string>
+    <string name="catalogo_state_oculto">Oculto</string>
     <string name="evidence_state_message">Mensagem técnica do estado.</string>
     <string name="evidence_hidden_description">Conteúdo oculto</string>
     <string name="evidence_sensitive_value">R$ 9.999,99</string>
