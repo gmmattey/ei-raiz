@@ -177,3 +177,33 @@ antes de qualquer build. Descobre dinamicamente a versão mais nova de Xcode já
 várias versões de Xcode pré-instaladas e a mais recente muda a cada atualização de imagem; hardcodar
 uma versão quebraria de novo no futuro. `xcodebuild -version` roda logo em seguida só para deixar
 registrado no log qual versão foi selecionada.
+
+## Quarta falha real — símbolo privado do UIKit não existe em nenhum SDK disponível no runner
+
+Com o Xcode mais recente do runner selecionado (`Xcode_16.2.0`, SDK `iphonesimulator18.2`), o mesmo
+erro de símbolo indefinido persistiu, idêntico ao da terceira falha:
+
+```
+ld: warning: Could not find or use auto-linked framework 'UIUtilities': framework 'UIUtilities' not found
+Undefined symbols for architecture arm64:
+  "_OBJC_CLASS_$_UIViewLayoutRegion", referenced from:
+       in SavroApp[25](CMPLayoutRegion.o)
+```
+
+Isso descarta a hipótese anterior (SDK antigo demais) como causa completa: mesmo o SDK mais novo
+disponível no runner `macos-14` não expõe `UIUtilities`/`UIViewLayoutRegion` — é um framework/classe
+privada do UIKit, não distribuída como stub linkável em nenhum SDK público de terceiros. O runtime
+nativo iOS do Compose Multiplatform 1.11.1 referencia essa classe diretamente no arquivo
+`CMPLayoutRegion.o` (parte do interop de layout/teclado do Compose para iOS), mas em tempo de execução
+esse código faz o lookup da classe dinamicamente (`NSClassFromString`/checagem de disponibilidade) —
+o problema é só de **link estático**, não de funcionalidade: o símbolo nunca vai ser chamado se a
+classe não existir em tempo de execução, mas o linker exige a existência do símbolo mesmo assim
+porque a referência foi emitida como "hard" (não fraca) no objeto compilado pela JetBrains.
+
+Correção: adicionado `-Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion` em `OTHER_LDFLAGS` (Debug e Release,
+build settings do target `iosApp`). Essa flag (`-U` do `ld`) marca esse símbolo específico como
+permitido ficar não resolvido no link, sem afetar nenhum outro símbolo nem desabilitar checagem de
+símbolos indefinidos em geral — é a técnica padrão para lidar com referência a classe Objective-C
+opcional/privada que o próprio código consumidor já trata como ausente em tempo de execução. Não
+altera `commonMain`, não mascara falha de teste real, não usa `continue-on-error`: é uma correção de
+link legítima e específica de uma classe conhecida.

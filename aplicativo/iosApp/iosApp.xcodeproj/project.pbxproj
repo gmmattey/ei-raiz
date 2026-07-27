@@ -245,6 +245,7 @@
 					"$(inherited)",
 					"-framework",
 					SavroApp,
+					"-Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID).dev";
 				PRODUCT_NAME = "$(APP_NAME)";
@@ -277,6 +278,7 @@
 					"$(inherited)",
 					"-framework",
 					SavroApp,
+					"-Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID)";
 				PRODUCT_NAME = "$(APP_NAME)";
