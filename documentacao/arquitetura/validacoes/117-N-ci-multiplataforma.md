@@ -120,3 +120,24 @@ jobs continuam confortáveis com o teto mais alto porque já concluíam com folg
 teto não força uso de mais memória onde não é preciso, só permite que o link do framework não
 estoure. Efeito colateral aceito: build local (Windows) e todos os jobs de CI agora podem alocar até
 6 GB de heap Java quando a tarefa exigir.
+
+Com o link corrigido, a segunda execução real (commit `51057ad`) avançou e revelou uma segunda falha,
+agora no step "Build do iosApp para simulador (sem assinatura)":
+
+```
+> Task :shared:app:syncComposeResourcesForIos FAILED
+error: Unknown iOS simulator arch: 'x86_64'
+```
+
+Causa raiz: `-destination "generic/platform=iOS Simulator"` faz o `xcodebuild` compilar para o
+`ARCHS_STANDARD` padrão do SDK `iphonesimulator`, que é universal (`arm64 x86_64`), na ausência de
+qualquer `EXCLUDED_ARCHS`/`ARCHS` customizado no projeto. O módulo KMP (`shared/app/build.gradle.kts`)
+só declara `iosArm64()` e `iosSimulatorArm64()` — nunca existiu `iosX64()` (simulador Intel) neste
+projeto — então a task de sincronização de recursos do Compose Multiplatform, ao rodar durante a
+build phase do Xcode, recebe `$ARCHS` incluindo `x86_64` e não encontra target KMP correspondente.
+
+Correção: adicionado `EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64;` nas configurações de build
+`Debug` e `Release` do nível de projeto em `iosApp.xcodeproj/project.pbxproj`. Isso apenas declara,
+de forma permanente no projeto Xcode (não só via flag de linha de comando da CI), que o app não
+suporta simulador Intel — coerente com o que o módulo KMP já expunha. Não afeta build de dispositivo
+real (`iphoneos`, arquitetura `arm64` única) nem qualquer critério de aceite da #195.
