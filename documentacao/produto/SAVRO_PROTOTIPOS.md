@@ -31,7 +31,10 @@ de divergência (ver nota de divergência abaixo).
 Jornada do MVP1 (7 etapas, conforme o diagrama):
 
 1. **Descoberta** — Landing page/loja; entende a proposta. *(sem conta · local-first · privado)*
-2. **Instalação** — Baixa o app; abre o Savro. *(Android primeiro · iOS na mesma base)*
+2. **Instalação** — Baixa o app; abre o Savro. *(o protótipo/diagrama dizem "Android primeiro,
+   iOS na mesma base"; as issues do GitHub do épico MVP1 — `#196` — exigem Android **e** iOS
+   disponíveis com a mesma base funcional como critério de lançamento, não sequencial — ver seção
+   de arquitetura abaixo)*
 3. **Primeira abertura** — Onboarding curto (privacidade → offline → backup é importante) →
    "Ativar proteção?" — **Sim** → biometria/credencial do aparelho; **Não** → continuar sem
    biometria → Entrar na Home. *(sem login · sem e-mail · sem CPF)*
@@ -86,6 +89,22 @@ qualquer tela, sincronizar sob demanda (processo abaixo).
 > (2026-07-26); o `CLAUDE.md` da raiz do repo ainda descreve a arquitetura anterior
 > (API/D1 centralizados, sessão autenticada) porque é isso que está implementado hoje — a ADR
 > trata o sistema atual como isolado durante a transição, sem ampliação funcional.
+
+## Arquitetura alvo — Android + iOS via KMP (não só Android)
+
+As issues do GitHub (`gmmattey/esquilo-wallet`) mostram que a ADR-001 (Android único runtime) foi
+**superada** pela issue `#192` — nova arquitetura em **Kotlin Multiplatform + Compose
+Multiplatform**, Android e iOS como runtimes de primeira classe. Detalhe completo no adendo de
+`documentacao/arquitetura/ADR-001-savro-android-local-first.md`. Isso não muda a jornada nem os
+tipos/campos do MVP1 documentados acima (que são de produto, não de plataforma) — muda como o
+protótipo deve ser lido: onde ele diz "Android primeiro", o épico `#196` já pede as duas
+plataformas juntas como critério de lançamento do MVP1.
+
+O épico `#196` no GitHub também confirma, com pequeno refinamento, os tipos e campos do MVP1
+documentados acima (issue `#119`): mesmos 7 tipos do diagrama; quantidade/preço médio existem mas
+são **opcionais**, só para renda variável — o usuário pode controlar qualquer item só pelo valor
+atual. `#119`–`#122` são as issues de referência para implementação; `#196` é o épico com os
+critérios de lançamento completos.
 
 ## Como sincronizar de novo (versão mais atual)
 
