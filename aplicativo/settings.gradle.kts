@@ -6,6 +6,11 @@ pluginManagement {
     }
 }
 
+plugins {
+    // Auto-provisiona o JDK do toolchain (17) quando não houver instalação local compatível.
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

@@ -95,7 +95,9 @@ compilação, não só na verificação estática.
 `org.jetbrains.compose.ui.tooling.preview.Preview` (multiplataforma) não aceita parâmetros, e as
 previews de #190 dependem de `@Preview(fontScale = 1.3f)` como evidência de acessibilidade.
 `SavroComponentsPreview.kt` foi para `shared/core/designsystem/src/androidMain/` mantendo o
-`androidx` `@Preview`. Avaliar preview comum é pendência da #194.
+`androidx` `@Preview`. Avaliar preview comum é pendência da #194. **Reavaliado na #194 (117-M):
+permanece em `androidMain`** — a limitação de parâmetros não mudou na versão do Compose
+Multiplatform em uso.
 
 ### 7. `VerifyArchitectureFunctionalTest` vive em `androidUnitTest`
 
@@ -186,6 +188,9 @@ de API Android: o compilador Kotlin/Native rejeitaria qualquer referência a `an
    Xcode real. Primeira execução em Mac (ou o job de CI macOS da #195) deve confirmá-lo.
 2. **Testes iOS (`iosTest`/XCTest via KMP) não existem ainda** — dependem de host macOS.
 3. **Teste instrumentado Android compila mas não roda aqui** (sem dispositivo/AVD). A cobertura
-   comum equivalente via `runComposeUiTest` é pendência da #194.
+   comum equivalente via `runComposeUiTest` é pendência da #194. **Fechada na #194 (117-M):**
+   `SavroPrivacyMaskCommonTest` em `commonTest`, rodando via Robolectric no target Android sem
+   device. O teste instrumentado original continua existindo para validação em ambiente Android
+   real.
 4. **`:shared:core:testing` sem fixtures comuns.** Continua servindo só à verificação arquitetural,
    como em 117-C.

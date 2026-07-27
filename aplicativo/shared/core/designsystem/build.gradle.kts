@@ -8,6 +8,12 @@ plugins {
 kotlin {
     jvmToolchain(17)
 
+    // expect/actual class (ComposeUiTestBase, ponte de teste comum ↔ Robolectric/XCTest) ainda é
+    // Beta na 2.3.10; suprime o aviso em vez de reintroduzir duplicação por plataforma.
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     androidTarget()
     iosArm64()
     iosSimulatorArm64()
@@ -25,6 +31,10 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.compose.ui.test)
+        }
+        androidUnitTest.dependencies {
+            implementation(libs.robolectric)
         }
     }
 }
@@ -47,6 +57,20 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // `runComposeUiTest` (commonTest) roda no target Android via Robolectric, sem device/emulador.
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// `ui-test-manifest` (activity host do Compose UI Test) é debug-only de propósito — não deve
+// vazar para o manifest de release. Sem ela, o variant de release não tem como hospedar
+// `runComposeUiTest`; desabilita só o unit test de release, o de debug já cobre o mesmo código.
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variant ->
+        variant.enableUnitTest = false
     }
 }
 
