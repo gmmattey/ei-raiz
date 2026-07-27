@@ -157,13 +157,13 @@ class RepositorioItensPatrimoniaisRoom(
 
     /**
      * SQLCipher/SQLite não distinguem "chave errada" de "arquivo corrompido" por código de erro —
-     * o sintoma é o mesmo: o cabeçalho não decifra para um SQLite válido. A mensagem
-     * `"file is not a database"` é o sinal documentado e estável dessa condição; qualquer outra
-     * falha vira [ErroRepositorio.FalhaAbertura].
+     * o sintoma é o mesmo: o cabeçalho não decifra para um SQLite válido. A mensagem real do
+     * SQLCipher é `"file is encrypted or is not a database"`; qualquer outra falha vira
+     * [ErroRepositorio.FalhaAbertura].
      */
     private fun mapearExcecaoDeAbertura(excecao: Exception): Resultado<MetadadosBancoLocal, ErroRepositorio> {
         val mensagem = excecao.message?.lowercase().orEmpty()
-        return if ("file is not a database" in mensagem || "not a database" in mensagem) {
+        return if ("encrypted" in mensagem || "not a database" in mensagem) {
             Resultado.Falha(ErroRepositorio.ChaveInvalida("Chave incorreta ou arquivo corrompido"))
         } else {
             Resultado.Falha(ErroRepositorio.FalhaAbertura(excecao.message ?: excecao.javaClass.simpleName))
