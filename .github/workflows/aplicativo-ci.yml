@@ -78,8 +78,19 @@ jobs:
 
       # commonTest roda via androidUnitTest (target de teste sem device); o mesmo código de
       # teste também é validado pelo klib de iOS no job "ios-compilacao-linux".
+      #
+      # :shared:core:database:testDebugUnitTest cobre o contrato de persistência (Room real via
+      # Robolectric, migrations) da #180 — não estava nesta lista até a #118 (lacuna da CI, não
+      # escondida: a suíte já existia, só não rodava em nenhum job). :shared:core:security
+      # adiciona a máquina de estados do cofre (#118, `GerenciadorCofreTest`).
       - name: Executar testes comuns e TestKit
-        run: ./gradlew --no-daemon --stacktrace :shared:core:testing:testDebugUnitTest :shared:core:designsystem:testDebugUnitTest :androidApp:testDevDebugUnitTest
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:core:testing:testDebugUnitTest \
+            :shared:core:designsystem:testDebugUnitTest \
+            :shared:core:database:testDebugUnitTest \
+            :shared:core:security:testDebugUnitTest \
+            :androidApp:testDevDebugUnitTest
 
   android-build:
     name: Lint e build de desenvolvimento Android

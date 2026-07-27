@@ -32,5 +32,7 @@
 	<string>Dark</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>O Savro usa o Face ID para desbloquear o cofre local do seu patrimônio.</string>
 </dict>
 </plist>

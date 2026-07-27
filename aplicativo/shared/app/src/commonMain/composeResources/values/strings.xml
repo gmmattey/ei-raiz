@@ -1,37 +1,48 @@
 <resources>
-    <string name="savro_bootstrap">Catálogo técnico Savro</string>
-    <string name="catalogo_secao_tipografia">Tipografia</string>
-    <string name="catalogo_secao_superficies">Superfícies e cards</string>
-    <string name="catalogo_secao_botoes">Botões</string>
-    <string name="catalogo_secao_campos">Campos de texto</string>
-    <string name="catalogo_secao_chips">Chips de filtro</string>
-    <string name="catalogo_secao_divisor">Divisor</string>
-    <string name="catalogo_secao_estados">Painéis de estado</string>
-    <string name="catalogo_secao_privacidade">Máscara de privacidade</string>
-    <string name="evidence_card_title">Card padrão</string>
-    <string name="evidence_card_body">Amostra técnica sem dado patrimonial.</string>
-    <string name="catalogo_card_erro_titulo">Card de erro</string>
-    <string name="catalogo_card_offline_titulo">Card offline</string>
-    <string name="catalogo_card_oculto_titulo">Card oculto</string>
-    <string name="evidence_button_normal">Botão primário</string>
-    <string name="catalogo_button_secundario">Botão secundário</string>
-    <string name="evidence_button_disabled">Botão desabilitado</string>
-    <string name="evidence_button_loading">Botão carregando</string>
-    <string name="evidence_button_destructive">Botão destrutivo</string>
-    <string name="evidence_loading">Carregando</string>
-    <string name="evidence_value">Amostra</string>
-    <string name="evidence_field_label">Campo normal</string>
-    <string name="evidence_field_error_label">Campo com erro</string>
-    <string name="evidence_field_error_support">Mensagem de validação</string>
-    <string name="evidence_chip_selected">Selecionado</string>
-    <string name="evidence_chip_unselected">Não selecionado</string>
-    <string name="catalogo_chip_desabilitado">Desabilitado</string>
-    <string name="evidence_state_loading">Carregando</string>
-    <string name="evidence_state_empty">Vazio</string>
-    <string name="evidence_state_error">Erro</string>
-    <string name="evidence_state_offline">Offline</string>
-    <string name="catalogo_state_oculto">Oculto</string>
-    <string name="evidence_state_message">Mensagem técnica do estado.</string>
-    <string name="evidence_hidden_description">Conteúdo oculto</string>
-    <string name="evidence_sensitive_value">R$ 9.999,99</string>
+    <string name="cofre_verificando">Verificando…</string>
+
+    <string name="onboarding_etapa1_titulo">Seus dados ficam só no seu aparelho</string>
+    <string name="onboarding_etapa1_corpo">O Savro guarda seu patrimônio localmente, cifrado, em Android e iOS. Nada é enviado para nenhum servidor.</string>
+    <string name="onboarding_etapa2_titulo">Sem conta, sem cadastro</string>
+    <string name="onboarding_etapa2_corpo">Não pedimos e-mail, CPF nem senha de servidor. Você usa o Savro sem criar conta.</string>
+    <string name="onboarding_etapa3_titulo">Sem recuperação automática pela internet</string>
+    <string name="onboarding_etapa3_corpo">Se você perder o aparelho ou apagar o app, o Savro não recupera seus dados sozinho — só um backup (*.savrobackup) feito por você permite restaurar.</string>
+    <string name="onboarding_botao_proximo">Próximo</string>
+    <string name="onboarding_botao_voltar">Voltar</string>
+    <string name="onboarding_botao_continuar">Continuar</string>
+
+    <string name="protecao_titulo">Proteger o Savro</string>
+    <string name="protecao_corpo">Você pode exigir biometria ou o código do aparelho para abrir o Savro. Sem essa proteção, qualquer pessoa com o aparelho desbloqueado vê seu patrimônio.</string>
+    <string name="protecao_botao_ativar">Ativar proteção</string>
+    <string name="protecao_botao_continuar_sem">Continuar sem biometria</string>
+
+    <string name="cofre_descriptografando_titulo">Desbloqueando</string>
+    <string name="cofre_descriptografando_mensagem">Confirmando sua identidade…</string>
+    <string name="cofre_credencial_invalida_titulo">Não foi possível confirmar</string>
+    <string name="cofre_credencial_invalida_mensagem">A biometria ou o código informado não conferem. Tente de novo.</string>
+    <string name="cofre_biometria_indisponivel_titulo">Proteção indisponível</string>
+    <string name="cofre_biometria_indisponivel_mensagem">Não há biometria nem código de dispositivo configurados. Configure a proteção do aparelho ou continue sem proteção.</string>
+    <string name="cofre_bloqueio_temporario_titulo">Bloqueado temporariamente</string>
+    <string name="cofre_bloqueio_temporario_mensagem">Muitas tentativas. Aguarde um momento e tente de novo.</string>
+    <string name="cofre_chave_invalidada_titulo">A proteção do aparelho mudou</string>
+    <string name="cofre_chave_invalidada_mensagem">A biometria ou o código de acesso do aparelho foi alterado (ou removido). Por segurança, o Savro não consegue mais abrir o cofre automaticamente — e nunca apaga seus dados por isso.</string>
+    <string name="cofre_restauracao_titulo">Restauração necessária</string>
+    <string name="cofre_restauracao_mensagem">Não é possível abrir o cofre com a proteção atual do aparelho. Restaure um backup (*.savrobackup) para recuperar seus dados — o Savro nunca recupera dados perdidos pela internet.</string>
+    <string name="cofre_erro_titulo">Algo deu errado</string>
+    <string name="cofre_erro_mensagem">Não foi possível abrir o cofre agora. Tente de novo.</string>
+    <string name="cofre_botao_tentar_novamente">Tentar novamente</string>
+    <string name="cofre_botao_continuar_sem_protecao">Continuar sem proteção</string>
+    <string name="cofre_botao_entendi">Entendi</string>
+
+    <string name="home_titulo">Savro</string>
+    <string name="home_subtitulo">Seu patrimônio, só no seu aparelho.</string>
+    <string name="home_botao_protecao">Proteção do cofre</string>
+
+    <string name="configuracao_protecao_titulo">Proteção do cofre</string>
+    <string name="configuracao_protecao_estado_ativada">Proteção ativada</string>
+    <string name="configuracao_protecao_estado_desativada">Proteção desativada</string>
+    <string name="configuracao_protecao_permitir_credencial">Permitir código do aparelho além de biometria</string>
+    <string name="configuracao_protecao_botao_ativar">Ativar proteção</string>
+    <string name="configuracao_protecao_botao_remover">Remover proteção</string>
+    <string name="configuracao_protecao_botao_fechar">Fechar</string>
 </resources>
