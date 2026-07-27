@@ -12,13 +12,38 @@ projeto `abe5910f-d043-47ec-a4df-2bff8715cf39`) e o "7A Labs Design System" (`bd
 
 ## Arquivos do projeto
 
-| Arquivo | Conteúdo |
-|---|---|
-| `Esquilo - Prototipos Mobile.dc.html` | Protótipo mobile/Android completo — fluxo linkado por Luiz em 2026-07-27 |
-| `Esquilo - MVP1.dc.html` | Protótipo do escopo MVP1 |
-| `Esquilo - Landing Em Breve.dc.html` | Landing "em breve" |
+| Arquivo | Conteúdo | Escopo de entrega |
+|---|---|---|
+| `Esquilo - MVP1.dc.html` | Protótipo do escopo MVP1 | **Ativo — entregar agora** (decisão de 2026-07-27) |
+| `Esquilo - Prototipos Mobile.dc.html` | Protótipo mobile/Android completo (fluxo estendido) | Backlog — referência futura, não implementar agora |
+| `Esquilo - Landing Em Breve.dc.html` | Landing "em breve" | Backlog — referência futura, não implementar agora |
 
-## Estrutura do protótipo mobile (`Esquilo - Prototipos Mobile.dc.html`)
+## Escopo de entrega atual — MVP1 (`Esquilo - MVP1.dc.html`)
+
+Decisão de 2026-07-27: **entregar somente o MVP1** neste momento. O fluxo completo
+("Prototipos Mobile") e a landing ficam como referência de onde o produto vai depois, mas não
+entram na implementação agora — evita construir tela que não faz parte do corte atual.
+
+Jornada do MVP1 (7 etapas, conforme o protótipo):
+
+1. **Descoberta** — landing/loja, proposta "sem conta · local-first · privado"
+2. **Instalação** — baixa o app (Android primeiro, iOS na mesma base depois), abre o Savro
+3. **Primeira abertura** — onboarding curto (3 telas: privacidade, offline, backup) + escolha de
+   proteção do cofre (biometria / credencial do aparelho / continuar sem bloqueio) — sem login,
+   sem e-mail, sem CPF
+4. **Home vazia** — estado inicial sem dados, CTA "Adicionar primeiro item"
+5. **Cadastrar patrimônio** — escolher tipo (Ação, Renda fixa, Conta ou saldo, Imóvel,
+   Cartão/Dívida) → formulário (ativo, instituição opcional, quantidade, preço médio, data de
+   referência) → "Salvar no aparelho"
+6. **Uso recorrente** — Home com patrimônio líquido e distribuição por categoria, detalhe de ativo
+   com histórico de movimentos, tela de Histórico (linha do tempo básica) — funciona em modo avião
+7. **Segurança e portabilidade** — Ajustes (privacidade, Backup, Transferência entre aparelhos),
+   tela de Backup e segurança (criar backup criptografado, exportar CSV, restaurar)
+
+**Princípios explícitos do MVP1** (rotulados no próprio protótipo): sem conta · dados no
+dispositivo · offline first · backup e restauração · **sem cotações automáticas no MVP1**.
+
+## Estrutura do protótipo mobile completo (`Esquilo - Prototipos Mobile.dc.html`) — backlog
 
 Levantamento estrutural (títulos de seção), não transcrição completa — para o detalhe visual de
 qualquer tela, sincronizar sob demanda (processo abaixo).
@@ -34,11 +59,12 @@ qualquer tela, sincronizar sob demanda (processo abaixo).
    Segurança, Dados e proteção
 7. **Savro Completo** — tela de upsell/paywall ("Tenha o Savro completo")
 
-> **Observação de produto (não interpretada além do que está no protótipo):** o copy do onboarding
-> ("sem conta e sem cadastro", "seus dados ficam no aparelho") descreve um modelo **local-first**,
-> o que diverge da arquitetura atual documentada em `CLAUDE.md` (API/D1 centralizados, sessão
-> autenticada). Isso é só um registro do que o protótipo mostra — decisão de arquitetura sobre
-> adotar local-first é de produto/negócio, não foi tomada aqui.
+> **Confirmado por Luiz em 2026-07-27:** o modelo **local-first** (sem conta, dados só no
+> aparelho) descrito no protótipo é decisão real de produto/arquitetura, não só copy de onboarding.
+> Já estava formalizado em `documentacao/arquitetura/ADR-001-savro-android-local-first.md`
+> (2026-07-26); o `CLAUDE.md` da raiz do repo ainda descreve a arquitetura anterior
+> (API/D1 centralizados, sessão autenticada) porque é isso que está implementado hoje — a ADR
+> trata o sistema atual como isolado durante a transição, sem ampliação funcional.
 
 ## Como sincronizar de novo (versão mais atual)
 

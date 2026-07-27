@@ -175,6 +175,16 @@ Nenhuma remoção, migration remota, descarte de dados ou interrupção do siste
 5. Antes do deploy da migração, provisionar recursos Cloudflare e Environments separados, com permissões mínimas e sem compartilhar D1.
 6. A API/telemetria atuais processam dados associados a usuário e não atendem à arquitetura alvo; devem ser isoladas até substituição, nunca ampliadas.
 
+## Adendo — 2026-07-27
+
+Luiz reconfirmou a decisão local-first como real (não hipótese de protótipo) ao aprovar a
+sincronização dos protótipos de tela Savro (`documentacao/produto/SAVRO_PROTOTIPOS.md`,
+projeto claude.ai/design `445b937c-6ecb-433d-a2b2-6886bc919204`). Escopo de entrega definido
+para este momento: **somente o MVP1** (`Esquilo - MVP1.dc.html`) — 7 etapas, sem cotações
+automáticas, sem conta, backup/restauração local. O fluxo mobile estendido e a landing "em breve"
+ficam como referência de roadmap, não como escopo de implementação atual. Este adendo não altera
+nenhuma decisão técnica desta ADR; apenas registra a reconfirmação e o corte de escopo de entrega.
+
 ## Critérios de aceite da #174
 
 - [x] Nome de trabalho, namespace, IDs e recursos documentados.
