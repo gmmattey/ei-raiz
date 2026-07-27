@@ -1,3 +1,6 @@
+> **Superado em 2026-07-27.** Protótipos vigentes vêm do claude.ai/design ("Novo Esquilo"),
+> não do Figma. Ver `documentacao/produto/SAVRO_PROTOTIPOS.md`.
+
 # Esquilo Invest — Entrega de Figma (Mobile + Desktop XL)
 **Data:** 2026-04-18
 

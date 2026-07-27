@@ -92,6 +92,10 @@ O projeto claude.ai/design organiza o design system em cards por grupo — consu
 Templates de tela completos (referência de composição, não copiar 1:1 sem adaptar ao domínio real):
 `Cadastro manual`, `Detalhe do item`, `Home`, `Lista patrimonial`.
 
+Protótipos de tela completos (fluxo mobile, MVP1, landing) ficam num projeto separado —
+ver `documentacao/produto/SAVRO_PROTOTIPOS.md` (projeto `445b937c-6ecb-433d-a2b2-6886bc919204`,
+"Novo Esquilo"), que consome este design system via `_ds/`.
+
 ## Como sincronizar de novo (versão mais atual)
 
 O design system em claude.ai/design é a fonte viva — este arquivo é um espelho pontual (sincronizado
