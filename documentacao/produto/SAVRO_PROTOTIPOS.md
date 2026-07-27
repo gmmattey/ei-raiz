@@ -14,34 +14,55 @@ projeto `abe5910f-d043-47ec-a4df-2bff8715cf39`) e o "7A Labs Design System" (`bd
 
 | Arquivo | Conteúdo | Escopo de entrega |
 |---|---|---|
-| `Esquilo - MVP1.dc.html` | Protótipo do escopo MVP1 | **Ativo — entregar agora** (decisão de 2026-07-27) |
+| `Esquilo - MVP1.dc.html` | Protótipo do escopo MVP1 (telas) | **Ativo — entregar agora**, mas modelo de dado da tela 5/6 superado pelo diagrama, ver abaixo |
 | `Esquilo - Prototipos Mobile.dc.html` | Protótipo mobile/Android completo (fluxo estendido) | Backlog — referência futura, não implementar agora |
 | `Esquilo - Landing Em Breve.dc.html` | Landing "em breve" | Backlog — referência futura, não implementar agora |
 
-## Escopo de entrega atual — MVP1 (`Esquilo - MVP1.dc.html`)
+## Escopo de entrega atual — MVP1
 
 Decisão de 2026-07-27: **entregar somente o MVP1** neste momento. O fluxo completo
 ("Prototipos Mobile") e a landing ficam como referência de onde o produto vai depois, mas não
 entram na implementação agora — evita construir tela que não faz parte do corte atual.
 
-Jornada do MVP1 (7 etapas, conforme o protótipo):
+**Referência canônica da jornada:** `documentacao/produto/jornada-mvp1.png` — diagrama entregue por
+Luiz em 2026-07-27, mais recente que o protótipo `Esquilo - MVP1.dc.html` e que prevalece em caso
+de divergência (ver nota de divergência abaixo).
 
-1. **Descoberta** — landing/loja, proposta "sem conta · local-first · privado"
-2. **Instalação** — baixa o app (Android primeiro, iOS na mesma base depois), abre o Savro
-3. **Primeira abertura** — onboarding curto (3 telas: privacidade, offline, backup) + escolha de
-   proteção do cofre (biometria / credencial do aparelho / continuar sem bloqueio) — sem login,
-   sem e-mail, sem CPF
-4. **Home vazia** — estado inicial sem dados, CTA "Adicionar primeiro item"
-5. **Cadastrar patrimônio** — escolher tipo (Ação, Renda fixa, Conta ou saldo, Imóvel,
-   Cartão/Dívida) → formulário (ativo, instituição opcional, quantidade, preço médio, data de
-   referência) → "Salvar no aparelho"
-6. **Uso recorrente** — Home com patrimônio líquido e distribuição por categoria, detalhe de ativo
-   com histórico de movimentos, tela de Histórico (linha do tempo básica) — funciona em modo avião
-7. **Segurança e portabilidade** — Ajustes (privacidade, Backup, Transferência entre aparelhos),
-   tela de Backup e segurança (criar backup criptografado, exportar CSV, restaurar)
+Jornada do MVP1 (7 etapas, conforme o diagrama):
 
-**Princípios explícitos do MVP1** (rotulados no próprio protótipo): sem conta · dados no
+1. **Descoberta** — Landing page/loja; entende a proposta. *(sem conta · local-first · privado)*
+2. **Instalação** — Baixa o app; abre o Savro. *(Android primeiro · iOS na mesma base)*
+3. **Primeira abertura** — Onboarding curto (privacidade → offline → backup é importante) →
+   "Ativar proteção?" — **Sim** → biometria/credencial do aparelho; **Não** → continuar sem
+   biometria → Entrar na Home. *(sem login · sem e-mail · sem CPF)*
+4. **Home vazia** — Estado inicial sem dados; CTA "Adicionar item". *(mostrar valor oculto quando
+   necessário)*
+5. **Cadastrar patrimônio** — Escolher tipo (**Conta / Renda variável / Renda fixa / Cripto / Bens
+   / Dívidas / Outros**) → preencher dados essenciais (**nome · valor atual · moeda · data ·
+   instituição opcional**) → Salvar → Home atualizada. *(tudo salvo localmente)*
+6. **Uso recorrente** — "Acompanhar patrimônio" como tela central, com "Ver distribuição básica" e
+   "Abrir detalhe" → do detalhe: "Editar/ajustar valor" ou "Arquivar/excluir" → "Linha do tempo
+   básica de alterações". *(funciona em modo avião)*
+7. **Segurança e portabilidade** — Ajustes → Gerar backup criptografado → Restaurar backup →
+   Exportar CSV → "Confiança para continuar usando". *(dados continuam do usuário)*
+
+**Princípios explícitos do MVP1** (rotulados no diagrama e no protótipo): sem conta · dados no
 dispositivo · offline first · backup e restauração · **sem cotações automáticas no MVP1**.
+
+### Divergência entre o diagrama e o protótipo `.dc.html` — usar o diagrama
+
+O diagrama (`jornada-mvp1.png`) simplifica o modelo de dado do MVP1 em relação ao que o protótipo
+`Esquilo - MVP1.dc.html` desenha:
+
+| | Diagrama (canônico) | Protótipo `.dc.html` (mais antigo/mais rico) |
+|---|---|---|
+| Tipos de item | Conta, Renda variável, Renda fixa, Cripto, Bens, Dívidas, Outros | Ação, Renda fixa, Conta ou saldo, Imóvel, Cartão/Dívida |
+| Campos de cadastro | Nome, valor atual, moeda, data, instituição (opcional) | Ativo (ticker), instituição (opcional), quantidade, preço médio, data de referência |
+| Atualização de posição | "Editar/ajustar valor" (valor único por item) | "Registrar movimento" (lançamento tipo compra/venda) |
+
+Ou seja: o MVP1 não modela posição por ticker/quantidade/preço médio — é um registro de valor por
+item de patrimônio (mais simples, tipo "saldo atual"), ajustado manualmente. Implementar conforme
+o diagrama; o `.dc.html` mostra uma versão mais avançada que não é o corte do MVP1.
 
 ## Estrutura do protótipo mobile completo (`Esquilo - Prototipos Mobile.dc.html`) — backlog
 
