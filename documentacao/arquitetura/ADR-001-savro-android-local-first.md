@@ -1,5 +1,11 @@
 # ADR-001 — Savro Android local-first
 
+> **Histórica/sucedida em 2026-07-27** — a decisão "Android como único runtime" foi substituída pela
+> issue `#192` (Kotlin Multiplatform + Compose Multiplatform, Android **e** iOS como runtimes de
+> primeira classe). Ver adendo no final deste arquivo. O que continua válido desta ADR: local-first,
+> sem conta, dados patrimoniais fora da nuvem, backend só com dados públicos. O que não vale mais:
+> "Android é o único runtime" e qualquer detalhe específico de módulo Gradle Android-only.
+
 - **Status:** proposta aprovada pelo solicitante; efetiva após merge e conclusão da #174. A implementação permanece pendente.
 - **Data:** 2026-07-26
 - **Relacionada:** #116; **predecessora obrigatória de:** #117.
@@ -174,6 +180,50 @@ Nenhuma remoção, migration remota, descarte de dados ou interrupção do siste
 4. Antes da #130, formalizar política de telemetria, redaction de crashes, inventário de SDKs e modelo de ameaças.
 5. Antes do deploy da migração, provisionar recursos Cloudflare e Environments separados, com permissões mínimas e sem compartilhar D1.
 6. A API/telemetria atuais processam dados associados a usuário e não atendem à arquitetura alvo; devem ser isoladas até substituição, nunca ampliadas.
+
+## Adendo — 2026-07-27
+
+Luiz reconfirmou a decisão local-first como real (não hipótese de protótipo) ao aprovar a
+sincronização dos protótipos de tela Savro (`documentacao/produto/SAVRO_PROTOTIPOS.md`,
+projeto claude.ai/design `445b937c-6ecb-433d-a2b2-6886bc919204`). Escopo de entrega definido
+para este momento: **somente o MVP1** (`Esquilo - MVP1.dc.html`) — 7 etapas, sem cotações
+automáticas, sem conta, backup/restauração local. O fluxo mobile estendido e a landing "em breve"
+ficam como referência de roadmap, não como escopo de implementação atual. Este adendo não altera
+nenhuma decisão técnica desta ADR; apenas registra a reconfirmação e o corte de escopo de entrega.
+
+## Adendo — 2026-07-27 (2) — correção arquitetural: KMP, Android + iOS
+
+Leitura das issues do GitHub (`gmmattey/esquilo-wallet`) mostrou que a decisão "Android é o único
+runtime" desta ADR **já foi superada dentro do próprio projeto antes deste adendo**, pela issue
+`#192` ("Redefinir arquitetura do Savro para Kotlin Multiplatform"), aberta a partir da issue-pai
+`#116` ("Transformar o Savro em um aplicativo mobile local-first, multiplataforma e sem conta").
+`#174` (que gerou esta ADR-001) está fechada com o título "sucedida pela `#192`".
+
+**O que muda:**
+- Savro passa a ser **Android e iOS**, os dois como runtimes de primeira classe — não só Android.
+- Base técnica: **Kotlin Multiplatform (KMP) + Compose Multiplatform**. `commonMain` concentra
+  modelos, regras financeiras, casos de uso, estados de apresentação, contratos de repositório,
+  processamento de pacotes públicos e formato de backup. `androidMain` cuida de Android Keystore,
+  BiometricPrompt e integrações Android; `iosMain` cuida de Keychain/Secure Enclave,
+  LocalAuthentication e integrações Apple.
+- Persistência cifrada usa contrato comum, com implementação nativa possivelmente distinta por
+  plataforma — compartilhar código nunca reduz a proteção do cofre (regra explícita da `#192`).
+- Backup precisa restaurar de Android para iOS e vice-versa (critério de aceite da `#121`).
+
+**O que continua igual** (não foi alterado pela correção): local-first, sem conta, dados
+patrimoniais nunca saem do aparelho, backend só distribui dados públicos/impessoais, `esquilo-wallet`
+continua sendo o repositório durante a transição.
+
+**Status real no momento deste adendo:** a `#192` está **aberta**, ou seja, a nova ADR canônica
+multiplataforma ainda não foi escrita/aprovada formalmente — a decisão está proposta e detalhada na
+issue, não em um documento `ADR-002` neste repositório. A `#192` bloqueia a implementação de
+persistência (`#180`) até ser aprovada. A fundação Android já construída pelas issues `#176`–`#185`,
+`#189` e `#190` (todas fechadas — Gradle, módulos, design system Compose) foi feita sob a ADR-001
+Android-only e pode precisar de ajuste quando a fundação KMP (`#193`–`#195`) for criada.
+
+Este segundo adendo é só registro de leitura das issues — não cria a ADR-002. Quando a `#192` for
+aprovada e fechada, criar `ADR-002-savro-kmp-multiplataforma.md` (ou nome equivalente) como a nova
+ADR canônica, marcando esta ADR-001 como histórica de forma definitiva.
 
 ## Critérios de aceite da #174
 

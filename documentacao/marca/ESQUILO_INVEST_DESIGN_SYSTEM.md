@@ -1,3 +1,7 @@
+> **Superado em 2026-07-27.** Este documento é histórico (marca "Esquilo Invest", Figma).
+> A marca vigente é **Savro** — ver `SAVRO_DESIGN_SYSTEM.md` neste mesmo diretório.
+> Não usar como fonte de verdade para tokens, cores ou nome do produto.
+
 # Esquilo Invest - Design System v1 - Completo
 
 **Figma Link:** https://www.figma.com/design/EpWH8v7RipihZnPlAJKt3d

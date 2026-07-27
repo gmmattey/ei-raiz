@@ -1,3 +1,5 @@
+> **Superado em 2026-07-27.** Marca vigente é **Savro** — ver `SAVRO_DESIGN_SYSTEM.md` neste diretório.
+
 # 🚀 Esquilo Invest Design System - Quick Start
 
 ## ⚡ 3 Coisas Que Você Precisa Fazer AGORA
