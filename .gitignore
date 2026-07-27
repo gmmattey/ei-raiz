@@ -75,14 +75,21 @@ backups/
 # Cache local de tooling de agente
 .impeccable/
 
-# Android native bootstrap local outputs
-android/.gradle/
-android/.kotlin/
-android/**/build/
-android/local.properties
-android/hs_err_pid*.log
-android/*.hprof
-android/captures/
-android/**/*.apk
-android/**/*.aab
-android/**/*.apks
+# Aplicativo KMP (Gradle) — saídas locais
+aplicativo/.gradle/
+aplicativo/.kotlin/
+aplicativo/**/build/
+aplicativo/local.properties
+aplicativo/hs_err_pid*.log
+aplicativo/*.hprof
+aplicativo/captures/
+aplicativo/**/*.apk
+aplicativo/**/*.aab
+aplicativo/**/*.apks
+
+# Aplicativo KMP — host Xcode (iOS)
+aplicativo/iosApp/**/xcuserdata/
+aplicativo/iosApp/**/*.xcworkspace/xcuserdata/
+aplicativo/iosApp/**/DerivedData/
+aplicativo/iosApp/Pods/
+aplicativo/iosApp/**/*.xcuserstate
