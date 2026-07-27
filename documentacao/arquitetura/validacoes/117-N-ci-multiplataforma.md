@@ -136,8 +136,15 @@ só declara `iosArm64()` e `iosSimulatorArm64()` — nunca existiu `iosX64()` (s
 projeto — então a task de sincronização de recursos do Compose Multiplatform, ao rodar durante a
 build phase do Xcode, recebe `$ARCHS` incluindo `x86_64` e não encontra target KMP correspondente.
 
-Correção: adicionado `EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64;` nas configurações de build
+Correção: adicionado `"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;` nas configurações de build
 `Debug` e `Release` do nível de projeto em `iosApp.xcodeproj/project.pbxproj`. Isso apenas declara,
 de forma permanente no projeto Xcode (não só via flag de linha de comando da CI), que o app não
 suporta simulador Intel — coerente com o que o módulo KMP já expunha. Não afeta build de dispositivo
 real (`iphoneos`, arquitetura `arm64` única) nem qualquer critério de aceite da #195.
+
+Primeira tentativa dessa correção (commit `6b4a721`) escreveu a chave **sem aspas**
+(`EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64;`) e quebrou o parser OpenStep do `project.pbxproj`
+inteiro: `xcodebuild: error: ... The project 'iosApp' is damaged and cannot be opened due to a parse
+error.` — chave de build setting condicional (com `[`, `]`, `=`, `*`) precisa estar entre aspas nesse
+formato de plist; sem aspas, o parser tenta tokenizar cada caractere especial como se fosse
+sintaxe do arquivo. Corrigido citando a chave inteira.
