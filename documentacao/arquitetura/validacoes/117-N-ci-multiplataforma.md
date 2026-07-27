@@ -93,3 +93,30 @@ Isso resolve, na prática, o item 1 das limitações conhecidas de 117-L ("sem m
 `project.pbxproj` nunca foi aberto nem compilado") — mas só **depois que o Actions rodar de fato**
 no GitHub. Este agente não tem acesso a macOS para validar localmente; a validação real acontece no
 runner hospedado após o push do PR desta issue.
+
+## Primeira execução real no runner macOS — falha e correção
+
+A primeira execução real do job `ios-xcode-macos` (commit `fba09c56`) falhou no step "Linkar
+framework KMP (SavroApp, simulador)" — não por scheme, SDK ou dependência ausente, e sim por
+`OutOfMemoryError: Java heap space` durante `linkDebugFrameworkIosSimulatorArm64`:
+
+```
+The currently configured max heap space is '1 GiB'.
+e: Compilation failed: Java heap space
+e: java.lang.OutOfMemoryError: Java heap space
+    at org.jetbrains.kotlin.backend.konan.llvm.DeclarationsGeneratorVisitor.createClassDeclarations(...)
+```
+
+Causa raiz: `aplicativo/gradle.properties` fixava `org.gradle.jvmargs=-Xmx1024m`. Esse teto nunca
+tinha sido testado contra o link real de framework Kotlin/Native (a IR completa do `shared:app` com
+Compose Multiplatform embutido) porque, até este PR, `linkDebugFrameworkIosSimulatorArm64` sempre
+rodou `SKIPPED` fora de host Apple (ver 117-L) — os jobs Linux (`ios-compilacao-linux`) só compilam
+klib, sem o passo de link que estoura heap. 1 GiB é suficiente para lint, testes e `assembleDevDebug`
+Android, mas não para o link de framework KMP com o grafo de IR desse tamanho.
+
+Correção: `org.gradle.jvmargs` elevado para `-Xmx6144m` em `aplicativo/gradle.properties`. Runner
+`macos-14` da GitHub tem 14 GB de RAM disponíveis; runners `ubuntu-latest` usados pelos outros quatro
+jobs continuam confortáveis com o teto mais alto porque já concluíam com folga em 1 GiB — elevar o
+teto não força uso de mais memória onde não é preciso, só permite que o link do framework não
+estoure. Efeito colateral aceito: build local (Windows) e todos os jobs de CI agora podem alocar até
+6 GB de heap Java quando a tarefa exigir.
