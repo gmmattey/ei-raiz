@@ -28,4 +28,13 @@ internal interface ItemPatrimonialDao {
 
     @Query("SELECT COUNT(*) FROM itens_patrimoniais")
     suspend fun contar(): Int
+
+    @Query("UPDATE itens_patrimoniais SET valor_centavos = :valorCentavos, atualizado_em_epoca_ms = :dataEpocaMs WHERE id = :id")
+    suspend fun atualizarValor(id: String, valorCentavos: Long, dataEpocaMs: Long): Int
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun inserirAjuste(entidade: EntidadeAjusteValorItem)
+
+    @Query("SELECT * FROM ajustes_valor_item WHERE item_id = :itemId ORDER BY data_epoca_ms ASC")
+    suspend fun listarAjustes(itemId: String): List<EntidadeAjusteValorItem>
 }

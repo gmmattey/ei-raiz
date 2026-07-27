@@ -3,11 +3,13 @@ package io.savro.database
 import io.savro.common.Relogio
 import io.savro.common.Resultado
 import io.savro.domain.patrimonio.ErroRepositorio
-import io.savro.domain.patrimonio.ProvedorChaveMestra
+import io.savro.domain.patrimonio.GeradorIdItem
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
+import io.savro.model.AjusteValorItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.domain.patrimonio.ProvedorChaveMestra
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -26,6 +28,7 @@ class FakeRepositorioItensPatrimoniais(
 
     private val mutex = Mutex()
     private val itens = LinkedHashMap<String, ItemPatrimonial>()
+    private val ajustes = mutableListOf<AjusteValorItem>()
     private var aberto = false
 
     override suspend fun abrir(): Resultado<MetadadosBancoLocal, ErroRepositorio> = mutex.withLock {
@@ -79,6 +82,34 @@ class FakeRepositorioItensPatrimoniais(
         exigirAberto()?.let { return@withLock Resultado.Falha(it) }
         Resultado.Sucesso(itens.values.toList())
     }
+
+    override suspend fun registrarAjusteDeValor(
+        itemId: String,
+        novoValorCentavos: Long,
+        dataEpocaMs: Long,
+    ): Resultado<ItemPatrimonial, ErroRepositorio> = mutex.withLock {
+        exigirAberto()?.let { return@withLock Resultado.Falha(it) }
+        val existente = itens[itemId] ?: return@withLock Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(itemId))
+
+        val ajuste = AjusteValorItem(
+            id = GeradorIdItem.novoId(),
+            itemId = itemId,
+            valorCentavosAnterior = existente.valorCentavos,
+            valorCentavosNovo = novoValorCentavos,
+            origem = existente.origem,
+            dataEpocaMs = dataEpocaMs,
+        )
+        val atualizado = existente.copy(valorCentavos = novoValorCentavos, atualizadoEmEpocaMs = dataEpocaMs)
+        ajustes += ajuste
+        itens[itemId] = atualizado
+        Resultado.Sucesso(atualizado)
+    }
+
+    override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        mutex.withLock {
+            exigirAberto()?.let { return@withLock Resultado.Falha(it) }
+            Resultado.Sucesso(ajustes.filter { it.itemId == itemId })
+        }
 
     override suspend fun executarEmTransacao(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,

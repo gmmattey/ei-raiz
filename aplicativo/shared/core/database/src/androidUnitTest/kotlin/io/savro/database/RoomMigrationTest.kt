@@ -51,6 +51,30 @@ internal abstract class SavroRoomDatabaseV1SomenteParaTeste : RoomDatabase() {
     abstract fun dao(): DaoItemPatrimonialV1
 }
 
+/** Schema exato da versão 2 (pós #180, pré #119) — usado para testar a migration 2->3. */
+@Entity(tableName = "itens_patrimoniais")
+internal data class EntidadeItemPatrimonialV2(
+    @PrimaryKey val id: String,
+    val tipo: String,
+    val nome: String,
+    @ColumnInfo(name = "valor_centavos") val valorCentavos: Long,
+    val instituicao: String?,
+    val observacao: String?,
+    @ColumnInfo(name = "criado_em_epoca_ms") val criadoEmEpocaMs: Long,
+    @ColumnInfo(name = "atualizado_em_epoca_ms") val atualizadoEmEpocaMs: Long,
+)
+
+@Dao
+internal interface DaoItemPatrimonialV2 {
+    @Insert
+    suspend fun inserir(entidade: EntidadeItemPatrimonialV2)
+}
+
+@Database(entities = [EntidadeItemPatrimonialV2::class], version = 2, exportSchema = false)
+internal abstract class SavroRoomDatabaseV2SomenteParaTeste : RoomDatabase() {
+    abstract fun dao(): DaoItemPatrimonialV2
+}
+
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class RoomMigrationTest {
@@ -98,6 +122,64 @@ class RoomMigrationTest {
         assertEquals("Nota adicionada após migration", itemAtualizado?.observacao)
 
         bancoV2.close()
+    }
+
+    @Test
+    fun migracao2Para3_remapeiaTiposPreservaDadosEAdicionaCamposDoCadastroManual() = runTest {
+        val arquivo = "teste-migracao-${UUID.randomUUID()}.db"
+        nomeArquivo = arquivo
+        val contexto = contexto()
+
+        val bancoV2 = Room.databaseBuilder(contexto, SavroRoomDatabaseV2SomenteParaTeste::class.java, arquivo)
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .build()
+        bancoV2.dao().inserir(
+            EntidadeItemPatrimonialV2(
+                id = "item-investimento",
+                tipo = "INVESTIMENTO",
+                nome = "Ações XPTO",
+                valorCentavos = 50_000,
+                instituicao = "Corretora Teste",
+                observacao = null,
+                criadoEmEpocaMs = 1,
+                atualizadoEmEpocaMs = 1,
+            ),
+        )
+        bancoV2.dao().inserir(
+            EntidadeItemPatrimonialV2(
+                id = "item-imovel",
+                tipo = "IMOVEL",
+                nome = "Apartamento",
+                valorCentavos = 30_000_000,
+                instituicao = null,
+                observacao = "Comprado em 2020",
+                criadoEmEpocaMs = 2,
+                atualizadoEmEpocaMs = 2,
+            ),
+        )
+        bancoV2.close()
+
+        val bancoV3 = Room.databaseBuilder(contexto, SavroRoomDatabase::class.java, arquivo)
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            .addMigrations(*TODAS_AS_MIGRATIONS_ROOM)
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .build()
+
+        val investimentoMigrado = bancoV3.itemPatrimonialDao().buscarPorId("item-investimento")
+        assertEquals("RENDA_VARIAVEL", investimentoMigrado?.tipo)
+        assertEquals("Ações XPTO", investimentoMigrado?.nome)
+        assertEquals(50_000L, investimentoMigrado?.valorCentavos)
+        assertEquals("BRL", investimentoMigrado?.moeda)
+        assertEquals("MANUAL", investimentoMigrado?.origem)
+        assertEquals(false, investimentoMigrado?.arquivado)
+        assertNull(investimentoMigrado?.quantidadeMilesimos)
+
+        val imovelMigrado = bancoV3.itemPatrimonialDao().buscarPorId("item-imovel")
+        assertEquals("BEM", imovelMigrado?.tipo)
+        assertEquals("Comprado em 2020", imovelMigrado?.observacao)
+
+        bancoV3.close()
     }
 
     private fun contexto(): Context = ApplicationProvider.getApplicationContext()

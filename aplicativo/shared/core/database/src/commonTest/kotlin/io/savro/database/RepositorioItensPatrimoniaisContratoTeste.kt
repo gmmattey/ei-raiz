@@ -3,7 +3,9 @@ package io.savro.database
 import io.savro.common.Resultado
 import io.savro.domain.patrimonio.ErroRepositorio
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
+import io.savro.model.AjusteValorItem
 import io.savro.model.ItemPatrimonial
+import io.savro.model.OrigemValor
 import io.savro.model.TipoItemPatrimonial
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -40,13 +42,19 @@ abstract class RepositorioItensPatrimoniaisContratoTeste {
         id: String = "item-1",
         nome: String = "Conta corrente",
         valorCentavos: Long = 123_456,
+        tipo: TipoItemPatrimonial = TipoItemPatrimonial.CONTA,
     ): ItemPatrimonial = ItemPatrimonial(
         id = id,
-        tipo = TipoItemPatrimonial.CONTA,
+        tipo = tipo,
         nome = nome,
         valorCentavos = valorCentavos,
+        moeda = "BRL",
         instituicao = "Banco Teste",
         observacao = null,
+        quantidadeMilesimos = null,
+        precoMedioCentavos = null,
+        origem = OrigemValor.MANUAL,
+        arquivado = false,
         criadoEmEpocaMs = 0,
         atualizadoEmEpocaMs = 0,
     )
@@ -249,6 +257,64 @@ abstract class RepositorioItensPatrimoniaisContratoTeste {
         assertIs<Resultado.Sucesso<List<ItemPatrimonial>>>(listagem)
         assertEquals(totalDeItens, listagem.valor.size)
         assertEquals(totalDeItens, listagem.valor.map { it.id }.toSet().size)
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun arquivar_persisteFlagENaoAlteraOutrosCampos() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        val item = itemDeTeste()
+        repositorio.inserir(item)
+
+        val arquivado = repositorio.atualizar(item.copy(arquivado = true))
+        assertIs<Resultado.Sucesso<ItemPatrimonial>>(arquivado)
+        assertTrue(arquivado.valor.arquivado)
+        assertEquals(item.nome, arquivado.valor.nome)
+
+        val buscado = repositorio.buscarPorId(item.id)
+        assertIs<Resultado.Sucesso<ItemPatrimonial?>>(buscado)
+        assertTrue(buscado.valor?.arquivado == true)
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun registrarAjusteDeValor_atualizaItemEGravaHistoricoAtomicamente() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        val item = itemDeTeste(valorCentavos = 1_000)
+        repositorio.inserir(item)
+
+        val resultado = repositorio.registrarAjusteDeValor(item.id, novoValorCentavos = 2_500, dataEpocaMs = 999)
+        assertIs<Resultado.Sucesso<ItemPatrimonial>>(resultado)
+        assertEquals(2_500L, resultado.valor.valorCentavos)
+        assertEquals(999L, resultado.valor.atualizadoEmEpocaMs)
+
+        val ajustes = repositorio.listarAjustesDeValor(item.id)
+        assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(ajustes)
+        assertEquals(1, ajustes.valor.size)
+        assertEquals(1_000L, ajustes.valor.single().valorCentavosAnterior)
+        assertEquals(2_500L, ajustes.valor.single().valorCentavosNovo)
+        assertEquals(999L, ajustes.valor.single().dataEpocaMs)
+        assertEquals(OrigemValor.MANUAL, ajustes.valor.single().origem)
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun registrarAjusteDeValor_itemInexistente_retornaItemNaoEncontradoENaoGravaAjuste() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+
+        val resultado = repositorio.registrarAjusteDeValor("nao-existe", novoValorCentavos = 1, dataEpocaMs = 1)
+        assertIs<Resultado.Falha<ErroRepositorio>>(resultado)
+        assertIs<ErroRepositorio.ItemNaoEncontrado>(resultado.erro)
+
+        val ajustes = repositorio.listarAjustesDeValor("nao-existe")
+        assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(ajustes)
+        assertEquals(0, ajustes.valor.size)
 
         encerrar(repositorio)
     }
