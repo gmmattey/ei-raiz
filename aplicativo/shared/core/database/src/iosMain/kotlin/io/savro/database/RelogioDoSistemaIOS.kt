@@ -1,6 +1,7 @@
 package io.savro.database
 
 import io.savro.common.Relogio
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.time
 
 /**
@@ -15,5 +16,6 @@ import platform.posix.time
  * para `criadoEmEpocaMs`/`atualizadoEmEpocaMs` e para o timeout de inatividade do cofre.
  */
 object RelogioDoSistemaIOS : Relogio {
+    @OptIn(ExperimentalForeignApi::class)
     override fun agoraEmEpocaMs(): Long = time(null) * 1000L
 }
