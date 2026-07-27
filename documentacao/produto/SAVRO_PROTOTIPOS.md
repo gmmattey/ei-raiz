@@ -106,6 +106,29 @@ são **opcionais**, só para renda variável — o usuário pode controlar qualq
 atual. `#119`–`#122` são as issues de referência para implementação; `#196` é o épico com os
 critérios de lançamento completos.
 
+## Autoridade da fonte visual (registrado pela ADR-002, auditoria 2026-07-27)
+
+Ordem de autoridade para qualquer decisão visual, da mais para a menos canônica:
+
+1. Versão atual publicada no projeto `claude.ai/design` indicado pelo Luiz (`DesignSync`,
+   `projectId: 445b937c-6ecb-433d-a2b2-6886bc919204`);
+2. Protótipo mobile atual disponível online (mesmo projeto);
+3. Design system atual disponível online (`projectId: abe5910f-d043-47ec-a4df-2bff8715cf39`);
+4. ZIPs locais (`C:\Users\luizg\Downloads\Novo Esquilo.zip` e
+   `Esquilo Wallet Design System.zip`) — **somente** fallback offline, inventário e evidência
+   histórica quando o projeto online estiver inacessível;
+5. Esta documentação;
+6. Código existente em `android/`.
+
+**Divergência confirmada nesta auditoria:** os dois ZIPs locais baixados em `Downloads/` estavam
+desatualizados frente ao projeto online no momento da auditoria (2026-07-27) — faltavam
+`Esquilo - MVP1.dc.html` (que **existe e continua ativo** no projeto online, confirmado via
+`list_files`), `assets/illus-onb-{1,2,3}.svg`, `assets/illus-home-empty.svg`,
+`screenshots/check{1,2,3}.png` e uploads mais recentes. Hashes dos ZIPs auditados registrados na
+ADR-002. Conclusão: o protótipo MVP1 continua sendo o artefato vigente — a ausência no ZIP local
+era só desatualização do download, não remoção do produto. Não tratar a versão do ZIP local como
+canônica quando o projeto online estiver acessível e divergir.
+
 ## Como sincronizar de novo (versão mais atual)
 
 Mesmo processo usado para `SAVRO_DESIGN_SYSTEM.md`:
@@ -119,6 +142,9 @@ Mesmo processo usado para `SAVRO_DESIGN_SYSTEM.md`:
    existentes no `apresentacao/` (React) e no `aplicativo/` (KMP) — não copiar 1:1 sem adaptar aos contratos,
    nomenclatura de domínio e camadas definidas no `AGENTS.md`.
 5. Sem polling automático — resync manual antes de tarefas de UI que dependam de fidelidade visual.
+6. Se o projeto online estiver inacessível, os ZIPs locais em `Downloads/` podem ser usados como
+   fallback — mas qualquer divergência encontrada depois deve ser registrada, nunca reconciliada
+   silenciosamente por suposição.
 
 ## Observação — nenhuma implementação feita
 
