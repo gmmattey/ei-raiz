@@ -17,6 +17,7 @@ private val sharedModulePaths = listOf(
     ":shared:core:testing",
     ":shared:core:designsystem",
     ":shared:core:database",
+    ":shared:core:security",
     ":shared:domain:patrimonio",
     ":shared:app",
 )
@@ -36,6 +37,7 @@ private val allowedProductionDependencies = mapOf(
         ":shared:core:model",
         ":shared:core:designsystem",
         ":shared:core:database",
+        ":shared:core:security",
         ":shared:domain:patrimonio",
     ),
     ":shared:core:common" to emptySet<String>(),
@@ -46,6 +48,11 @@ private val allowedProductionDependencies = mapOf(
     ":shared:core:testing" to emptySet<String>(),
     ":shared:core:designsystem" to setOf(":shared:core:common"),
     ":shared:core:database" to setOf(
+        ":shared:core:common",
+        ":shared:core:model",
+        ":shared:domain:patrimonio",
+    ),
+    ":shared:core:security" to setOf(
         ":shared:core:common",
         ":shared:core:model",
         ":shared:domain:patrimonio",

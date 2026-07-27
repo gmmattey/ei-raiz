@@ -17,6 +17,8 @@ androidxRoom = "2.8.4"
 androidxSqlite = "2.6.2"
 sqlcipherAndroid = "4.17.0"
 kotlinxCoroutines = "1.11.0"
+# Cofre local (#118) — BiometricPrompt/credencial segura do dispositivo (Android).
+androidxBiometric = "1.1.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -44,6 +46,7 @@ sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "s
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidxBiometric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

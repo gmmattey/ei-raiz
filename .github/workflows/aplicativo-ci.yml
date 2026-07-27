@@ -78,8 +78,19 @@ jobs:
 
       # commonTest roda via androidUnitTest (target de teste sem device); o mesmo código de
       # teste também é validado pelo klib de iOS no job "ios-compilacao-linux".
+      #
+      # :shared:core:database:testDebugUnitTest cobre o contrato de persistência (Room real via
+      # Robolectric, migrations) da #180 — não estava nesta lista até a #118 (lacuna da CI, não
+      # escondida: a suíte já existia, só não rodava em nenhum job). :shared:core:security
+      # adiciona a máquina de estados do cofre (#118, `GerenciadorCofreTest`).
       - name: Executar testes comuns e TestKit
-        run: ./gradlew --no-daemon --stacktrace :shared:core:testing:testDebugUnitTest :shared:core:designsystem:testDebugUnitTest :androidApp:testDevDebugUnitTest
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:core:testing:testDebugUnitTest \
+            :shared:core:designsystem:testDebugUnitTest \
+            :shared:core:database:testDebugUnitTest \
+            :shared:core:security:testDebugUnitTest \
+            :androidApp:testDevDebugUnitTest
 
   android-build:
     name: Lint e build de desenvolvimento Android
@@ -146,14 +157,21 @@ jobs:
       # macOS. Não faz link do framework nem valida o projeto Xcode — isso é o job
       # "ios-xcode-macos", que exige runner macOS de verdade.
       #
-      # Cobertura conhecida desde a #180: :shared:core:database usa cinterop CocoaPods (pod
-      # SQLCipher) nos alvos iOS. Cinterop com pods não compila fora de host mac — o Gradle pula
-      # (SKIPPED) os alvos iOS desse módulo aqui, silenciosamente, em vez de falhar. Isso é
-      # aceitável hoje porque :shared:app ainda não depende de :shared:core:database (ver 117-O);
-      # o dia em que passar a depender, este job deixa de pegar erro de tipagem do iosMain daquele
-      # módulo — só o job "ios-xcode-macos" (abaixo) continua cobrindo de verdade.
+      # ATUALIZADO NA #118: até a #180, este job compilava `:shared:app` (que ainda não dependia de
+      # `:shared:core:database`). A #118 fez `:shared:app` passar a depender de verdade de
+      # `:shared:core:database` (wiring do cofre) — e descobriu, rodando de verdade nesta CI (não
+      # era só suposição), que isso quebra este job de forma dura, não silenciosa: o cinterop
+      # CocoaPods do SQLCipher faz `:shared:core:database` pular (SKIPPED) seus alvos iOS aqui, mas
+      # `:shared:app` continua tentando compilar contra esse klib incompleto e falha com referência
+      # não resolvida (ex.: `RelogioDoSistemaIOS`) — não é warning, é `compileKotlinIosX` retornando
+      # exit code 1. Por isso este job voltou a compilar só `:shared:core:security` (novo módulo da
+      # #118, sem CocoaPods, compila de verdade mesmo em Linux) — `:shared:app`/`:iosApp` perderam a
+      # rede de segurança deste job e passaram a depender inteiramente do "ios-xcode-macos" abaixo.
       - name: Compilar alvos iOS (klib, sem link)
-        run: ./gradlew --no-daemon --stacktrace :shared:app:compileKotlinIosArm64 :shared:app:compileKotlinIosSimulatorArm64
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:core:security:compileKotlinIosArm64 \
+            :shared:core:security:compileKotlinIosSimulatorArm64
 
   ios-xcode-macos:
     name: Link do framework e build do Xcode (runner macOS)
@@ -213,14 +231,23 @@ jobs:
       - name: Linkar framework KMP (SavroApp, simulador)
         run: ./gradlew --no-daemon --stacktrace :shared:app:linkDebugFrameworkIosSimulatorArm64
 
+      # `iosApp.xcodeproj` não tem integração CocoaPods própria — o Podfile (#118) declara o
+      # SQLCipher que o SavroApp.framework espera "auto-linked" no executável final (ver
+      # comentário no Podfile). `pod install` gera o `.xcworkspace` que o xcodebuild abaixo usa.
+      - name: Instalar CocoaPods (SQLCipher)
+        working-directory: aplicativo/iosApp
+        run: pod install --repo-update
+
       # Build do iosApp para simulador, sem assinatura/certificado (CODE_SIGNING_ALLOWED=NO),
       # cobrindo o critério de aceite "o projeto iOS compila em simulador no runner macOS" e
       # validando a integração Gradle -> Xcode (a build phase do target roda
       # `./gradlew :shared:app:embedAndSignAppleFrameworkForXcode` de novo, agora via Xcode).
+      # `-workspace`, não `-project`, a partir do Podfile (#118) — o workspace gerado pelo
+      # `pod install` inclui o target `iosApp` original e o `Pods.xcodeproj`.
       - name: Build do iosApp para simulador (sem assinatura)
         run: |
           xcodebuild \
-            -project iosApp/iosApp.xcodeproj \
+            -workspace iosApp/iosApp.xcworkspace \
             -scheme iosApp \
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \

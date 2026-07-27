@@ -33,7 +33,10 @@ class ProvedorChaveMestraAndroid(
     private val context: Context,
 ) : ProvedorChaveMestra {
 
-    private val keyStore: KeyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
+    // `by lazy`, não inicialização eager: construir este provedor não pode, por si só, tocar o
+    // Keystore em disco — desde a #118, o host (`MainActivity`/`ComposicaoCofreAndroid`) constrói
+    // este objeto durante `onCreate`, antes de qualquer tentativa real de abrir o cofre.
+    private val keyStore: KeyStore by lazy { KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) } }
 
     private val arquivoChaveEncapsulada: File
         get() = File(context.noBackupFilesDir, NOME_ARQUIVO_CHAVE_ENCAPSULADA)
