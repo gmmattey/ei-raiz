@@ -16,10 +16,10 @@ permissions:
   contents: read
 
 jobs:
-  aplicativo:
-    name: Validar aplicativo KMP
+  arquitetura-e-design-system:
+    name: Fronteira KMP e tokens do design system
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: aplicativo
@@ -49,8 +49,64 @@ jobs:
       - name: Verificar arquitetura e tokens
         run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens
 
+  testes-comuns:
+    name: Testes de commonTest e módulos compartilhados
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # commonTest roda via androidUnitTest (target de teste sem device); o mesmo código de
+      # teste também é validado pelo klib de iOS no job "ios-compilacao-linux".
       - name: Executar testes comuns e TestKit
         run: ./gradlew --no-daemon --stacktrace :shared:core:testing:testDebugUnitTest :shared:core:designsystem:testDebugUnitTest :androidApp:testDevDebugUnitTest
+
+  android-build:
+    name: Lint e build de desenvolvimento Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Executar lint do app e design system
         run: ./gradlew --no-daemon --stacktrace :androidApp:lintDevDebug :shared:core:designsystem:lintDebug
@@ -58,6 +114,90 @@ jobs:
       - name: Gerar APK devDebug
         run: ./gradlew --no-daemon --stacktrace :androidApp:assembleDevDebug
 
-      # Compila os klibs de iOS; o link do framework e o build do Xcode exigem runner macOS (#195).
-      - name: Compilar alvos iOS (klib)
+  ios-compilacao-linux:
+    name: Compilação dos klibs iOS (sem link, sem macOS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # Compila commonMain/iosMain para os alvos iosArm64/iosSimulatorArm64 em runner Linux.
+      # Pega quebra de compilação (tipagem, expect/actual, dependência proibida) sem precisar de
+      # macOS. Não faz link do framework nem valida o projeto Xcode — isso é o job
+      # "ios-xcode-macos", que exige runner macOS de verdade.
+      - name: Compilar alvos iOS (klib, sem link)
         run: ./gradlew --no-daemon --stacktrace :shared:app:compileKotlinIosArm64 :shared:app:compileKotlinIosSimulatorArm64
+
+  ios-xcode-macos:
+    name: Link do framework e build do Xcode (runner macOS)
+    runs-on: macos-14
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # Só o link real de framework (iosSimulatorArm64) exige host macOS; em Linux essa tarefa
+      # fica SKIPPED. Roda isolado antes do Xcode pra falhar rápido e com log específico se o
+      # link quebrar, sem depender do build phase do Xcode pra revelar o problema.
+      - name: Linkar framework KMP (SavroApp, simulador)
+        run: ./gradlew --no-daemon --stacktrace :shared:app:linkDebugFrameworkIosSimulatorArm64
+
+      # Build do iosApp para simulador, sem assinatura/certificado (CODE_SIGNING_ALLOWED=NO),
+      # cobrindo o critério de aceite "o projeto iOS compila em simulador no runner macOS" e
+      # validando a integração Gradle -> Xcode (a build phase do target roda
+      # `./gradlew :shared:app:embedAndSignAppleFrameworkForXcode` de novo, agora via Xcode).
+      - name: Build do iosApp para simulador (sem assinatura)
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      # Fora do escopo desta CI (documentado, não fingido como validado):
+      # - build/assinatura de Release, .xcarchive ou .ipa;
+      # - certificado, perfil de provisionamento ou credencial da App Store Connect;
+      # - execução de testes de UI reais em simulador booted (só build, sem rodar app/testes);
+      # - TestFlight ou publicação na App Store.
