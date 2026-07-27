@@ -11,13 +11,21 @@ package io.savro.database
  */
 object EsquemaSavro {
     const val NOME_BANCO = "savro.db"
-    const val VERSAO_ATUAL = 2
+    const val VERSAO_ATUAL = 3
 
     val migracoes: List<DescricaoMigracao> = listOf(
         DescricaoMigracao(
             versaoOrigem = 1,
             versaoDestino = 2,
             descricao = "Adiciona coluna opcional 'observacao' em itens_patrimoniais",
+        ),
+        DescricaoMigracao(
+            versaoOrigem = 2,
+            versaoDestino = 3,
+            descricao = "Cadastro manual de patrimônio (#119): adiciona 'moeda', 'quantidade_milesimos', " +
+                "'preco_medio_centavos', 'origem' e 'arquivado' em itens_patrimoniais; remapeia " +
+                "'INVESTIMENTO'->'RENDA_VARIAVEL' e 'IMOVEL'/'VEICULO'->'BEM' na coluna 'tipo'; cria a " +
+                "tabela 'ajustes_valor_item'",
         ),
     )
 }

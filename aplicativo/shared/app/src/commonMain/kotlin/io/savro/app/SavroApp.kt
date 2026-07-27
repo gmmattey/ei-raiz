@@ -10,6 +10,7 @@ import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroSurface
 import io.savro.designsystem.tema.SavroTheme
+import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.security.GerenciadorCofre
 import org.jetbrains.compose.resources.stringResource
 import io.savro.app.recursos.Res
@@ -19,10 +20,11 @@ import io.savro.app.recursos.cofre_verificando
  * Raiz compartilhada consumida pelo host Android (Activity) e pelo host iOS (UIViewController).
  * [gerenciador] já vem construído pelo host com as implementações nativas do cofre (#118) —
  * `:shared:app` não conhece Keystore, Keychain, BiometricPrompt nem LAContext, só o contrato
- * comum de `:shared:core:security`.
+ * comum de `:shared:core:security`. [servicoPatrimonio] (issue #119) compartilha a mesma conexão
+ * de banco já aberta pelo cofre.
  */
 @Composable
-fun SavroApp(gerenciador: GerenciadorCofre) {
+fun SavroApp(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
     SavroTheme {
         var verificandoOnboarding by remember { mutableStateOf(true) }
         var onboardingConcluido by remember { mutableStateOf(false) }
@@ -47,7 +49,7 @@ fun SavroApp(gerenciador: GerenciadorCofre) {
                         gerenciador.iniciar()
                     },
                 )
-                else -> TelaCofre(gerenciador)
+                else -> TelaCofre(gerenciador, servicoPatrimonio)
             }
         }
     }

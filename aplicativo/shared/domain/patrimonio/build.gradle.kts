@@ -14,9 +14,11 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":shared:core:common"))
             implementation(project(":shared:core:model"))
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

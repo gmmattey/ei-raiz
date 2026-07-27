@@ -9,8 +9,10 @@ import io.savro.common.Relogio
 import io.savro.common.Resultado
 import io.savro.domain.patrimonio.ErroRepositorio
 import io.savro.domain.patrimonio.ProvedorChaveMestra
+import io.savro.domain.patrimonio.GeradorIdItem
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
+import io.savro.model.AjusteValorItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
 import java.util.Arrays
@@ -129,6 +131,44 @@ class RepositorioItensPatrimoniaisRoom(
 
     override suspend fun listarTodos(): Resultado<List<ItemPatrimonial>, ErroRepositorio> =
         comBancoAberto { dao -> Resultado.Sucesso(dao.listarTodos().map { it.paraModelo() }) }
+
+    override suspend fun registrarAjusteDeValor(
+        itemId: String,
+        novoValorCentavos: Long,
+        dataEpocaMs: Long,
+    ): Resultado<ItemPatrimonial, ErroRepositorio> {
+        val instancia = banco ?: return Resultado.Falha(
+            ErroRepositorio.FalhaAbertura("Repositório chamado antes de abrir()"),
+        )
+        val dao = instancia.itemPatrimonialDao()
+        return try {
+            val itemAtualizado = instancia.withTransaction {
+                val existente = dao.buscarPorId(itemId) ?: error("item-nao-encontrado")
+                dao.inserirAjuste(
+                    EntidadeAjusteValorItem(
+                        id = GeradorIdItem.novoId(),
+                        itemId = itemId,
+                        valorCentavosAnterior = existente.valorCentavos,
+                        valorCentavosNovo = novoValorCentavos,
+                        origem = existente.origem,
+                        dataEpocaMs = dataEpocaMs,
+                    ),
+                )
+                dao.atualizarValor(itemId, novoValorCentavos, dataEpocaMs)
+                existente.copy(valorCentavos = novoValorCentavos, atualizadoEmEpocaMs = dataEpocaMs)
+            }
+            Resultado.Sucesso(itemAtualizado.paraModelo())
+        } catch (excecao: Exception) {
+            if (excecao.message == "item-nao-encontrado") {
+                Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(itemId))
+            } else {
+                Resultado.Falha(ErroRepositorio.FalhaTransacao(excecao.message ?: "Transação revertida"))
+            }
+        }
+    }
+
+    override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        comBancoAberto { dao -> Resultado.Sucesso(dao.listarAjustes(itemId).map { it.paraModelo() }) }
 
     override suspend fun executarEmTransacao(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,

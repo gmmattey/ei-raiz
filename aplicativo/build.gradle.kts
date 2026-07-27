@@ -40,6 +40,8 @@ private val allowedProductionDependencies = mapOf(
         ":shared:core:security",
         ":shared:domain:patrimonio",
     ),
+    // (nota: ":shared:core:model" já estava na allowlist acima antes desta issue — só a
+    // declaração em shared/app/build.gradle.kts estava faltando; ver #119)
     ":shared:core:common" to emptySet<String>(),
     ":shared:core:model" to emptySet<String>(),
     // :core:testing hospeda fakes/fixtures reutilizáveis (RepositorioItensPatrimoniaisContratoTeste

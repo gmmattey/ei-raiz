@@ -1,6 +1,7 @@
 package io.savro.domain.patrimonio
 
 import io.savro.common.Resultado
+import io.savro.model.AjusteValorItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
 
@@ -38,6 +39,21 @@ interface RepositorioItensPatrimoniais {
     suspend fun buscarPorId(id: String): Resultado<ItemPatrimonial?, ErroRepositorio>
 
     suspend fun listarTodos(): Resultado<List<ItemPatrimonial>, ErroRepositorio>
+
+    /**
+     * Aplica um ajuste manual de valor atomicamente (issue #119): grava o novo `valorCentavos` no
+     * item **e** o registro histórico em [AjusteValorItem] na mesma operação — nunca um sem o
+     * outro. Implementações fazem isso internamente com a mesma garantia de
+     * [executarEmTransacao] (tudo ou nada); o chamador não precisa orquestrar a transação.
+     */
+    suspend fun registrarAjusteDeValor(
+        itemId: String,
+        novoValorCentavos: Long,
+        dataEpocaMs: Long,
+    ): Resultado<ItemPatrimonial, ErroRepositorio>
+
+    /** Histórico de ajustes de um item, do mais antigo para o mais recente. */
+    suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio>
 
     /**
      * Executa [bloco] atomicamente: todas as operações de dentro se aplicam juntas, ou nenhuma se

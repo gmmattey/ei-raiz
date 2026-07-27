@@ -4,6 +4,7 @@ import io.savro.common.Resultado
 import io.savro.domain.patrimonio.ErroRepositorio
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
+import io.savro.model.AjusteValorItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
 
@@ -50,6 +51,15 @@ class FakeRepositorioItensPatrimoniais(
         Resultado.Sucesso(null)
 
     override suspend fun listarTodos(): Resultado<List<ItemPatrimonial>, ErroRepositorio> =
+        Resultado.Sucesso(emptyList())
+
+    override suspend fun registrarAjusteDeValor(
+        itemId: String,
+        novoValorCentavos: Long,
+        dataEpocaMs: Long,
+    ): Resultado<ItemPatrimonial, ErroRepositorio> = Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(itemId))
+
+    override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
         Resultado.Sucesso(emptyList())
 
     override suspend fun executarEmTransacao(
