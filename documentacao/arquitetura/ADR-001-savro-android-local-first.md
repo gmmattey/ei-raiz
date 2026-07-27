@@ -1,10 +1,14 @@
 # ADR-001 — Savro Android local-first
 
-> **Histórica/sucedida em 2026-07-27** — a decisão "Android como único runtime" foi substituída pela
-> issue `#192` (Kotlin Multiplatform + Compose Multiplatform, Android **e** iOS como runtimes de
-> primeira classe). Ver adendo no final deste arquivo. O que continua válido desta ADR: local-first,
-> sem conta, dados patrimoniais fora da nuvem, backend só com dados públicos. O que não vale mais:
-> "Android é o único runtime" e qualquer detalhe específico de módulo Gradle Android-only.
+> **Histórica/sucedida em 2026-07-27 por [`ADR-002-savro-kmp-multiplataforma.md`](ADR-002-savro-kmp-multiplataforma.md)**
+> — a decisão "Android como único runtime" foi substituída pela ADR-002 (Kotlin Multiplatform +
+> Compose Multiplatform, Android **e** iOS como runtimes de primeira classe), gerada pela issue
+> `#192`. Ver adendo no final deste arquivo para o histórico da leitura das issues que levou a essa
+> substituição. O que continua válido desta ADR: local-first, sem conta, dados patrimoniais fora da
+> nuvem, backend só com dados públicos, separação entre chave do cofre e chave de assinatura do
+> aplicativo, transição controlada do sistema legado. O que não vale mais: "Android é o único
+> runtime" e qualquer detalhe específico de módulo Gradle Android-only — ver a ADR-002 para a
+> arquitetura de módulos e a matriz comum × Android × iOS vigentes.
 
 - **Status:** proposta aprovada pelo solicitante; efetiva após merge e conclusão da #174. A implementação permanece pendente.
 - **Data:** 2026-07-26
