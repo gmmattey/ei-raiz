@@ -181,6 +181,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -209,6 +210,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -243,6 +245,7 @@
 					"$(inherited)",
 					"-framework",
 					SavroApp,
+					"-Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID).dev";
 				PRODUCT_NAME = "$(APP_NAME)";
@@ -275,6 +278,7 @@
 					"$(inherited)",
 					"-framework",
 					SavroApp,
+					"-Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID)";
 				PRODUCT_NAME = "$(APP_NAME)";
