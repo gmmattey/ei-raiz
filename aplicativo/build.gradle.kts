@@ -100,6 +100,23 @@ private val productionSourceSets = listOf("commonMain", "androidMain", "iosMain"
  * Compose Multiplatform reaproveita o pacote `androidx.compose.*`, por isso a proibição em
  * `commonMain` é enumerada em vez de bloquear `androidx.` inteiro.
  */
+/**
+ * MVP1 funciona 100% sem rede (#130, critério "inspeção de tráfego Android e iOS não encontra
+ * dados patrimoniais" — o gate mais barato para isso é não permitir que um cliente de rede exista
+ * em primeiro lugar). Nenhum módulo `:shared:*` declara hoje uma dependência de rede; esta lista
+ * existe para que introduzir uma exija passar por revisão de arquitetura explícita (#124/#125,
+ * `shared:core:network`), nunca "funcionou, então ficou".
+ */
+private val forbiddenNetworkReferences = listOf(
+    "io.ktor.client.",
+    "okhttp3.",
+    "com.squareup.okhttp",
+    "retrofit2.",
+    "java.net.HttpURLConnection",
+    "java.net.URLConnection",
+    "javax.net.ssl.HttpsURLConnection",
+)
+
 private val forbiddenCommonMainReferences = listOf(
     "android.",
     "androidx.activity",
@@ -120,7 +137,7 @@ private val forbiddenCommonMainReferences = listOf(
     "platform.LocalAuthentication",
     "platform.Security",
     "kotlinx.cinterop",
-)
+) + forbiddenNetworkReferences
 
 private val forbiddenIosMainReferences = listOf(
     "android.",
@@ -132,7 +149,10 @@ private val forbiddenIosMainReferences = listOf(
     "androidx.sqlite",
     "androidx.work",
     "net.sqlcipher",
-)
+    "platform.Foundation.NSURLSession",
+    "platform.Foundation.NSURLConnection",
+    "platform.Network.",
+) + forbiddenNetworkReferences
 
 private val forbiddenAndroidMainReferences = listOf(
     "platform.UIKit",
@@ -141,7 +161,7 @@ private val forbiddenAndroidMainReferences = listOf(
     "platform.LocalAuthentication",
     "platform.Security",
     "kotlinx.cinterop",
-)
+) + forbiddenNetworkReferences
 
 /** Módulos puros não conhecem UI, plataforma, banco, rede nem serialização, em nenhum source set. */
 private val forbiddenPureSourceReferences = listOf(
@@ -312,9 +332,60 @@ tasks.register("verifyDesignSystemTokens") {
     }
 }
 
+/** Referências de rede em Swift — nomes das APIs nativas da Apple, não pacotes Kotlin. */
+private val forbiddenIosAppNetworkReferences = listOf(
+    "URLSession",
+    "NSURLSession",
+    "NSURLConnection",
+    "CFNetwork",
+    "Alamofire",
+    "dataTask(with:",
+)
+
+tasks.register("verifyNoNetworkAccess") {
+    group = "verification"
+    description = "Falha se surgir cliente de rede em :androidApp ou no host iOS (#130 — MVP1 é 100% offline)."
+
+    doLast {
+        val violations = mutableListOf<String>()
+
+        val androidAppMain = rootProject.file("androidApp/src/main/kotlin")
+        if (androidAppMain.exists()) {
+            androidAppMain.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { source ->
+                val content = source.readText()
+                forbiddenNetworkReferences.forEach { forbiddenReference ->
+                    if (content.contains(forbiddenReference)) {
+                        violations += ":androidApp contém referência de rede proibida " +
+                            "'$forbiddenReference' em ${source.relativeTo(rootProject.projectDir)}"
+                    }
+                }
+            }
+        }
+
+        val iosAppSources = rootProject.file("iosApp/iosApp")
+        if (iosAppSources.exists()) {
+            iosAppSources.walkTopDown().filter { it.isFile && it.extension == "swift" }.forEach { source ->
+                val content = source.readText()
+                forbiddenIosAppNetworkReferences.forEach { forbiddenReference ->
+                    if (content.contains(forbiddenReference)) {
+                        violations += ":iosApp contém referência de rede proibida " +
+                            "'$forbiddenReference' em ${source.relativeTo(rootProject.projectDir)}"
+                    }
+                }
+            }
+        }
+
+        check(violations.isEmpty()) {
+            "Rede detectada fora do escopo aprovado do MVP1 (ver documentacao/arquitetura/seguranca/" +
+                "auditoria-rede-savro.md):\n${violations.joinToString("\n") { "- $it" }}"
+        }
+    }
+}
+
 tasks.register("check") {
     group = "verification"
     description = "Executa as verificações arquiteturais do projeto Savro."
     dependsOn(tasks.named("verifyArchitecture"))
     dependsOn(tasks.named("verifyDesignSystemTokens"))
+    dependsOn(tasks.named("verifyNoNetworkAccess"))
 }

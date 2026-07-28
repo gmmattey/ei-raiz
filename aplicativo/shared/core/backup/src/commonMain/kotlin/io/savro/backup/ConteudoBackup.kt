@@ -32,6 +32,15 @@ data class ConteudoBackup(
         ajustes = ajustes.sortedBy { it.id },
         eventos = eventos.sortedBy { it.id },
     )
+
+    /**
+     * Redaction (#130): mesmo com [ItemPatrimonial]/[AjusteValorItem]/[EventoTimelineItem] já
+     * redigindo seus próprios campos, o `toString()` padrão de `data class` ainda listaria as
+     * listas inteiras (`itens=[...]`) — só as contagens são seguras para log/mensagem técnica.
+     */
+    override fun toString(): String =
+        "ConteudoBackup(versaoEsquema=$versaoEsquema, itens=${itens.size}, ajustes=${ajustes.size}, " +
+            "eventos=${eventos.size})"
 }
 
 /**
