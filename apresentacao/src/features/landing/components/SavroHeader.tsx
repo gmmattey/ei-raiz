@@ -23,7 +23,7 @@ const SavroHeader: React.FC = () => {
             className="rounded-full px-4 py-2 text-[13px] font-semibold transition"
             style={{ background: 'var(--gradient-primary)', color: '#fff', boxShadow: 'var(--shadow-cta)' }}
           >
-            Acompanhar lançamento
+            Ver plataformas
           </a>
         </nav>
       </div>

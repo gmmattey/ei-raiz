@@ -1,11 +1,11 @@
 import React from 'react'
 
 const STEPS = [
-  { n: '01', title: 'Instala o app', desc: 'Baixa o Savro na loja do seu aparelho, quando disponível.' },
-  { n: '02', title: 'Cria o cofre local', desc: 'Define a proteção do seu cofre — os dados nascem cifrados desde o primeiro item.' },
-  { n: '03', title: 'Cadastra o patrimônio', desc: 'Adiciona contas, bens e investimentos manualmente, no seu ritmo.' },
-  { n: '04', title: 'Acompanha no aparelho', desc: 'Consulta a visão consolidada sempre que quiser, mesmo sem internet.' },
-  { n: '05', title: 'Cria backup quando quiser', desc: 'Gera um backup criptografado manual para levar o cofre para outro aparelho.' },
+  { n: '01', title: 'Instalar o Savro', desc: 'Baixe o Savro na loja do seu aparelho quando ele estiver disponível.' },
+  { n: '02', title: 'Proteger o cofre', desc: 'Defina a proteção do cofre antes de adicionar seus dados.' },
+  { n: '03', title: 'Adicionar o patrimônio', desc: 'Cadastre bens, contas, investimentos e dívidas no seu ritmo.' },
+  { n: '04', title: 'Acompanhar tudo', desc: 'Consulte sua visão consolidada mesmo sem internet.' },
+  { n: '05', title: 'Criar um backup', desc: 'Quando quiser, crie um backup protegido por senha para trocar de aparelho.' },
 ]
 
 const HowItWorks: React.FC = () => {

@@ -17,9 +17,9 @@ const Landing: React.FC = () => {
   const siteUrl = getSiteUrl()
 
   useSeo({
-    title: 'Savro | Organização patrimonial local-first, sem nuvem',
+    title: 'Savro — Seu patrimônio. Só seu.',
     description:
-      'O Savro é um app para organizar seu patrimônio com os dados sempre no seu aparelho — sem conta, sem nuvem, sem anúncios. Em desenvolvimento, em breve nas lojas.',
+      'Organize bens, contas e investimentos em um app privado, sem cadastro e que funciona offline. Em desenvolvimento para Android e iPhone.',
     path: '/',
     image: `${siteUrl}/assets/savro/icon-512x512.png`,
   })

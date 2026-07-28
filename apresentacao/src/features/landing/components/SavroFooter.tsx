@@ -8,8 +8,7 @@ const SavroFooter: React.FC = () => {
         <div className="flex flex-col gap-3">
           <img src="/assets/savro/savro-logo-completo-white.svg" alt="Savro" className="h-6 w-auto" />
           <p className="max-w-xs text-[13px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-            Organização patrimonial local-first. Seus dados ficam no seu aparelho — o Savro está em
-            desenvolvimento.
+            Seus dados ficam no seu aparelho. O Savro está em desenvolvimento.
           </p>
         </div>
 

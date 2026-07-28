@@ -7,12 +7,11 @@ const Commercial: React.FC = () => {
   return (
     <section className="px-5 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-3xl text-center">
-        <h2 className="mb-5 text-[1.75rem] font-bold sm:text-[2.25rem]">Como o Savro se sustenta</h2>
+        <h2 className="mb-5 text-[1.75rem] font-bold sm:text-[2.25rem]">Você será o cliente. Seus dados, não.</h2>
         <p className="mx-auto text-[1.0625rem] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          O modelo é simples: quem usa o Savro paga pelo app. Seu patrimônio não é o produto — não
-          há anúncio, não há venda de dado, não há monetização em cima da sua informação
-          financeira. Os detalhes de preço e planos serão anunciados quando o app estiver
-          disponível para publicação.
+          O modelo comercial do Savro será simples e transparente. O aplicativo não será
+          financiado por anúncios nem pela venda das suas informações. Os detalhes serão
+          apresentados antes do lançamento.
         </p>
       </div>
     </section>

@@ -13,14 +13,14 @@ export const FAQ_ITEMS: FaqItem[] = [
       'Não. O Savro não tem login, cadastro nem conta de usuário. Você abre o app e já começa a organizar seu patrimônio no seu próprio aparelho.',
   },
   {
-    pergunta: 'O Savro acessa meu banco?',
+    pergunta: 'O Savro acessa minha conta bancária?',
     resposta:
       'Não. O Savro não se conecta a nenhuma conta bancária, corretora ou instituição financeira. Você registra seu patrimônio manualmente, e os dados ficam só no seu aparelho.',
   },
   {
     pergunta: 'Usa Open Finance?',
     resposta:
-      'Não. O Savro não integra com Open Finance nem com nenhuma API bancária. Não existe nenhuma conexão automática com instituições financeiras.',
+      'Não. O Savro não integra com Open Finance nem com nenhuma API bancária. Não existe conexão automática com instituições financeiras.',
   },
   {
     pergunta: 'Meus dados ficam na nuvem?',
@@ -29,37 +29,38 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     pergunta: 'Funciona sem internet?',
-    resposta:
-      'Sim, o tempo todo. O Savro não tem nenhuma dependência de rede — não precisa de internet para nenhuma funcionalidade do app.',
+    resposta: 'Sim, o tempo todo. O Savro não depende de rede para nenhuma funcionalidade do app.',
   },
   {
     pergunta: 'Consigo usar no computador?',
-    resposta:
-      'Ainda não. O MVP1 do Savro é um app nativo para Android e iOS. Não há versão web ou desktop no momento.',
+    resposta: 'Ainda não. O Savro é um app nativo para Android e iPhone — não há versão web ou desktop.',
   },
   {
-    pergunta: 'O que acontece se eu trocar de celular?',
+    pergunta: 'Como levo meus dados para outro celular?',
     resposta:
-      'Como os dados ficam só no aparelho, a forma de levar seu patrimônio para o novo celular é gerar um backup manual protegido por senha no aparelho antigo e restaurá-lo no novo.',
+      'Como os dados ficam só no aparelho, você gera um backup manual protegido por senha no aparelho antigo e restaura no novo.',
   },
   {
-    pergunta: 'O Savro recupera minha senha?',
+    pergunta: 'O Savro recupera a senha do backup?',
     resposta:
-      'Não. Não existe servidor para recuperar nada — se você perder a senha do backup, não há como recuperar o conteúdo desse arquivo. Guarde a senha em um lugar seguro.',
+      'Não. Não existe servidor para recuperar nada — se você perder a senha, não há como recuperar o conteúdo desse backup. Guarde a senha em um lugar seguro.',
   },
   {
-    pergunta: 'O backup funciona entre Android e iOS?',
-    resposta:
-      'Sim. O formato de backup (`.savrobackup`) é o mesmo nas duas plataformas — você pode gerar um backup no Android e restaurar no iOS, ou o caminho inverso.',
+    pergunta: 'O backup funciona entre Android e iPhone?',
+    resposta: 'Sim. Você pode gerar um backup no Android e restaurar no iPhone, ou o caminho inverso.',
   },
   {
-    pergunta: 'O CSV é protegido?',
+    pergunta: 'O arquivo CSV é protegido?',
     resposta:
-      'Não. A exportação em CSV é texto claro, sem criptografia — é uma decisão de produto para permitir abrir em qualquer planilha. Use com cuidado: quem tiver acesso ao arquivo lê o conteúdo.',
+      'Não. A exportação em CSV é texto claro, sem criptografia — assim você consegue abrir em qualquer planilha. Use com cuidado: quem tiver acesso ao arquivo lê o conteúdo.',
   },
   {
-    pergunta: 'Tem anúncios?',
+    pergunta: 'O Savro tem anúncios?',
+    resposta: 'Não. O Savro não tem anúncios, não vende dados e não usa SDK de rastreamento ou publicidade.',
+  },
+  {
+    pergunta: 'O aplicativo já está disponível?',
     resposta:
-      'Não. O Savro não tem anúncios, não vende dados e não usa nenhum SDK de rastreamento ou publicidade.',
+      'Ainda não. O Savro está em desenvolvimento para Android e iPhone. Assim que for publicado, o link oficial aparece na página inicial.',
   },
 ]

@@ -1,15 +1,11 @@
 import React from 'react'
-import { LayoutGrid, WifiOff, Database, RefreshCw, FileDown, ShieldCheck, EyeOff as EyeOffIcon } from 'lucide-react'
+import { LayoutGrid, WifiOff, ShieldCheck, RefreshCw } from 'lucide-react'
 
 const ITEMS = [
-  { icon: LayoutGrid, title: 'Organização patrimonial manual', desc: 'Cadastre contas, bens e investimentos do seu jeito, sem depender de integração automática.' },
-  { icon: LayoutGrid, title: 'Visão consolidada', desc: 'Veja o todo do seu patrimônio em um único lugar, organizado por categoria.' },
-  { icon: WifiOff, title: 'Funciona offline', desc: 'Sem internet, sem problema — o app não depende de rede para nada.' },
-  { icon: Database, title: 'Banco local cifrado', desc: 'Seus dados ficam guardados em um banco criptografado, só no seu aparelho.' },
-  { icon: RefreshCw, title: 'Backup Android ↔ iOS', desc: 'Gere um backup criptografado e restaure no mesmo aparelho ou em outro, mesmo trocando de plataforma.' },
-  { icon: FileDown, title: 'Exportação CSV', desc: 'Exporte seus dados para planilha quando quiser, sob sua decisão explícita.' },
-  { icon: EyeOffIcon, title: 'Máscara de valores', desc: 'Oculte os valores na tela com um toque — útil em qualquer lugar público.' },
-  { icon: ShieldCheck, title: 'Restauração controlada', desc: 'Restaurar um backup mostra uma prévia antes de qualquer confirmação.' },
+  { icon: LayoutGrid, title: 'Tudo em um lugar', desc: 'Organize bens, contas, investimentos e dívidas em uma visão única.' },
+  { icon: WifiOff, title: 'Funciona offline', desc: 'Consulte e atualize seu patrimônio mesmo sem conexão.' },
+  { icon: ShieldCheck, title: 'Protegido no aparelho', desc: 'Seu cofre é criptografado e protegido pelos recursos de segurança do celular.' },
+  { icon: RefreshCw, title: 'Seus dados, suas escolhas', desc: 'Crie backups, troque entre Android e iPhone ou exporte uma planilha quando precisar.' },
 ]
 
 const Benefits: React.FC = () => {
@@ -17,13 +13,13 @@ const Benefits: React.FC = () => {
     <section className="px-5 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mb-14 max-w-xl">
-          <h2 className="mb-4 text-[1.75rem] font-bold sm:text-[2.25rem]">Feito para quem quer controle, não complicação</h2>
+          <h2 className="mb-4 text-[1.75rem] font-bold sm:text-[2.25rem]">Feito para o seu dia a dia</h2>
           <p className="text-[1.0625rem] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Recursos pensados para organizar patrimônio sem depender de conta, nuvem ou terceiros.
+            Recursos pensados para você enxergar e organizar seu patrimônio com clareza.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {ITEMS.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div

@@ -35,11 +35,11 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Título correto
-    await expect(page).toHaveTitle('Savro | Organização patrimonial local-first, sem nuvem');
+    await expect(page).toHaveTitle('Savro — Seu patrimônio. Só seu.');
 
     // Meta description presente
     const metaDesc = await page.locator('meta[name="description"]').getAttribute('content');
-    expect(metaDesc).toContain('sem nuvem');
+    expect(metaDesc).toContain('offline');
 
     // Canonical baseado na URL pública configurada — não em domínio fixo no código
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
@@ -177,6 +177,12 @@ test.describe('Rotas Patrimoniais — Não Devem Ser Públicas', () => {
     test(`${route} não expõe UI funcional no build de produção`, async ({ page }) => {
       await page.goto(route);
 
+      // Espera a app hidratar (rota antiga cai em NotFound ou na landing) antes de ler o DOM —
+      // sem isso, page.content() pode ainda pegar o fallback "Carregando..." de forma
+      // intermitente sob carga (contenção de CPU com outros testes em paralelo).
+      const mainContent = page.locator('main');
+      await expect(mainContent).toBeVisible();
+
       const loginForm = page.locator('form >> text=Entrar, input[type="password"], input[type="email"]').first();
       await expect(loginForm).not.toBeVisible();
 
@@ -184,9 +190,6 @@ test.describe('Rotas Patrimoniais — Não Devem Ser Públicas', () => {
       expect(html).not.toContain('patrimonio');
       expect(html).not.toContain('carteira');
       expect(html).not.toContain('investimento');
-
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
     });
   });
 });
@@ -246,7 +249,7 @@ test.describe('SEO — robots.txt e sitemap.xml', () => {
 
 test.describe('Meta Tags por Rota', () => {
   const routes = [
-    { path: '/', expectedTitle: 'Organização patrimonial local-first' },
+    { path: '/', expectedTitle: 'Seu patrimônio. Só seu.' },
     { path: '/privacidade', expectedTitle: 'Privacidade' },
     { path: '/termos', expectedTitle: 'Termos' },
     { path: '/suporte', expectedTitle: 'Suporte' },
@@ -399,13 +402,15 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
     expect(content).not.toMatch(/disponível.*play store|disponível.*app store/i);
   });
 
-  test('Seção Commercial não contém preço inventado', async ({ page }) => {
+  test('Seção Commercial não contém preço, plano ou assinatura inventados', async ({ page }) => {
     await page.goto('/');
 
-    const commercialSection = page.locator('section >> text=sustenta');
+    const commercialSection = page.locator('section >> text=Você será o cliente');
+    await expect(commercialSection).toBeVisible();
     const text = await commercialSection.textContent();
 
     expect(text).not.toMatch(/R\$\s*\d+|^R\$|a partir de R\$/);
+    expect(text?.toLowerCase()).not.toMatch(/assinatura|plano gratuito|compra única|mensal|anual/);
   });
 
   test('Privacidade não inventa CNPJ e não afirma domínio/empresa fixos', async ({ page }) => {
@@ -415,6 +420,119 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
     const content = await page.locator('body').textContent();
     expect(content?.toLowerCase()).toContain('pendente');
     expect(content).not.toContain('savro.app');
+  });
+});
+
+test.describe('Revisão de copy e posicionamento da landing', () => {
+  test('Headline e subtítulo do Hero corretos', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Seu patrimônio. Só seu.');
+    await expect(page.locator('text=Organize bens, contas e investimentos em um app privado')).toBeVisible();
+  });
+
+  test('CTA principal aponta para "Como funciona" e nenhum CTA promete acompanhamento sem ação real', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const ctaPrincipal = page.locator('a[href="#como-funciona"]', { hasText: 'Ver como funciona' });
+    await expect(ctaPrincipal.first()).toBeVisible();
+
+    // Sem VITE_SUPPORT_EMAIL/canal configurado, nenhum CTA pode prometer "acompanhar lançamento"
+    // ou aviso que não existe de verdade.
+    const html = await page.content();
+    expect(html).not.toMatch(/acompanhar o lançamento|acompanhar lançamento/i);
+  });
+
+  test('Landing não usa "local-first" nem os demais termos banidos de copy institucional', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const html = (await page.content()).toLowerCase();
+
+    const termosBanidos = [
+      'local-first',
+      'ecossistema',
+      'jornada',
+      'revolucionário',
+      'plataforma inteligente',
+      'controle total',
+      'segurança de ponta',
+      'feito para você',
+      'camada de proteção',
+      'contexto patrimonial',
+      'infraestrutura',
+      'chamada de rede',
+      'servidor patrimonial',
+      'o que garantimos',
+      'canal ainda não configurado',
+    ];
+
+    for (const termo of termosBanidos) {
+      expect(html).not.toContain(termo);
+    }
+  });
+
+  test('Security não expõe detalhe técnico de implementação (AES-256, Keystore, Keychain etc.)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const html = (await page.content()).toLowerCase();
+
+    const detalhesTecnicos = [
+      'aes-256',
+      'keystore',
+      'keychain',
+      'auto backup',
+      'nsurlisexcludedfrombackupkey',
+      'icloud',
+      'jailbreak',
+    ];
+
+    for (const detalhe of detalhesTecnicos) {
+      expect(html).not.toContain(detalhe);
+    }
+
+    // Link discreto pra política de privacidade continua presente
+    await expect(page.locator('a[href="/privacidade"]', { hasText: 'Veja como protegemos' })).toBeVisible();
+  });
+
+  test('Benefits tem exatamente 4 cards, sem títulos técnicos como card principal', async ({ page }) => {
+    await page.goto('/');
+
+    const cards = page.locator('section', { has: page.locator('text=Tudo em um lugar') }).locator('h3');
+    await expect(cards).toHaveCount(4);
+
+    const html = await page.content();
+    for (const tituloTecnico of ['Organização patrimonial manual', 'Banco local cifrado', 'Restauração controlada', 'Exportação CSV']) {
+      const h3ComTitulo = page.locator('h3', { hasText: tituloTecnico });
+      await expect(h3ComTitulo).toHaveCount(0);
+    }
+  });
+
+  test('Plataformas: Android e iOS ambos "Em desenvolvimento" sem URL de loja configurada', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#plataformas')).toBeVisible();
+
+    // toHaveCount tem auto-retry (espera a app hidratar) — .count() cru não tem e lê a
+    // árvore antes do React montar, dando falso 0 de forma intermitente.
+    await expect(page.locator('#plataformas span', { hasText: /^em desenvolvimento$/i })).toHaveCount(2);
+
+    const html = await page.content();
+    expect(html).not.toMatch(/planejado/i);
+  });
+
+  test('Nenhuma afirmação de que o app já está disponível para download', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#plataformas')).toBeVisible();
+
+    await expect(page.locator('#plataformas span', { hasText: /^disponível$/i })).toHaveCount(0);
+
+    // "já está disponível?" aparece como PERGUNTA no FAQ (resposta: "ainda não") — o que não
+    // pode existir é uma AFIRMAÇÃO de disponibilidade fora desse contexto de pergunta/resposta.
+    const html = (await page.content()).toLowerCase();
+    expect(html).not.toMatch(/disponível para download|baixe agora|já disponível na loja/);
   });
 });
 
