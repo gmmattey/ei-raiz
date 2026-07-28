@@ -1,5 +1,6 @@
 package io.savro.backup
 
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -100,6 +101,7 @@ class ArquivosDoSistemaIOS : ArquivosDoSistema {
 }
 
 /** `NSTemporaryDirectory()/savro-backup` — sandbox do app, limpo pelo sistema e por nós. */
+@OptIn(ExperimentalForeignApi::class)
 class AreaTemporariaBackupIOS : AreaTemporariaBackup {
 
     private val diretorio = NSTemporaryDirectory() + "savro-backup"
@@ -135,7 +137,7 @@ private fun NSData.paraByteArray(): ByteArray {
     return destino
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 private fun ByteArray.paraNsData(): NSData {
     // `usePinned` em array vazio lança IllegalArgumentException — backup vazio é caso de teste
     // obrigatório da #121, então este caminho existe de verdade.

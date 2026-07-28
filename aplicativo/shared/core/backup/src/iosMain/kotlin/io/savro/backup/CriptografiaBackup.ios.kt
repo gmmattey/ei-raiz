@@ -1,32 +1,39 @@
 package io.savro.backup
 
+import kotlinx.cinterop.CFunction
+import kotlinx.cinterop.COpaquePointer
+import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.convert
+import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.refTo
+import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.CoreCrypto.CCCryptorCreateWithMode
-import platform.CoreCrypto.CCCryptorGCMAddAAD
-import platform.CoreCrypto.CCCryptorGCMAddIV
-import platform.CoreCrypto.CCCryptorGCMFinal
+import platform.CoreCrypto.CCCryptorRef
 import platform.CoreCrypto.CCCryptorRefVar
 import platform.CoreCrypto.CCCryptorRelease
 import platform.CoreCrypto.CCCryptorUpdate
 import platform.CoreCrypto.CCKeyDerivationPBKDF
+import platform.CoreCrypto.CCOperation
 import platform.CoreCrypto.ccNoPadding
 import platform.CoreCrypto.kCCAlgorithmAES
 import platform.CoreCrypto.kCCDecrypt
 import platform.CoreCrypto.kCCEncrypt
-import platform.CoreCrypto.kCCModeGCM
 import platform.CoreCrypto.kCCPBKDF2
 import platform.CoreCrypto.kCCPRFHmacAlgSHA1
 import platform.CoreCrypto.kCCSuccess
 import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
+import platform.posix.RTLD_NOW
+import platform.posix.dlopen
+import platform.posix.dlsym
+import platform.posix.size_t
 import platform.posix.size_tVar
 
 /**
@@ -36,6 +43,20 @@ import platform.posix.size_tVar
  * (AES-256-GCM), com os mesmos parâmetros que o lado Android — o arquivo é o mesmo dos dois
  * lados, byte a byte.
  *
+ * O binding padrão do Kotlin/Native para CommonCrypto (`platform.CoreCrypto`, gerado a partir do
+ * module map de sistema) não expõe `CCCryptorGCMAddIV`/`CCCryptorGCMAddAAD`/`CCCryptorGCMFinal`
+ * nem a constante de modo `kCCModeGCM` — símbolos documentados pela Apple em
+ * `CommonCryptorSPI.h` e presentes de verdade na libSystem de todo binário iOS/macOS, mas fora do
+ * alcance desse module map. Um cinterop próprio resolveria isso com checagem de tipos em tempo de
+ * compilação, mas cinterop (mesmo sem CocoaPods) só é processado em host macOS — quebraria a
+ * verificação barata de compilação deste módulo no job "ios-compilacao-linux" (ver comentário em
+ * `.github/workflows/aplicativo-ci.yml`), que hoje compila `:shared:core:backup` de verdade em
+ * runner Linux justamente por ele não depender de nenhum cinterop. Por isso os três símbolos são
+ * resolvidos em runtime via `dlsym` contra a mesma biblioteca do sistema — sem reintroduzir
+ * cinterop, sem reimplementar GCM. O preço é perder a checagem de assinatura em tempo de
+ * compilação: qualquer erro de assinatura só aparece como falha em runtime (coberta pelos testes
+ * de interoperabilidade Android↔iOS no simulador).
+ *
  * A comparação da tag no caminho de decifragem é feita em tempo constante: comparar com saída
  * antecipada vazaria, por temporização, quantos bytes da tag conferem.
  */
@@ -43,6 +64,35 @@ import platform.posix.size_tVar
 internal actual object CriptografiaBackup {
 
     private const val TAMANHO_TAG = 16
+
+    // Valor estável do enum `CCMode` da Apple (CommonCryptorSPI.h) — não muda sem quebrar ABI, já
+    // que a própria libSystem do sistema depende desse valor numérico publicado desde iOS 6.
+    private const val K_CC_MODE_GCM: UInt = 11u
+
+    private typealias FuncaoGcmAddIvOuAad =
+        CPointer<CFunction<(CCCryptorRef?, COpaquePointer?, size_t) -> Int>>
+    private typealias FuncaoGcmFinal =
+        CPointer<CFunction<(CCCryptorRef?, COpaquePointer?, CPointer<size_tVar>?) -> Int>>
+
+    private val bibliotecaSistema = dlopen(null, RTLD_NOW)
+
+    private val ccCryptorGcmAddIv: FuncaoGcmAddIvOuAad by lazy {
+        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMAddIV")) {
+            "Símbolo CCCryptorGCMAddIV não encontrado em CommonCrypto"
+        }.reinterpret()
+    }
+
+    private val ccCryptorGcmAddAad: FuncaoGcmAddIvOuAad by lazy {
+        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMAddAAD")) {
+            "Símbolo CCCryptorGCMAddAAD não encontrado em CommonCrypto"
+        }.reinterpret()
+    }
+
+    private val ccCryptorGcmFinal: FuncaoGcmFinal by lazy {
+        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMFinal")) {
+            "Símbolo CCCryptorGCMFinal não encontrado em CommonCrypto"
+        }.reinterpret()
+    }
 
     actual fun bytesAleatorios(quantidade: Int): ByteArray {
         val saida = ByteArray(quantidade)
@@ -111,7 +161,7 @@ internal actual object CriptografiaBackup {
     }
 
     private fun executarGcm(
-        operacao: Int,
+        operacao: CCOperation,
         chave: ByteArray,
         nonce: ByteArray,
         dadosAutenticados: ByteArray,
@@ -123,7 +173,7 @@ internal actual object CriptografiaBackup {
         var estado = chave.usePinned { chaveFixada ->
             CCCryptorCreateWithMode(
                 op = operacao.convert(),
-                mode = kCCModeGCM.convert(),
+                mode = K_CC_MODE_GCM.convert(),
                 alg = kCCAlgorithmAES,
                 padding = ccNoPadding,
                 iv = null,
@@ -141,13 +191,13 @@ internal actual object CriptografiaBackup {
 
         try {
             estado = nonce.usePinned { nonceFixado ->
-                CCCryptorGCMAddIV(cryptor, nonceFixado.addressOf(0), nonce.size.convert())
+                ccCryptorGcmAddIv(cryptor, nonceFixado.addressOf(0), nonce.size.convert())
             }
             check(estado == kCCSuccess) { "CCCryptorGCMAddIV falhou" }
 
             if (dadosAutenticados.isNotEmpty()) {
                 estado = dadosAutenticados.usePinned { aadFixado ->
-                    CCCryptorGCMAddAAD(cryptor, aadFixado.addressOf(0), dadosAutenticados.size.convert())
+                    ccCryptorGcmAddAad(cryptor, aadFixado.addressOf(0), dadosAutenticados.size.convert())
                 }
                 check(estado == kCCSuccess) { "CCCryptorGCMAddAAD falhou" }
             }
@@ -172,7 +222,7 @@ internal actual object CriptografiaBackup {
             val tamanhoTag = alloc<size_tVar>()
             tamanhoTag.value = tag.size.convert()
             estado = tag.usePinned { tagFixada ->
-                CCCryptorGCMFinal(cryptor, tagFixada.addressOf(0), tamanhoTag.ptr)
+                ccCryptorGcmFinal(cryptor, tagFixada.addressOf(0), tamanhoTag.ptr)
             }
             check(estado == kCCSuccess) { "CCCryptorGCMFinal falhou" }
         } finally {
