@@ -20,6 +20,8 @@
     "test:api": "npm run test -w @ei/api"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "axe-playwright": "^1.2.3",
     "better-sqlite3": "^12.9.0",
     "concurrently": "^9.1.2",
     "playwright": "^1.59.1",

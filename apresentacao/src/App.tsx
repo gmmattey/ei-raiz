@@ -1,249 +1,34 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { consumirMotivoSaidaSessao } from './cliente-api';
-
-// Componentes do shell da aplicação — carregados de forma eager por serem usados em toda navegação
-import Placeholder from './components/feedback/Placeholder';
-import AppLayout from './components/layout/AppLayout';
-import MobileAppLayout from './components/layout/MobileAppLayout';
-import { useIsMobile } from './hooks/useIsMobile';
 
 // Contextos
 import { ModoVisualizacaoProvider } from './context/ModoVisualizacaoContext';
 import { ThemeProvider } from './context/ThemeContext';
 
-// ─── Lazy imports: cada grupo vira um chunk separado ─────────────────────────
+// ─── Lazy imports: landing institucional + páginas legais ────────────────────
+// Rotas patrimoniais/autenticadas (login, onboarding, dashboard, carteira, aportes, insights,
+// histórico, importação, decisões, perfil, configurações, admin) foram removidas do router
+// público nesta issue (#122 — Savro migrando para app mobile KMP local-first). Os arquivos de
+// `src/features/*` correspondentes NÃO foram apagados — remoção física é escopo da issue #184.
+const Landing = React.lazy(() => import('./features/landing/Landing'));
+const Privacidade = React.lazy(() => import('./features/legal/Privacidade'));
+const Termos = React.lazy(() => import('./features/legal/Termos'));
+const Suporte = React.lazy(() => import('./features/legal/Suporte'));
+const FaqPage = React.lazy(() => import('./features/legal/FaqPage'));
+const Changelog = React.lazy(() => import('./features/legal/Changelog'));
+const NotFound = React.lazy(() => import('./features/legal/NotFound'));
 
-// Rotas públicas
-const LandingPage = React.lazy(() => import('./features/home/LandingPage'));
-
-// Home e pré-insight — carregam cedo, mas em chunk próprio
-const Home = React.lazy(() => import('./features/home/Home'));
-const HomeMobile = React.lazy(() => import('./features/home/HomeMobile'));
-const PreInsight = React.lazy(() => import('./components/feedback/PreInsight'));
-
-// Carteira
-const Carteira = React.lazy(() => import('./features/carteira/Carteira'));
-const CarteiraMobile = React.lazy(() => import('./features/carteira/CarteiraMobile'));
-const AssetCategoryView = React.lazy(() => import('./features/carteira/AssetCategoryView'));
-const AssetCategoryMobile = React.lazy(() => import('./features/carteira/AssetCategoryMobile'));
-const DetalheAtivo = React.lazy(() => import('./features/carteira/DetalheAtivo'));
-const DetalheAtivoMobile = React.lazy(() => import('./features/carteira/DetalheAtivoMobile'));
-
-// Funcionalidades principais
-const Insights = React.lazy(() => import('./features/insights/Insights'));
-const InsightsMobile = React.lazy(() => import('./features/insights/InsightsMobile'));
-const Aportes = React.lazy(() => import('./features/aportes/Aportes'));
-const AportesMobile = React.lazy(() => import('./features/aportes/AportesMobile'));
-const Historico = React.lazy(() => import('./features/historico/Historico'));
-const HistoricoMobile = React.lazy(() => import('./features/historico/HistoricoMobile'));
-const Importar = React.lazy(() => import('./features/importacao/Importar'));
-const ImportarMobile = React.lazy(() => import('./features/importacao/ImportarMobile'));
-
-// Simuladores de decisão
-const DecisionHub = React.lazy(() => import('./features/decisoes/DecisionHub'));
-const DecisionHubMobile = React.lazy(() => import('./features/decisoes/DecisionHubMobile'));
-const PropertySimulator = React.lazy(() => import('./features/decisoes/PropertySimulator'));
-const PropertySimulatorMobile = React.lazy(() => import('./features/decisoes/PropertySimulatorMobile'));
-const CarSimulator = React.lazy(() => import('./features/decisoes/CarSimulator'));
-const CarSimulatorMobile = React.lazy(() => import('./features/decisoes/CarSimulatorMobile'));
-const ReserveOrFinanceSimulator = React.lazy(() => import('./features/decisoes/ReserveOrFinanceSimulator'));
-const ReserveOrFinanceSimulatorMobile = React.lazy(() => import('./features/decisoes/ReserveOrFinanceSimulatorMobile'));
-const SpendOrInvestSimulator = React.lazy(() => import('./features/decisoes/SpendOrInvestSimulator'));
-const SpendOrInvestSimulatorMobile = React.lazy(() => import('./features/decisoes/SpendOrInvestSimulatorMobile'));
-const FreeSimulationSimulator = React.lazy(() => import('./features/decisoes/FreeSimulationSimulator'));
-const FreeSimulationSimulatorMobile = React.lazy(() => import('./features/decisoes/FreeSimulationSimulatorMobile'));
-const SimulationHistory = React.lazy(() => import('./features/decisoes/SimulationHistory'));
-const SimulationDetail = React.lazy(() => import('./features/decisoes/SimulationDetail'));
-const SimulationResultMobile = React.lazy(() => import('./features/decisoes/SimulationResultMobile'));
-
-// Perfil e configurações
-const PerfilRisco = React.lazy(() => import('./features/perfil/PerfilRisco'));
-const PerfilUsuario = React.lazy(() => import('./features/perfil/PerfilUsuario'));
-const PerfilMobile = React.lazy(() => import('./features/perfil/PerfilMobile'));
-const Configuracoes = React.lazy(() => import('./features/perfil/Configuracoes'));
-const PerfilRiscoMobile = React.lazy(() => import('./features/perfil/PerfilRiscoMobile'));
-const ConfiguracoesMobile = React.lazy(() => import('./features/perfil/ConfiguracoesMobile'));
-const ContextoFinanceiroMobile = React.lazy(() => import('./features/perfil/ContextoFinanceiroMobile'));
-
-// Admin
-const PainelAdmin = React.lazy(() => import('./features/admin/PainelAdmin'));
-const Dashboard = React.lazy(() => import('./features/perfil/dashboard'));
-
-// Preview isolado da nova tela de entrada
-const MobileEntryPreview = React.lazy(() => import('./features/autenticacao/MobileEntryPreview'));
-
-// ─── Utilitários de autenticação ─────────────────────────────────────────────
-
-const safeGetStorageItem = (key: string): string | null => {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const isAuthenticated = () => safeGetStorageItem('isAuthenticated') === 'true';
-
-const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  if (!isAuthenticated()) {
-    const motivoSaida = consumirMotivoSaidaSessao();
-    const destino = motivoSaida === 'expirada' ? '/?sessao=expirada' : '/';
-    return <Navigate to={destino} replace />;
-  }
-  return children;
-};
-
-const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  if (isAuthenticated()) {
-    return <Navigate to="/home" replace />;
-  }
-  return children;
-};
-
-// Fallback de loading para Suspense.
-// Nao use Placeholder aqui: ele mostra "Pagina em construcao" e pisca durante navegacao / troca de layout.
+// Fallback de loading para Suspense — dark, coerente com o tema Savro das rotas públicas atuais.
 const Loading: React.FC = () => (
-  <div className="flex min-h-[100vh] w-full items-center justify-center bg-[#F5F0EB] p-6">
-    <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-[#EFE7DC] bg-white p-10 shadow-xl">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#EFE7DC] border-t-[#F56A2A]" />
-      <div className="mt-5 font-['Sora'] text-lg font-bold text-[#0B1218]">Carregando...</div>
-      <div className="mt-2 font-['Inter'] text-sm text-[#0B1218]/60">Aguarde um instante.</div>
+  <div className="flex min-h-[100vh] w-full items-center justify-center bg-[#07111F] p-6">
+    <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-[#13213A] p-10 shadow-xl">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-[#4772F5]" />
+      <div className="mt-5 font-semibold text-[#F7F9FC]">Carregando...</div>
+      <div className="mt-2 text-sm text-[#A3AEC3]">Aguarde um instante.</div>
     </div>
   </div>
 );
-
-const ResponsiveLayout: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const isMobile = useIsMobile();
-  if (isMobile) return <MobileAppLayout>{children}</MobileAppLayout>;
-  return <AppLayout>{children}</AppLayout>;
-};
-
-const ResponsiveHome: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <HomeMobile /> : <Home />;
-};
-
-const ResponsiveCarteira: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <CarteiraMobile /> : <Carteira />;
-};
-
-const ResponsiveInsights: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <InsightsMobile /> : <Insights />;
-};
-
-const ResponsiveHistorico: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <HistoricoMobile /> : <Historico />;
-};
-
-const ResponsiveDecisoes: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <DecisionHubMobile /> : <DecisionHub />;
-};
-
-const ResponsivePerfil: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <PerfilMobile /> : <PerfilUsuario />;
-};
-
-const ResponsiveCategoria: React.FC<{ manualCategoriaId?: string }> = ({ manualCategoriaId }) => {
-  const isMobile = useIsMobile();
-  return isMobile ? <AssetCategoryMobile manualCategoriaId={manualCategoriaId} /> : <AssetCategoryView manualCategoriaId={manualCategoriaId} />;
-};
-
-const ResponsiveAtivo: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <DetalheAtivoMobile /> : <DetalheAtivo />;
-};
-
-const ResponsiveResultadoSimulacao: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <SimulationResultMobile /> : <SimulationDetail />;
-};
-
-const ResponsiveAportes: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <AportesMobile /> : <Aportes />;
-};
-
-const ResponsiveImportar: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <ImportarMobile /> : <Importar />;
-};
-
-const ResponsivePerfilRisco: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <PerfilRiscoMobile /> : <PerfilRisco />;
-};
-
-const ResponsiveConfiguracoes: React.FC = () => {
-  const isMobile = useIsMobile();
-  return isMobile ? <ConfiguracoesMobile /> : <Configuracoes />;
-};
-
-const ResponsiveSimulator: React.FC<{ mobile: React.ReactElement; desktop: React.ReactElement }> = ({ mobile, desktop }) => {
-  const isMobile = useIsMobile();
-  return isMobile ? mobile : desktop;
-};
-
-const DesktopOnlyGate: React.FC<{ title: string; description: string; desktop: React.ReactElement }> = ({
-  title,
-  description,
-  desktop,
-}) => {
-  const isMobile = useIsMobile();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const storageKey = `ei:force-desktop:${location.pathname}`;
-  const [forceDesktop, setForceDesktop] = React.useState(() => {
-    try {
-      return window.sessionStorage.getItem(storageKey) === '1';
-    } catch {
-      return false;
-    }
-  });
-
-  if (!isMobile || forceDesktop) return desktop;
-
-  return (
-    <div className="p-6">
-      <Placeholder
-        title={title}
-        description={description}
-        actions={
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              className="rounded-xl border border-[#EFE7DC] bg-white px-4 py-3 text-sm font-semibold text-[#0B1218] shadow-sm transition hover:bg-[#FAFAFA]"
-              onClick={() => navigate('/home')}
-            >
-              Voltar para Home
-            </button>
-            <button
-              type="button"
-              className="rounded-xl bg-[#0B1218] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-              onClick={() => {
-                try {
-                  window.sessionStorage.setItem(storageKey, '1');
-                } catch {}
-                setForceDesktop(true);
-              }}
-            >
-              Abrir mesmo assim
-            </button>
-          </div>
-        }
-      />
-    </div>
-  );
-};
-
-// ─── Rotas ───────────────────────────────────────────────────────────────────
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -252,105 +37,13 @@ const AnimatedRoutes: React.FC = () => {
     <AnimatePresence mode="wait">
       <Suspense fallback={<Loading />}>
         <Routes location={location} key={location.pathname}>
-          {/* Públicas */}
-          <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
-          <Route path="/0" element={<PublicRoute><LandingPage /></PublicRoute>} />
-          <Route path="/onboarding" element={<PublicRoute><LandingPage /></PublicRoute>} />
-          <Route path="/mobile-entry-test" element={<MobileEntryPreview />} />
-          <Route path="/placeholder" element={<ResponsiveLayout><Placeholder /></ResponsiveLayout>} />
-
-          {/* Home */}
-          <Route path="/home" element={<ProtectedRoute><ResponsiveLayout><ResponsiveHome /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/pre-insight" element={<ProtectedRoute><ResponsiveLayout><PreInsight /></ResponsiveLayout></ProtectedRoute>} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <ResponsiveLayout>
-                  <DesktopOnlyGate
-                    title="Dashboard ainda não está pronto para mobile"
-                    description="No PWA/mobile, esta tela ainda renderiza a versão desktop e fica ruim de usar. Estamos adaptando. Se precisar, você pode abrir mesmo assim."
-                    desktop={<Dashboard />}
-                  />
-                </ResponsiveLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Carteira */}
-          <Route path="/carteira" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCarteira /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/carteira/:categoria" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/acoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="acoes" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/fundos" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="fundos" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/previdencia" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="previdencia" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/renda-fixa" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="renda-fixa" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/poupanca" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="poupanca" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/bens" element={<ProtectedRoute><ResponsiveLayout><ResponsiveCategoria manualCategoriaId="bens" /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/ativo/:ticker" element={<ProtectedRoute><ResponsiveLayout><ResponsiveAtivo /></ResponsiveLayout></ProtectedRoute>} />
-
-          {/* Funcionalidades */}
-          <Route path="/aportes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveAportes /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/insights" element={<ProtectedRoute><ResponsiveLayout><ResponsiveInsights /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/historico" element={<ProtectedRoute><ResponsiveLayout><ResponsiveHistorico /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/importar" element={<ProtectedRoute><ResponsiveLayout><ResponsiveImportar /></ResponsiveLayout></ProtectedRoute>} />
-
-          {/* Simuladores de decisão */}
-          <Route path="/decisoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveDecisoes /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/imovel" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<PropertySimulatorMobile />} desktop={<PropertySimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/carro" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<CarSimulatorMobile />} desktop={<CarSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/reserva-ou-financiar" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<ReserveOrFinanceSimulatorMobile />} desktop={<ReserveOrFinanceSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/gastar-ou-investir" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<SpendOrInvestSimulatorMobile />} desktop={<SpendOrInvestSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/decisoes/livre" element={<ProtectedRoute><ResponsiveLayout><ResponsiveSimulator mobile={<FreeSimulationSimulatorMobile />} desktop={<FreeSimulationSimulator />} /></ResponsiveLayout></ProtectedRoute>} />
-          <Route
-            path="/decisoes/historico"
-            element={
-              <ProtectedRoute>
-                <ResponsiveLayout>
-                  <DesktopOnlyGate
-                    title="Histórico de simulações ainda não está pronto para mobile"
-                    description="No PWA/mobile, esta tela ainda abre a versão desktop. Se você precisar acessar agora, dá para abrir mesmo assim."
-                    desktop={<SimulationHistory />}
-                  />
-                </ResponsiveLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/decisoes/resultado/:id" element={<ProtectedRoute><ResponsiveLayout><ResponsiveResultadoSimulacao /></ResponsiveLayout></ProtectedRoute>} />
-
-          {/* Perfil */}
-          <Route path="/perfil-de-risco" element={<ProtectedRoute><ResponsiveLayout><ResponsivePerfilRisco /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/perfil" element={<ProtectedRoute><ResponsiveLayout><ResponsivePerfil /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/configuracoes" element={<ProtectedRoute><ResponsiveLayout><ResponsiveConfiguracoes /></ResponsiveLayout></ProtectedRoute>} />
-          <Route path="/contexto-financeiro" element={<ProtectedRoute><ResponsiveLayout><ContextoFinanceiroMobile /></ResponsiveLayout></ProtectedRoute>} />
-
-          {/* Admin */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <ResponsiveLayout>
-                  <DesktopOnlyGate
-                    title="Admin é desktop-only no momento"
-                    description="Esta área ainda não foi adaptada para mobile/PWA. Para evitar uma experiência ruim, ela fica protegida aqui. Se precisar, você pode abrir mesmo assim."
-                    desktop={<PainelAdmin />}
-                  />
-                </ResponsiveLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* 404 */}
-          <Route
-            path="*"
-            element={
-              <ResponsiveLayout>
-                <Placeholder
-                  title="Rota não encontrada"
-                  description="A URL acessada não existe no mapeamento atual. Use o menu para navegar entre as telas válidas."
-                />
-              </ResponsiveLayout>
-            }
-          />
+          <Route path="/" element={<Landing />} />
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/termos" element={<Termos />} />
+          <Route path="/suporte" element={<Suporte />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/changelog" element={<Changelog />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </AnimatePresence>
