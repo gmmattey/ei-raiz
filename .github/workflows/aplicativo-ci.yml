@@ -47,7 +47,7 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Verificar arquitetura e tokens
-        run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens
+        run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens verifyNoNetworkAccess
 
   testes-comuns:
     name: Testes de commonTest e módulos compartilhados
@@ -88,9 +88,13 @@ jobs:
       # o MESMO código de `commonTest` roda no simulador iOS no job "ios-xcode-macos", e é o par
       # dos dois que constitui a evidência de interoperabilidade Android <-> iOS.
       # :shared:domain:patrimonio entra junto porque a #121 mexeu em `FormatadorData`.
+      # :shared:core:model entra na lista com a #130: hospeda os testes de redaction
+      # (RedacaoModeloPatrimonialTest) que fixam o contrato de `toString()` dos modelos
+      # patrimoniais — não estava em nenhum job de CI até aqui.
       - name: Executar testes comuns e TestKit
         run: |
           ./gradlew --no-daemon --stacktrace \
+            :shared:core:model:testDebugUnitTest \
             :shared:core:testing:testDebugUnitTest \
             :shared:core:designsystem:testDebugUnitTest \
             :shared:core:database:testDebugUnitTest \

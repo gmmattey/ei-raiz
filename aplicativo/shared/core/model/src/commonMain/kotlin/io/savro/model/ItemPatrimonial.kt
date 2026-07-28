@@ -67,7 +67,18 @@ data class ItemPatrimonial(
     val arquivado: Boolean,
     val criadoEmEpocaMs: Long,
     val atualizadoEmEpocaMs: Long,
-)
+) {
+    /**
+     * Contrato de redaction (#130): o `toString()` gerado automaticamente por `data class`
+     * incluiria `nome`, `instituicao`, `observacao`, `moeda` e `valorCentavos` em texto claro — é
+     * exatamente esse `toString()` implícito que um `Log.d(TAG, item.toString())` futuro, uma
+     * interpolação `"$item"` num erro, ou uma breadcrumb de crash reporter usariam por padrão.
+     * Nunca adicione um campo sensível novo a este modelo sem também decidir aqui se ele entra
+     * neste `toString()` (ver `contrato-redaction-savro.md`).
+     */
+    override fun toString(): String =
+        "ItemPatrimonial(id=$id, tipo=$tipo, origem=$origem, arquivado=$arquivado)"
+}
 
 /**
  * Registro histórico de um ajuste manual de valor (issue #119: "registrar ajuste manual de valor
@@ -83,7 +94,10 @@ data class AjusteValorItem(
     val valorCentavosNovo: Long,
     val origem: OrigemValor,
     val dataEpocaMs: Long,
-)
+) {
+    /** Redaction (#130): valores de ajuste nunca aparecem em `toString()` — ver [ItemPatrimonial]. */
+    override fun toString(): String = "AjusteValorItem(id=$id, itemId=$itemId, origem=$origem)"
+}
 
 /** Metadados técnicos do banco local — não é um relatório de patrimônio, é estado de infra. */
 data class MetadadosBancoLocal(
@@ -117,4 +131,7 @@ data class EventoTimelineItem(
     val itemNome: String,
     val tipo: TipoEventoTimeline,
     val dataEpocaMs: Long,
-)
+) {
+    /** Redaction (#130): `itemNome` nunca aparece em `toString()` — ver [ItemPatrimonial]. */
+    override fun toString(): String = "EventoTimelineItem(id=$id, itemId=$itemId, tipo=$tipo)"
+}
