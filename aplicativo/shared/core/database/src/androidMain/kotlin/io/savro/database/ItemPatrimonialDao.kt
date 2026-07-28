@@ -38,6 +38,23 @@ internal interface ItemPatrimonialDao {
     @Query("SELECT * FROM ajustes_valor_item WHERE item_id = :itemId ORDER BY data_epoca_ms ASC")
     suspend fun listarAjustes(itemId: String): List<EntidadeAjusteValorItem>
 
+    /** Retrato completo dos ajustes para o backup (#121). */
+    @Query("SELECT * FROM ajustes_valor_item ORDER BY data_epoca_ms ASC")
+    suspend fun listarTodosOsAjustes(): List<EntidadeAjusteValorItem>
+
+    // Restauração por substituição total (#121). A ordem de chamada importa: eventos e ajustes
+    // primeiro, itens depois — apagar itens antes dispararia o ON DELETE CASCADE e o resultado
+    // seria o mesmo, mas a ordem explícita mantém o comportamento igual ao do iOS, onde
+    // `PRAGMA foreign_keys` pode estar habilitado ou não.
+    @Query("DELETE FROM eventos_timeline_item")
+    suspend fun apagarEventosTimeline()
+
+    @Query("DELETE FROM ajustes_valor_item")
+    suspend fun apagarAjustes()
+
+    @Query("DELETE FROM itens_patrimoniais")
+    suspend fun apagarItens()
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun inserirEventoTimeline(entidade: EntidadeEventoTimelineItem)
 

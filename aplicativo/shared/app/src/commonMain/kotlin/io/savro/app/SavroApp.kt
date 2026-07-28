@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.savro.backup.ServicoBackup
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroSurface
@@ -32,11 +33,15 @@ private const val DURACAO_SPLASH_MS = 1200L
  * Raiz compartilhada consumida pelo host Android (Activity) e pelo host iOS (UIViewController).
  * [gerenciador] já vem construído pelo host com as implementações nativas do cofre (#118) —
  * `:shared:app` não conhece Keystore, Keychain, BiometricPrompt nem LAContext, só o contrato
- * comum de `:shared:core:security`. [servicoPatrimonio] (issue #119) compartilha a mesma conexão
- * de banco já aberta pelo cofre.
+ * comum de `:shared:core:security`. [servicoPatrimonio] (issue #119) e [servicoBackup] (issue
+ * #121) compartilham a mesma conexão de banco já aberta pelo cofre.
  */
 @Composable
-fun SavroApp(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
+fun SavroApp(
+    gerenciador: GerenciadorCofre,
+    servicoPatrimonio: ServicoPatrimonio,
+    servicoBackup: ServicoBackup,
+) {
     SavroTheme {
         var mostrarSplash by remember { mutableStateOf(true) }
         var verificandoOnboarding by remember { mutableStateOf(true) }
@@ -68,7 +73,7 @@ fun SavroApp(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio
                         gerenciador.iniciar()
                     },
                 )
-                else -> TelaCofre(gerenciador, servicoPatrimonio)
+                else -> TelaCofre(gerenciador, servicoPatrimonio, servicoBackup)
             }
         }
     }

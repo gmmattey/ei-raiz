@@ -2,6 +2,10 @@ package io.savro.app
 
 import android.content.Context
 import androidx.fragment.app.FragmentActivity
+import io.savro.backup.AreaTemporariaBackupAndroid
+import io.savro.backup.ArquivosDoSistemaAndroid
+import io.savro.backup.ServicoBackup
+import io.savro.database.EsquemaSavro
 import io.savro.database.ProvedorChaveMestraAndroid
 import io.savro.database.RelogioDoSistemaAndroid
 import io.savro.database.RepositorioItensPatrimoniaisRoom
@@ -31,6 +35,8 @@ class ComposicaoCofreAndroid(activity: FragmentActivity) {
 
     val autenticador = AutenticadorBiometricoAndroid(context)
 
+    private val preferenciasCofre = PreferenciasCofreAndroid(context)
+
     private val provedorChaveMestra = ProvedorChaveMestraAndroid(context)
     private val repositorio = RepositorioItensPatrimoniaisRoom(context, provedorChaveMestra)
 
@@ -38,13 +44,26 @@ class ComposicaoCofreAndroid(activity: FragmentActivity) {
         provedorChaveMestra = provedorChaveMestra,
         repositorio = repositorio,
         autenticador = autenticador,
-        preferencias = PreferenciasCofreAndroid(context),
+        preferencias = preferenciasCofre,
         relogio = RelogioDoSistemaAndroid,
         escopo = escopo,
     )
 
     /** Cadastro manual de patrimônio (issue #119) — mesma conexão de banco do [gerenciadorCofre]. */
     val servicoPatrimonio = ServicoPatrimonio(repositorio, RelogioDoSistemaAndroid)
+
+    /**
+     * Backup, restauração e exportação (issue #121) — mesma conexão de banco, e o Storage Access
+     * Framework ligado a esta Activity (os launchers precisam ser registrados ainda no `onCreate`).
+     */
+    val servicoBackup = ServicoBackup(
+        repositorio = repositorio,
+        preferencias = PreferenciasRestauraveisDoCofre(preferenciasCofre),
+        arquivos = ArquivosDoSistemaAndroid(activity),
+        areaTemporaria = AreaTemporariaBackupAndroid(context),
+        relogio = RelogioDoSistemaAndroid,
+        versaoEsquemaAtual = EsquemaSavro.VERSAO_ATUAL,
+    )
 
     init {
         autenticador.vincularAtividade(activity)

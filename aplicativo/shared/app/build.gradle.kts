@@ -31,6 +31,10 @@ kotlin {
             // BiometricPrompt, notificar background/foreground) — inevitável porque `BiometricPrompt`
             // exige uma referência de Activity viva, diferente do Keychain/LAContext do iOS.
             api(project(":shared:core:security"))
+            // api (não implementation): `:androidApp` precisa construir `ArquivosDoSistemaAndroid`
+            // com a Activity real (o Storage Access Framework exige `ActivityResultRegistry`) e
+            // repassá-lo à composição — mesma razão do `:shared:core:security` acima (#121).
+            api(project(":shared:core:backup"))
             // api (não implementation): :androidApp precisa enxergar `ServicoPatrimonio` a partir
             // de `ComposicaoCofreAndroid.servicoPatrimonio` (#119), mesmo motivo do
             // shared:core:security acima.
