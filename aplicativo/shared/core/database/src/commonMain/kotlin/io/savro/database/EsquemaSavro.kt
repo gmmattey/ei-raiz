@@ -11,7 +11,7 @@ package io.savro.database
  */
 object EsquemaSavro {
     const val NOME_BANCO = "savro.db"
-    const val VERSAO_ATUAL = 3
+    const val VERSAO_ATUAL = 4
 
     val migracoes: List<DescricaoMigracao> = listOf(
         DescricaoMigracao(
@@ -26,6 +26,12 @@ object EsquemaSavro {
                 "'preco_medio_centavos', 'origem' e 'arquivado' em itens_patrimoniais; remapeia " +
                 "'INVESTIMENTO'->'RENDA_VARIAVEL' e 'IMOVEL'/'VEICULO'->'BEM' na coluna 'tipo'; cria a " +
                 "tabela 'ajustes_valor_item'",
+        ),
+        DescricaoMigracao(
+            versaoOrigem = 3,
+            versaoDestino = 4,
+            descricao = "Linha do tempo básica (#120): cria a tabela 'eventos_timeline_item' " +
+                "(id, item_id, item_nome, tipo, data_epoca_ms), FK item_id -> itens_patrimoniais ON DELETE CASCADE",
         ),
     )
 }

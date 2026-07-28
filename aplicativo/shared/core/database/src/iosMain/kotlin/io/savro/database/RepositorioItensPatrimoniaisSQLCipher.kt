@@ -8,9 +8,11 @@ import io.savro.domain.patrimonio.ProvedorChaveMestra
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
 import io.savro.model.OrigemValor
+import io.savro.model.TipoEventoTimeline
 import io.savro.model.TipoItemPatrimonial
 import kotlin.concurrent.Volatile
 import kotlinx.coroutines.sync.Mutex
@@ -52,6 +54,13 @@ class RepositorioItensPatrimoniaisSQLCipher(
         return try {
             val instancia = SQLiteCifrado.abrir(caminho, chave)
             try {
+                // Achado ao implementar a #120 (timeline): `PRAGMA foreign_keys` nunca era
+                // habilitado nesta conexão — sem isso, `ON DELETE CASCADE` (já declarado desde a
+                // #119 em `ajustes_valor_item`, e agora também em `eventos_timeline_item`) nunca
+                // era aplicado de verdade no iOS; SQLite trata FK como só-documentação por padrão
+                // até este pragma ser executado em cada conexão. Precisa vir antes de qualquer
+                // outra operação na conexão.
+                instancia.executar("PRAGMA foreign_keys = ON")
                 aplicarSchemaEMigrations(instancia)
                 val total = contar(instancia)
                 banco = instancia
@@ -159,6 +168,44 @@ class RepositorioItensPatrimoniaisSQLCipher(
             Resultado.Sucesso(linhas.map(::linhaParaAjuste))
         }
 
+    override suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio> = comBancoAberto { db ->
+        val evento = EventoTimelineItem(
+            id = GeradorIdItem.novoId(),
+            itemId = itemId,
+            itemNome = itemNome,
+            tipo = tipo,
+            dataEpocaMs = dataEpocaMs,
+        )
+        db.executar(
+            """
+            INSERT INTO eventos_timeline_item (id, item_id, item_nome, tipo, data_epoca_ms)
+            VALUES (
+                '${evento.id.escapado()}',
+                '${itemId.escapado()}',
+                '${itemNome.escapado()}',
+                '${tipo.name}',
+                $dataEpocaMs
+            )
+            """.trimIndent(),
+        )
+        Resultado.Sucesso(evento)
+    }
+
+    override suspend fun listarTimeline(itemId: String?): Resultado<List<EventoTimelineItem>, ErroRepositorio> =
+        comBancoAberto { db ->
+            val sql = if (itemId == null) {
+                "SELECT * FROM eventos_timeline_item ORDER BY data_epoca_ms DESC"
+            } else {
+                "SELECT * FROM eventos_timeline_item WHERE item_id = '${itemId.escapado()}' ORDER BY data_epoca_ms DESC"
+            }
+            Resultado.Sucesso(db.consultar(sql).map(::linhaParaEventoTimeline))
+        }
+
     override suspend fun executarEmTransacao(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,
     ): Resultado<Unit, ErroRepositorio> {
@@ -219,6 +266,7 @@ class RepositorioItensPatrimoniaisSQLCipher(
                 """.trimIndent(),
             )
             criarTabelaDeAjustes(db)
+            criarTabelaDeTimeline(db)
             db.executar("PRAGMA user_version = ${EsquemaSavro.VERSAO_ATUAL}")
             return
         }
@@ -240,6 +288,11 @@ class RepositorioItensPatrimoniaisSQLCipher(
                 db.executar("ALTER TABLE itens_patrimoniais ADD COLUMN arquivado INTEGER NOT NULL DEFAULT 0")
                 criarTabelaDeAjustes(db)
             }
+            if (versaoAtual < 4) {
+                // Linha do tempo básica (#120). Mesma tabela que a migration 3->4 do Android
+                // (MIGRATION_3_4 em SavroRoomDatabase.kt).
+                criarTabelaDeTimeline(db)
+            }
             db.executar("PRAGMA user_version = ${EsquemaSavro.VERSAO_ATUAL}")
         }
     }
@@ -259,6 +312,22 @@ class RepositorioItensPatrimoniaisSQLCipher(
             """.trimIndent(),
         )
         db.executar("CREATE INDEX IF NOT EXISTS index_ajustes_valor_item_item_id ON ajustes_valor_item(item_id)")
+    }
+
+    private fun criarTabelaDeTimeline(db: SQLiteCifrado) {
+        db.executar(
+            """
+            CREATE TABLE IF NOT EXISTS eventos_timeline_item (
+              id TEXT NOT NULL PRIMARY KEY,
+              item_id TEXT NOT NULL,
+              item_nome TEXT NOT NULL,
+              tipo TEXT NOT NULL,
+              data_epoca_ms INTEGER NOT NULL,
+              FOREIGN KEY(item_id) REFERENCES itens_patrimoniais(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.executar("CREATE INDEX IF NOT EXISTS index_eventos_timeline_item_item_id ON eventos_timeline_item(item_id)")
     }
 
     private fun mapearExcecaoDeAbertura(excecao: Exception): Resultado<MetadadosBancoLocal, ErroRepositorio> {
@@ -315,6 +384,14 @@ private fun linhaParaAjuste(linha: Map<String, String?>): AjusteValorItem = Ajus
     valorCentavosAnterior = linha.getValue("valor_centavos_anterior")?.toLong() ?: 0,
     valorCentavosNovo = linha.getValue("valor_centavos_novo")?.toLong() ?: 0,
     origem = linha["origem"]?.let { runCatching { OrigemValor.valueOf(it) }.getOrNull() } ?: OrigemValor.MANUAL,
+    dataEpocaMs = linha.getValue("data_epoca_ms")?.toLong() ?: 0,
+)
+
+private fun linhaParaEventoTimeline(linha: Map<String, String?>): EventoTimelineItem = EventoTimelineItem(
+    id = linha.getValue("id") ?: error("linha sem id"),
+    itemId = linha.getValue("item_id") ?: error("linha sem item_id"),
+    itemNome = linha.getValue("item_nome") ?: error("linha sem item_nome"),
+    tipo = TipoEventoTimeline.valueOf(linha.getValue("tipo") ?: error("linha sem tipo")),
     dataEpocaMs = linha.getValue("data_epoca_ms")?.toLong() ?: 0,
 )
 

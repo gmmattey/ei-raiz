@@ -90,3 +90,31 @@ data class MetadadosBancoLocal(
     val versaoEsquema: Int,
     val totalDeItens: Int,
 )
+
+/**
+ * Os 5 tipos de evento da "linha do tempo básica" (issue #120). Cada evento é imutável e
+ * append-only, no mesmo espírito de [AjusteValorItem] — nunca editado nem removido, exceto por
+ * cascata quando o item em si é excluído (exclusão não é um evento rastreado: "excluir" apaga o
+ * item e todo o seu histórico, não é uma alteração a exibir na linha do tempo de algo que deixou
+ * de existir).
+ */
+enum class TipoEventoTimeline {
+    ITEM_CRIADO,
+    VALOR_AJUSTADO,
+    ITEM_EDITADO,
+    ITEM_ARQUIVADO,
+    ITEM_REATIVADO,
+}
+
+/**
+ * Registro de um evento da linha do tempo básica de um item patrimonial (issue #120). `itemNome`
+ * é um instantâneo do nome no momento do evento (não uma referência viva) — preserva o histórico
+ * mesmo que o item seja renomeado depois, sem exigir join em toda leitura da timeline.
+ */
+data class EventoTimelineItem(
+    val id: String,
+    val itemId: String,
+    val itemNome: String,
+    val tipo: TipoEventoTimeline,
+    val dataEpocaMs: Long,
+)

@@ -6,7 +6,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [EntidadeItemPatrimonial::class, EntidadeAjusteValorItem::class],
+    entities = [EntidadeItemPatrimonial::class, EntidadeAjusteValorItem::class, EntidadeEventoTimelineItem::class],
     version = EsquemaSavro.VERSAO_ATUAL,
     exportSchema = true,
 )
@@ -60,4 +60,23 @@ internal val MIGRATION_2_3: Migration = object : Migration(2, 3) {
     }
 }
 
-internal val TODAS_AS_MIGRATIONS_ROOM: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+/** Linha do tempo básica (#120, ver [EsquemaSavro]). */
+internal val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS eventos_timeline_item (
+              id TEXT NOT NULL PRIMARY KEY,
+              item_id TEXT NOT NULL,
+              item_nome TEXT NOT NULL,
+              tipo TEXT NOT NULL,
+              data_epoca_ms INTEGER NOT NULL,
+              FOREIGN KEY(item_id) REFERENCES itens_patrimoniais(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_eventos_timeline_item_item_id ON eventos_timeline_item(item_id)")
+    }
+}
+
+internal val TODAS_AS_MIGRATIONS_ROOM: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

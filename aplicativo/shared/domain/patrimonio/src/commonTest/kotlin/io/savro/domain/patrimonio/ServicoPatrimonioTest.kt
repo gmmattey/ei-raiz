@@ -1,6 +1,7 @@
 package io.savro.domain.patrimonio
 
 import io.savro.common.Resultado
+import io.savro.model.TipoEventoTimeline
 import io.savro.model.TipoItemPatrimonial
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -165,5 +166,95 @@ class ServicoPatrimonioTest {
         )
         assertEquals(1, resultado.size)
         assertEquals("Ações Nubank", resultado.single().nome)
+    }
+
+    // --- Linha do tempo básica (issue #120) — os 5 tipos de evento e reatividade imediata. ---
+
+    @Test
+    fun criar_registraEventoItemCriadoNaTimelineImediatamente() = runTest {
+        val (servico, _, _) = novoServico()
+        val criado = (servico.criar(estadoConta(nome = "Conta Itaú")) as Resultado.Sucesso).valor
+
+        assertEquals(1, servico.timeline.value.size)
+        val evento = servico.timeline.value.single()
+        assertEquals(TipoEventoTimeline.ITEM_CRIADO, evento.tipo)
+        assertEquals(criado.id, evento.itemId)
+        assertEquals("Conta Itaú", evento.itemNome)
+    }
+
+    @Test
+    fun editar_registraEventoItemEditadoNaTimeline() = runTest {
+        val relogio = RelogioDeTesteSimples()
+        val (servico, _, rel) = novoServico(relogio)
+        val criado = (servico.criar(estadoConta()) as Resultado.Sucesso).valor
+
+        rel.avancar(1_000)
+        servico.editar(estadoConta(nome = "Conta renomeada").copy(itemIdEmEdicao = criado.id))
+
+        assertEquals(TipoEventoTimeline.ITEM_EDITADO, servico.timeline.value.first().tipo)
+    }
+
+    @Test
+    fun ajustarValor_registraEventoValorAjustadoNaTimeline() = runTest {
+        val relogio = RelogioDeTesteSimples()
+        val (servico, _, rel) = novoServico(relogio)
+        val criado = (servico.criar(estadoConta()) as Resultado.Sucesso).valor
+
+        rel.avancar(1_000)
+        servico.ajustarValor(criado.id, "2.000,00")
+
+        assertEquals(TipoEventoTimeline.VALOR_AJUSTADO, servico.timeline.value.first().tipo)
+    }
+
+    @Test
+    fun arquivarEReativar_registramEventosDistintosNaTimeline() = runTest {
+        val relogio = RelogioDeTesteSimples()
+        val (servico, _, rel) = novoServico(relogio)
+        val criado = (servico.criar(estadoConta()) as Resultado.Sucesso).valor
+
+        rel.avancar(1_000)
+        servico.arquivar(criado.id, arquivado = true)
+        assertEquals(TipoEventoTimeline.ITEM_ARQUIVADO, servico.timeline.value.first().tipo)
+
+        rel.avancar(1_000)
+        servico.arquivar(criado.id, arquivado = false)
+        assertEquals(TipoEventoTimeline.ITEM_REATIVADO, servico.timeline.value.first().tipo)
+
+        // criado + arquivado + reativado — todos os eventos ficam registrados, nenhum é perdido.
+        assertEquals(3, servico.timeline.value.size)
+    }
+
+    @Test
+    fun arquivar_semMudarEstado_naoRegistraEventoDuplicado() = runTest {
+        val (servico, _, _) = novoServico()
+        val criado = (servico.criar(estadoConta()) as Resultado.Sucesso).valor
+
+        servico.arquivar(criado.id, arquivado = false) // já não está arquivado — noop
+        assertEquals(1, servico.timeline.value.size) // só o ITEM_CRIADO
+    }
+
+    @Test
+    fun duplicar_registraEventoItemCriadoParaACopia() = runTest {
+        val (servico, _, _) = novoServico()
+        val original = (servico.criar(estadoConta()) as Resultado.Sucesso).valor
+        servico.duplicar(original.id)
+
+        val eventosDeCriacao = servico.timeline.value.filter { it.tipo == TipoEventoTimeline.ITEM_CRIADO }
+        assertEquals(2, eventosDeCriacao.size)
+    }
+
+    @Test
+    fun listarTimelineDoItem_filtraApenasEventosDoItemInformado() = runTest {
+        val (servico, _, _) = novoServico()
+        val item1 = (servico.criar(estadoConta(nome = "Item 1")) as Resultado.Sucesso).valor
+        val item2 = (servico.criar(estadoConta(nome = "Item 2")) as Resultado.Sucesso).valor
+        servico.ajustarValor(item1.id, "50,00")
+
+        val timelineItem1 = (servico.listarTimelineDoItem(item1.id) as Resultado.Sucesso).valor
+        assertEquals(2, timelineItem1.size) // CRIADO + VALOR_AJUSTADO
+        assertTrue(timelineItem1.all { it.itemId == item1.id })
+
+        val timelineItem2 = (servico.listarTimelineDoItem(item2.id) as Resultado.Sucesso).valor
+        assertEquals(1, timelineItem2.size)
     }
 }

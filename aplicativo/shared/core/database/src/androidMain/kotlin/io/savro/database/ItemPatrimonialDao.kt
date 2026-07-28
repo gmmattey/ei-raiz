@@ -37,4 +37,13 @@ internal interface ItemPatrimonialDao {
 
     @Query("SELECT * FROM ajustes_valor_item WHERE item_id = :itemId ORDER BY data_epoca_ms ASC")
     suspend fun listarAjustes(itemId: String): List<EntidadeAjusteValorItem>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun inserirEventoTimeline(entidade: EntidadeEventoTimelineItem)
+
+    @Query("SELECT * FROM eventos_timeline_item ORDER BY data_epoca_ms DESC")
+    suspend fun listarTimelineGlobal(): List<EntidadeEventoTimelineItem>
+
+    @Query("SELECT * FROM eventos_timeline_item WHERE item_id = :itemId ORDER BY data_epoca_ms DESC")
+    suspend fun listarTimelineDoItem(itemId: String): List<EntidadeEventoTimelineItem>
 }

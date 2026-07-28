@@ -13,8 +13,10 @@ import io.savro.domain.patrimonio.GeradorIdItem
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoEventoTimeline
 import java.util.Arrays
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -169,6 +171,29 @@ class RepositorioItensPatrimoniaisRoom(
 
     override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
         comBancoAberto { dao -> Resultado.Sucesso(dao.listarAjustes(itemId).map { it.paraModelo() }) }
+
+    override suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio> = comBancoAberto { dao ->
+        val entidade = EntidadeEventoTimelineItem(
+            id = GeradorIdItem.novoId(),
+            itemId = itemId,
+            itemNome = itemNome,
+            tipo = tipo.name,
+            dataEpocaMs = dataEpocaMs,
+        )
+        dao.inserirEventoTimeline(entidade)
+        Resultado.Sucesso(entidade.paraModelo())
+    }
+
+    override suspend fun listarTimeline(itemId: String?): Resultado<List<EventoTimelineItem>, ErroRepositorio> =
+        comBancoAberto { dao ->
+            val linhas = if (itemId == null) dao.listarTimelineGlobal() else dao.listarTimelineDoItem(itemId)
+            Resultado.Sucesso(linhas.map { it.paraModelo() })
+        }
 
     override suspend fun executarEmTransacao(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,

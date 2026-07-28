@@ -141,10 +141,10 @@ private fun BotaoTentarNovamente(gerenciador: GerenciadorCofre) {
 }
 
 /**
- * Destino pós-onboarding/desbloqueio: cadastro manual de patrimônio (#119) é a experiência
- * principal do app hoje — Home/Patrimônio definitivas com gráficos e resumo consolidado são a
- * #120, fora do escopo aqui. Acesso a ativar/alterar/remover a proteção do cofre (#118) continua
- * disponível a partir daqui.
+ * Destino pós-onboarding/desbloqueio: [TelaPatrimonio] (em `PatrimonioScreens.kt`) hospeda a
+ * experiência principal completa (#120) — Home, Patrimônio e Detalhe, todos sobre a mesma
+ * instância de [servicoPatrimonio]. Acesso a ativar/alterar/remover a proteção do cofre (#118)
+ * continua disponível a partir daqui.
  */
 @Composable
 private fun TelaHome(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
