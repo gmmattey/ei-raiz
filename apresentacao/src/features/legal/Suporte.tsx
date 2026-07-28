@@ -32,19 +32,13 @@ const Suporte: React.FC = () => {
 
   return (
     <LegalLayout title="Suporte">
-      <LegalSection title="Canal de contato">
-        {SUPPORT_EMAIL ? (
+      {SUPPORT_EMAIL && (
+        <LegalSection title="Canal de contato">
           <p>
             Fale com a gente em <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
           </p>
-        ) : (
-          <p style={{ color: 'var(--warning)' }}>
-            [Canal de contato ainda não configurado. Nenhum e-mail de suporte foi aprovado até a
-            publicação desta página — não invente um endereço nem confie em outro canal como
-            oficial.]
-          </p>
-        )}
-      </LegalSection>
+        </LegalSection>
+      )}
 
       <LegalSection title="Nunca envie estes dados pelo suporte">
         <p style={{ color: 'var(--negative)' }}>

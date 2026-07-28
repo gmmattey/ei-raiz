@@ -413,13 +413,64 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
     expect(text?.toLowerCase()).not.toMatch(/assinatura|plano gratuito|compra única|mensal|anual/);
   });
 
-  test('Privacidade não inventa CNPJ e não afirma domínio/empresa fixos', async ({ page }) => {
+  test('Privacidade não afirma domínio/empresa fixos', async ({ page }) => {
     await page.goto('/privacidade');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     const content = await page.locator('body').textContent();
-    expect(content?.toLowerCase()).toContain('pendente');
     expect(content).not.toContain('savro.app');
+  });
+});
+
+test.describe('Gate contra regressão de dados legais pendentes', () => {
+  // Sem VITE_LEGAL_CONTROLLER_NAME/VITE_LEGAL_CONTROLLER_TAX_ID/VITE_SUPPORT_EMAIL aprovados e
+  // configurados, as páginas legais devem OMITIR a seção correspondente — nunca mostrar texto
+  // de placeholder, dado inventado ou canal quebrado. Este gate garante que isso nunca regride,
+  // em qualquer estado (configurado ou não) da env var.
+  const STRINGS_PROIBIDAS = [
+    'dado pendente',
+    'pendente de configuração',
+    'pendente de aprovação',
+    'aprovação legal',
+    'canal ainda não configurado',
+    'não invente',
+  ];
+
+  const ROTAS = ['/', '/privacidade', '/termos', '/suporte'];
+
+  ROTAS.forEach((rota) => {
+    test(`${rota}: sem texto de placeholder/bastidor sobre dados legais`, async ({ page }) => {
+      await page.goto(rota);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // Footer renderiza em toda rota pública — cobre o requisito de checar o footer também.
+      await expect(page.locator('footer')).toBeVisible();
+
+      const content = (await page.locator('body').textContent())?.toLowerCase() ?? '';
+
+      for (const proibida of STRINGS_PROIBIDAS) {
+        expect(content).not.toContain(proibida);
+      }
+
+      // Nenhum placeholder entre colchetes visível no conteúdo principal (JSON-LD/scripts não
+      // entram aqui — textContent() de body não inclui o texto de <script>[type=application/ld+json]
+      // como conteúdo "visível" da forma que interessa, mas por segurança medimos só main+footer).
+      const mainMaisFooter = `${(await page.locator('main').textContent()) ?? ''}${
+        (await page.locator('footer').textContent()) ?? ''
+      }`;
+      expect(mainMaisFooter).not.toMatch(/\[[^\]]*pendente[^\]]*\]/i);
+
+      // Nenhum link mailto: quebrado (vazio ou com placeholder óbvio).
+      const mailtos = await page.locator('a[href^="mailto:"]').all();
+      for (const link of mailtos) {
+        const href = await link.getAttribute('href');
+        expect(href).not.toBe('mailto:');
+        expect(href?.toLowerCase()).not.toMatch(/mailto:(undefined|null|pendente|exemplo|placeholder)/);
+      }
+
+      // Nenhum CNPJ/CPF fictício — hoje VITE_LEGAL_CONTROLLER_TAX_ID não está configurada, então
+      // nenhum formato de CNPJ (XX.XXX.XXX/XXXX-XX) deve aparecer em lugar nenhum da página.
+      expect(mainMaisFooter).not.toMatch(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
+    });
   });
 });
 

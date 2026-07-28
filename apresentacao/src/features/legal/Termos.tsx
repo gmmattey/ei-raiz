@@ -95,19 +95,14 @@ const Termos: React.FC = () => {
         <p>Estes termos são regidos pelas leis da República Federativa do Brasil.</p>
       </LegalSection>
 
-      <LegalSection title="12. Contato">
-        {SUPPORT_EMAIL ? (
+      {SUPPORT_EMAIL && (
+        <LegalSection title="12. Contato">
           <p>
             Dúvidas sobre estes termos podem ser enviadas para{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
           </p>
-        ) : (
-          <p style={{ color: 'var(--warning)' }}>
-            [Canal de contato pendente de configuração — nenhum e-mail de suporte aprovado até
-            a publicação desta página.]
-          </p>
-        )}
-      </LegalSection>
+        </LegalSection>
+      )}
     </LegalLayout>
   )
 }

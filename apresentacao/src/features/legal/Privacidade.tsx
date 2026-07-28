@@ -3,6 +3,7 @@ import { useSeo } from '../../hooks/useSeo'
 import LegalLayout from './LegalLayout'
 import LegalSection from './LegalSection'
 import { SUPPORT_EMAIL } from '../../config/platforms'
+import { CONTROLLER_NAME, CONTROLLER_TAX_ID, PUBLIC_BRAND_NAME, CONTROLLER_IDENTITY_CONFIGURADA } from '../../config/legal'
 
 const Privacidade: React.FC = () => {
   useSeo({
@@ -62,12 +63,17 @@ const Privacidade: React.FC = () => {
 
       <LegalSection title="6. Dados técnicos deste site institucional">
         <p>
-          O código deste site (o repositório que serve esta página) não declara nenhuma
-          dependência de analytics, rastreamento ou anúncio em seu arquivo de dependências.
-          Se a hospedagem (Cloudflare Pages) registrar logs técnicos padrão de servidor (como IP
-          e user-agent, comuns a qualquer provedor de hospedagem web), esse dado é operacional
-          da infraestrutura, não é coletado ativamente pelo Savro para nenhuma finalidade de
-          produto.
+          Este site é hospedado no Cloudflare Pages. O código do site não declara nenhuma
+          dependência de analytics, rastreamento ou anúncio — mas isso não significa ausência
+          total de tratamento: como qualquer provedor de hospedagem, o Cloudflare pode
+          processar logs técnicos de acesso (como endereço IP e user-agent) necessários para
+          entregar e proteger o site contra abuso.
+        </p>
+        <p>
+          Esse processamento é feito pela infraestrutura de hospedagem, não pelo Savro, e não é
+          usado para montar perfil patrimonial de ninguém, para publicidade ou para analytics de
+          produto. Não temos hoje um prazo de retenção desses logs documentado pelo provedor
+          para divulgar aqui — quando esse dado existir, esta seção é atualizada.
         </p>
       </LegalSection>
 
@@ -88,26 +94,24 @@ const Privacidade: React.FC = () => {
         </p>
       </LegalSection>
 
-      <LegalSection title="9. Controlador responsável">
-        <p style={{ color: 'var(--warning)' }}>
-          [Dado pendente de aprovação legal — razão social/CNPJ do controlador responsável pelo
-          tratamento de dados.]
-        </p>
-      </LegalSection>
+      {CONTROLLER_IDENTITY_CONFIGURADA && (
+        <LegalSection title="9. Controlador responsável">
+          <p>
+            O controlador responsável pelo tratamento de dados desta política é{' '}
+            {CONTROLLER_NAME}
+            {PUBLIC_BRAND_NAME ? ` (${PUBLIC_BRAND_NAME})` : ''}, CPF/CNPJ {CONTROLLER_TAX_ID}.
+          </p>
+        </LegalSection>
+      )}
 
-      <LegalSection title="10. Contato">
-        {SUPPORT_EMAIL ? (
+      {SUPPORT_EMAIL && (
+        <LegalSection title="10. Contato">
           <p>
             Dúvidas sobre esta política podem ser enviadas para{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
           </p>
-        ) : (
-          <p style={{ color: 'var(--warning)' }}>
-            [Canal de contato pendente de configuração — nenhum e-mail de suporte aprovado até
-            a publicação desta página.]
-          </p>
-        )}
-      </LegalSection>
+        </LegalSection>
+      )}
     </LegalLayout>
   )
 }
