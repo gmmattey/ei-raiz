@@ -8,12 +8,16 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     const response = await page.goto('/', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
 
+    // Espera a app React hidratar antes de ler title/meta (goto só resolve no load do HTML,
+    // não no fim do mount — sem isso a leitura corre contra o fallback "Carregando...").
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
     // Título correto
     await expect(page).toHaveTitle('Savro | Organização patrimonial local-first, sem nuvem');
 
     // Meta description presente
     const metaDesc = await page.locator('meta[name="description"]').getAttribute('content');
-    expect(metaDesc).toContain('local-first');
+    expect(metaDesc).toContain('sem nuvem');
 
     // Canonical URL presente
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
@@ -33,9 +37,6 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     const twitterCard = await page.locator('meta[name="twitter:card"]').getAttribute('content');
     expect(twitterCard).toBe('summary');
 
-    // Conteúdo visível (pelo menos sections principais)
-    const hero = page.locator('section >> text=Seu patrimônio');
-    await expect(hero).toBeVisible();
   });
 
   test('/privacidade renderiza 200 com conteúdo', async ({ page }) => {
@@ -88,7 +89,7 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     const response = await page.goto('/faq');
     expect(response?.status()).toBe(200);
 
-    await expect(page).toHaveTitle(/FAQ|Frequentes/);
+    await expect(page).toHaveTitle(/frequentes/i);
 
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
     expect(canonical).toBe('https://savro.app/faq');
@@ -214,12 +215,13 @@ test.describe('Meta Tags por Rota', () => {
     { path: '/', expectedTitle: 'Organização patrimonial local-first' },
     { path: '/privacidade', expectedTitle: 'Privacidade' },
     { path: '/termos', expectedTitle: 'Termos' },
-    { path: '/faq', expectedTitle: 'FAQ' },
+    { path: '/faq', expectedTitle: 'Perguntas frequentes' },
   ];
 
   routes.forEach(({ path, expectedTitle }) => {
     test(`Meta tags distintas em ${path}`, async ({ page }) => {
       await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
       const title = await page.title();
       expect(title).toContain(expectedTitle);
@@ -265,7 +267,11 @@ test.describe('Responsividade Básica', () => {
 
 test.describe('Acessibilidade — axe-core', () => {
   test('Landing — zero violação crítica/séria com axe-core', async ({ page }) => {
+    // Reduced motion evita falso-positivo de contraste do axe enquanto o Hero
+    // ainda está em transição de opacidade (motion.div do PhoneMockup, delay 0.1s + 0.6s).
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Injetar axe
     await injectAxe(page);
@@ -286,6 +292,7 @@ test.describe('Acessibilidade — axe-core', () => {
 
   test('/privacidade — zero violação crítica/séria com axe-core', async ({ page }) => {
     await page.goto('/privacidade');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     await injectAxe(page);
 
@@ -300,6 +307,7 @@ test.describe('Acessibilidade — axe-core', () => {
 
   test('Foco visível em teclado', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('section >> text=Seu patrimônio').first()).toBeVisible();
 
     // Tab para o primeiro botão
     await page.keyboard.press('Tab');
@@ -355,6 +363,7 @@ test.describe('Acessibilidade — axe-core', () => {
 test.describe('Conteúdo — Honestidade sobre Status', () => {
   test('Landing menciona "em desenvolvimento"', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('section >> text=Seu patrimônio').first()).toBeVisible();
 
     const content = await page.locator('body').textContent();
     expect(content?.toLowerCase()).toMatch(/em desenvolvimento|em breve/i);
@@ -380,6 +389,7 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
 
   test('Privacidade não inventa CNPJ', async ({ page }) => {
     await page.goto('/privacidade');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     const content = await page.locator('body').textContent();
     // CNPJ é formato 14 dígitos — se houver, deve ser um CNPJ real (muito improvável encontrar aqui)

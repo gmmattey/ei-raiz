@@ -38,6 +38,8 @@ lerna-debug.log*
 coverage/
 .nyc_output/
 jest.config.js
+playwright-report/
+test-results/
 
 # OS
 .DS_Store
