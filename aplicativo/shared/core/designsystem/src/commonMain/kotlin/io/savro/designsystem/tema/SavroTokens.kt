@@ -49,7 +49,18 @@ internal object SavroPrimitiveSpace {
     val Space32 = 32.dp
     val Space40 = 40.dp
     val Space48 = 48.dp
+    val Space56 = 56.dp
     val Space64 = 64.dp
+}
+
+/**
+ * Métricas exclusivas do donut chart (`charts.html`: raio 54 / stroke 18) — não são espaçamento
+ * genérico, por isso ficam fora de [SavroPrimitiveSpace], mas seguem o mesmo princípio de primitivo
+ * literal isolado (auditoria #220, item 5).
+ */
+internal object SavroPrimitiveChart {
+    val DonutRadius = 54.dp
+    val DonutStroke = 18.dp
 }
 
 internal object SavroPrimitiveRadius {
@@ -109,20 +120,38 @@ data class SavroComponentMetrics(
     val buttonMinHeight: Dp,
     val buttonLoadingIndicatorSize: Dp,
     val buttonLoadingIndicatorStroke: Dp,
+    /** `buttons.html`: btn-icon 48x48 — reaproveita [SavroPrimitiveSpace.Space48], já usado no botão. */
+    val iconButtonSize: Dp,
+    /** `buttons.html`/`tokens.html`: FAB 56x56. */
+    val fabSize: Dp,
+    val donutRadius: Dp,
+    val donutStrokeWidth: Dp,
+    /** Borda de [io.savro.designsystem.componentes.SavroRadioOptionCard] — reaproveita Stroke2. */
+    val outlineWidth: Dp,
 )
 
 internal val DefaultSavroComponentMetrics = SavroComponentMetrics(
     buttonMinHeight = SavroPrimitiveSpace.Space48,
     buttonLoadingIndicatorSize = SavroPrimitiveSpace.Space20,
     buttonLoadingIndicatorStroke = SavroPrimitiveStroke.Stroke2,
+    iconButtonSize = SavroPrimitiveSpace.Space48,
+    fabSize = SavroPrimitiveSpace.Space56,
+    donutRadius = SavroPrimitiveChart.DonutRadius,
+    donutStrokeWidth = SavroPrimitiveChart.DonutStroke,
+    outlineWidth = SavroPrimitiveStroke.Stroke2,
 )
 
 @Immutable
-data class SavroGradients(val primary: Brush)
+data class SavroGradients(val primary: Brush, val iconButton: Brush)
 
 internal val DefaultSavroGradients = SavroGradients(
     primary = Brush.linearGradient(
         colors = listOf(SavroPrimitiveColor.Blue400, SavroPrimitiveColor.Blue500, SavroPrimitiveColor.Blue700),
+    ),
+    // `buttons.html`: btn-icon usa gradient escuro dedicado (#1c3157→#111f38) — reaproveita os
+    // primitivos navy já existentes (Navy700/Navy900) em vez de literais hex novos (auditoria #220).
+    iconButton = Brush.linearGradient(
+        colors = listOf(SavroPrimitiveColor.Navy700, SavroPrimitiveColor.Navy900),
     ),
 )
 
@@ -158,6 +187,8 @@ data class SavroSemanticColors(
     val success: Color,
     val warning: Color,
     val info: Color,
+    /** `overlays.html`/tela 05: banner de aviso (`rgba(244,201,93,.1)` — Yellow400 a 10% de opacidade). */
+    val warningBackground: Color,
 )
 
 internal val DefaultSavroSemanticColors = SavroSemanticColors(
@@ -166,6 +197,7 @@ internal val DefaultSavroSemanticColors = SavroSemanticColors(
     success = SavroPrimitiveColor.Mint400,
     warning = SavroPrimitiveColor.Yellow400,
     info = SavroPrimitiveColor.Sky400,
+    warningBackground = SavroPrimitiveColor.Yellow400.copy(alpha = 0.1f),
 )
 
 /**

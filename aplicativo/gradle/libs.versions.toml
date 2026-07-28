@@ -4,6 +4,9 @@ kotlin = "2.3.10"
 composeMultiplatform = "1.11.1"
 # Material 3 do Compose Multiplatform tem cadência própria; 1.9.0 é o estável mais recente.
 composeMaterial3 = "1.9.0"
+# material-icons-extended tem trem de release próprio, não acompanha composeMultiplatform — 1.7.3
+# é o mais recente publicado (checado via maven-metadata.xml em 2026-07-27, auditoria #220).
+composeMaterialIcons = "1.7.3"
 composeBom = "2026.06.00"
 activityCompose = "1.12.1"
 junit = "4.13.2"
@@ -25,6 +28,9 @@ compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.re
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
+# Ícones lineares usados pelos componentes novos da auditoria #220 (SavroIconButton/Fab/BottomNav) —
+# só o designsystem depende disso, :shared:app continua só enxergando o enum SavroIcon (ADR-002).
+compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMaterialIcons" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

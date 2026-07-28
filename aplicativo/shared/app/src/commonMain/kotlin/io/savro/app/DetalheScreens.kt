@@ -16,13 +16,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.savro.designsystem.componentes.SavroButton
-import io.savro.designsystem.componentes.SavroButtonStyle
 import io.savro.designsystem.componentes.SavroCard
+import io.savro.designsystem.componentes.SavroConfirmDialog
 import io.savro.designsystem.componentes.SavroDivider
+import io.savro.designsystem.componentes.SavroIcon
+import io.savro.designsystem.componentes.SavroIconButton
+import io.savro.designsystem.componentes.SavroInlineIcon
+import io.savro.designsystem.componentes.SavroMenuAction
+import io.savro.designsystem.componentes.SavroOverflowMenu
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -55,6 +61,7 @@ internal fun TelaDetalheItem(
     val itens by servico.itens.collectAsState()
     val item = itens.firstOrNull { it.id == itemId }
     var timeline by remember(itemId) { mutableStateOf<List<EventoTimelineItem>>(emptyList()) }
+    var confirmandoExclusao by remember(itemId) { mutableStateOf(false) }
     val escopo = rememberCoroutineScope()
 
     // Recarrega a timeline sempre que os itens mudam (CRUD/ajuste em qualquer tela) — a mesma
@@ -69,18 +76,50 @@ internal fun TelaDetalheItem(
             state = SavroState.Empty,
             title = "Item não encontrado",
             message = "Este item pode ter sido excluído.",
+            icon = SavroIcon.EstadoVazio,
             action = { SavroButton(label = "Voltar", onClick = aoVoltar, loadingStateDescription = "") },
         )
         return
+    }
+
+    if (confirmandoExclusao) {
+        SavroConfirmDialog(
+            title = "Excluir ${item.nome}?",
+            message = "Esta ação não pode ser desfeita.",
+            confirmLabel = "Excluir",
+            cancelLabel = "Cancelar",
+            onConfirm = {
+                confirmandoExclusao = false
+                escopo.launch { servico.excluir(item.id); aoVoltar() }
+            },
+            onDismiss = { confirmandoExclusao = false },
+        )
     }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md),
         verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.md),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            SavroText(item.nome, style = SavroTextStyle.Headline)
-            SavroButton(label = "Voltar", onClick = aoVoltar, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
+        // "Voltar" em texto vira ícone (chevron-esquerda) e as 5 ações viram menu "⋯", com
+        // confirmação explícita antes de excluir (#220, item 19).
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
+                SavroIconButton(icon = SavroIcon.Voltar, contentDescription = "Voltar", onClick = aoVoltar)
+                SavroText(item.nome, style = SavroTextStyle.Headline)
+            }
+            SavroOverflowMenu(
+                contentDescription = "Mais opções para ${item.nome}",
+                actions = listOf(
+                    SavroMenuAction("Editar", { aoEditar(item.id) }),
+                    SavroMenuAction("Ajustar valor", { aoAjustarValor(item.id) }),
+                    SavroMenuAction("Duplicar", { escopo.launch { servico.duplicar(item.id); aoVoltar() } }),
+                    SavroMenuAction(
+                        if (item.arquivado) "Reativar" else "Arquivar",
+                        { escopo.launch { servico.arquivar(item.id, arquivado = !item.arquivado) } },
+                    ),
+                    SavroMenuAction("Excluir", { confirmandoExclusao = true }, destructive = true),
+                ),
+            )
         }
 
         SavroCard(modifier = Modifier.fillMaxWidth()) {
@@ -117,36 +156,6 @@ internal fun TelaDetalheItem(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
-            SavroButton(label = "Editar", onClick = { aoEditar(item.id) }, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
-            SavroButton(
-                label = "Ajustar valor",
-                onClick = { aoAjustarValor(item.id) },
-                style = SavroButtonStyle.Secondary,
-                loadingStateDescription = "",
-            )
-            SavroButton(
-                label = "Duplicar",
-                onClick = { escopo.launch { servico.duplicar(item.id); aoVoltar() } },
-                style = SavroButtonStyle.Secondary,
-                loadingStateDescription = "",
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
-            SavroButton(
-                label = if (item.arquivado) "Reativar" else "Arquivar",
-                onClick = { escopo.launch { servico.arquivar(item.id, arquivado = !item.arquivado) } },
-                style = SavroButtonStyle.Secondary,
-                loadingStateDescription = "",
-            )
-            SavroButton(
-                label = "Excluir",
-                onClick = { escopo.launch { servico.excluir(item.id); aoVoltar() } },
-                style = SavroButtonStyle.Destructive,
-                loadingStateDescription = "",
-            )
-        }
-
         SavroText("Linha do tempo", style = SavroTextStyle.Title)
         if (timeline.isEmpty()) {
             SavroText("Nenhum evento registrado ainda.", style = SavroTextStyle.BodySmall)
@@ -154,8 +163,14 @@ internal fun TelaDetalheItem(
             LazyColumn(verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
                 items(timeline, key = { it.id }) { evento ->
                     SavroCard(modifier = Modifier.fillMaxWidth()) {
-                        SavroText(rotuloDoEvento(evento.tipo), style = SavroTextStyle.Body)
-                        SavroText(FormatadorData.paraDataCurta(evento.dataEpocaMs), style = SavroTextStyle.BodySmall)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
+                            // Ícone por tipo de evento (#220, item 20 — nice-to-have).
+                            SavroInlineIcon(icon = iconeDoEvento(evento.tipo))
+                            Column {
+                                SavroText(rotuloDoEvento(evento.tipo), style = SavroTextStyle.Body)
+                                SavroText(FormatadorData.paraDataCurta(evento.dataEpocaMs), style = SavroTextStyle.BodySmall)
+                            }
+                        }
                     }
                 }
             }
@@ -197,4 +212,12 @@ private fun rotuloDoEvento(tipo: TipoEventoTimeline): String = when (tipo) {
     TipoEventoTimeline.ITEM_EDITADO -> "Item editado"
     TipoEventoTimeline.ITEM_ARQUIVADO -> "Item arquivado"
     TipoEventoTimeline.ITEM_REATIVADO -> "Item reativado"
+}
+
+private fun iconeDoEvento(tipo: TipoEventoTimeline): SavroIcon = when (tipo) {
+    TipoEventoTimeline.ITEM_CRIADO -> SavroIcon.EventoCriado
+    TipoEventoTimeline.VALOR_AJUSTADO -> SavroIcon.EventoValorAjustado
+    TipoEventoTimeline.ITEM_EDITADO -> SavroIcon.EventoEditado
+    TipoEventoTimeline.ITEM_ARQUIVADO -> SavroIcon.EventoArquivado
+    TipoEventoTimeline.ITEM_REATIVADO -> SavroIcon.EventoReativado
 }
