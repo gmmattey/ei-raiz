@@ -87,6 +87,11 @@ aplicativo/**/*.apk
 aplicativo/**/*.aab
 aplicativo/**/*.apks
 
+# Gradle rodado por engano fora de aplicativo/ (raiz do repo não é projeto Gradle)
+/.gradle/
+/.kotlin/
+/android/
+
 # Aplicativo KMP — host Xcode (iOS)
 aplicativo/iosApp/**/xcuserdata/
 aplicativo/iosApp/**/*.xcworkspace/xcuserdata/
