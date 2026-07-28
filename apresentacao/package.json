@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/gerar-arquivos-seo.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "wrangler pages deploy dist --project-name ei-raiz-web --commit-dirty=true"

@@ -1,0 +1,4 @@
+# Default seguro versionado — regerado no build por scripts/gerar-arquivos-seo.mjs a partir de
+# VITE_PUBLIC_SITE_URL. Sem a env var (dev local, preview de branch), fica assim: não indexável.
+User-agent: *
+Disallow: /

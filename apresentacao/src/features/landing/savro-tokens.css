@@ -1,0 +1,81 @@
+/* Tokens do design system Savro (documentacao/marca/SAVRO_DESIGN_SYSTEM.md).
+   Escopados em `.savro` para não vazar para o restante do app (que ainda usa a paleta
+   laranja "Esquilo Wallet" legada em `src/styles/index.css`, fora de escopo desta issue). */
+
+.savro {
+  --bg-primary: #07111f;
+  --bg-secondary: #0d182a;
+  --surface: #13213a;
+  --surface-elevated: #192a49;
+  --primary: #4772f5;
+  --primary-pressed: #3a5fe0;
+  --secondary: #5fa8ff;
+  --accent: #f5a23a;
+  --positive: #29d3b2;
+  --warning: #f4c95d;
+  --negative: #f06b7a;
+  --info: #5fa8ff;
+  --border: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.05);
+  --focus: #5fa8ff;
+  --text-primary: #f7f9fc;
+  --text-secondary: #a3aec3;
+  --text-tertiary: #8e9ab5;
+  --text-inverse: #07111f;
+  --overlay: rgba(7, 17, 31, 0.6);
+  --scrim: rgba(7, 17, 31, 0.85);
+  --disabled-bg: rgba(255, 255, 255, 0.06);
+  --disabled-text: #5a6478;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  --shadow-card: 0 28px 56px -20px rgba(0, 0, 0, 0.75), 0 8px 16px -8px rgba(0, 0, 0, 0.4);
+  --shadow-cta: 0 14px 28px -10px rgba(71, 114, 245, 0.55);
+  --gradient-bg: linear-gradient(180deg, #16294a 0%, #0d1c33 28%, #07111f 60%, #04090f 100%);
+  --gradient-surface: linear-gradient(180deg, #1c3157 0%, #111f38 100%);
+  --gradient-primary: linear-gradient(155deg, #5b84ff 0%, #4772f5 45%, #2f55d6 100%);
+
+  background: var(--gradient-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.savro h1,
+.savro h2,
+.savro h3,
+.savro h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.savro a {
+  color: var(--secondary);
+}
+
+.savro a:hover {
+  color: #8fc4ff;
+}
+
+.savro :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

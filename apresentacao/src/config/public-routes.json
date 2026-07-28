@@ -1,0 +1,8 @@
+[
+  { "path": "/", "changefreq": "weekly", "priority": "1.0" },
+  { "path": "/privacidade", "changefreq": "monthly", "priority": "0.5" },
+  { "path": "/termos", "changefreq": "monthly", "priority": "0.5" },
+  { "path": "/suporte", "changefreq": "monthly", "priority": "0.5" },
+  { "path": "/faq", "changefreq": "monthly", "priority": "0.6" },
+  { "path": "/changelog", "changefreq": "weekly", "priority": "0.4" }
+]

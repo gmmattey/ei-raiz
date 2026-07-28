@@ -1,0 +1,63 @@
+import React from 'react'
+import { useSeo, useJsonLd } from '../../hooks/useSeo'
+import { getSiteUrl } from '../../config/site'
+import './savro-tokens.css'
+import SavroHeader from './components/SavroHeader'
+import SavroFooter from './components/SavroFooter'
+import Hero from './components/Hero'
+import PrivacySection from './components/PrivacySection'
+import Benefits from './components/Benefits'
+import HowItWorks from './components/HowItWorks'
+import Security from './components/Security'
+import Platforms from './components/Platforms'
+import Commercial from './components/Commercial'
+import Faq from './components/Faq'
+
+const Landing: React.FC = () => {
+  const siteUrl = getSiteUrl()
+
+  useSeo({
+    title: 'Savro — Seu patrimônio. Só seu.',
+    description:
+      'Organize bens, contas e investimentos em um app privado, sem cadastro e que funciona offline. Em desenvolvimento para Android e iPhone.',
+    path: '/',
+    image: `${siteUrl}/assets/savro/icon-512x512.png`,
+  })
+
+  useJsonLd('savro-org', {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Savro',
+    url: siteUrl,
+    logo: `${siteUrl}/assets/savro/savro-logo-completo.svg`,
+  })
+
+  useJsonLd('savro-app', {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Savro',
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Android, iOS',
+    // Honesto: o app não está publicado ainda — sem rating/reviews inventados.
+    releaseNotes: 'Em desenvolvimento — ainda não publicado nas lojas.',
+  })
+
+  return (
+    <div className="savro">
+      <SavroHeader />
+      <main>
+        <Hero />
+        <PrivacySection />
+        <Benefits />
+        <HowItWorks />
+        <Security />
+        <Platforms />
+        <Commercial />
+        <Faq />
+      </main>
+      <SavroFooter />
+    </div>
+  )
+}
+
+export default Landing
