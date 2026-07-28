@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { SUPPORT_EMAIL } from '../../../config/platforms'
 
 const SavroFooter: React.FC = () => {
   return (
@@ -32,6 +33,14 @@ const SavroFooter: React.FC = () => {
       </div>
       <div className="mx-auto max-w-6xl px-5 pb-10 text-[12px] sm:px-8" style={{ color: 'var(--text-tertiary)' }}>
         © {new Date().getFullYear()} Savro. Todos os direitos reservados.
+        {SUPPORT_EMAIL && (
+          <>
+            {' · '}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {SUPPORT_EMAIL}
+            </a>
+          </>
+        )}
       </div>
     </footer>
   )

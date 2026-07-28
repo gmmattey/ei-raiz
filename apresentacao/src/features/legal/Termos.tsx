@@ -99,7 +99,7 @@ const Termos: React.FC = () => {
         <LegalSection title="12. Contato">
           <p>
             Dúvidas sobre estes termos podem ser enviadas para{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+            <a href={`mailto:${SUPPORT_EMAIL}?subject=D%C3%BAvida%20sobre%20termos%20de%20uso`}>{SUPPORT_EMAIL}</a>.
           </p>
         </LegalSection>
       )}

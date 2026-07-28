@@ -10,6 +10,9 @@ env:
   # (issue #122). Não é segredo, só o único lugar onde o valor real deveria viver. Trocar aqui
   # quando um domínio próprio for registrado; nenhum outro arquivo precisa mudar.
   PUBLIC_SITE_URL: https://ei-raiz-web.pages.dev
+  # Canal oficial de suporte/privacidade do Savro (issue #122) — não é segredo, é o contato
+  # público exibido em Privacidade/Termos/Suporte/footer. Trocar aqui se o canal mudar.
+  SUPPORT_EMAIL: suporte.savro@gmail.com
 
 jobs:
   deploy:
@@ -47,6 +50,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           VITE_PUBLIC_SITE_URL: ${{ env.PUBLIC_SITE_URL }}
+          VITE_SUPPORT_EMAIL: ${{ env.SUPPORT_EMAIL }}
 
       - name: Deploy Backend to Cloudflare Workers
         run: npm run deploy:api

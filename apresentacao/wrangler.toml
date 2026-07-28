@@ -9,3 +9,7 @@ VITE_API_BASE_URL = "https://ei-api-gateway.giammattey-luiz.workers.dev"
 # (.github/workflows/deploy.yml) passa esta mesma env var explicitamente ao `npm run build`; este
 # valor aqui documenta o que o build de produção usa e serve `wrangler pages dev` local.
 VITE_PUBLIC_SITE_URL = "https://ei-raiz-web.pages.dev"
+# Canal oficial de suporte/privacidade do Savro (issue #122), aprovado pelo Luiz. Fonte única
+# consumida por src/config/platforms.ts (SUPPORT_EMAIL) — Privacidade, Termos, Suporte e
+# StoreLinks só usam este valor, nunca um e-mail hardcoded no componente.
+VITE_SUPPORT_EMAIL = "suporte.savro@gmail.com"

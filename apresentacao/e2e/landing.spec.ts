@@ -472,6 +472,35 @@ test.describe('Gate contra regressão de dados legais pendentes', () => {
       expect(mainMaisFooter).not.toMatch(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
     });
   });
+
+  test('e-mail de suporte aparece só onde deve, sem e-mail pessoal/antigo no bundle', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const respostaBundle = await page.request.get('/');
+    const html = await respostaBundle.text();
+
+    // suporte.savro@gmail.com é o único e-mail aprovado — decisão explícita do responsável
+    // pelo produto (issue #122). Qualquer outro endereço no HTML servido é regressão.
+    const emailsEncontrados = html.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+    const emailsInesperados = emailsEncontrados.filter((e) => e.toLowerCase() !== 'suporte.savro@gmail.com');
+    expect(emailsInesperados).toEqual([]);
+  });
+
+  test('mailto: renderizado (não só presente no bundle) nas páginas legais e no footer', async ({ page }) => {
+    // O e-mail vive num chunk JS compartilhado (import cross-chunk) — verificar só o HTML
+    // servido não prova que renderiza. Aqui navegamos de verdade e checamos o link no DOM.
+    for (const rota of ['/privacidade', '/termos', '/suporte']) {
+      await page.goto(rota);
+      const link = page.locator(`a[href^="mailto:suporte.savro@gmail.com"]`).first();
+      await expect(link).toBeVisible();
+    }
+
+    await page.goto('/');
+    const linkFooter = page.locator('footer a[href="mailto:suporte.savro@gmail.com"]');
+    await expect(linkFooter).toBeVisible();
+    await expect(linkFooter).toHaveText('suporte.savro@gmail.com');
+  });
 });
 
 test.describe('Revisão de copy e posicionamento da landing', () => {
@@ -663,6 +692,31 @@ test.describe('Ausência de domínio hardcoded (savro.app)', () => {
       if (!/\.(js|html|json|txt|xml|css)$/.test(caminho)) return;
       const conteudo = readFileSync(caminho, 'utf-8');
       if (conteudo.includes('savro.app')) ofensores.push(path.relative(distDir, caminho));
+    }
+
+    varrer(distDir);
+
+    expect(ofensores).toEqual([]);
+  });
+
+  test('nenhum e-mail além de suporte.savro@gmail.com aparece no build final (dist/)', () => {
+    const distDir = path.resolve(APRESENTACAO_DIR, 'dist');
+    const ofensores: string[] = [];
+
+    function varrer(caminho: string) {
+      const info = statSync(caminho, { throwIfNoEntry: false });
+      if (!info) return;
+      if (info.isDirectory()) {
+        for (const filho of readdirSync(caminho)) varrer(path.join(caminho, filho));
+        return;
+      }
+      if (!/\.(js|html|json|txt|xml|css)$/.test(caminho)) return;
+      const conteudo = readFileSync(caminho, 'utf-8');
+      const emails = conteudo.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+      const inesperados = emails.filter((e) => e.toLowerCase() !== 'suporte.savro@gmail.com');
+      if (inesperados.length > 0) {
+        ofensores.push(`${path.relative(distDir, caminho)}: ${inesperados.join(', ')}`);
+      }
     }
 
     varrer(distDir);

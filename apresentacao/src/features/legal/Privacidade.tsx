@@ -108,7 +108,7 @@ const Privacidade: React.FC = () => {
         <LegalSection title="10. Contato">
           <p>
             Dúvidas sobre esta política podem ser enviadas para{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+            <a href={`mailto:${SUPPORT_EMAIL}?subject=D%C3%BAvida%20sobre%20privacidade`}>{SUPPORT_EMAIL}</a>.
           </p>
         </LegalSection>
       )}
