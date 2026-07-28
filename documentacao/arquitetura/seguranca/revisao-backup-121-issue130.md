@@ -30,15 +30,25 @@ de código feita nesta issue relacionada ao backup é a correção de redaction 
 um único byte do arquivo `*.savrobackup` gerado ou lido (confirmado por leitura de
 `SerializadorBackup.kt`/`JsonCanonico.kt`, que serializam campo a campo e nunca usam `toString()`).
 
-## Achado relacionado, fora do escopo do formato do backup, dentro do escopo da persistência (#180)
+## Achado relacionado, fora do escopo do formato do backup, dentro do escopo da persistência (#180) — mitigado
 
-Ver `modelo-ameacas-savro.md` seção 2 e a matriz de dados (linha "Backup automático do SO
+Ver `modelo-ameacas-savro.md` seção 1.1 e a matriz de dados (linha "Backup automático do SO
 (iCloud/iTunes, iOS)"): o arquivo físico `savro.db` no iOS (não o `*.savrobackup` — são coisas
-diferentes) não tem exclusão explícita de backup do sistema (`NSURLIsExcludedFromBackupKey`) hoje.
-Isso não é uma falha do formato `*.savrobackup` da #121; é uma lacuna da implementação de
-persistência da #180 no lado iOS, registrada aqui porque foi encontrada durante esta auditoria de
-segurança. Recomendação e justificativa completa no resumo executivo desta issue — não implementada
-nesta auditoria por falta de toolchain macOS para validar localmente antes de propor o código.
+diferentes) não tinha exclusão explícita de backup do sistema (`NSURLIsExcludedFromBackupKey`).
+Isso nunca foi uma falha do formato `*.savrobackup` da #121; era uma lacuna da implementação de
+persistência da #180 no lado iOS, encontrada durante esta auditoria de segurança.
+
+**Correção aplicada (decisão obrigatória do Luiz, mesmo ciclo desta issue):** `savro.db` e seus
+sidecars (`-journal`, e defensivamente `-wal`/`-shm`) passam a ser excluídos do backup automático
+via `NSURLIsExcludedFromBackupKey` (API pública) logo após a abertura do banco
+(`ExclusaoBackupAutomaticoIOS.kt`, chamado por `RepositorioItensPatrimoniaisSQLCipher.abrirComChave`).
+**Distinção explícita e importante:** isto é só sobre o banco INTERNO do cofre — o backup MANUAL do
+app (`*.savrobackup`, fluxo desta mesma #121) continua funcionando exatamente como antes, por ser
+ação explícita do usuário; nenhuma linha do formato, da serialização ou da criptografia do
+`*.savrobackup` foi tocada por esta correção. Testes de unidade e de integração real (abrindo o
+banco e confirmando o resource value no arquivo) foram adicionados em `:shared:core:database`
+(`iosTest`) — dependem do job `ios-xcode-macos` da CI (runner macOS real) para validação de
+verdade, não executável neste ambiente (host Windows sem toolchain iOS).
 
 ## Conclusão
 

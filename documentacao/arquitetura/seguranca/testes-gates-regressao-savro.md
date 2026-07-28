@@ -23,13 +23,23 @@ nesta sessão com sucesso, e o que cada um impede.
 | `SavroPrivacyMaskCommonTest`/`SavroPrivacyMaskInstrumentedTest` | `:shared:core:designsystem` (já existiam) | Regressão de vazamento na árvore de semântica | ✅ (confirmado nesta auditoria) |
 | `MainActivitySnapshotProtectionTest` | `:androidApp` (já existia) | Regressão do `FLAG_SECURE` | ✅ (confirmado nesta auditoria, roda em `:androidApp:testDevDebugUnitTest`) |
 
+## Testes iOS (`iosTest`, exigem runner macOS real — não executáveis neste ambiente)
+
+| Teste | Módulo | O que impede | Status |
+|---|---|---|---|
+| `ExclusaoBackupAutomaticoIOSTest` | `:shared:core:database` (**novo**, correção obrigatória do Luiz sobre a #130) | Regressão da lógica pura de exclusão (arquivo ausente não é erro, resultado nunca contém caminho, lista de candidatos correta) | ⏳ Depende do job `ios-xcode-macos` da CI para rodar de verdade |
+| `ExclusaoDeBackupAutomaticoDoBancoIntegracaoTest` | `:shared:core:database` (**novo**) | Prova de verdade — abre o banco real e confirma `NSURLIsExcludedFromBackupKey == true` no arquivo criado, não só que a chamada existe no código | ⏳ Depende do job `ios-xcode-macos` da CI |
+
 ## O que ainda não é um gate automatizado (limite honesto)
 
 - **API privada da Apple no framework final:** já validado, mas como *step* de CI (`nm`/`strings`
   no job `ios-xcode-macos`), não como teste JUnit/XCTest — não roda neste ambiente (precisa do
   framework linkado, que só existe após build em macOS).
-- **Ausência de `NSURLIsExcludedFromBackupKey`** no `savro.db` iOS: nenhum gate automatizado hoje —
-  é um achado documentado, sem correção nesta issue (ver seção correspondente no resumo executivo).
+- **`NSURLIsExcludedFromBackupKey` no `savro.db` iOS:** corrigido nesta issue (ver
+  `ExclusaoBackupAutomaticoIOS.kt` e os dois testes `iosTest` acima) — a validação real do
+  comportamento em runtime, porém, só acontece quando o job `ios-xcode-macos` rodar na CI do PR;
+  este ambiente não tem toolchain iOS para confirmar localmente (mesma limitação de todo código
+  `iosMain`/`iosTest` já existente no projeto).
 - **Captura de tráfego real (proxy) em device/emulador:** não é um gate de CI hoje, nem prático como
   um — é validação manual de release, registrada como pendência em `auditoria-rede-savro.md`.
 - **Verificação exaustiva de todo campo futuro sensível via reflexão:** os testes de redaction usam

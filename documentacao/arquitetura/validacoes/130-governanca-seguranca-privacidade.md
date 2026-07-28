@@ -57,6 +57,10 @@ obrigatório de cada uma.
 | `aplicativo/shared/core/testing/src/androidUnitTest/kotlin/io/savro/testing/VerifyDependencyInventoryTest.kt` | **Novo** — gate de regressão do inventário de dependências |
 | `aplicativo/build.gradle.kts` | Estende listas de referências proibidas com padrões de rede; nova tarefa `verifyNoNetworkAccess` (androidApp + iosApp Swift); `check` passa a depender dela |
 | `.github/workflows/aplicativo-ci.yml` | `verifyNoNetworkAccess` no job de arquitetura; `:shared:core:model:testDebugUnitTest` no job de testes comuns |
+| `aplicativo/shared/core/database/src/iosMain/kotlin/io/savro/database/ExclusaoBackupAutomaticoIOS.kt` | **Novo** — correção obrigatória do Luiz: exclui `savro.db`/sidecars do backup automático iOS via `NSURLIsExcludedFromBackupKey` (API pública) |
+| `aplicativo/shared/core/database/src/iosMain/kotlin/io/savro/database/RepositorioItensPatrimoniaisSQLCipher.kt` | Chama `excluirBancoDoBackupAutomatico` logo após abrir/criar o banco |
+| `aplicativo/shared/core/database/src/iosTest/kotlin/io/savro/database/ExclusaoBackupAutomaticoIOSTest.kt` | **Novo** — testes de unidade da lógica de exclusão |
+| `aplicativo/shared/core/database/src/iosTest/kotlin/io/savro/database/ExclusaoDeBackupAutomaticoDoBancoIntegracaoTest.kt` | **Novo** — teste de integração real (abre o banco, confirma o resource value no arquivo) |
 
 ## Testes rodados localmente nesta auditoria
 
@@ -74,21 +78,40 @@ obrigatório de cada uma.
   possivelmente relacionado a como o Robolectric/SQLite nativo se comporta neste ambiente). A CI
   real roda em `ubuntu-latest`, não neste host — registrado como achado a escalar, não corrigido
   nesta issue por estar fora do escopo de segurança/privacidade da #130.
+- `verifyArchitecture`/`verifyDesignSystemTokens`/`verifyNoNetworkAccess` e toda a suíte JVM acima
+  foram **re-executados após a correção do achado iOS** (exclusão de backup automático) — mesmo
+  resultado, sem regressão.
+- `ExclusaoBackupAutomaticoIOSTest`, `ExclusaoDeBackupAutomaticoDoBancoIntegracaoTest` (`iosTest`,
+  `:shared:core:database`) — **não executados neste ambiente** (host Windows, sem toolchain iOS;
+  confirmado que até `compileIosMainKotlinMetadata` fica `SKIPPED` neste host por causa do cinterop
+  CocoaPods do SQLCipher, a mesma razão documentada para todo o resto do código `iosMain` do
+  projeto). Validação real depende do job `ios-xcode-macos` rodar na CI do PR #229.
 
-## Achado não resolvido, a escalar para o Luiz
+## Achado corrigido — decisão obrigatória do Luiz (revisão pós-aprovação do PR)
 
-O arquivo `savro.db` (SQLCipher) no lado iOS não tem exclusão explícita de backup do sistema
-(`NSURLIsExcludedFromBackupKey`) — a chave mestra (Keychain, `ThisDeviceOnly`) já está corretamente
-excluída, mas o arquivo de banco cifrado em si, em `Application Support`, segue a política padrão
-do iOS (incluído em backups iCloud/iTunes). Como o conteúdo está cifrado com uma chave que nunca
-sai do aparelho de origem, o risco prático é baixo (o arquivo seria um blob inútil sem a chave), mas
-a correção recomendada (marcar o diretório como excluído via API pública `NSURLIsExcludedFromBackupKey`)
-não foi implementada nesta auditoria porque este ambiente não tem toolchain macOS/Xcode para
-compilar e validar uma mudança em código Kotlin/Native `iosMain` antes de propô-la — mesmo padrão de
-cautela que o próprio código já documenta em vários pontos (`ProvedorChaveMestraIOS`, `SQLiteCifrado`).
-Recomendação: Igor implementa isso num commit dedicado e pequeno assim que houver acesso a CI/host
-macOS para validar (o job `ios-xcode-macos` já existente valida builds iOS reais), ou o Luiz decide
-aceitar o risco residual documentado como está.
+O arquivo `savro.db` (SQLCipher) no lado iOS não tinha exclusão explícita de backup do sistema
+(`NSURLIsExcludedFromBackupKey`) — a chave mestra (Keychain, `ThisDeviceOnly`) já estava
+corretamente excluída, mas o arquivo de banco cifrado em si, em `Application Support`, seguia a
+política padrão do iOS (incluído em backups iCloud/iTunes).
+
+**Corrigido:** `savro.db` e seus sidecars reais/candidatos (`-journal` — o único que a configuração
+atual de journal mode realmente cria, já que nenhum PRAGMA `journal_mode=WAL` é definido no iOS; e
+defensivamente `-wal`/`-shm` para o caso de isso mudar no futuro) passam a ser excluídos via
+`NSURLIsExcludedFromBackupKey` (API pública, nunca SPI privada) logo após a abertura do banco. Ver
+`ExclusaoBackupAutomaticoIOS.kt`, `modelo-ameacas-savro.md` seção 1.1, e os dois testes `iosTest`
+novos (unidade + integração real, confirmando o resource value no arquivo, não só a chamada no
+código). **Validação real desta correção depende do job `ios-xcode-macos` da CI** (runner macOS) —
+não compilável/executável neste ambiente (host Windows sem toolchain iOS), mesma limitação já
+documentada para todo o restante do código `iosMain` deste projeto. Distinção explícita preservada
+em toda a documentação: isto é só sobre o banco interno — o backup MANUAL do app (`*.savrobackup`,
+#121) continua funcionando normalmente.
+
+## Item não bloqueante, com issue própria aberta
+
+`SavroPrivacyMask` existe e é testado, mas as telas de produto usam `ApresentacaoValor`
+diretamente — duplicação de abordagem para ocultar valores, não falha de segurança (ver
+`seguranca-tela-acessibilidade-savro.md`). Por decisão do Luiz, a unificação **não é feita como
+parte da #130** — issue própria aberta: [#230](https://github.com/gmmattey/esquilo-wallet/issues/230).
 
 ## Critérios de aceite da #130
 

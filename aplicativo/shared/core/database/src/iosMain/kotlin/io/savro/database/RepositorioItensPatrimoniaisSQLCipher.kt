@@ -62,6 +62,10 @@ class RepositorioItensPatrimoniaisSQLCipher(
                 // outra operação na conexão.
                 instancia.executar("PRAGMA foreign_keys = ON")
                 aplicarSchemaEMigrations(instancia)
+                // Correção #130 (decisão do Luiz): exclui savro.db e seus sidecars do backup
+                // automático do sistema (iCloud/iTunes) — best-effort, nunca falha a abertura do
+                // cofre. Ver ExclusaoBackupAutomaticoIOS.kt.
+                excluirBancoDoBackupAutomatico(caminho)
                 val total = contar(instancia)
                 banco = instancia
                 Resultado.Sucesso(MetadadosBancoLocal(EsquemaSavro.VERSAO_ATUAL, total))

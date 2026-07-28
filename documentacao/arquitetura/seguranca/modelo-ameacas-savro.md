@@ -26,6 +26,17 @@ leitura de código, ou "nenhuma — pendente").
 | Risco residual | SQLCipher/AES protege em repouso; não protege contra processo comprometido em execução (malware com acesso ao processo enxerga dados decifrados, igual documentado para o backup). Nenhuma primitiva criptográfica é implementada pelo Savro — depende da corretude do SQLCipher/OpenSSL/BoringSSL subjacente. |
 | Evidência | Teste de contrato `RepositorioItensPatrimoniaisContratoTeste`/`RoomRepositorioItensPatrimoniaisContratoTest` (Robolectric) e `SQLCipherRepositorioItensPatrimoniaisContratoTest` (iOS, roda só na CI macOS). Comportamento de chave errada real (`KeyPermanentlyInvalidatedException`, "file is encrypted or is not a database") **não é testável em Robolectric** (biblioteca nativa incompatível com o host JVM) — depende de `androidInstrumentedTest` em dispositivo/emulador real, que não roda neste ambiente nem na CI atual (lacuna registrada desde a #180, não desta auditoria). |
 
+### 1.1 `savro.db` (iOS) dentro do backup automático do sistema (iCloud/iTunes) — **mitigado nesta correção**
+
+| Item | Detalhe |
+|---|---|
+| Ativo protegido | Cópia do arquivo `savro.db` (e seus sidecars) que o iOS faria automaticamente em backup de iCloud/iTunes, fora do controle do usuário. |
+| Vetor | Comprometimento da conta iCloud do usuário ou do backup local (iTunes/Finder) dando acesso ao arquivo cifrado do banco. |
+| Impacto | Antes da correção: risco baixo, mas real — o atacante obteria um blob cifrado (não o conteúdo em claro), já que a chave (Keychain, `ThisDeviceOnly`) nunca acompanha esse backup. Ainda assim, era uma cópia do arquivo saindo do aparelho sem necessidade. |
+| Mitigação atual (correção desta issue, decisão do Luiz) | `savro.db` e seus sidecars (`-journal`, e defensivamente `-wal`/`-shm`) são explicitamente excluídos do backup automático do sistema via `NSURLIsExcludedFromBackupKey` (API pública, `NSURL.setResourceValue(_:forKey:error:)`), aplicado logo após a criação/abertura do banco (`RepositorioItensPatrimoniaisSQLCipher.abrirComChave` → `excluirBancoDoBackupAutomatico`, `ExclusaoBackupAutomaticoIOS.kt`). Ausência de um sidecar (comum para o `-journal`, transitório) nunca falha a abertura do cofre. Falha real da chamada é tratada como resultado tipado (`ResultadoExclusaoBackupAutomatico.Falhou(indice)`), nunca revelando caminho de arquivo. **Distinção explícita:** isto é só sobre o banco interno — o backup MANUAL do app (`*.savrobackup`, #121) continua funcionando normalmente, por ser ação explícita do usuário; nenhuma mudança nesta correção afeta esse fluxo. |
+| Risco residual | Nenhum identificado após a correção, para o caso de aparelho não comprometido. `-wal`/`-shm` não são esperados em uso normal nesta configuração (iOS não habilita `PRAGMA journal_mode=WAL`, diferente do Android/Room) — mantidos só como cobertura defensiva. |
+| Evidência | `ExclusaoBackupAutomaticoIOSTest` (unidade, `iosTest`) e `ExclusaoDeBackupAutomaticoDoBancoIntegracaoTest` (integração real — abre o banco e confirma `NSURLIsExcludedFromBackupKey == true` no arquivo criado, não só que a chamada existe). Ambos **dependem do job `ios-xcode-macos` da CI (runner macOS real)** para rodar de verdade — não executáveis neste ambiente (host Windows sem toolchain iOS). |
+
 ## 2. Chave mestra do cofre (Android Keystore / iOS Keychain)
 
 | Item | Detalhe |

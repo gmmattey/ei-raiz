@@ -50,6 +50,16 @@ linked/not linked do formulário da Apple não se aplica. Se isso mudar no futur
 técnica opcional), a resposta correta dependerá de como esse dado futuro é desenhado — precisa ser
 reavaliado então, não assumido hoje.
 
+## 4.1 Backup automático do sistema (iCloud/iTunes) — reforço da postura "Data Not Collected"
+
+Correção aplicada nesta auditoria (decisão do Luiz, ver `modelo-ameacas-savro.md` seção 1.1): o
+arquivo interno do cofre (`savro.db`) e seus sidecars passam a ser explicitamente excluídos do
+backup automático do sistema via `NSURLIsExcludedFromBackupKey` (API pública), além da chave mestra
+(Keychain, `ThisDeviceOnly`) já excluída desde sempre. Isso reforça, com evidência técnica, a
+resposta "Data Not Collected": nem o iCloud do próprio usuário recebe automaticamente uma cópia do
+banco patrimonial — só o backup MANUAL explícito (`*.savrobackup`, ação deliberada do usuário) sai
+do aparelho, e mesmo esse vai só para onde o próprio usuário escolher entregá-lo.
+
 ## 5. Uso de criptografia (export compliance)
 
 `Info.plist` já declara `ITSAppUsesNonExemptEncryption = false`. Base real: o app usa criptografia
