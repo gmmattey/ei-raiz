@@ -42,6 +42,7 @@ import io.savro.app.recursos.configuracao_protecao_titulo
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
 import io.savro.designsystem.componentes.SavroFilterChip
+import io.savro.designsystem.componentes.SavroIcon
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -73,6 +74,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             state = SavroState.Error,
             title = stringResource(Res.string.cofre_credencial_invalida_titulo),
             message = stringResource(Res.string.cofre_credencial_invalida_mensagem),
+            icon = SavroIcon.EstadoErro,
             action = { BotaoTentarNovamente(gerenciador) },
         )
 
@@ -80,6 +82,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             state = SavroState.Error,
             title = stringResource(Res.string.cofre_biometria_indisponivel_titulo),
             message = stringResource(Res.string.cofre_biometria_indisponivel_mensagem),
+            icon = SavroIcon.EstadoErro,
             action = {
                 Column(verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
                     BotaoTentarNovamente(gerenciador)
@@ -98,6 +101,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             state = SavroState.Offline,
             title = stringResource(Res.string.cofre_bloqueio_temporario_titulo),
             message = stringResource(Res.string.cofre_bloqueio_temporario_mensagem),
+            icon = SavroIcon.EstadoOffline,
             action = { BotaoTentarNovamente(gerenciador) },
         )
 
@@ -105,6 +109,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             state = SavroState.Error,
             title = stringResource(Res.string.cofre_chave_invalidada_titulo),
             message = stringResource(Res.string.cofre_chave_invalidada_mensagem),
+            icon = SavroIcon.EstadoErro,
             action = {
                 SavroButton(
                     label = stringResource(Res.string.cofre_botao_entendi),
@@ -119,12 +124,14 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             state = SavroState.Error,
             title = stringResource(Res.string.cofre_restauracao_titulo),
             message = stringResource(Res.string.cofre_restauracao_mensagem),
+            icon = SavroIcon.EstadoErro,
         )
 
         is EstadoCofre.ErroRecuperavel -> SavroStatePanel(
             state = SavroState.Error,
             title = stringResource(Res.string.cofre_erro_titulo),
             message = stringResource(Res.string.cofre_erro_mensagem),
+            icon = SavroIcon.EstadoErro,
             action = { BotaoTentarNovamente(gerenciador) },
         )
     }

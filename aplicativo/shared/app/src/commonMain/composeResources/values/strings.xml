@@ -10,11 +10,16 @@
     <string name="onboarding_botao_proximo">Próximo</string>
     <string name="onboarding_botao_voltar">Voltar</string>
     <string name="onboarding_botao_continuar">Continuar</string>
+    <string name="onboarding_link_pular">Pular</string>
 
-    <string name="protecao_titulo">Proteger o Savro</string>
-    <string name="protecao_corpo">Você pode exigir biometria ou o código do aparelho para abrir o Savro. Sem essa proteção, qualquer pessoa com o aparelho desbloqueado vê seu patrimônio.</string>
-    <string name="protecao_botao_ativar">Ativar proteção</string>
-    <string name="protecao_botao_continuar_sem">Continuar sem biometria</string>
+    <string name="protecao_titulo">Proteja seu cofre</string>
+    <string name="protecao_corpo">Escolha como destravar o Savro neste aparelho.</string>
+    <string name="protecao_opcao_biometria">Biometria</string>
+    <string name="protecao_opcao_credencial">Credencial do aparelho</string>
+    <string name="protecao_opcao_sem_bloqueio">Continuar sem bloqueio adicional</string>
+    <string name="protecao_aviso_backup">O Savro não poderá recuperar seu acesso ou seus dados sem um backup.</string>
+    <string name="protecao_checkbox_responsabilidade">Entendi que sou responsável pelo backup dos meus dados.</string>
+    <string name="protecao_botao_continuar">Continuar</string>
 
     <string name="cofre_descriptografando_titulo">Desbloqueando</string>
     <string name="cofre_descriptografando_mensagem">Confirmando sua identidade…</string>

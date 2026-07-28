@@ -27,6 +27,7 @@ kotlin {
             // Material 3 fica em implementation de propósito: consumidores só chegam nele através
             // dos componentes Savro (fronteira da ADR-002).
             implementation(libs.compose.material3)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.compose.components.resources)
         }
         commonTest.dependencies {

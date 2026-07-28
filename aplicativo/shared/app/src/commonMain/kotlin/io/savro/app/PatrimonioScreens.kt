@@ -2,7 +2,9 @@ package io.savro.app
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,15 +23,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.savro.common.Resultado
+import io.savro.designsystem.componentes.SavroBottomNavItem
+import io.savro.designsystem.componentes.SavroBottomNavScaffold
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
 import io.savro.designsystem.componentes.SavroCard
-import io.savro.designsystem.componentes.SavroDivider
+import io.savro.designsystem.componentes.SavroConfirmDialog
+import io.savro.designsystem.componentes.SavroFab
 import io.savro.designsystem.componentes.SavroFilterChip
+import io.savro.designsystem.componentes.SavroIcon
+import io.savro.designsystem.componentes.SavroMenuAction
+import io.savro.designsystem.componentes.SavroOverflowMenu
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -113,18 +122,37 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
     LaunchedEffect(servico) { servico.carregar() }
 
     when (val atual = destino) {
-        DestinoPatrimonio.Lista -> Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(SavroThemeTokens.spacing.md),
-                horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
-            ) {
-                SavroFilterChip(label = "Home", selected = aba == AbaPrincipal.HOME, onClick = { aba = AbaPrincipal.HOME })
-                SavroFilterChip(
+        // Bottom navigation com 3 destinos (protótipo `navigation.html`, reduzido de 4 para o
+        // MVP1 — Histórico é backlog, timeline por item já vive no Detalhe). "Ajustes" não é uma
+        // aba de conteúdo persistente: abre a configuração de proteção do cofre (#118) já existente
+        // como overlay em `CofreScreens.kt` — por isso nunca aparece "selecionada" (#220, item 3/14).
+        //
+        // Correção pós-revisão do Luiz (PR #224): `SavroBottomNavScaffold` mede a barra e repassa
+        // a altura real (via `contentPadding`) pro conteúdo — nada de overlay nem valor fixo. Cada
+        // tela decide onde aplicar esse padding (lista rolável reserva o espaço; nada cobre a
+        // última linha nem o FAB).
+        DestinoPatrimonio.Lista -> SavroBottomNavScaffold(
+            items = listOf(
+                SavroBottomNavItem(
+                    icon = SavroIcon.Home,
+                    label = "Início",
+                    selected = aba == AbaPrincipal.HOME,
+                    onClick = { aba = AbaPrincipal.HOME },
+                ),
+                SavroBottomNavItem(
+                    icon = SavroIcon.Patrimonio,
                     label = "Patrimônio",
                     selected = aba == AbaPrincipal.PATRIMONIO,
                     onClick = { aba = AbaPrincipal.PATRIMONIO },
-                )
-            }
+                ),
+                SavroBottomNavItem(
+                    icon = SavroIcon.Ajustes,
+                    label = "Ajustes",
+                    selected = false,
+                    onClick = aoAbrirConfiguracaoProtecao,
+                ),
+            ),
+        ) { contentPadding ->
             when (aba) {
                 AbaPrincipal.HOME -> TelaHomeResumo(
                     servico = servico,
@@ -132,6 +160,7 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
                     aoAlternarOcultarValores = { ocultarValores = !ocultarValores },
                     aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
                     aoAbrirItem = { id -> destino = DestinoPatrimonio.Detalhe(id) },
+                    contentPadding = contentPadding,
                 )
                 AbaPrincipal.PATRIMONIO -> TelaListaPatrimonio(
                     servico = servico,
@@ -145,11 +174,11 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
                     ordenacao = ordenacao,
                     aoAlterarOrdenacao = { ordenacao = it },
                     estadoDaLista = estadoDaLista,
-                    aoAbrirConfiguracaoProtecao = aoAbrirConfiguracaoProtecao,
                     aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
                     aoAbrirDetalhe = { id -> destino = DestinoPatrimonio.Detalhe(id) },
                     aoEditar = { id -> destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = id) },
                     aoAjustarValor = { id -> destino = DestinoPatrimonio.Ajuste(id) },
+                    contentPadding = contentPadding,
                 )
             }
         }
@@ -188,11 +217,11 @@ private fun TelaListaPatrimonio(
     ordenacao: OrdenacaoItensPatrimoniais,
     aoAlterarOrdenacao: (OrdenacaoItensPatrimoniais) -> Unit,
     estadoDaLista: LazyListState,
-    aoAbrirConfiguracaoProtecao: () -> Unit,
     aoCriar: () -> Unit,
     aoAbrirDetalhe: (String) -> Unit,
     aoEditar: (String) -> Unit,
     aoAjustarValor: (String) -> Unit,
+    contentPadding: PaddingValues,
 ) {
     val itens by servico.itens.collectAsState()
     val escopo = rememberCoroutineScope()
@@ -206,99 +235,78 @@ private fun TelaListaPatrimonio(
         filtro.aplicar(itens).ordenarPor(ordenacao)
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+    // FAB fixo (protótipo tela 08) substitui o botão "Novo item" de largura total — #220, item 10.
+    // `contentPadding` vem de `SavroBottomNavScaffold` (altura real da bottom nav já medida, sem
+    // valor fixo arbitrário) — aplicado aqui pra nem a lista, nem o FAB, ficarem por baixo da barra
+    // (correção pós-revisão do Luiz, PR #224).
+    Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md)) {
             SavroText("Patrimônio", style = SavroTextStyle.Headline)
-            SavroButton(
-                label = "Proteção",
-                onClick = aoAbrirConfiguracaoProtecao,
-                style = SavroButtonStyle.Secondary,
-                loadingStateDescription = "",
-            )
-        }
 
-        SavroButton(
-            label = "Novo item",
-            onClick = aoCriar,
-            modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.sm),
-            loadingStateDescription = "",
-        )
-
-        SavroTextField(
-            value = texto,
-            onValueChange = aoAlterarTexto,
-            label = "Buscar",
-            modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.md),
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
-        ) {
-            SavroFilterChip(
-                label = "Arquivados",
-                selected = mostrarArquivados,
-                onClick = { aoAlterarMostrarArquivados(!mostrarArquivados) },
+            SavroTextField(
+                value = texto,
+                onValueChange = aoAlterarTexto,
+                label = "Buscar",
+                modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.md),
             )
-            TipoItemPatrimonial.entries.forEach { tipo ->
-                SavroFilterChip(
-                    label = rotuloDoTipo(tipo),
-                    selected = tipoSelecionado == tipo,
-                    onClick = { aoAlterarTipoSelecionado(if (tipoSelecionado == tipo) null else tipo) },
-                )
-            }
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
-        ) {
-            SavroText("Ordenar:", style = SavroTextStyle.BodySmall)
-            SavroFilterChip(
-                label = "Nome",
-                selected = ordenacao == OrdenacaoItensPatrimoniais.NOME_ASC || ordenacao == OrdenacaoItensPatrimoniais.NOME_DESC,
-                onClick = {
-                    aoAlterarOrdenacao(
-                        if (ordenacao == OrdenacaoItensPatrimoniais.NOME_ASC) {
-                            OrdenacaoItensPatrimoniais.NOME_DESC
-                        } else {
-                            OrdenacaoItensPatrimoniais.NOME_ASC
-                        },
-                    )
-                },
-            )
-            SavroFilterChip(
-                label = "Valor",
-                selected = ordenacao == OrdenacaoItensPatrimoniais.VALOR_ASC || ordenacao == OrdenacaoItensPatrimoniais.VALOR_DESC,
-                onClick = {
-                    aoAlterarOrdenacao(
-                        if (ordenacao == OrdenacaoItensPatrimoniais.VALOR_ASC) {
-                            OrdenacaoItensPatrimoniais.VALOR_DESC
-                        } else {
-                            OrdenacaoItensPatrimoniais.VALOR_ASC
-                        },
-                    )
-                },
-            )
-        }
-
-        if (itensFiltrados.isEmpty()) {
-            SavroStatePanel(
-                state = SavroState.Empty,
-                title = "Nenhum item encontrado",
-                message = "Cadastre um item ou ajuste a busca/filtro.",
-                modifier = Modifier.padding(top = SavroThemeTokens.spacing.md),
-            )
-        } else {
-            LazyColumn(
-                state = estadoDaLista,
-                modifier = Modifier.fillMaxSize().padding(top = SavroThemeTokens.spacing.md),
-                verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
             ) {
-                items(itensFiltrados, key = { it.id }) { item ->
+                SavroFilterChip(
+                    label = "Arquivados",
+                    selected = mostrarArquivados,
+                    onClick = { aoAlterarMostrarArquivados(!mostrarArquivados) },
+                )
+                // Mantém os 7 tipos reais do domínio como filtro (não os 4 grupos genéricos do
+                // protótipo antigo) — já justificado por #196/SAVRO_PROTOTIPOS.md; divergência
+                // mantida deliberadamente (#220, item 11).
+                TipoItemPatrimonial.entries.forEach { tipo ->
+                    SavroFilterChip(
+                        label = rotuloDoTipo(tipo),
+                        selected = tipoSelecionado == tipo,
+                        onClick = { aoAlterarTipoSelecionado(if (tipoSelecionado == tipo) null else tipo) },
+                    )
+                }
+            }
+
+            // Controle único de ordenação (protótipo: "Ordenar ⌄") no lugar dos 2 chips
+            // acumulativos — #220, item 11.
+            SavroOverflowMenu(
+                modifier = Modifier.padding(top = SavroThemeTokens.spacing.sm),
+                contentDescription = "Ordenar",
+                actions = listOf(
+                    SavroMenuAction("Nome A→Z", { aoAlterarOrdenacao(OrdenacaoItensPatrimoniais.NOME_ASC) }),
+                    SavroMenuAction("Nome Z→A", { aoAlterarOrdenacao(OrdenacaoItensPatrimoniais.NOME_DESC) }),
+                    SavroMenuAction("Valor crescente", { aoAlterarOrdenacao(OrdenacaoItensPatrimoniais.VALOR_ASC) }),
+                    SavroMenuAction("Valor decrescente", { aoAlterarOrdenacao(OrdenacaoItensPatrimoniais.VALOR_DESC) }),
+                ),
+                trigger = { abrir ->
+                    SavroButton(
+                        label = "Ordenar: ${rotuloDaOrdenacao(ordenacao)} ⌄",
+                        onClick = abrir,
+                        style = SavroButtonStyle.Secondary,
+                        loadingStateDescription = "",
+                    )
+                },
+            )
+
+            if (itensFiltrados.isEmpty()) {
+                SavroStatePanel(
+                    state = SavroState.Empty,
+                    title = "Nenhum item encontrado",
+                    message = "Cadastre um item ou ajuste a busca/filtro.",
+                    icon = if (texto.isNotBlank() || tipoSelecionado != null) SavroIcon.EstadoBuscaSemResultado else SavroIcon.EstadoVazio,
+                    modifier = Modifier.padding(top = SavroThemeTokens.spacing.md),
+                )
+            } else {
+                LazyColumn(
+                    state = estadoDaLista,
+                    modifier = Modifier.fillMaxSize().padding(top = SavroThemeTokens.spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
+                ) {
+                    items(itensFiltrados, key = { it.id }) { item ->
                     ItemPatrimonialCard(
                         item = item,
                         ocultarValores = ocultarValores,
@@ -311,8 +319,22 @@ private fun TelaListaPatrimonio(
                     )
                 }
             }
+            }
         }
+
+        SavroFab(
+            contentDescription = "Novo item",
+            onClick = aoCriar,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(SavroThemeTokens.spacing.md),
+        )
     }
+}
+
+private fun rotuloDaOrdenacao(ordenacao: OrdenacaoItensPatrimoniais): String = when (ordenacao) {
+    OrdenacaoItensPatrimoniais.NOME_ASC -> "Nome A→Z"
+    OrdenacaoItensPatrimoniais.NOME_DESC -> "Nome Z→A"
+    OrdenacaoItensPatrimoniais.VALOR_ASC -> "Valor crescente"
+    OrdenacaoItensPatrimoniais.VALOR_DESC -> "Valor decrescente"
 }
 
 @Composable
@@ -328,11 +350,37 @@ private fun ItemPatrimonialCard(
 ) {
     val valorFormatado = "${formatarValor(item)} ${item.moeda}"
     val descricaoValor = ApresentacaoValor.descricaoAcessibilidade(valorFormatado, ocultarValores)
+    var confirmandoExclusao by remember { mutableStateOf(false) }
 
+    if (confirmandoExclusao) {
+        SavroConfirmDialog(
+            title = "Excluir ${item.nome}?",
+            message = "Esta ação não pode ser desfeita.",
+            confirmLabel = "Excluir",
+            cancelLabel = "Cancelar",
+            onConfirm = { confirmandoExclusao = false; aoExcluir() },
+            onDismiss = { confirmandoExclusao = false },
+        )
+    }
+
+    // Ações que antes eram 5 botões sempre visíveis viram um menu "⋯" (protótipo tela 08) —
+    // exclusão passa a exigir confirmação explícita (#220, item 10).
     SavroCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = aoAbrirDetalhe),
     ) {
-        SavroText(item.nome, style = SavroTextStyle.Title)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            SavroText(item.nome, style = SavroTextStyle.Title)
+            SavroOverflowMenu(
+                contentDescription = "Mais opções para ${item.nome}",
+                actions = listOf(
+                    SavroMenuAction("Editar", aoEditar),
+                    SavroMenuAction("Ajustar valor", aoAjustarValor),
+                    SavroMenuAction("Duplicar", aoDuplicar),
+                    SavroMenuAction(if (item.arquivado) "Desarquivar" else "Arquivar", aoArquivar),
+                    SavroMenuAction("Excluir", { confirmandoExclusao = true }, destructive = true),
+                ),
+            )
+        }
         SavroText(
             "${rotuloDoTipo(item.tipo)} · ${ApresentacaoValor.texto(valorFormatado, ocultarValores)}",
             style = SavroTextStyle.Body,
@@ -340,26 +388,6 @@ private fun ItemPatrimonialCard(
         )
         item.instituicao?.let { SavroText(it, style = SavroTextStyle.BodySmall) }
         if (item.arquivado) SavroText("Arquivado", style = SavroTextStyle.Label)
-
-        SavroDivider(modifier = Modifier.padding(vertical = SavroThemeTokens.spacing.sm))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
-            SavroButton(label = "Editar", onClick = aoEditar, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
-            SavroButton(label = "Ajustar valor", onClick = aoAjustarValor, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
-            SavroButton(label = "Duplicar", onClick = aoDuplicar, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
-        }
-        Row(
-            modifier = Modifier.padding(top = SavroThemeTokens.spacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
-        ) {
-            SavroButton(
-                label = if (item.arquivado) "Desarquivar" else "Arquivar",
-                onClick = aoArquivar,
-                style = SavroButtonStyle.Secondary,
-                loadingStateDescription = "",
-            )
-            SavroButton(label = "Excluir", onClick = aoExcluir, style = SavroButtonStyle.Destructive, loadingStateDescription = "")
-        }
     }
 }
 
@@ -449,6 +477,11 @@ private fun TelaFormularioItem(
             }
         } else {
             FormularioCampos(estado = estado, aoAlterar = { estado = it }, erros = erros)
+            // Nota de privacidade antes do CTA (protótipo tela 11) — #220, item 12.
+            SavroText(
+                "Nenhuma informação será enviada ao Savro.",
+                style = SavroTextStyle.BodySmall,
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
                 SavroButton(label = "Cancelar", onClick = aoCancelar, style = SavroButtonStyle.Secondary, loadingStateDescription = "")
                 SavroButton(
@@ -518,39 +551,60 @@ private fun FormularioCampos(
             modifier = Modifier.fillMaxWidth(),
         )
     }
-    if (CampoFormularioItem.QUANTIDADE in camposVisiveis) {
-        SavroTextField(
-            value = estado.quantidadeTexto,
-            onValueChange = { aoAlterar(estado.copy(quantidadeTexto = it)) },
-            label = "Quantidade (opcional)",
-            isError = erros.any { it is ErroValidacaoItem.QuantidadeDeveSerPositiva },
-            modifier = Modifier.fillMaxWidth(),
+    // Campos opcionais colapsados sob "Campos avançados" (protótipo tela 11) — #220, item 12.
+    val existeCampoAvancado = camposVisiveis.any {
+        it in setOf(
+            CampoFormularioItem.QUANTIDADE,
+            CampoFormularioItem.PRECO_MEDIO,
+            CampoFormularioItem.INSTITUICAO,
+            CampoFormularioItem.OBSERVACAO,
         )
     }
-    if (CampoFormularioItem.PRECO_MEDIO in camposVisiveis) {
-        SavroTextField(
-            value = estado.precoMedioTexto,
-            onValueChange = { aoAlterar(estado.copy(precoMedioTexto = it)) },
-            label = "Preço médio (opcional)",
-            isError = erros.any { it is ErroValidacaoItem.PrecoMedioDeveSerPositivo },
+    if (existeCampoAvancado) {
+        var mostrarCamposAvancados by remember { mutableStateOf(false) }
+        SavroButton(
+            label = if (mostrarCamposAvancados) "Ocultar campos avançados" else "Campos avançados",
+            onClick = { mostrarCamposAvancados = !mostrarCamposAvancados },
+            style = SavroButtonStyle.Secondary,
+            loadingStateDescription = "",
             modifier = Modifier.fillMaxWidth(),
         )
-    }
-    if (CampoFormularioItem.INSTITUICAO in camposVisiveis) {
-        SavroTextField(
-            value = estado.instituicao,
-            onValueChange = { aoAlterar(estado.copy(instituicao = it)) },
-            label = "Instituição (opcional)",
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-    if (CampoFormularioItem.OBSERVACAO in camposVisiveis) {
-        SavroTextField(
-            value = estado.observacao,
-            onValueChange = { aoAlterar(estado.copy(observacao = it)) },
-            label = "Observação (opcional)",
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (mostrarCamposAvancados) {
+            if (CampoFormularioItem.QUANTIDADE in camposVisiveis) {
+                SavroTextField(
+                    value = estado.quantidadeTexto,
+                    onValueChange = { aoAlterar(estado.copy(quantidadeTexto = it)) },
+                    label = "Quantidade (opcional)",
+                    isError = erros.any { it is ErroValidacaoItem.QuantidadeDeveSerPositiva },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (CampoFormularioItem.PRECO_MEDIO in camposVisiveis) {
+                SavroTextField(
+                    value = estado.precoMedioTexto,
+                    onValueChange = { aoAlterar(estado.copy(precoMedioTexto = it)) },
+                    label = "Preço médio (opcional)",
+                    isError = erros.any { it is ErroValidacaoItem.PrecoMedioDeveSerPositivo },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (CampoFormularioItem.INSTITUICAO in camposVisiveis) {
+                SavroTextField(
+                    value = estado.instituicao,
+                    onValueChange = { aoAlterar(estado.copy(instituicao = it)) },
+                    label = "Instituição (opcional)",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (CampoFormularioItem.OBSERVACAO in camposVisiveis) {
+                SavroTextField(
+                    value = estado.observacao,
+                    onValueChange = { aoAlterar(estado.copy(observacao = it)) },
+                    label = "Observação (opcional)",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
     }
 }
 
