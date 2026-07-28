@@ -12,7 +12,8 @@ object CodecArquivoBackup {
     /**
      * Gera o arquivo. [salt] e [nonce] são parâmetros para os testes de vetor conseguirem
      * reproduzir bytes exatos; em produção ficam `null` e vêm do gerador seguro do sistema —
-     * **nonce novo a cada arquivo**, nunca reaproveitado com a mesma chave (requisito do GCM).
+     * **IV/nonce exclusivo a cada arquivo**, nunca reaproveitado com a mesma chave (reaproveitar o
+     * par chave/nonce no AES-CTR expõe o keystream e quebra a confidencialidade).
      */
     fun gerar(
         conteudo: ConteudoBackup,
@@ -23,6 +24,9 @@ object CodecArquivoBackup {
     ): Resultado<ByteArray, ErroBackup> {
         if (senha.length < FormatoBackup.TAMANHO_MINIMO_SENHA) {
             return Resultado.Falha(ErroBackup.SenhaFraca)
+        }
+        if (iteracoesKdf < 1 || iteracoesKdf > FormatoBackup.ITERACOES_MAXIMAS_ACEITAS) {
+            return Resultado.Falha(ErroBackup.IteracoesKdfInvalidas(iteracoesKdf))
         }
 
         val cabecalho = CabecalhoBackup(
@@ -47,8 +51,9 @@ object CodecArquivoBackup {
     }
 
     /**
-     * Valida cabeçalho, versão de formato, versão de schema, integridade (tag AEAD) e senha —
-     * nesta ordem e **antes** de qualquer escrita no banco (issue #121). Não toca em persistência:
+     * Valida cabeçalho, versão de formato, versão de schema, integridade (tag de autenticação
+     * HMAC) e senha — nesta ordem e **antes** de qualquer escrita no banco (issue #121). Não toca
+     * em persistência:
      * quem restaura é [ServicoBackup], depois de o usuário confirmar a prévia.
      */
     fun abrir(

@@ -6,7 +6,8 @@ import io.savro.common.Resultado
  * Cabeçalho em texto claro do arquivo `*.savrobackup` — ver o mapa de bytes em [FormatoBackup].
  *
  * Nenhum campo aqui é dado do usuário: são só os parâmetros necessários para tentar abrir o
- * arquivo. Todos eles entram como AAD da cifra, então adulterar qualquer um invalida a tag.
+ * arquivo. Todos eles entram como dados autenticados pelo HMAC, então adulterar qualquer um
+ * invalida a tag de autenticação.
  */
 data class CabecalhoBackup(
     val versaoFormato: Int,

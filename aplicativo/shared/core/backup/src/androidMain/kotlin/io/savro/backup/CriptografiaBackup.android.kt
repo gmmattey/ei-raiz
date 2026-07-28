@@ -68,11 +68,16 @@ internal actual object CriptografiaBackup {
         texto: ByteArray,
     ): ByteArray {
         val (chaveCifra, chaveMac) = subchaves(chave)
-        val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
-        cifrador.init(Cipher.ENCRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
-        val ciphertext = cifrador.doFinal(texto)
-        val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
-        return ciphertext + tag
+        try {
+            val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
+            cifrador.init(Cipher.ENCRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
+            val ciphertext = cifrador.doFinal(texto)
+            val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+            return ciphertext + tag
+        } finally {
+            chaveCifra.fill(0)
+            chaveMac.fill(0)
+        }
     }
 
     actual fun decifrar(
@@ -83,22 +88,27 @@ internal actual object CriptografiaBackup {
     ): ByteArray? {
         if (cifra.size < FormatoBackup.TAMANHO_TAG) return null
         val (chaveCifra, chaveMac) = subchaves(chave)
-        val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
-        val tagRecebida = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
-        val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+        try {
+            val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
+            val tagRecebida = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
+            val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
 
-        // Verifica a tag ANTES de decifrar (verify-then-decrypt) e em tempo constante:
-        // `MessageDigest.isEqual` é desenhado pelo próprio JDK para essa comparação.
-        if (!MessageDigest.isEqual(tagCalculada, tagRecebida)) return null
+            // Verifica a tag ANTES de decifrar (verify-then-decrypt) e em tempo constante:
+            // `MessageDigest.isEqual` é desenhado pelo próprio JDK para essa comparação.
+            if (!MessageDigest.isEqual(tagCalculada, tagRecebida)) return null
 
-        return try {
-            val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
-            cifrador.init(Cipher.DECRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
-            cifrador.doFinal(ciphertext)
-        } catch (excecao: GeneralSecurityException) {
-            // Corpo com tamanho inválido para o modo de cifra: um único caminho de falha, sem log e
-            // sem distinção (ver ErroBackup.ArquivoInvalido).
-            null
+            return try {
+                val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
+                cifrador.init(Cipher.DECRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
+                cifrador.doFinal(ciphertext)
+            } catch (excecao: GeneralSecurityException) {
+                // Corpo com tamanho inválido para o modo de cifra: um único caminho de falha, sem log e
+                // sem distinção (ver ErroBackup.ArquivoInvalido).
+                null
+            }
+        } finally {
+            chaveCifra.fill(0)
+            chaveMac.fill(0)
         }
     }
 

@@ -292,9 +292,9 @@ Ordem obrigatória, implementada em `ServicoBackup`:
 
 1. **Selecionar** o arquivo pelos mecanismos nativos (SAF no Android,
    `UIDocumentPickerViewController` no iOS). Nada é validado ainda.
-2. **Validar** cabeçalho → versão de formato → versão de schema → integridade (tag AEAD) → senha →
-   consistência do conteúdo. Nenhuma escrita no banco acontece nesta etapa. **Arquivo inválido
-   nunca altera o cofre atual, em nenhuma circunstância.**
+2. **Validar** cabeçalho → versão de formato → versão de schema → integridade (tag de autenticação
+   HMAC) → senha → consistência do conteúdo. Nenhuma escrita no banco acontece nesta etapa.
+   **Arquivo inválido nunca altera o cofre atual, em nenhuma circunstância.**
 3. **Prévia obrigatória**, mostrando: data do backup, quantidade de itens, de ajustes e de
    eventos, moedas encontradas, versão do formato e do schema, e o impacto explícito ("isso
    substituirá todos os dados atuais", com a contagem atual do aparelho).

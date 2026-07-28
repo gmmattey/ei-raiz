@@ -94,9 +94,14 @@ internal actual object CriptografiaBackup {
         texto: ByteArray,
     ): ByteArray {
         val (chaveCifra, chaveMac) = subchaves(chave)
-        val ciphertext = executarCtr(kCCEncrypt, chaveCifra, nonce, texto)
-        val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
-        return ciphertext + tag
+        try {
+            val ciphertext = executarCtr(kCCEncrypt, chaveCifra, nonce, texto)
+            val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+            return ciphertext + tag
+        } finally {
+            chaveCifra.fill(0)
+            chaveMac.fill(0)
+        }
     }
 
     actual fun decifrar(
@@ -107,14 +112,19 @@ internal actual object CriptografiaBackup {
     ): ByteArray? {
         if (cifra.size < FormatoBackup.TAMANHO_TAG) return null
         val (chaveCifra, chaveMac) = subchaves(chave)
-        val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
-        val tagEsperada = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
-        val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+        try {
+            val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
+            val tagEsperada = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
+            val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
 
-        // Verifica a tag ANTES de decifrar (verify-then-decrypt), em tempo constante.
-        if (!iguaisEmTempoConstante(tagCalculada, tagEsperada)) return null
+            // Verifica a tag ANTES de decifrar (verify-then-decrypt), em tempo constante.
+            if (!iguaisEmTempoConstante(tagCalculada, tagEsperada)) return null
 
-        return runCatching { executarCtr(kCCDecrypt, chaveCifra, nonce, ciphertext) }.getOrNull()
+            return runCatching { executarCtr(kCCDecrypt, chaveCifra, nonce, ciphertext) }.getOrNull()
+        } finally {
+            chaveCifra.fill(0)
+            chaveMac.fill(0)
+        }
     }
 
     /** `chave[0..31]` cifra, `chave[32..63]` autentica — nunca a mesma subchave para as duas coisas. */
@@ -186,22 +196,29 @@ internal actual object CriptografiaBackup {
 
     private fun hmacSha256(chaveMac: ByteArray, vararg partes: ByteArray): ByteArray {
         val entrada = partes.fold(ByteArray(0)) { acumulado, parte -> acumulado + parte }
-        val mac = ByteArray(FormatoBackup.TAMANHO_TAG)
-        chaveMac.usePinned { chaveFixada ->
-            entrada.usePinned { entradaFixada ->
-                mac.usePinned { macFixada ->
-                    CCHmac(
-                        algorithm = kCCHmacAlgSHA256,
-                        key = chaveFixada.addressOf(0),
-                        keyLength = chaveMac.size.convert(),
-                        data = if (entrada.isEmpty()) null else entradaFixada.addressOf(0),
-                        dataLength = entrada.size.convert(),
-                        macOut = macFixada.addressOf(0),
-                    )
+        try {
+            val mac = ByteArray(FormatoBackup.TAMANHO_TAG)
+            chaveMac.usePinned { chaveFixada ->
+                entrada.usePinned { entradaFixada ->
+                    mac.usePinned { macFixada ->
+                        CCHmac(
+                            algorithm = kCCHmacAlgSHA256,
+                            key = chaveFixada.addressOf(0),
+                            keyLength = chaveMac.size.convert(),
+                            data = if (entrada.isEmpty()) null else entradaFixada.addressOf(0),
+                            dataLength = entrada.size.convert(),
+                            macOut = macFixada.addressOf(0),
+                        )
+                    }
                 }
             }
+            return mac
+        } finally {
+            // `entrada` é o cabeçalho + ciphertext completos concatenados num único ByteArray
+            // intermediário (o binding padrão de CCHmac não aceita partes separadas como o
+            // `Mac.update` incremental do Android) — zera assim que o HMAC já foi calculado.
+            entrada.fill(0)
         }
-        return mac
     }
 
     private fun iguaisEmTempoConstante(esquerda: ByteArray, direita: ByteArray): Boolean {

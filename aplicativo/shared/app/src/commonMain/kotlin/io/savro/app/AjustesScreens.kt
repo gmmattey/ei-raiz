@@ -542,5 +542,7 @@ private fun mensagemDeErro(erro: ErroBackup): String = when (erro) {
         "Não foi possível acessar o cofre deste aparelho. Seus dados atuais continuam intactos."
     is ErroBackup.FalhaDeArquivo ->
         "Não foi possível ler ou gravar o arquivo escolhido."
+    is ErroBackup.IteracoesKdfInvalidas ->
+        "Não foi possível gerar o backup. Tente novamente."
     ErroBackup.CanceladoPeloUsuario -> "Operação cancelada."
 }

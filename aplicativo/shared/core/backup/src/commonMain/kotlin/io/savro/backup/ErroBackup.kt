@@ -27,6 +27,15 @@ sealed class ErroBackup {
     /** Senha escolhida não atende ao mínimo exigido na criação do backup. */
     data object SenhaFraca : ErroBackup()
 
+    /**
+     * `iteracoesKdf` passado para [CodecArquivoBackup.gerar] está fora do intervalo aceito (< 1 ou
+     * acima de [FormatoBackup.ITERACOES_MAXIMAS_ACEITAS]). Diferente de [ArquivoInvalido], não é
+     * sobre um arquivo lido de fora: é defesa em profundidade num parâmetro de **geração** — hoje
+     * só o próprio app chama `gerar()` com esse valor (não há entrada de usuário direta nele), mas
+     * o contrato do codec não deveria depender só de quem chama se comportar.
+     */
+    data class IteracoesKdfInvalidas(val solicitadas: Int) : ErroBackup()
+
     /** Falha ao ler ou escrever no cofre local (não é problema do arquivo de backup). */
     data class FalhaDeCofre(val detalhe: String) : ErroBackup()
 

@@ -198,6 +198,22 @@ class CodecArquivoBackupTest {
     }
 
     @Test
+    fun iteracoesKdfForaDoIntervaloSaoRecusadasNaGeracao() {
+        val abaixoDoMinimo = CodecArquivoBackup.gerar(conteudoDeTeste(), senha, iteracoesKdf = 0)
+        val acimaDoTeto = CodecArquivoBackup.gerar(
+            conteudoDeTeste(),
+            senha,
+            iteracoesKdf = FormatoBackup.ITERACOES_MAXIMAS_ACEITAS + 1,
+        )
+
+        assertEquals(Resultado.Falha(ErroBackup.IteracoesKdfInvalidas(0)), abaixoDoMinimo)
+        assertEquals(
+            Resultado.Falha(ErroBackup.IteracoesKdfInvalidas(FormatoBackup.ITERACOES_MAXIMAS_ACEITAS + 1)),
+            acimaDoTeto,
+        )
+    }
+
+    @Test
     fun doisArquivosDaMesmaSenhaUsamSaltENonceDiferentes() {
         val primeiro = gerar()
         val segundo = gerar()
