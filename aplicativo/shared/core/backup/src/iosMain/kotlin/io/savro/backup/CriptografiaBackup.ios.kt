@@ -1,98 +1,60 @@
 package io.savro.backup
 
-import kotlinx.cinterop.CFunction
-import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.convert
-import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.refTo
-import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.CoreCrypto.CCCryptorCreateWithMode
-import platform.CoreCrypto.CCCryptorRef
+import platform.CoreCrypto.CCCryptorFinal
 import platform.CoreCrypto.CCCryptorRefVar
 import platform.CoreCrypto.CCCryptorRelease
 import platform.CoreCrypto.CCCryptorUpdate
+import platform.CoreCrypto.CCHmac
 import platform.CoreCrypto.CCKeyDerivationPBKDF
 import platform.CoreCrypto.CCOperation
 import platform.CoreCrypto.ccNoPadding
 import platform.CoreCrypto.kCCAlgorithmAES
 import platform.CoreCrypto.kCCDecrypt
 import platform.CoreCrypto.kCCEncrypt
+import platform.CoreCrypto.kCCHmacAlgSHA256
+import platform.CoreCrypto.kCCModeCTR
 import platform.CoreCrypto.kCCPBKDF2
-import platform.CoreCrypto.kCCPRFHmacAlgSHA1
+import platform.CoreCrypto.kCCPRFHmacAlgSHA256
 import platform.CoreCrypto.kCCSuccess
 import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
-import platform.posix.RTLD_NOW
-import platform.posix.dlopen
-import platform.posix.dlsym
-import platform.posix.size_t
 import platform.posix.size_tVar
 
 /**
- * Implementação iOS da fronteira criptográfica do backup (#121), sobre CommonCrypto — a mesma
- * biblioteca do sistema que o restante da plataforma usa. Nenhuma primitiva é escrita aqui: só
- * chamadas a `CCKeyDerivationPBKDF` (PBKDF2-HMAC-SHA1) e ao modo GCM do `CCCryptor`
- * (AES-256-GCM), com os mesmos parâmetros que o lado Android — o arquivo é o mesmo dos dois
- * lados, byte a byte.
+ * Implementação iOS da fronteira criptográfica do backup (#121). Ver a docstring do `expect
+ * object` em `CriptografiaBackup.kt` para a construção *encrypt-then-MAC* completa — este arquivo
+ * só orquestra CommonCrypto **público**:
  *
- * O binding padrão do Kotlin/Native para CommonCrypto (`platform.CoreCrypto`, gerado a partir do
- * module map de sistema) não expõe `CCCryptorGCMAddIV`/`CCCryptorGCMAddAAD`/`CCCryptorGCMFinal`
- * nem a constante de modo `kCCModeGCM` — símbolos documentados pela Apple em
- * `CommonCryptorSPI.h` e presentes de verdade na libSystem de todo binário iOS/macOS, mas fora do
- * alcance desse module map. Um cinterop próprio resolveria isso com checagem de tipos em tempo de
- * compilação, mas cinterop (mesmo sem CocoaPods) só é processado em host macOS — quebraria a
- * verificação barata de compilação deste módulo no job "ios-compilacao-linux" (ver comentário em
- * `.github/workflows/aplicativo-ci.yml`), que hoje compila `:shared:core:backup` de verdade em
- * runner Linux justamente por ele não depender de nenhum cinterop. Por isso os três símbolos são
- * resolvidos em runtime via `dlsym` contra a mesma biblioteca do sistema — sem reintroduzir
- * cinterop, sem reimplementar GCM. O preço é perder a checagem de assinatura em tempo de
- * compilação: qualquer erro de assinatura só aparece como falha em runtime (coberta pelos testes
- * de interoperabilidade Android↔iOS no simulador).
+ * - **KDF:** `CCKeyDerivationPBKDF` com `kCCPRFHmacAlgSHA256` — PBKDF2-HMAC-SHA256, símbolo público
+ *   de `CommonKeyDerivation.h` desde sempre (não é o gargalo: o gargalo era só o Android antes da
+ *   API 26).
+ * - **Cifra:** `CCCryptorCreateWithMode` com `mode = kCCModeCTR` — AES-256-CTR. `kCCModeCTR` (valor
+ *   4 do enum `CCMode`) é público em `CommonCryptor.h`, ao contrário de `kCCModeGCM` (valor 11, só
+ *   em `CommonCryptorSPI.h`, SPI privada da Apple). É exatamente por isso que a versão anterior
+ *   deste arquivo (commit `5f69690`) resolvia símbolos via `dlsym`: o binding padrão do
+ *   Kotlin/Native para CommonCrypto não expõe `CCCryptorGCMAddIV`/`CCCryptorGCMAddAAD`/
+ *   `CCCryptorGCMFinal` nem `kCCModeGCM`, porque eles não fazem parte do module map público. Essa
+ *   abordagem foi revertida por decisão do Luiz (ver PR #228): interface privada não é aceitável
+ *   num app destinado à App Store, mesmo funcionando em runtime. A troca de GCM por
+ *   AES-256-CTR + HMAC-SHA256 elimina a dependência de SPI por completo — nenhum símbolo é
+ *   resolvido em runtime, tudo é resolvido em tempo de compilação pelo binding padrão.
+ * - **MAC:** `CCHmac` com `kCCHmacAlgSHA256` — símbolo público de `CommonHMAC.h`.
  *
  * A comparação da tag no caminho de decifragem é feita em tempo constante: comparar com saída
  * antecipada vazaria, por temporização, quantos bytes da tag conferem.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal actual object CriptografiaBackup {
-
-    private const val TAMANHO_TAG = 16
-
-    // Valor estável do enum `CCMode` da Apple (CommonCryptorSPI.h) — não muda sem quebrar ABI, já
-    // que a própria libSystem do sistema depende desse valor numérico publicado desde iOS 6.
-    private const val K_CC_MODE_GCM: UInt = 11u
-
-    private typealias FuncaoGcmAddIvOuAad =
-        CPointer<CFunction<(CCCryptorRef?, COpaquePointer?, size_t) -> Int>>
-    private typealias FuncaoGcmFinal =
-        CPointer<CFunction<(CCCryptorRef?, COpaquePointer?, CPointer<size_tVar>?) -> Int>>
-
-    private val bibliotecaSistema = dlopen(null, RTLD_NOW)
-
-    private val ccCryptorGcmAddIv: FuncaoGcmAddIvOuAad by lazy {
-        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMAddIV")) {
-            "Símbolo CCCryptorGCMAddIV não encontrado em CommonCrypto"
-        }.reinterpret()
-    }
-
-    private val ccCryptorGcmAddAad: FuncaoGcmAddIvOuAad by lazy {
-        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMAddAAD")) {
-            "Símbolo CCCryptorGCMAddAAD não encontrado em CommonCrypto"
-        }.reinterpret()
-    }
-
-    private val ccCryptorGcmFinal: FuncaoGcmFinal by lazy {
-        requireNotNull(dlsym(bibliotecaSistema, "CCCryptorGCMFinal")) {
-            "Símbolo CCCryptorGCMFinal não encontrado em CommonCrypto"
-        }.reinterpret()
-    }
 
     actual fun bytesAleatorios(quantidade: Int): ByteArray {
         val saida = ByteArray(quantidade)
@@ -116,7 +78,7 @@ internal actual object CriptografiaBackup {
             passwordLen = senhaAscii.length.convert(),
             salt = salt.asUByteArray().refTo(0),
             saltLen = salt.size.convert(),
-            prf = kCCPRFHmacAlgSHA1,
+            prf = kCCPRFHmacAlgSHA256,
             rounds = iteracoes.convert(),
             derivedKey = chave.asUByteArray().refTo(0),
             derivedKeyLen = chave.size.convert(),
@@ -131,10 +93,10 @@ internal actual object CriptografiaBackup {
         dadosAutenticados: ByteArray,
         texto: ByteArray,
     ): ByteArray {
-        val cifra = ByteArray(texto.size)
-        val tag = ByteArray(TAMANHO_TAG)
-        executarGcm(kCCEncrypt, chave, nonce, dadosAutenticados, texto, cifra, tag)
-        return cifra + tag
+        val (chaveCifra, chaveMac) = subchaves(chave)
+        val ciphertext = executarCtr(kCCEncrypt, chaveCifra, nonce, texto)
+        val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+        return ciphertext + tag
     }
 
     actual fun decifrar(
@@ -143,65 +105,55 @@ internal actual object CriptografiaBackup {
         dadosAutenticados: ByteArray,
         cifra: ByteArray,
     ): ByteArray? {
-        if (cifra.size < TAMANHO_TAG) return null
-        val corpo = cifra.copyOfRange(0, cifra.size - TAMANHO_TAG)
-        val tagEsperada = cifra.copyOfRange(cifra.size - TAMANHO_TAG, cifra.size)
-        val texto = ByteArray(corpo.size)
-        val tagCalculada = ByteArray(TAMANHO_TAG)
+        if (cifra.size < FormatoBackup.TAMANHO_TAG) return null
+        val (chaveCifra, chaveMac) = subchaves(chave)
+        val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
+        val tagEsperada = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
+        val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
 
-        val sucesso = runCatching {
-            executarGcm(kCCDecrypt, chave, nonce, dadosAutenticados, corpo, texto, tagCalculada)
-        }.isSuccess
+        // Verifica a tag ANTES de decifrar (verify-then-decrypt), em tempo constante.
+        if (!iguaisEmTempoConstante(tagCalculada, tagEsperada)) return null
 
-        if (!sucesso || !iguaisEmTempoConstante(tagCalculada, tagEsperada)) {
-            texto.fill(0)
-            return null
-        }
-        return texto
+        return runCatching { executarCtr(kCCDecrypt, chaveCifra, nonce, ciphertext) }.getOrNull()
     }
 
-    private fun executarGcm(
+    /** `chave[0..31]` cifra, `chave[32..63]` autentica — nunca a mesma subchave para as duas coisas. */
+    private fun subchaves(chave: ByteArray): Pair<ByteArray, ByteArray> {
+        val metade = FormatoBackup.TAMANHO_CHAVE / 2
+        return chave.copyOfRange(0, metade) to chave.copyOfRange(metade, chave.size)
+    }
+
+    private fun executarCtr(
         operacao: CCOperation,
-        chave: ByteArray,
+        chaveCifra: ByteArray,
         nonce: ByteArray,
-        dadosAutenticados: ByteArray,
         entrada: ByteArray,
-        saida: ByteArray,
-        tag: ByteArray,
-    ) = memScoped {
+    ): ByteArray = memScoped {
         val referencia = alloc<CCCryptorRefVar>()
-        var estado = chave.usePinned { chaveFixada ->
-            CCCryptorCreateWithMode(
-                op = operacao.convert(),
-                mode = K_CC_MODE_GCM.convert(),
-                alg = kCCAlgorithmAES,
-                padding = ccNoPadding,
-                iv = null,
-                key = chaveFixada.addressOf(0),
-                keyLength = chave.size.convert(),
-                tweak = null,
-                tweakLength = 0.convert(),
-                numRounds = 0,
-                options = 0.convert(),
-                cryptorRef = referencia.ptr,
-            )
+        val saida = ByteArray(entrada.size)
+
+        var estado = chaveCifra.usePinned { chaveFixada ->
+            nonce.usePinned { nonceFixada ->
+                CCCryptorCreateWithMode(
+                    op = operacao.convert(),
+                    mode = kCCModeCTR,
+                    alg = kCCAlgorithmAES,
+                    padding = ccNoPadding,
+                    iv = nonceFixada.addressOf(0),
+                    key = chaveFixada.addressOf(0),
+                    keyLength = chaveCifra.size.convert(),
+                    tweak = null,
+                    tweakLength = 0.convert(),
+                    numRounds = 0,
+                    options = 0.convert(),
+                    cryptorRef = referencia.ptr,
+                )
+            }
         }
         check(estado == kCCSuccess) { "CCCryptorCreateWithMode falhou" }
         val cryptor = requireNotNull(referencia.value) { "CCCryptorRef nulo" }
 
         try {
-            estado = nonce.usePinned { nonceFixado ->
-                ccCryptorGcmAddIv(cryptor, nonceFixado.addressOf(0), nonce.size.convert())
-            }
-            check(estado == kCCSuccess) { "CCCryptorGCMAddIV falhou" }
-
-            if (dadosAutenticados.isNotEmpty()) {
-                estado = dadosAutenticados.usePinned { aadFixado ->
-                    ccCryptorGcmAddAad(cryptor, aadFixado.addressOf(0), dadosAutenticados.size.convert())
-                }
-                check(estado == kCCSuccess) { "CCCryptorGCMAddAAD falhou" }
-            }
-
             if (entrada.isNotEmpty()) {
                 val movidos = alloc<size_tVar>()
                 estado = entrada.usePinned { entradaFixada ->
@@ -219,15 +171,37 @@ internal actual object CriptografiaBackup {
                 check(estado == kCCSuccess) { "CCCryptorUpdate falhou" }
             }
 
-            val tamanhoTag = alloc<size_tVar>()
-            tamanhoTag.value = tag.size.convert()
-            estado = tag.usePinned { tagFixada ->
-                ccCryptorGcmFinal(cryptor, tagFixada.addressOf(0), tamanhoTag.ptr)
-            }
-            check(estado == kCCSuccess) { "CCCryptorGCMFinal falhou" }
+            // AES-CTR sem padding não deixa resto para o Final flusar (ao contrário de CBC com
+            // padding) — a chamada existe só para fechar o ciclo de vida documentado da Apple
+            // (Create -> Update -> Final -> Release) e continua sendo API pública, não a SPI de GCM.
+            val movidosFinal = alloc<size_tVar>()
+            movidosFinal.value = 0.convert()
+            estado = CCCryptorFinal(cryptor, null, 0.convert(), movidosFinal.ptr)
+            check(estado == kCCSuccess) { "CCCryptorFinal falhou" }
         } finally {
             CCCryptorRelease(cryptor)
         }
+        saida
+    }
+
+    private fun hmacSha256(chaveMac: ByteArray, vararg partes: ByteArray): ByteArray {
+        val entrada = partes.fold(ByteArray(0)) { acumulado, parte -> acumulado + parte }
+        val mac = ByteArray(FormatoBackup.TAMANHO_TAG)
+        chaveMac.usePinned { chaveFixada ->
+            entrada.usePinned { entradaFixada ->
+                mac.usePinned { macFixada ->
+                    CCHmac(
+                        algorithm = kCCHmacAlgSHA256,
+                        key = chaveFixada.addressOf(0),
+                        keyLength = chaveMac.size.convert(),
+                        data = if (entrada.isEmpty()) null else entradaFixada.addressOf(0),
+                        dataLength = entrada.size.convert(),
+                        macOut = macFixada.addressOf(0),
+                    )
+                }
+            }
+        }
+        return mac
     }
 
     private fun iguaisEmTempoConstante(esquerda: ByteArray, direita: ByteArray): Boolean {

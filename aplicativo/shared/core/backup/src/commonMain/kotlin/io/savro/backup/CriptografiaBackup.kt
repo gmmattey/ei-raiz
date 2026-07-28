@@ -2,9 +2,16 @@ package io.savro.backup
 
 /**
  * Única fronteira criptográfica do backup (#121). Nenhuma primitiva é implementada aqui nem nas
- * implementações de plataforma: cada `actual` só chama a biblioteca criptográfica auditada do
- * sistema operacional — JCA/Conscrypt(BoringSSL) no Android, CommonCrypto no iOS. O Savro não
- * escreve AES, GCM nem PBKDF2 em linha nenhuma.
+ * implementações de plataforma: cada `actual` só chama bibliotecas/APIs criptográficas públicas e
+ * auditadas do sistema operacional — JCA/Conscrypt(BoringSSL) + Bouncy Castle (KDF) no Android,
+ * CommonCrypto público no iOS. O Savro não escreve AES, HMAC nem PBKDF2 em linha nenhuma.
+ *
+ * **Construção *encrypt-then-MAC*, não GCM.** O binding padrão do Kotlin/Native para CommonCrypto
+ * não expõe modo GCM (`kCCModeGCM`/`CCCryptorGCM*` são SPI privada da Apple, `CommonCryptorSPI.h`,
+ * fora do module map público) — usar essa SPI foi avaliado e rejeitado (ver histórico do PR #228).
+ * A cifra é **AES-256-CTR + HMAC-SHA256** com duas subchaves distintas derivadas do mesmo KDF
+ * (ver [FormatoBackup.TAMANHO_CHAVE]): `chave[0..31]` cifra, `chave[32..63]` autentica. Nunca a
+ * mesma subchave para as duas coisas. Detalhe completo em `formato-savrobackup.md` §3.2.
  *
  * **Codificação da senha (regra do formato, não detalhe de implementação):** a senha do usuário
  * chega aqui já convertida para uma *string hexadecimal ASCII minúscula dos seus bytes UTF-8*
@@ -19,16 +26,23 @@ internal expect object CriptografiaBackup {
     /** Bytes do gerador seguro do sistema (`SecureRandom` / `SecRandomCopyBytes`). */
     fun bytesAleatorios(quantidade: Int): ByteArray
 
-    /** PBKDF2-HMAC-SHA1 (RFC 8018). [senhaAscii] já vem codificada conforme documentado acima. */
+    /**
+     * PBKDF2-HMAC-SHA256 (RFC 8018). [senhaAscii] já vem codificada conforme documentado acima.
+     * [tamanhoBytes] é sempre [FormatoBackup.TAMANHO_CHAVE] (64 = chave de cifra + chave de MAC).
+     */
     fun derivarChave(senhaAscii: String, salt: ByteArray, iteracoes: Int, tamanhoBytes: Int): ByteArray
 
-    /** AES-256-GCM. Devolve `cifra || tag(16)`. */
+    /**
+     * *Encrypt-then-MAC*: AES-256-CTR(chave[0..31], nonce, texto), depois
+     * HMAC-SHA256(chave[32..63], dadosAutenticados || ciphertext). Devolve `ciphertext || tag(32)`.
+     */
     fun cifrar(chave: ByteArray, nonce: ByteArray, dadosAutenticados: ByteArray, texto: ByteArray): ByteArray
 
     /**
-     * AES-256-GCM. Devolve o texto claro, ou `null` quando a tag não confere — senha errada,
-     * cabeçalho adulterado, corpo adulterado e corpo truncado caem todos neste mesmo `null`, de
-     * propósito (ver [ErroBackup]).
+     * Verifica a tag HMAC-SHA256 **antes** de decifrar (verify-then-decrypt) em tempo constante, e
+     * só então roda AES-256-CTR. Devolve o texto claro, ou `null` quando a tag não confere — senha
+     * errada, cabeçalho adulterado, corpo adulterado e corpo truncado caem todos neste mesmo
+     * `null`, de propósito (ver [ErroBackup]).
      */
     fun decifrar(chave: ByteArray, nonce: ByteArray, dadosAutenticados: ByteArray, cifra: ByteArray): ByteArray?
 }

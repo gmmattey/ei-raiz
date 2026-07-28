@@ -31,6 +31,9 @@ kotlin {
             // ActivityResultContracts (SAF: ACTION_CREATE_DOCUMENT / ACTION_OPEN_DOCUMENT).
             implementation(libs.androidx.activity)
             implementation(libs.kotlinx.coroutines.android)
+            // PBKDF2-HMAC-SHA256 (PR #228): só a API leve de PKCS5S2ParametersGenerator, nunca
+            // Security.addProvider — ver docstring de CriptografiaBackup.android.kt.
+            implementation(libs.bouncycastle.provider)
         }
         val androidUnitTest by getting {
             dependencies {

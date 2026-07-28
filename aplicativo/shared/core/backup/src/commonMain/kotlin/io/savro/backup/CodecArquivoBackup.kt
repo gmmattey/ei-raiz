@@ -28,9 +28,9 @@ object CodecArquivoBackup {
         val cabecalho = CabecalhoBackup(
             versaoFormato = FormatoBackup.VERSAO_FORMATO,
             versaoEsquema = conteudo.versaoEsquema,
-            idKdf = FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA1,
+            idKdf = FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA256,
             iteracoesKdf = iteracoesKdf,
-            idCifra = FormatoBackup.ID_CIFRA_AES_256_GCM,
+            idCifra = FormatoBackup.ID_CIFRA_AES_256_CTR_HMAC_SHA256,
             salt = salt ?: CriptografiaBackup.bytesAleatorios(FormatoBackup.TAMANHO_SALT),
             nonce = nonce ?: CriptografiaBackup.bytesAleatorios(FormatoBackup.TAMANHO_NONCE),
         )

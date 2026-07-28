@@ -202,7 +202,10 @@ class CodecArquivoBackupTest {
         val primeiro = gerar()
         val segundo = gerar()
 
-        assertNotEquals(primeiro.copyOfRange(20, 48).paraHex(), segundo.copyOfRange(20, 48).paraHex())
+        assertNotEquals(
+            primeiro.copyOfRange(20, FormatoBackup.TAMANHO_CABECALHO).paraHex(),
+            segundo.copyOfRange(20, FormatoBackup.TAMANHO_CABECALHO).paraHex(),
+        )
         assertNotEquals(primeiro.paraHex(), segundo.paraHex())
     }
 

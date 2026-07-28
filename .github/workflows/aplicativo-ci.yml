@@ -254,6 +254,27 @@ jobs:
       - name: Linkar framework KMP (SavroApp, simulador)
         run: ./gradlew --no-daemon --stacktrace :shared:app:linkDebugFrameworkIosSimulatorArm64
 
+      # Confirmação real (não suposição) de que a correção do PR #228 removeu a SPI privada do
+      # backup: nenhum símbolo de CommonCryptorSPI.h pode aparecer no binário linkado, nem como
+      # símbolo dinâmico (nm) nem como string literal (o `dlsym(handle, "CCCryptorGCMAddIV")` da
+      # versão anterior embutia o nome como string no binário — `strings` pega isso mesmo sem
+      # relocation de linker, já que dlsym resolve em runtime, não em link time).
+      - name: Confirmar ausência de símbolo privado do CommonCrypto no framework
+        run: |
+          FRAMEWORK_BIN="shared/app/build/bin/iosSimulatorArm64/debugFramework/SavroApp.framework/SavroApp"
+          if [ ! -f "$FRAMEWORK_BIN" ]; then
+            echo "Framework não encontrado em $FRAMEWORK_BIN — ajustar o caminho do step." >&2
+            exit 1
+          fi
+          echo "Símbolos dinâmicos (nm -m):"
+          nm -m "$FRAMEWORK_BIN" | grep -i 'CCCryptorGCM\|kCCModeGCM' && { echo "Símbolo de SPI privada encontrado (nm)."; exit 1; } || echo "  nenhum encontrado."
+          echo "Strings embutidas (dlsym usa string literal em runtime, não relocation):"
+          strings "$FRAMEWORK_BIN" | grep -i 'CCCryptorGCM\|kCCModeGCM' && { echo "String de SPI privada encontrada (strings)."; exit 1; } || echo "  nenhuma encontrada."
+          echo "Referências a dlopen/dlsym no binário (informativo — o runtime do Kotlin/Native"
+          echo "pode usar dlopen internamente por motivo alheio ao backup; não falha o job sozinho,"
+          echo "só documenta a contagem para leitura humana do log):"
+          nm -m "$FRAMEWORK_BIN" | grep -ic 'dlopen\|dlsym' || true
+
       # `iosApp.xcodeproj` não tem integração CocoaPods própria — o Podfile (#118) declara o
       # SQLCipher que o SavroApp.framework espera "auto-linked" no executável final (ver
       # comentário no Podfile). `pod install` gera o `.xcworkspace` que o xcodebuild abaixo usa.

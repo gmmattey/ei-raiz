@@ -27,7 +27,7 @@ data class CabecalhoBackup(
         bytes[17] = idCifra.toByte()
         bytes.escreverUInt16(18, 0)
         salt.copyInto(bytes, 20)
-        nonce.copyInto(bytes, 36)
+        nonce.copyInto(bytes, 20 + FormatoBackup.TAMANHO_SALT)
         return bytes
     }
 
@@ -89,7 +89,9 @@ data class CabecalhoBackup(
             val idKdf = arquivo[12].toInt() and 0xFF
             val iteracoes = arquivo.lerUInt32(13)
             val idCifra = arquivo[17].toInt() and 0xFF
-            if (idKdf != FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA1 || idCifra != FormatoBackup.ID_CIFRA_AES_256_GCM) {
+            if (idKdf != FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA256 ||
+                idCifra != FormatoBackup.ID_CIFRA_AES_256_CTR_HMAC_SHA256
+            ) {
                 return Resultado.Falha(ErroBackup.ArquivoInvalido)
             }
             if (iteracoes < 1 || iteracoes > FormatoBackup.ITERACOES_MAXIMAS_ACEITAS) {
@@ -103,8 +105,11 @@ data class CabecalhoBackup(
                     idKdf = idKdf,
                     iteracoesKdf = iteracoes,
                     idCifra = idCifra,
-                    salt = arquivo.copyOfRange(20, 36),
-                    nonce = arquivo.copyOfRange(36, 48),
+                    salt = arquivo.copyOfRange(20, 20 + FormatoBackup.TAMANHO_SALT),
+                    nonce = arquivo.copyOfRange(
+                        20 + FormatoBackup.TAMANHO_SALT,
+                        20 + FormatoBackup.TAMANHO_SALT + FormatoBackup.TAMANHO_NONCE,
+                    ),
                 ),
             )
         }

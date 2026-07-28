@@ -19,7 +19,7 @@ criptográficas do sistema operacional.
 |---|---|
 | Aparelho perdido ou roubado com o arquivo de backup dentro | O conteúdo só abre com a senha escolhida pelo usuário; a chave não deriva de nada guardado no aparelho. |
 | Backup salvo em nuvem de terceiros (Google Drive, iCloud Drive, e-mail) pelo próprio usuário | O provedor recebe apenas texto cifrado autenticado; sem a senha não há leitura nem edição silenciosa. |
-| Adulteração do arquivo (troca de bytes, downgrade de parâmetros do KDF, truncamento) | AES-256-GCM autentica corpo **e** cabeçalho; qualquer alteração invalida a tag e o arquivo é recusado antes de qualquer escrita no banco. |
+| Adulteração do arquivo (troca de bytes, downgrade de parâmetros do KDF, truncamento) | A tag HMAC-SHA256 (*encrypt-then-MAC*) autentica corpo **e** cabeçalho; qualquer alteração invalida a tag e o arquivo é recusado antes de qualquer escrita no banco. |
 | Comprometimento do servidor Savro | Irrelevante para o backup: **o servidor nunca vê o arquivo**. Não há upload, sincronização, telemetria de conteúdo nem chamada de rede em nenhum ponto do fluxo. |
 | Chave do Keystore/Keychain revogada (biometria alterada, aparelho restaurado) | O backup é independente do material criptográfico local, então continua restaurável. É justamente o caminho de recuperação previsto quando o cofre local fica inacessível. |
 
@@ -40,7 +40,7 @@ criptográficas do sistema operacional.
 
 ## 2. Layout do arquivo
 
-Tudo em **big-endian**. O cabeçalho tem exatamente 48 bytes e fica em texto claro.
+Tudo em **big-endian**. O cabeçalho tem exatamente 52 bytes e fica em texto claro.
 
 ```
 offset  tamanho  campo             conteúdo
@@ -48,18 +48,18 @@ offset  tamanho  campo             conteúdo
 0       8        magia             "SAVROBK1" (ASCII, 53 41 56 52 4F 42 4B 31)
 8       2        versaoFormato     uint16 — versão desta especificação (hoje 1)
 10      2        versaoEsquema     uint16 — versão do schema do cofre (hoje 4)
-12      1        idKdf             uint8  — 1 = PBKDF2-HMAC-SHA1
+12      1        idKdf             uint8  — 1 = PBKDF2-HMAC-SHA256
 13      4        iteracoesKdf      uint32 — iterações usadas neste arquivo
-17      1        idCifra           uint8  — 1 = AES-256-GCM (tag de 128 bits)
+17      1        idCifra           uint8  — 1 = AES-256-CTR + HMAC-SHA256 (encrypt-then-MAC)
 18      2        reservado         uint16 — sempre 0
 20      16       salt              salt aleatório do KDF
-36      12       nonce             nonce/IV aleatório do GCM, único por arquivo
-48      N        corpo             ciphertext || tag(16 bytes)
+36      16       nonce             IV/contador inicial do AES-CTR, único por arquivo
+52      N        corpo             ciphertext || tag HMAC-SHA256(32 bytes)
 ```
 
-- **AAD:** os 48 bytes do cabeçalho entram integralmente como dados autenticados adicionais. Um
-  atacante não consegue baixar `iteracoesKdf`, trocar o `salt` ou forjar uma versão de schema sem
-  invalidar a tag.
+- **Dados autenticados:** os 52 bytes do cabeçalho entram integralmente na entrada do HMAC
+  (`tag = HMAC-SHA256(chaveMac, cabecalho || ciphertext)`). Um atacante não consegue baixar
+  `iteracoesKdf`, trocar o `salt` ou forjar uma versão de schema sem invalidar a tag.
 - **Sem campo de tamanho do corpo:** o corpo é "todo o resto do arquivo". Truncamento é detectado
   pela falha de autenticação, não por um campo que poderia divergir do conteúdo real.
 - **Sem dado do usuário no cabeçalho:** a data do backup, a contagem de itens e a lista de moedas
@@ -73,11 +73,17 @@ offset  tamanho  campo             conteúdo
 ### 3.1 Derivação de chave
 
 ```
-chave = PBKDF2-HMAC-SHA1(senhaCanonica, salt, iteracoesKdf, 32 bytes)
+chaveCompleta = PBKDF2-HMAC-SHA256(senhaCanonica, salt, iteracoesKdf, 64 bytes)
+chaveCifra    = chaveCompleta[0..31]   (AES-256)
+chaveMac      = chaveCompleta[32..63]  (HMAC-SHA256)
 ```
 
-- **Iterações padrão na geração: 1.300.000** — recomendação da OWASP (*Password Storage Cheat
-  Sheet*) para PBKDF2 com PRF HMAC-SHA1. O número fica gravado no arquivo: subir esse padrão no
+Uma única derivação produz **duas subchaves explicitamente distintas** — nenhuma implementação de
+plataforma reaproveita a mesma chave para cifrar e para autenticar. É a exigência básica de uma
+construção *encrypt-then-MAC* segura.
+
+- **Iterações padrão na geração: 600.000** — recomendação da OWASP (*Password Storage Cheat
+  Sheet*) para PBKDF2 com PRF HMAC-SHA256. O número fica gravado no arquivo: subir esse padrão no
   futuro não invalida nenhum backup já gerado.
 - **Teto na leitura: 10.000.000 iterações.** Um arquivo adulterado pedindo bilhões de iterações
   travaria o aparelho antes de a tag ser verificada (a derivação acontece antes da autenticação,
@@ -85,21 +91,24 @@ chave = PBKDF2-HMAC-SHA1(senhaCanonica, salt, iteracoesKdf, 32 bytes)
 - **`salt` de 16 bytes**, novo a cada arquivo, do gerador seguro do sistema (`SecureRandom` no
   Android, `SecRandomCopyBytes` no iOS).
 
-#### Por que HMAC-SHA1 e não HMAC-SHA256
+#### Por que PBKDF2-HMAC-SHA256 (e não SHA-1)
 
-`SecretKeyFactory` do Android só oferece `PBKDF2WithHmacSHA256` **a partir da API 26**, e o Savro
-suporta `minSdk = 23`. Um formato cuja chave dependesse da versão do Android quebraria o critério
-de aceite de interoperabilidade — o mesmo arquivo tem que abrir em qualquer aparelho suportado, e
-não em "alguns Androids".
+A primeira versão deste PR usava PBKDF2-HMAC-SHA1, porque `SecretKeyFactory` do Android só oferece
+`PBKDF2WithHmacSHA256` **a partir da API 26**, e o Savro suporta `minSdk = 23`. Essa decisão foi
+revista antes de congelar a versão 1 do formato (PR #228): em vez de aceitar SHA-1 como solução
+definitiva, o Android passou a usar a **API leve do Bouncy Castle**
+(`PKCS5S2ParametersGenerator` + `SHA256Digest`, biblioteca madura desde 2000, ativamente mantida —
+release 1.85 em julho de 2026) para calcular PBKDF2-HMAC-SHA256 diretamente, **sem** registrar um
+`Security.addProvider` global (o Android já embute uma versão reduzida do Bouncy Castle sob o nome
+`"BC"` só para validação de certificados; registrar a distribuição completa como provedor JCA
+global conflitaria com ela — problema documentado do ecossistema Android). O iOS já conseguia
+SHA-256 como PRF do PBKDF2 nativamente (`kCCPRFHmacAlgSHA256` é símbolo público de
+`CommonKeyDerivation.h`; o gargalo nunca foi o iOS). Resultado: os dois lados usam PBKDF2-HMAC-SHA256
+sem subir `minSdk`, sem esperar por Argon2id auditado nas duas plataformas.
 
-HMAC-SHA1 permanece adequado como PRF: os ataques conhecidos ao SHA-1 são de colisão e não se
-aplicam à construção HMAC. O custo relativo é compensado pelas 1.300.000 iterações.
-
-**Caminho de evolução, já previsto:** `idKdf` é um campo versionado. Quando o `minSdk` subir para
-26 (ou quando houver Argon2id auditado e disponível nas duas plataformas), basta definir
-`idKdf = 2` (PBKDF2-HMAC-SHA256) ou `idKdf = 3` (Argon2id) para os arquivos novos; os antigos
-continuam abrindo, porque o id do KDF viaja dentro do arquivo. Nenhuma migração de dados é
-necessária.
+`idKdf` continua um campo versionado (hoje `1` = PBKDF2-HMAC-SHA256). Se um dia surgir Argon2id
+maduro e interoperável nas duas plataformas, `idKdf = 2` convive com os arquivos já gerados —
+nenhuma migração de dados é necessária.
 
 #### 3.1.1 Codificação canônica da senha
 
@@ -120,18 +129,58 @@ usuário. Passando só caracteres ASCII, todos os provedores concordam byte a by
 O custo é nulo em segurança (mapeamento bijetivo, entropia preservada) e o teste
 `codificacaoDaSenhaEhIdenticaNasDuasPlataformas` fixa esse contrato nas duas plataformas.
 
-### 3.2 Cifra
+### 3.2 Cifra: *encrypt-then-MAC*, não GCM
 
 ```
-corpo = AES-256-GCM(chave, nonce, aad = cabecalho[0..48), texto = corpoCanonicoUtf8)
+ciphertext = AES-256-CTR(chaveCifra, nonce, corpoCanonicoUtf8)
+tag        = HMAC-SHA256(chaveMac, cabecalho[0..52) || ciphertext)
+corpo      = ciphertext || tag
 ```
 
-- Tag de **128 bits**, anexada ao final do ciphertext (convenção do JCA e do CommonCrypto).
-- **Nonce de 12 bytes, único por arquivo**, sempre novo do gerador seguro do sistema. Nunca há
-  reuso de par (chave, nonce): o salt também muda a cada arquivo, então nem a chave se repete.
-- Implementações: `javax.crypto.Cipher("AES/GCM/NoPadding")` no Android (Conscrypt/BoringSSL) e
-  `CCCryptorCreateWithMode(kCCModeGCM, kCCAlgorithmAES)` no iOS (CommonCrypto). **Nenhuma
-  primitiva criptográfica é implementada pelo Savro.**
+Na leitura, a tag é recalculada e comparada em **tempo constante** *antes* de decifrar
+(verify-then-decrypt): só se a tag conferir o AES-CTR roda.
+
+- **Por que não AES-256-GCM.** A primeira versão deste PR usava AES-256-GCM nas duas plataformas.
+  No Android isso é API pública direta (`javax.crypto.Cipher("AES/GCM/NoPadding")`,
+  Conscrypt/BoringSSL). No iOS, porém, o binding padrão do Kotlin/Native para CommonCrypto **não
+  expõe** o modo GCM: `kCCModeGCM` e as funções `CCCryptorGCMAddIV`/`CCCryptorGCMAddAAD`/
+  `CCCryptorGCMFinal` existem apenas em `CommonCryptorSPI.h`, uma interface privada da Apple — não
+  fazem parte do module map público que o Kotlin/Native usa para gerar o binding. Uma primeira
+  correção (commit `5f69690`) resolveu esses símbolos em runtime via `dlsym` contra a própria
+  CommonCrypto do sistema; **essa abordagem foi revertida** por decisão do Luiz (dono do repo,
+  ver PR #228): SPI privada não é aceitável num app destinado à App Store, mesmo funcionando em
+  runtime e mesmo com os símbolos presentes de fato na libSystem.
+- **Alternativas avaliadas e descartadas:**
+  - *Biblioteca multiplataforma auditada com AES-GCM/XChaCha20-Poly1305* (ex.: bindings Kotlin de
+    libsodium) — a própria documentação do projeto mais maduro encontrado
+    (`kotlin-multiplatform-libsodium`) se declara **experimental** ("you shouldn't use it in
+    production until it has been reviewed by community"), o que desqualifica o critério de
+    "madura e auditada". Nenhuma outra biblioteca KMP com suporte real a `iosArm64`/
+    `iosSimulatorArm64` (não só JVM/Android) e maturidade comparável foi encontrada.
+  - *Bridge Swift para CryptoKit* (API pública real desde iOS 13, `CryptoKit.AES.GCM`) — é a opção
+    tecnicamente mais correta (mantém GCM real nas duas plataformas, mesmo padrão NIST, bytes
+    idênticos), mas exige compilar um framework Swift `@objc`-compatible e consumi-lo via cinterop
+    de Kotlin/Native — um padrão de build que não existe hoje no projeto (o cinterop existente,
+    CocoaPods para SQLCipher em `:shared:core:database`, resolve C/Objective-C existente, não gera
+    um framework Swift novo a partir do zero) e que só pode ser testado em host macOS de verdade.
+    Sem acesso a um host macOS/Xcode para prototipar e depurar esse bridge (o ambiente onde esta
+    decisão foi tomada é Windows), o custo real de implementar esse caminho às cegas — só com
+    feedback de CI, cada iteração custando um run completo do runner macOS — foi considerado alto
+    demais frente à alternativa abaixo, que é auditável, testável localmente e não depende de
+    nenhuma ferramenta de build nova.
+  - **Escolhida: *encrypt-then-MAC* com API pública.** AES-256-CTR (`kCCModeCTR`, valor público do
+    enum `CCMode` em `CommonCryptor.h` — ao contrário de `kCCModeGCM`) + HMAC-SHA256 (`CCHmac`,
+    público em `CommonHMAC.h`). Nenhuma primitiva é implementada pelo Savro: é orquestração de duas
+    primitivas públicas e amplamente auditadas (AES e HMAC), não uma AEAD de biblioteca única. As
+    duas subchaves (cifra e MAC) são sempre distintas (ver §3.1) e a tag é verificada antes de
+    decifrar — as duas regras que tornam essa composição segura.
+- **Nonce/IV de 16 bytes** (bloco inteiro do AES, exigido pelo CTR — por isso maior que os 12 bytes
+  do GCM), único por arquivo, sempre novo do gerador seguro do sistema. Nunca há reuso de par
+  (chave, nonce): o salt também muda a cada arquivo, então nem a chave se repete.
+- Implementações: `javax.crypto.Cipher("AES/CTR/NoPadding")` + `javax.crypto.Mac("HmacSHA256")` no
+  Android (Conscrypt/BoringSSL), `CCCryptorCreateWithMode(kCCModeCTR, kCCAlgorithmAES)` +
+  `CCHmac(kCCHmacAlgSHA256, ...)` no iOS (CommonCrypto público). **Nenhuma primitiva criptográfica
+  é implementada pelo Savro.**
 
 ### 3.3 Falhas e vazamento de informação
 
@@ -145,12 +194,13 @@ informações estão no cabeçalho em texto claro, não dependem da senha e não
 conteúdo. Sem elas, o usuário ficaria sem saber que precisa atualizar o app.
 
 Nunca são registrados em log: senha, senha canônica, chave derivada, conteúdo decifrado ou
-mensagem crua da engine de banco. A comparação de tag no iOS é feita em tempo constante.
+mensagem crua da engine de banco. A comparação de tag é feita em tempo constante nas duas
+plataformas — `MessageDigest.isEqual` (API pública do JDK, desenhada para isso) no Android,
+comparação XOR-OR sem saída antecipada no iOS.
 
-Buffers sensíveis (chave derivada, corpo serializado, corpo decifrado) são zerados
-(`ByteArray.fill(0)`) assim que deixam de ser necessários, e o `PBEKeySpec` do Android recebe
-`clearPassword()`. Isso é melhor esforço: nem a JVM nem o Kotlin/Native garantem que não houve
-cópia intermediária na memória.
+Buffers sensíveis (chave derivada, corpo serializado, corpo decifrado, bytes da senha usados no
+KDF) são zerados (`ByteArray.fill(0)`) assim que deixam de ser necessários. Isso é melhor esforço:
+nem a JVM nem o Kotlin/Native garantem que não houve cópia intermediária na memória.
 
 ---
 
@@ -305,4 +355,4 @@ testes.
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 1 | 2026-07 (#121) | Versão inicial: PBKDF2-HMAC-SHA1 + AES-256-GCM, corpo em JSON canônico. |
+| 1 | 2026-07 (#121, PR #228) | Versão congelada: PBKDF2-HMAC-SHA256 + AES-256-CTR/HMAC-SHA256 (*encrypt-then-MAC*), corpo em JSON canônico. Uma iteração intermediária deste mesmo PR (não publicada) usou PBKDF2-HMAC-SHA1 + AES-256-GCM; revista antes do merge porque o modo GCM do CommonCrypto no iOS só é acessível via SPI privada da Apple (ver §3.2) e porque SHA-1 não era a melhor escolha disponível para o KDF (ver §3.1). |

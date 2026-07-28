@@ -1,26 +1,38 @@
 package io.savro.backup
 
 import java.security.GeneralSecurityException
+import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.PBEKeySpec
+import javax.crypto.Mac
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import org.bouncycastle.crypto.digests.SHA256Digest
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
+import org.bouncycastle.crypto.params.KeyParameter
 
 /**
- * Implementação Android da fronteira criptográfica do backup (#121). Só chama JCA — nenhuma
- * primitiva escrita à mão, nenhuma dependência nova: `AES/GCM/NoPadding` e
- * `PBKDF2WithHmacSHA1` já vêm do provedor do sistema (Conscrypt/BoringSSL nas versões atuais,
- * Bouncy Castle nas antigas) em todos os níveis de API suportados (`minSdk = 23`).
+ * Implementação Android da fronteira criptográfica do backup (#121). Ver a docstring do `expect
+ * object` em `CriptografiaBackup.kt` para a construção *encrypt-then-MAC* completa (motivo de não
+ * ser GCM) — este arquivo só orquestra:
  *
- * Por que HMAC-SHA1 e não HMAC-SHA256 no PBKDF2: `SecretKeyFactory` só oferece
- * `PBKDF2WithHmacSHA256` a partir da API 26, e o app suporta API 23. Um formato cuja chave depende
- * da versão do Android quebraria o critério de aceite de interoperabilidade (o mesmo arquivo tem
- * que abrir em qualquer aparelho). HMAC-SHA1 permanece seguro como PRF — os ataques conhecidos ao
- * SHA-1 são de colisão e não se aplicam a HMAC — e o custo é compensado pelas 1.300.000 iterações
- * recomendadas pela OWASP para esse PRF. O id do KDF está gravado no arquivo: quando o `minSdk`
- * subir para 26, um `idKdf = 2` com HMAC-SHA256 convive com os arquivos já gerados.
+ * - **KDF:** PBKDF2-HMAC-SHA256 via a API leve do Bouncy Castle (`PKCS5S2ParametersGenerator` +
+ *   `SHA256Digest`), **não** via `SecretKeyFactory`/`Security.addProvider`. Dois motivos: (1)
+ *   `SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")` só existe a partir da API 26 no
+ *   provedor do sistema, e o app suporta `minSdk = 23`; (2) registrar o Bouncy Castle como
+ *   provedor JCA global (`Security.addProvider(BouncyCastleProvider())`) conflita com a versão
+ *   reduzida de BC que o próprio Android já embute sob o nome `"BC"` para verificação de
+ *   certificados — um problema documentado e conhecido do ecossistema Android. A API leve
+ *   (`PKCS5S2ParametersGenerator`) roda os bytes diretamente, sem passar pelo registro de
+ *   provedores, sem esse risco.
+ * - **Cifra:** `AES/CTR/NoPadding` (JCA/Conscrypt), disponível em todos os níveis de API
+ *   suportados — ao contrário do GCM, o CTR nunca foi um problema de disponibilidade aqui; a
+ *   mudança de GCM para CTR+HMAC é só para manter os dois lados (Android e iOS) na mesma
+ *   construção, já que o iOS não consegue GCM sem SPI privada (ver decisão no PR #228).
+ * - **MAC:** `HmacSHA256` (JCA), padrão em qualquer nível de API.
+ *
+ * A comparação da tag no caminho de decifragem usa `MessageDigest.isEqual`, a API pública do JDK
+ * feita especificamente para comparação em tempo constante — não uma comparação escrita à mão.
  */
 internal actual object CriptografiaBackup {
 
@@ -35,13 +47,17 @@ internal actual object CriptografiaBackup {
         iteracoes: Int,
         tamanhoBytes: Int,
     ): ByteArray {
-        val especificacao = PBEKeySpec(senhaAscii.toCharArray(), salt, iteracoes, tamanhoBytes * 8)
+        val senhaBytes = senhaAscii.encodeToByteArray()
         return try {
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(especificacao).encoded
+            val gerador = PKCS5S2ParametersGenerator(SHA256Digest())
+            gerador.init(senhaBytes, salt, iteracoes)
+            val parametros = gerador.generateDerivedParameters(tamanhoBytes * 8) as KeyParameter
+            parametros.key
         } finally {
-            // Limpa a cópia interna da senha mantida pelo PBEKeySpec (#121: "limpar buffers
-            // sensíveis da memória quando a plataforma permitir").
-            especificacao.clearPassword()
+            // Não existe um `clearPassword()` equivalente ao PBEKeySpec na API leve do BC — zera a
+            // cópia que este método controla (#121: "limpar buffers sensíveis quando a plataforma
+            // permitir").
+            senhaBytes.fill(0)
         }
     }
 
@@ -51,11 +67,12 @@ internal actual object CriptografiaBackup {
         dadosAutenticados: ByteArray,
         texto: ByteArray,
     ): ByteArray {
-        val cifrador = Cipher.getInstance(TRANSFORMACAO)
-        val chaveSecreta = SecretKeySpec(chave, "AES")
-        cifrador.init(Cipher.ENCRYPT_MODE, chaveSecreta, GCMParameterSpec(TAMANHO_TAG_BITS, nonce))
-        cifrador.updateAAD(dadosAutenticados)
-        return cifrador.doFinal(texto)
+        val (chaveCifra, chaveMac) = subchaves(chave)
+        val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
+        cifrador.init(Cipher.ENCRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
+        val ciphertext = cifrador.doFinal(texto)
+        val tag = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+        return ciphertext + tag
     }
 
     actual fun decifrar(
@@ -63,24 +80,40 @@ internal actual object CriptografiaBackup {
         nonce: ByteArray,
         dadosAutenticados: ByteArray,
         cifra: ByteArray,
-    ): ByteArray? = try {
-        val cifrador = Cipher.getInstance(TRANSFORMACAO)
-        cifrador.init(
-            Cipher.DECRYPT_MODE,
-            SecretKeySpec(chave, "AES"),
-            GCMParameterSpec(TAMANHO_TAG_BITS, nonce),
-        )
-        cifrador.updateAAD(dadosAutenticados)
-        cifrador.doFinal(cifra)
-    } catch (excecao: GeneralSecurityException) {
-        // Tag inválida, cifra truncada, chave errada: um único caminho de falha, sem log e sem
-        // distinção — o motivo real nunca chega a quem chamou (ver ErroBackup.ArquivoInvalido).
-        null
-    } catch (excecao: IllegalArgumentException) {
-        // Alguns provedores recusam entrada menor que a tag por aqui em vez de AEADBadTagException.
-        null
+    ): ByteArray? {
+        if (cifra.size < FormatoBackup.TAMANHO_TAG) return null
+        val (chaveCifra, chaveMac) = subchaves(chave)
+        val ciphertext = cifra.copyOfRange(0, cifra.size - FormatoBackup.TAMANHO_TAG)
+        val tagRecebida = cifra.copyOfRange(cifra.size - FormatoBackup.TAMANHO_TAG, cifra.size)
+        val tagCalculada = hmacSha256(chaveMac, dadosAutenticados, ciphertext)
+
+        // Verifica a tag ANTES de decifrar (verify-then-decrypt) e em tempo constante:
+        // `MessageDigest.isEqual` é desenhado pelo próprio JDK para essa comparação.
+        if (!MessageDigest.isEqual(tagCalculada, tagRecebida)) return null
+
+        return try {
+            val cifrador = Cipher.getInstance(TRANSFORMACAO_CIFRA)
+            cifrador.init(Cipher.DECRYPT_MODE, SecretKeySpec(chaveCifra, "AES"), IvParameterSpec(nonce))
+            cifrador.doFinal(ciphertext)
+        } catch (excecao: GeneralSecurityException) {
+            // Corpo com tamanho inválido para o modo de cifra: um único caminho de falha, sem log e
+            // sem distinção (ver ErroBackup.ArquivoInvalido).
+            null
+        }
     }
 
-    private const val TRANSFORMACAO = "AES/GCM/NoPadding"
-    private const val TAMANHO_TAG_BITS = 128
+    /** `chave[0..31]` cifra, `chave[32..63]` autentica — nunca a mesma subchave para as duas coisas. */
+    private fun subchaves(chave: ByteArray): Pair<ByteArray, ByteArray> {
+        val metade = FormatoBackup.TAMANHO_CHAVE / 2
+        return chave.copyOfRange(0, metade) to chave.copyOfRange(metade, chave.size)
+    }
+
+    private fun hmacSha256(chaveMac: ByteArray, vararg partes: ByteArray): ByteArray {
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(chaveMac, "HmacSHA256"))
+        partes.forEach(mac::update)
+        return mac.doFinal()
+    }
+
+    private const val TRANSFORMACAO_CIFRA = "AES/CTR/NoPadding"
 }

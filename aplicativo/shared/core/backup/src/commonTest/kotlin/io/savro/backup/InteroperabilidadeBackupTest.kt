@@ -65,8 +65,8 @@ class InteroperabilidadeBackupTest {
         val cabecalho = resultado.valor
         assertEquals(FormatoBackup.VERSAO_FORMATO, cabecalho.versaoFormato)
         assertEquals(VetoresDeReferencia.VERSAO_ESQUEMA, cabecalho.versaoEsquema)
-        assertEquals(FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA1, cabecalho.idKdf)
-        assertEquals(FormatoBackup.ID_CIFRA_AES_256_GCM, cabecalho.idCifra)
+        assertEquals(FormatoBackup.ID_KDF_PBKDF2_HMAC_SHA256, cabecalho.idKdf)
+        assertEquals(FormatoBackup.ID_CIFRA_AES_256_CTR_HMAC_SHA256, cabecalho.idCifra)
         assertEquals(VetoresDeReferencia.ITERACOES, cabecalho.iteracoesKdf)
         assertContentEquals(VetoresDeReferencia.SALT, cabecalho.salt)
         assertContentEquals(VetoresDeReferencia.NONCE, cabecalho.nonce)
@@ -100,10 +100,13 @@ class InteroperabilidadeBackupTest {
         const val SENHA_EM_HEX = "73656e2368612d41c3a7346f2d22666f72746522"
 
         /**
-         * PBKDF2-HMAC-SHA1([SENHA_EM_HEX], `VetoresDeReferencia.SALT`, 1000 iterações, 32 bytes).
-         * Valor conferido fora do projeto com `hashlib.pbkdf2_hmac` (CPython/OpenSSL) — uma
-         * terceira implementação independente do JCA e do CommonCrypto.
+         * PBKDF2-HMAC-SHA256([SENHA_EM_HEX], `VetoresDeReferencia.SALT`, 1000 iterações, 64 bytes —
+         * `chave[0..31]` cifra + `chave[32..63]` MAC). Valor conferido fora do projeto com
+         * `hashlib.pbkdf2_hmac` (CPython/OpenSSL) — uma terceira implementação independente do
+         * Bouncy Castle e do CommonCrypto.
          */
-        const val CHAVE_ESPERADA_HEX = "fa50d3f06ef43e0de57c5de16cf5eae4fe7b7ec0f51fe06d0b7aca108a4e4f3b"
+        const val CHAVE_ESPERADA_HEX =
+            "c164307496488f3a1fa2d715e3d1667989a2a222345e922ee1bff80d96551c2" +
+                "f39a12ecb97032aa486f35cc1e8db08d335a0bfbea9c5c9c590bf08becab91566"
     }
 }
