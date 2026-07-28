@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.savro.common.Resultado
 import io.savro.designsystem.componentes.SavroBottomNavItem
-import io.savro.designsystem.componentes.SavroBottomNavigation
+import io.savro.designsystem.componentes.SavroBottomNavScaffold
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
 import io.savro.designsystem.componentes.SavroCard
@@ -125,61 +126,61 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
         // MVP1 — Histórico é backlog, timeline por item já vive no Detalhe). "Ajustes" não é uma
         // aba de conteúdo persistente: abre a configuração de proteção do cofre (#118) já existente
         // como overlay em `CofreScreens.kt` — por isso nunca aparece "selecionada" (#220, item 3/14).
-        DestinoPatrimonio.Lista -> Box(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (aba) {
-                    AbaPrincipal.HOME -> TelaHomeResumo(
-                        servico = servico,
-                        ocultarValores = ocultarValores,
-                        aoAlternarOcultarValores = { ocultarValores = !ocultarValores },
-                        aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
-                        aoAbrirItem = { id -> destino = DestinoPatrimonio.Detalhe(id) },
-                    )
-                    AbaPrincipal.PATRIMONIO -> TelaListaPatrimonio(
-                        servico = servico,
-                        ocultarValores = ocultarValores,
-                        texto = texto,
-                        aoAlterarTexto = { texto = it },
-                        tipoSelecionado = tipoSelecionado,
-                        aoAlterarTipoSelecionado = { tipoSelecionado = it },
-                        mostrarArquivados = mostrarArquivados,
-                        aoAlterarMostrarArquivados = { mostrarArquivados = it },
-                        ordenacao = ordenacao,
-                        aoAlterarOrdenacao = { ordenacao = it },
-                        estadoDaLista = estadoDaLista,
-                        aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
-                        aoAbrirDetalhe = { id -> destino = DestinoPatrimonio.Detalhe(id) },
-                        aoEditar = { id -> destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = id) },
-                        aoAjustarValor = { id -> destino = DestinoPatrimonio.Ajuste(id) },
-                    )
-                }
-            }
-            SavroBottomNavigation(
-                items = listOf(
-                    SavroBottomNavItem(
-                        icon = SavroIcon.Home,
-                        label = "Início",
-                        selected = aba == AbaPrincipal.HOME,
-                        onClick = { aba = AbaPrincipal.HOME },
-                    ),
-                    SavroBottomNavItem(
-                        icon = SavroIcon.Patrimonio,
-                        label = "Patrimônio",
-                        selected = aba == AbaPrincipal.PATRIMONIO,
-                        onClick = { aba = AbaPrincipal.PATRIMONIO },
-                    ),
-                    SavroBottomNavItem(
-                        icon = SavroIcon.Ajustes,
-                        label = "Ajustes",
-                        selected = false,
-                        onClick = aoAbrirConfiguracaoProtecao,
-                    ),
+        //
+        // Correção pós-revisão do Luiz (PR #224): `SavroBottomNavScaffold` mede a barra e repassa
+        // a altura real (via `contentPadding`) pro conteúdo — nada de overlay nem valor fixo. Cada
+        // tela decide onde aplicar esse padding (lista rolável reserva o espaço; nada cobre a
+        // última linha nem o FAB).
+        DestinoPatrimonio.Lista -> SavroBottomNavScaffold(
+            items = listOf(
+                SavroBottomNavItem(
+                    icon = SavroIcon.Home,
+                    label = "Início",
+                    selected = aba == AbaPrincipal.HOME,
+                    onClick = { aba = AbaPrincipal.HOME },
                 ),
-                // Overlay no rodapé (sem reservar espaço via peso) — pendência conhecida: o
-                // conteúdo não recebe padding inferior extra, então o nav pode cobrir a última
-                // linha de uma lista longa. Registrado no PR, não bloqueante (#220, item 14).
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+                SavroBottomNavItem(
+                    icon = SavroIcon.Patrimonio,
+                    label = "Patrimônio",
+                    selected = aba == AbaPrincipal.PATRIMONIO,
+                    onClick = { aba = AbaPrincipal.PATRIMONIO },
+                ),
+                SavroBottomNavItem(
+                    icon = SavroIcon.Ajustes,
+                    label = "Ajustes",
+                    selected = false,
+                    onClick = aoAbrirConfiguracaoProtecao,
+                ),
+            ),
+        ) { contentPadding ->
+            when (aba) {
+                AbaPrincipal.HOME -> TelaHomeResumo(
+                    servico = servico,
+                    ocultarValores = ocultarValores,
+                    aoAlternarOcultarValores = { ocultarValores = !ocultarValores },
+                    aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
+                    aoAbrirItem = { id -> destino = DestinoPatrimonio.Detalhe(id) },
+                    contentPadding = contentPadding,
+                )
+                AbaPrincipal.PATRIMONIO -> TelaListaPatrimonio(
+                    servico = servico,
+                    ocultarValores = ocultarValores,
+                    texto = texto,
+                    aoAlterarTexto = { texto = it },
+                    tipoSelecionado = tipoSelecionado,
+                    aoAlterarTipoSelecionado = { tipoSelecionado = it },
+                    mostrarArquivados = mostrarArquivados,
+                    aoAlterarMostrarArquivados = { mostrarArquivados = it },
+                    ordenacao = ordenacao,
+                    aoAlterarOrdenacao = { ordenacao = it },
+                    estadoDaLista = estadoDaLista,
+                    aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
+                    aoAbrirDetalhe = { id -> destino = DestinoPatrimonio.Detalhe(id) },
+                    aoEditar = { id -> destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = id) },
+                    aoAjustarValor = { id -> destino = DestinoPatrimonio.Ajuste(id) },
+                    contentPadding = contentPadding,
+                )
+            }
         }
         is DestinoPatrimonio.Detalhe -> TelaDetalheItem(
             servico = servico,
@@ -220,6 +221,7 @@ private fun TelaListaPatrimonio(
     aoAbrirDetalhe: (String) -> Unit,
     aoEditar: (String) -> Unit,
     aoAjustarValor: (String) -> Unit,
+    contentPadding: PaddingValues,
 ) {
     val itens by servico.itens.collectAsState()
     val escopo = rememberCoroutineScope()
@@ -234,7 +236,10 @@ private fun TelaListaPatrimonio(
     }
 
     // FAB fixo (protótipo tela 08) substitui o botão "Novo item" de largura total — #220, item 10.
-    Box(modifier = Modifier.fillMaxSize()) {
+    // `contentPadding` vem de `SavroBottomNavScaffold` (altura real da bottom nav já medida, sem
+    // valor fixo arbitrário) — aplicado aqui pra nem a lista, nem o FAB, ficarem por baixo da barra
+    // (correção pós-revisão do Luiz, PR #224).
+    Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
         Column(modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md)) {
             SavroText("Patrimônio", style = SavroTextStyle.Headline)
 

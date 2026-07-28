@@ -37,6 +37,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -390,6 +391,34 @@ fun SavroBottomNavigation(items: List<SavroBottomNavItem>, modifier: Modifier = 
                 ),
             )
         }
+    }
+}
+
+/**
+ * Hospeda [SavroBottomNavigation] junto do conteúdo principal usando `Scaffold` — a altura real da
+ * barra (incluindo a área segura do sistema, já que `NavigationBar` aplica
+ * `NavigationBarDefaults.windowInsets` por padrão) chega em [content] como `contentPadding`, para
+ * quem rola a tela (lista, FAB) nunca ficar por baixo da barra. Existe só por causa disso — evita
+ * que cada tela precise reimplementar o próprio cálculo de espaço reservado.
+ *
+ * Correção da auditoria #220 (revisão do Luiz pós-PR #224): a versão anterior usava um `Box` com
+ * a bottom nav sobreposta por cima do conteúdo (contorno do bug do modifier `weight()` nesta versão
+ * do Compose Multiplatform — ver nota abaixo). `Scaffold` resolve o mesmo problema sem precisar de
+ * `weight()`: ele mede a barra primeiro e informa ao conteúdo, via `contentPadding`, exatamente
+ * quanto espaço reservar — nenhum valor fixo arbitrário.
+ */
+@Composable
+fun SavroBottomNavScaffold(
+    items: List<SavroBottomNavItem>,
+    modifier: Modifier = Modifier,
+    content: @Composable (contentPadding: PaddingValues) -> Unit,
+) {
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = { SavroBottomNavigation(items = items) },
+    ) { valoresDePadding ->
+        content(valoresDePadding)
     }
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,6 +61,7 @@ internal fun TelaHomeResumo(
     aoAlternarOcultarValores: () -> Unit,
     aoCriar: () -> Unit,
     aoAbrirItem: (String) -> Unit,
+    contentPadding: PaddingValues,
 ) {
     val itens by servico.itens.collectAsState()
     val resumo = remember(itens) { CalculoPatrimonio.resumo(itens) }
@@ -69,8 +71,10 @@ internal fun TelaHomeResumo(
         CalculoPatrimonio.itensQuePrecisamAtualizacao(itens, agoraEpocaMs = servico.agoraEmEpocaMs())
     }
 
+    // `contentPadding` vem de `SavroBottomNavScaffold` (altura real da bottom nav, sem valor fixo
+    // arbitrário) — correção pós-revisão do Luiz (PR #224): a barra não pode mais sobrepor conteúdo.
     Column(
-        modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md),
+        modifier = Modifier.fillMaxSize().padding(contentPadding).padding(SavroThemeTokens.spacing.md),
         verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.md),
     ) {
         Row(
