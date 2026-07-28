@@ -64,6 +64,9 @@ class FakeRepositorioItensPatrimoniais(
     override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
         Resultado.Sucesso(emptyList())
 
+    override suspend fun listarTodosOsAjustes(): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        Resultado.Sucesso(emptyList())
+
     override suspend fun registrarEventoTimeline(
         itemId: String,
         itemNome: String,

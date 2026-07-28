@@ -58,6 +58,14 @@ interface RepositorioItensPatrimoniais {
     suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio>
 
     /**
+     * Todos os ajustes de valor do cofre, de todos os itens, do mais antigo para o mais recente
+     * (issue #121). Existe porque o backup precisa de um retrato completo do cofre em uma leitura
+     * só — percorrer [listarAjustesDeValor] item a item devolveria o mesmo conteúdo, mas em N
+     * leituras não atômicas entre si.
+     */
+    suspend fun listarTodosOsAjustes(): Resultado<List<AjusteValorItem>, ErroRepositorio>
+
+    /**
      * Registra um evento da linha do tempo básica (issue #120) — sempre chamado por
      * [ServicoPatrimonio] logo após a operação de escrita correspondente já ter sido confirmada
      * (nunca antes, para não registrar evento de algo que falhou em persistir).
@@ -90,4 +98,24 @@ interface TransacaoItensPatrimoniais {
     suspend fun inserir(item: ItemPatrimonial)
     suspend fun atualizar(item: ItemPatrimonial)
     suspend fun excluir(id: String)
+
+    /**
+     * Apaga itens, ajustes e eventos do cofre (issue #121, restauração por substituição total).
+     * Só faz sentido dentro da mesma transação que regrava o conteúdo restaurado — se qualquer
+     * escrita posterior falhar, o `ROLLBACK` devolve o cofre exatamente ao estado anterior.
+     */
+    suspend fun apagarTudo()
+
+    /**
+     * Insere um item **sem** reescrever `criadoEmEpocaMs`/`atualizadoEmEpocaMs` com o relógio
+     * atual, diferente de [inserir] (issue #121: "restauração preserva itens, eventos básicos e
+     * preferências"). Restauração recoloca o passado do usuário, não cria itens novos.
+     */
+    suspend fun inserirItemRestaurado(item: ItemPatrimonial)
+
+    /** Recoloca um ajuste histórico exatamente como estava no backup (mesmo id, mesma data). */
+    suspend fun inserirAjusteRestaurado(ajuste: AjusteValorItem)
+
+    /** Recoloca um evento de linha do tempo exatamente como estava no backup. */
+    suspend fun inserirEventoRestaurado(evento: EventoTimelineItem)
 }

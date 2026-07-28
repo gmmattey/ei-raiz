@@ -22,6 +22,11 @@ sqlcipherAndroid = "4.17.0"
 kotlinxCoroutines = "1.11.0"
 # Cofre local (#118) — BiometricPrompt/credencial segura do dispositivo (Android).
 androidxBiometric = "1.1.0"
+# Backup (#121, PR #228) — só a API leve (PKCS5S2ParametersGenerator), sem Security.addProvider:
+# SecretKeyFactory do sistema só tem PBKDF2WithHmacSHA256 a partir da API 26 e o app suporta
+# minSdk = 23. Checado via maven-metadata.xml em 2026-07-28 (auditoria PR #228): 1.85 é o release
+# mais recente, atualizado no mesmo mês — biblioteca madura (desde 2000) e ativamente mantida.
+bouncycastle = "1.85"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -53,6 +58,10 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidxBiometric" }
+# Backup/restauração (#121) — ActivityResultContracts para o Storage Access Framework.
+androidx-activity = { module = "androidx.activity:activity", version.ref = "activityCompose" }
+# Backup (#121, PR #228) — PBKDF2-HMAC-SHA256 (ver comentário da versão acima).
+bouncycastle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

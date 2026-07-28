@@ -172,6 +172,9 @@ class RepositorioItensPatrimoniaisRoom(
     override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
         comBancoAberto { dao -> Resultado.Sucesso(dao.listarAjustes(itemId).map { it.paraModelo() }) }
 
+    override suspend fun listarTodosOsAjustes(): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        comBancoAberto { dao -> Resultado.Sucesso(dao.listarTodosOsAjustes().map { it.paraModelo() }) }
+
     override suspend fun registrarEventoTimeline(
         itemId: String,
         itemNome: String,
@@ -251,6 +254,24 @@ class RepositorioItensPatrimoniaisRoom(
 
         override suspend fun excluir(id: String) {
             check(dao.excluir(id) > 0) { "Item '$id' não encontrado na transação" }
+        }
+
+        override suspend fun apagarTudo() {
+            dao.apagarEventosTimeline()
+            dao.apagarAjustes()
+            dao.apagarItens()
+        }
+
+        override suspend fun inserirItemRestaurado(item: ItemPatrimonial) {
+            dao.inserir(item.paraEntidade())
+        }
+
+        override suspend fun inserirAjusteRestaurado(ajuste: AjusteValorItem) {
+            dao.inserirAjuste(ajuste.paraEntidade())
+        }
+
+        override suspend fun inserirEventoRestaurado(evento: EventoTimelineItem) {
+            dao.inserirEventoTimeline(evento.paraEntidade())
         }
     }
 }

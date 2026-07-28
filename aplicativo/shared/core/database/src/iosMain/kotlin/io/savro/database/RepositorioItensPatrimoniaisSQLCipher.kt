@@ -168,6 +168,12 @@ class RepositorioItensPatrimoniaisSQLCipher(
             Resultado.Sucesso(linhas.map(::linhaParaAjuste))
         }
 
+    override suspend fun listarTodosOsAjustes(): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        comBancoAberto { db ->
+            val linhas = db.consultar("SELECT * FROM ajustes_valor_item ORDER BY data_epoca_ms ASC")
+            Resultado.Sucesso(linhas.map(::linhaParaAjuste))
+        }
+
     override suspend fun registrarEventoTimeline(
         itemId: String,
         itemNome: String,
@@ -356,6 +362,50 @@ class RepositorioItensPatrimoniaisSQLCipher(
         override suspend fun excluir(id: String) {
             db.executar("DELETE FROM itens_patrimoniais WHERE id = '${id.escapado()}'")
             check(db.linhasAfetadas() > 0) { "Item '$id' não encontrado na transação" }
+        }
+
+        // Restauração por substituição total (#121) — mesma ordem explícita do Android
+        // (eventos, ajustes, itens), independente de `PRAGMA foreign_keys`.
+        override suspend fun apagarTudo() {
+            db.executar("DELETE FROM eventos_timeline_item")
+            db.executar("DELETE FROM ajustes_valor_item")
+            db.executar("DELETE FROM itens_patrimoniais")
+        }
+
+        override suspend fun inserirItemRestaurado(item: ItemPatrimonial) {
+            db.executar(sqlInserir(item))
+        }
+
+        override suspend fun inserirAjusteRestaurado(ajuste: AjusteValorItem) {
+            db.executar(
+                """
+                INSERT INTO ajustes_valor_item
+                    (id, item_id, valor_centavos_anterior, valor_centavos_novo, origem, data_epoca_ms)
+                VALUES (
+                    '${ajuste.id.escapado()}',
+                    '${ajuste.itemId.escapado()}',
+                    ${ajuste.valorCentavosAnterior},
+                    ${ajuste.valorCentavosNovo},
+                    '${ajuste.origem.name}',
+                    ${ajuste.dataEpocaMs}
+                )
+                """.trimIndent(),
+            )
+        }
+
+        override suspend fun inserirEventoRestaurado(evento: EventoTimelineItem) {
+            db.executar(
+                """
+                INSERT INTO eventos_timeline_item (id, item_id, item_nome, tipo, data_epoca_ms)
+                VALUES (
+                    '${evento.id.escapado()}',
+                    '${evento.itemId.escapado()}',
+                    '${evento.itemNome.escapado()}',
+                    '${evento.tipo.name}',
+                    ${evento.dataEpocaMs}
+                )
+                """.trimIndent(),
+            )
         }
     }
 }

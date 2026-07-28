@@ -43,6 +43,7 @@ fun SavroAppViewController(): UIViewController =
         SavroApp(
             gerenciador = ComposicaoCofreIOS.gerenciadorCofre,
             servicoPatrimonio = ComposicaoCofreIOS.servicoPatrimonio,
+            servicoBackup = ComposicaoCofreIOS.servicoBackup,
         )
     }
 

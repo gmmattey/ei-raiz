@@ -2,11 +2,8 @@ package io.savro.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,32 +29,26 @@ import io.savro.app.recursos.cofre_erro_mensagem
 import io.savro.app.recursos.cofre_erro_titulo
 import io.savro.app.recursos.cofre_restauracao_mensagem
 import io.savro.app.recursos.cofre_restauracao_titulo
-import io.savro.app.recursos.configuracao_protecao_botao_ativar
-import io.savro.app.recursos.configuracao_protecao_botao_fechar
-import io.savro.app.recursos.configuracao_protecao_botao_remover
-import io.savro.app.recursos.configuracao_protecao_estado_ativada
-import io.savro.app.recursos.configuracao_protecao_estado_desativada
-import io.savro.app.recursos.configuracao_protecao_permitir_credencial
-import io.savro.app.recursos.configuracao_protecao_titulo
+import io.savro.backup.ServicoBackup
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
-import io.savro.designsystem.componentes.SavroFilterChip
 import io.savro.designsystem.componentes.SavroIcon
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
-import io.savro.designsystem.componentes.SavroText
-import io.savro.designsystem.componentes.SavroTextStyle
 import io.savro.designsystem.tema.SavroThemeTokens
 import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.security.EstadoCofre
 import io.savro.security.GerenciadorCofre
-import io.savro.security.PoliticaProtecao
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 /** Despacha a UI a partir do [EstadoCofre] atual — os 8 estados obrigatórios da #118. */
 @Composable
-internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
+internal fun TelaCofre(
+    gerenciador: GerenciadorCofre,
+    servicoPatrimonio: ServicoPatrimonio,
+    servicoBackup: ServicoBackup,
+) {
     val estado by gerenciador.estado.collectAsState()
     val escopo = rememberCoroutineScope()
 
@@ -68,7 +59,7 @@ internal fun TelaCofre(gerenciador: GerenciadorCofre, servicoPatrimonio: Servico
             message = stringResource(Res.string.cofre_descriptografando_mensagem),
         )
 
-        EstadoCofre.Desbloqueado -> TelaHome(gerenciador, servicoPatrimonio)
+        EstadoCofre.Desbloqueado -> TelaHome(gerenciador, servicoPatrimonio, servicoBackup)
 
         is EstadoCofre.CredencialInvalida -> SavroStatePanel(
             state = SavroState.Error,
@@ -150,87 +141,31 @@ private fun BotaoTentarNovamente(gerenciador: GerenciadorCofre) {
 /**
  * Destino pós-onboarding/desbloqueio: [TelaPatrimonio] (em `PatrimonioScreens.kt`) hospeda a
  * experiência principal completa (#120) — Home, Patrimônio e Detalhe, todos sobre a mesma
- * instância de [servicoPatrimonio]. Acesso a ativar/alterar/remover a proteção do cofre (#118)
- * continua disponível a partir daqui.
+ * instância de [servicoPatrimonio]. Ajustes (proteção do cofre #118 + backup/restauração/CSV
+ * #121) abre a partir daqui, em `AjustesScreens.kt`.
  */
 @Composable
-private fun TelaHome(gerenciador: GerenciadorCofre, servicoPatrimonio: ServicoPatrimonio) {
-    var mostrarConfiguracaoProtecao by remember { mutableStateOf(false) }
+private fun TelaHome(
+    gerenciador: GerenciadorCofre,
+    servicoPatrimonio: ServicoPatrimonio,
+    servicoBackup: ServicoBackup,
+) {
+    var mostrarAjustes by remember { mutableStateOf(false) }
 
-    if (mostrarConfiguracaoProtecao) {
-        TelaConfiguracaoProtecao(gerenciador = gerenciador, aoFechar = { mostrarConfiguracaoProtecao = false })
+    if (mostrarAjustes) {
+        TelaAjustes(
+            gerenciador = gerenciador,
+            servicoBackup = servicoBackup,
+            // Ao voltar, `TelaPatrimonio` entra de novo em composição e seu
+            // `LaunchedEffect(servico)` recarrega o cofre — necessário depois de uma restauração,
+            // que troca o conteúdo do banco por baixo do estado em memória do serviço.
+            aoFechar = { mostrarAjustes = false },
+        )
         return
     }
 
     TelaPatrimonio(
         servico = servicoPatrimonio,
-        aoAbrirConfiguracaoProtecao = { mostrarConfiguracaoProtecao = true },
+        aoAbrirConfiguracaoProtecao = { mostrarAjustes = true },
     )
-}
-
-/** Permite ativar, alterar e remover a proteção do cofre (#118, critério de aceite obrigatório). */
-@Composable
-private fun TelaConfiguracaoProtecao(gerenciador: GerenciadorCofre, aoFechar: () -> Unit) {
-    val escopo = rememberCoroutineScope()
-    var politica by remember { mutableStateOf<PoliticaProtecao?>(null) }
-
-    LaunchedEffect(gerenciador) { politica = gerenciador.politicaAtual() }
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.lg),
-    ) {
-        SavroText(stringResource(Res.string.configuracao_protecao_titulo), style = SavroTextStyle.Headline)
-
-        when (val atual = politica) {
-            null -> Unit
-            PoliticaProtecao.Nenhuma -> {
-                SavroText(stringResource(Res.string.configuracao_protecao_estado_desativada))
-                SavroButton(
-                    label = stringResource(Res.string.configuracao_protecao_botao_ativar),
-                    onClick = {
-                        escopo.launch {
-                            gerenciador.ativarProtecao()
-                            politica = gerenciador.politicaAtual()
-                        }
-                    },
-                    loadingStateDescription = "",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            is PoliticaProtecao.Ativada -> {
-                SavroText(stringResource(Res.string.configuracao_protecao_estado_ativada))
-                SavroFilterChip(
-                    label = stringResource(Res.string.configuracao_protecao_permitir_credencial),
-                    selected = atual.permitirCredencialDispositivo,
-                    onClick = {
-                        escopo.launch {
-                            gerenciador.alterarProtecao(!atual.permitirCredencialDispositivo)
-                            politica = gerenciador.politicaAtual()
-                        }
-                    },
-                )
-                SavroButton(
-                    label = stringResource(Res.string.configuracao_protecao_botao_remover),
-                    onClick = {
-                        escopo.launch {
-                            gerenciador.removerProtecao()
-                            politica = gerenciador.politicaAtual()
-                        }
-                    },
-                    style = SavroButtonStyle.Destructive,
-                    loadingStateDescription = "",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
-        SavroButton(
-            label = stringResource(Res.string.configuracao_protecao_botao_fechar),
-            onClick = aoFechar,
-            style = SavroButtonStyle.Secondary,
-            loadingStateDescription = "",
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
 }

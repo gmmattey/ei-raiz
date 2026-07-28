@@ -83,6 +83,11 @@ jobs:
       # Robolectric, migrations) da #180 — não estava nesta lista até a #118 (lacuna da CI, não
       # escondida: a suíte já existia, só não rodava em nenhum job). :shared:core:security
       # adiciona a máquina de estados do cofre (#118, `GerenciadorCofreTest`).
+      #
+      # :shared:core:backup (#121) roda aqui o lado Android dos vetores compartilhados de backup —
+      # o MESMO código de `commonTest` roda no simulador iOS no job "ios-xcode-macos", e é o par
+      # dos dois que constitui a evidência de interoperabilidade Android <-> iOS.
+      # :shared:domain:patrimonio entra junto porque a #121 mexeu em `FormatadorData`.
       - name: Executar testes comuns e TestKit
         run: |
           ./gradlew --no-daemon --stacktrace \
@@ -90,6 +95,8 @@ jobs:
             :shared:core:designsystem:testDebugUnitTest \
             :shared:core:database:testDebugUnitTest \
             :shared:core:security:testDebugUnitTest \
+            :shared:core:backup:testDebugUnitTest \
+            :shared:domain:patrimonio:testDebugUnitTest \
             :androidApp:testDevDebugUnitTest
 
   android-build:
@@ -167,11 +174,19 @@ jobs:
       # exit code 1. Por isso este job voltou a compilar só `:shared:core:security` (novo módulo da
       # #118, sem CocoaPods, compila de verdade mesmo em Linux) — `:shared:app`/`:iosApp` perderam a
       # rede de segurança deste job e passaram a depender inteiramente do "ios-xcode-macos" abaixo.
+      #
+      # :shared:core:backup (#121) entra nesta lista porque, como :shared:core:security, não usa
+      # CocoaPods — `iosMain` fala direto com CommonCrypto, Security e UIKit via bindings de
+      # plataforma do Kotlin/Native, que existem também no host Linux. É a rede de segurança barata
+      # para erro de cinterop na criptografia e no seletor de arquivos do iOS, antes do runner
+      # macOS.
       - name: Compilar alvos iOS (klib, sem link)
         run: |
           ./gradlew --no-daemon --stacktrace \
             :shared:core:security:compileKotlinIosArm64 \
-            :shared:core:security:compileKotlinIosSimulatorArm64
+            :shared:core:security:compileKotlinIosSimulatorArm64 \
+            :shared:core:backup:compileKotlinIosArm64 \
+            :shared:core:backup:compileKotlinIosSimulatorArm64
 
   ios-xcode-macos:
     name: Link do framework e build do Xcode (runner macOS)
@@ -225,11 +240,40 @@ jobs:
             :shared:core:database:compileKotlinIosSimulatorArm64 \
             :shared:core:database:iosSimulatorArm64Test
 
+      # Evidência de interoperabilidade Android <-> iOS da #121 (critério de aceite, não opcional).
+      # É o MESMO `commonTest` que o job "testes-comuns" roda na JVM: o arquivo de referência
+      # `VetoresDeReferencia.ARQUIVO_HEX` foi gerado pela implementação Android e aqui precisa
+      # (a) abrir no iOS e (b) ser regenerado byte a byte pelo iOS. Se este passo falhar, o formato
+      # divergiu entre as plataformas — não é teste de fachada.
+      - name: Testar backup/restauração/CSV no simulador iOS (vetores compartilhados)
+        run: ./gradlew --no-daemon --stacktrace :shared:core:backup:iosSimulatorArm64Test
+
       # Só o link real de framework (iosSimulatorArm64) exige host macOS; em Linux essa tarefa
       # fica SKIPPED. Roda isolado antes do Xcode pra falhar rápido e com log específico se o
       # link quebrar, sem depender do build phase do Xcode pra revelar o problema.
       - name: Linkar framework KMP (SavroApp, simulador)
         run: ./gradlew --no-daemon --stacktrace :shared:app:linkDebugFrameworkIosSimulatorArm64
+
+      # Confirmação real (não suposição) de que a correção do PR #228 removeu a SPI privada do
+      # backup: nenhum símbolo de CommonCryptorSPI.h pode aparecer no binário linkado, nem como
+      # símbolo dinâmico (nm) nem como string literal (o `dlsym(handle, "CCCryptorGCMAddIV")` da
+      # versão anterior embutia o nome como string no binário — `strings` pega isso mesmo sem
+      # relocation de linker, já que dlsym resolve em runtime, não em link time).
+      - name: Confirmar ausência de símbolo privado do CommonCrypto no framework
+        run: |
+          FRAMEWORK_BIN="shared/app/build/bin/iosSimulatorArm64/debugFramework/SavroApp.framework/SavroApp"
+          if [ ! -f "$FRAMEWORK_BIN" ]; then
+            echo "Framework não encontrado em $FRAMEWORK_BIN — ajustar o caminho do step." >&2
+            exit 1
+          fi
+          echo "Símbolos dinâmicos (nm -m):"
+          nm -m "$FRAMEWORK_BIN" | grep -i 'CCCryptorGCM\|kCCModeGCM' && { echo "Símbolo de SPI privada encontrado (nm)."; exit 1; } || echo "  nenhum encontrado."
+          echo "Strings embutidas (dlsym usa string literal em runtime, não relocation):"
+          strings "$FRAMEWORK_BIN" | grep -i 'CCCryptorGCM\|kCCModeGCM' && { echo "String de SPI privada encontrada (strings)."; exit 1; } || echo "  nenhuma encontrada."
+          echo "Referências a dlopen/dlsym no binário (informativo — o runtime do Kotlin/Native"
+          echo "pode usar dlopen internamente por motivo alheio ao backup; não falha o job sozinho,"
+          echo "só documenta a contagem para leitura humana do log):"
+          nm -m "$FRAMEWORK_BIN" | grep -ic 'dlopen\|dlsym' || true
 
       # `iosApp.xcodeproj` não tem integração CocoaPods própria — o Podfile (#118) declara o
       # SQLCipher que o SavroApp.framework espera "auto-linked" no executável final (ver

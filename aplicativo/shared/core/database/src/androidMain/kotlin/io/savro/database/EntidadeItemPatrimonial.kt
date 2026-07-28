@@ -108,6 +108,16 @@ internal fun EntidadeAjusteValorItem.paraModelo(): AjusteValorItem = AjusteValor
     dataEpocaMs = dataEpocaMs,
 )
 
+/** Restauração de backup (#121) — recoloca o ajuste histórico com o mesmo id e a mesma data. */
+internal fun AjusteValorItem.paraEntidade(): EntidadeAjusteValorItem = EntidadeAjusteValorItem(
+    id = id,
+    itemId = itemId,
+    valorCentavosAnterior = valorCentavosAnterior,
+    valorCentavosNovo = valorCentavosNovo,
+    origem = origem.name,
+    dataEpocaMs = dataEpocaMs,
+)
+
 /** Linha do tempo básica (issue #120) — append-only, nunca editada nem removida (exceto por cascata). */
 @Entity(
     tableName = "eventos_timeline_item",
@@ -138,5 +148,14 @@ internal fun EntidadeEventoTimelineItem.paraModelo(): EventoTimelineItem = Event
     itemId = itemId,
     itemNome = itemNome,
     tipo = TipoEventoTimeline.valueOf(tipo),
+    dataEpocaMs = dataEpocaMs,
+)
+
+/** Restauração de backup (#121) — recoloca o evento com o mesmo id e a mesma data. */
+internal fun EventoTimelineItem.paraEntidade(): EntidadeEventoTimelineItem = EntidadeEventoTimelineItem(
+    id = id,
+    itemId = itemId,
+    itemNome = itemNome,
+    tipo = tipo.name,
     dataEpocaMs = dataEpocaMs,
 )

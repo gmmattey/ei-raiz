@@ -119,6 +119,12 @@ class FakeRepositorioItensPatrimoniais(
             Resultado.Sucesso(ajustes.filter { it.itemId == itemId })
         }
 
+    override suspend fun listarTodosOsAjustes(): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        mutex.withLock {
+            exigirAberto()?.let { return@withLock Resultado.Falha(it) }
+            Resultado.Sucesso(ajustes.sortedBy { it.dataEpocaMs })
+        }
+
     override suspend fun registrarEventoTimeline(
         itemId: String,
         itemNome: String,
@@ -148,14 +154,20 @@ class FakeRepositorioItensPatrimoniais(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,
     ): Resultado<Unit, ErroRepositorio> = mutex.withLock {
         exigirAberto()?.let { return@withLock Resultado.Falha(it) }
-        val instantaneo = LinkedHashMap(itens)
-        val transacao = TransacaoEmMemoria(itens, relogio)
+        val instantaneoItens = LinkedHashMap(itens)
+        val instantaneoAjustes = ajustes.toList()
+        val instantaneoTimeline = timeline.toList()
+        val transacao = TransacaoEmMemoria(itens, ajustes, timeline, relogio)
         return@withLock try {
             transacao.bloco()
             Resultado.Sucesso(Unit)
         } catch (excecao: Exception) {
             itens.clear()
-            itens.putAll(instantaneo)
+            itens.putAll(instantaneoItens)
+            ajustes.clear()
+            ajustes.addAll(instantaneoAjustes)
+            timeline.clear()
+            timeline.addAll(instantaneoTimeline)
             Resultado.Falha(ErroRepositorio.FalhaTransacao(excecao.message ?: "Transação revertida"))
         }
     }
@@ -165,6 +177,8 @@ class FakeRepositorioItensPatrimoniais(
 
     private class TransacaoEmMemoria(
         private val itens: MutableMap<String, ItemPatrimonial>,
+        private val ajustes: MutableList<AjusteValorItem>,
+        private val timeline: MutableList<EventoTimelineItem>,
         private val relogio: Relogio,
     ) : TransacaoItensPatrimoniais {
         override suspend fun inserir(item: ItemPatrimonial) {
@@ -179,6 +193,29 @@ class FakeRepositorioItensPatrimoniais(
 
         override suspend fun excluir(id: String) {
             if (itens.remove(id) == null) error("Item '$id' não encontrado na transação")
+            ajustes.removeAll { it.itemId == id }
+            timeline.removeAll { it.itemId == id }
+        }
+
+        override suspend fun apagarTudo() {
+            timeline.clear()
+            ajustes.clear()
+            itens.clear()
+        }
+
+        override suspend fun inserirItemRestaurado(item: ItemPatrimonial) {
+            if (itens.containsKey(item.id)) error("Item '${item.id}' já existe na transação")
+            itens[item.id] = item
+        }
+
+        override suspend fun inserirAjusteRestaurado(ajuste: AjusteValorItem) {
+            if (!itens.containsKey(ajuste.itemId)) error("Ajuste '${ajuste.id}' sem item correspondente")
+            ajustes += ajuste
+        }
+
+        override suspend fun inserirEventoRestaurado(evento: EventoTimelineItem) {
+            if (!itens.containsKey(evento.itemId)) error("Evento '${evento.id}' sem item correspondente")
+            timeline += evento
         }
     }
 }

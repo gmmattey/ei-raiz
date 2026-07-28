@@ -18,6 +18,7 @@ private val sharedModulePaths = listOf(
     ":shared:core:designsystem",
     ":shared:core:database",
     ":shared:core:security",
+    ":shared:core:backup",
     ":shared:domain:patrimonio",
     ":shared:app",
 )
@@ -38,6 +39,7 @@ private val allowedProductionDependencies = mapOf(
         ":shared:core:designsystem",
         ":shared:core:database",
         ":shared:core:security",
+        ":shared:core:backup",
         ":shared:domain:patrimonio",
     ),
     // (nota: ":shared:core:model" já estava na allowlist acima antes desta issue — só a
@@ -55,6 +57,14 @@ private val allowedProductionDependencies = mapOf(
         ":shared:domain:patrimonio",
     ),
     ":shared:core:security" to setOf(
+        ":shared:core:common",
+        ":shared:core:model",
+        ":shared:domain:patrimonio",
+    ),
+    // Backup/restauração/exportação (#121): conhece o contrato de persistência e o modelo, nunca a
+    // engine física (Room/SQLCipher) nem o cofre local (Keystore/Keychain) — o material
+    // criptográfico do aparelho jamais entra no arquivo `*.savrobackup`.
+    ":shared:core:backup" to setOf(
         ":shared:core:common",
         ":shared:core:model",
         ":shared:domain:patrimonio",

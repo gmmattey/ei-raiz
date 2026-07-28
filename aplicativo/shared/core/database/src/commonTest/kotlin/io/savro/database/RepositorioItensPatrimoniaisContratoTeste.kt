@@ -360,4 +360,113 @@ abstract class RepositorioItensPatrimoniaisContratoTeste {
 
         encerrar(repositorio)
     }
+
+    // --- Operações de restauração de backup (#121) -------------------------------------------
+    // Rodam contra a engine real das duas plataformas (Room+SQLCipher no Android, SQLCipher via
+    // cinterop no iOS): é aqui que "substituição total em uma transação com rollback integral"
+    // deixa de ser promessa de código em memória e passa a ser comportamento verificado de banco.
+
+    @Test
+    fun listarTodosOsAjustes_retornaOHistoricoDeTodosOsItens() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        repositorio.inserir(itemDeTeste(id = "item-1"))
+        repositorio.inserir(itemDeTeste(id = "item-2"))
+        repositorio.registrarAjusteDeValor("item-1", novoValorCentavos = 999, dataEpocaMs = 10)
+        repositorio.registrarAjusteDeValor("item-2", novoValorCentavos = 888, dataEpocaMs = 20)
+
+        val todos = repositorio.listarTodosOsAjustes()
+
+        assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(todos)
+        assertEquals(2, todos.valor.size)
+        assertEquals(listOf("item-1", "item-2"), todos.valor.map { it.itemId })
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun transacaoDeRestauracao_substituiTudoEPreservaDatasOriginais() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        repositorio.inserir(itemDeTeste(id = "antigo"))
+        repositorio.registrarEventoTimeline("antigo", "Conta corrente", TipoEventoTimeline.ITEM_CRIADO, 1)
+
+        val restaurado = itemDeTeste(id = "novo", nome = "Poupança").copy(
+            criadoEmEpocaMs = 1_700_000_000_000L,
+            atualizadoEmEpocaMs = 1_700_000_500_000L,
+        )
+        val resultado = repositorio.executarEmTransacao {
+            apagarTudo()
+            inserirItemRestaurado(restaurado)
+            inserirAjusteRestaurado(
+                AjusteValorItem(
+                    id = "ajuste-restaurado",
+                    itemId = "novo",
+                    valorCentavosAnterior = 1,
+                    valorCentavosNovo = 2,
+                    origem = OrigemValor.MANUAL,
+                    dataEpocaMs = 1_700_000_400_000L,
+                ),
+            )
+            inserirEventoRestaurado(
+                EventoTimelineItem(
+                    id = "evento-restaurado",
+                    itemId = "novo",
+                    itemNome = "Poupança",
+                    tipo = TipoEventoTimeline.VALOR_AJUSTADO,
+                    dataEpocaMs = 1_700_000_500_000L,
+                ),
+            )
+        }
+        assertIs<Resultado.Sucesso<Unit>>(resultado)
+
+        val itens = repositorio.listarTodos()
+        assertIs<Resultado.Sucesso<List<ItemPatrimonial>>>(itens)
+        assertEquals(listOf("novo"), itens.valor.map { it.id })
+        assertEquals(1_700_000_000_000L, itens.valor.single().criadoEmEpocaMs)
+        assertEquals(1_700_000_500_000L, itens.valor.single().atualizadoEmEpocaMs)
+
+        val ajustes = repositorio.listarTodosOsAjustes()
+        assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(ajustes)
+        assertEquals(listOf("ajuste-restaurado"), ajustes.valor.map { it.id })
+
+        val timeline = repositorio.listarTimeline(itemId = null)
+        assertIs<Resultado.Sucesso<List<EventoTimelineItem>>>(timeline)
+        assertEquals(listOf("evento-restaurado"), timeline.valor.map { it.id })
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun transacaoDeRestauracao_falhaNoMeioMantemOCofreIntacto() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        repositorio.inserir(itemDeTeste(id = "antigo", nome = "Conta antiga"))
+        repositorio.registrarAjusteDeValor("antigo", novoValorCentavos = 555, dataEpocaMs = 5)
+        repositorio.registrarEventoTimeline("antigo", "Conta antiga", TipoEventoTimeline.ITEM_CRIADO, 5)
+
+        val resultado = repositorio.executarEmTransacao {
+            apagarTudo()
+            inserirItemRestaurado(itemDeTeste(id = "novo-1"))
+            error("falha simulada no meio da restauração")
+        }
+
+        assertIs<Resultado.Falha<ErroRepositorio>>(resultado)
+        assertIs<ErroRepositorio.FalhaTransacao>(resultado.erro)
+
+        val itens = repositorio.listarTodos()
+        assertIs<Resultado.Sucesso<List<ItemPatrimonial>>>(itens)
+        assertEquals(listOf("antigo"), itens.valor.map { it.id })
+        assertEquals("Conta antiga", itens.valor.single().nome)
+
+        val ajustes = repositorio.listarTodosOsAjustes()
+        assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(ajustes)
+        assertEquals(1, ajustes.valor.size)
+
+        val timeline = repositorio.listarTimeline(itemId = null)
+        assertIs<Resultado.Sucesso<List<EventoTimelineItem>>>(timeline)
+        assertEquals(1, timeline.valor.size)
+
+        encerrar(repositorio)
+    }
 }
