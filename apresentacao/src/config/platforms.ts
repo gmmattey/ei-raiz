@@ -2,17 +2,19 @@
 // (`apresentacao/.env*` não declara nenhuma) — por isso os componentes que consomem isso devem
 // cair no estado "ainda não disponível" honesto, nunca inventar um link/e-mail.
 
-function readValidUrl(raw: string | undefined): string | null {
+function readValidStoreUrl(raw: string | undefined): string | null {
   if (!raw) return null
   try {
-    return new URL(raw).toString()
+    const url = new URL(raw)
+    // Só HTTPS é aceito — nunca renderiza botão de loja com URL http/placeholder.
+    return url.protocol === 'https:' ? url.toString() : null
   } catch {
     return null
   }
 }
 
-export const PLAY_STORE_URL = readValidUrl(import.meta.env.VITE_PLAY_STORE_URL as string | undefined)
-export const APP_STORE_URL = readValidUrl(import.meta.env.VITE_APP_STORE_URL as string | undefined)
+export const PLAY_STORE_URL = readValidStoreUrl(import.meta.env.VITE_PLAY_STORE_URL as string | undefined)
+export const APP_STORE_URL = readValidStoreUrl(import.meta.env.VITE_APP_STORE_URL as string | undefined)
 
 function readValidEmail(raw: string | undefined): string | null {
   if (!raw) return null

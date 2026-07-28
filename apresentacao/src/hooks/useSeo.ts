@@ -1,12 +1,16 @@
 import { useEffect } from 'react'
-import { SITE_URL, SITE_NAME } from '../config/site'
+import { getSiteUrl, SITE_URL_PUBLICA_CONFIGURADA, SITE_NAME } from '../config/site'
 
 interface SeoOptions {
   title: string
   description: string
-  /** Caminho relativo (ex: "/privacidade"). Vira URL canônica absoluta a partir de SITE_URL. */
+  /** Caminho relativo (ex: "/privacidade"). Vira URL canônica absoluta a partir da URL pública configurada. */
   path?: string
-  /** Impede indexação (não usado nas rotas públicas atuais, disponível se necessário). */
+  /**
+   * Impede indexação. Se omitido, o default é `!SITE_URL_PUBLICA_CONFIGURADA` — ou seja,
+   * qualquer build sem `VITE_PUBLIC_SITE_URL` (dev local, preview de branch) já nasce
+   * `noindex, nofollow`, sem precisar que cada rota lembre de marcar isso.
+   */
   noindex?: boolean
   image?: string
 }
@@ -35,15 +39,17 @@ function setLink(rel: string, href: string) {
  * Hook leve de SEO — escreve title/description/canonical/OG/Twitter no <head> via useEffect.
  * Não usa lib externa (react-helmet etc), só DOM direto. Cada rota pública chama isso 1x.
  */
-export function useSeo({ title, description, path = '/', noindex = false, image }: SeoOptions) {
+export function useSeo({ title, description, path = '/', noindex, image }: SeoOptions) {
   useEffect(() => {
     const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`
     document.title = fullTitle
 
-    setMeta('name', 'description', description)
-    setMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow')
+    const deveNoindex = noindex ?? !SITE_URL_PUBLICA_CONFIGURADA
 
-    const canonicalUrl = `${SITE_URL}${path}`
+    setMeta('name', 'description', description)
+    setMeta('name', 'robots', deveNoindex ? 'noindex, nofollow' : 'index, follow')
+
+    const canonicalUrl = `${getSiteUrl()}${path}`
     setLink('canonical', canonicalUrl)
 
     setMeta('property', 'og:title', fullTitle)

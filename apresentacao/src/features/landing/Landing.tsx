@@ -1,6 +1,6 @@
 import React from 'react'
 import { useSeo, useJsonLd } from '../../hooks/useSeo'
-import { SITE_URL } from '../../config/site'
+import { getSiteUrl } from '../../config/site'
 import './savro-tokens.css'
 import SavroHeader from './components/SavroHeader'
 import SavroFooter from './components/SavroFooter'
@@ -14,20 +14,22 @@ import Commercial from './components/Commercial'
 import Faq from './components/Faq'
 
 const Landing: React.FC = () => {
+  const siteUrl = getSiteUrl()
+
   useSeo({
     title: 'Savro | Organização patrimonial local-first, sem nuvem',
     description:
       'O Savro é um app para organizar seu patrimônio com os dados sempre no seu aparelho — sem conta, sem nuvem, sem anúncios. Em desenvolvimento, em breve nas lojas.',
     path: '/',
-    image: `${SITE_URL}/assets/savro/icon-512x512.png`,
+    image: `${siteUrl}/assets/savro/icon-512x512.png`,
   })
 
   useJsonLd('savro-org', {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Savro',
-    url: SITE_URL,
-    logo: `${SITE_URL}/assets/savro/savro-logo-completo.svg`,
+    url: siteUrl,
+    logo: `${siteUrl}/assets/savro/savro-logo-completo.svg`,
   })
 
   useJsonLd('savro-app', {

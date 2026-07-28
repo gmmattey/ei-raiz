@@ -2,9 +2,12 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Config de testes e2e para a landing do Savro (apresentacao/).
- * Rodas contra o build de produção (`vite preview`), não contra dev server.
+ * Roda contra o build de produção (`vite preview`), não contra dev server.
  *
- * Antes de rodar: npm run build -w @ei/web
+ * Antes de rodar: VITE_PUBLIC_SITE_URL=<url pública> npm run build -w @ei/web
+ *   (a suíte usa a mesma env var — via process.env.VITE_PUBLIC_SITE_URL — para montar as
+ *   asserções de canonical/OG/sitemap; sem ela, cai no domínio Cloudflare Pages real do
+ *   projeto como default de teste, nunca um domínio inventado)
  * Depois: npm run preview -w @ei/web (em outro terminal ou background)
  * Testes: npx playwright test
  */
@@ -14,6 +17,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  // Acima do default (30s): a suíte "sem URL pública configurada" builda um dist/ isolado
+  // (tsc + vite build) e sobe um segundo `vite preview` dentro do beforeAll.
+  timeout: 60_000,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',

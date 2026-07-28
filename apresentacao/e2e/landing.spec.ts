@@ -1,7 +1,29 @@
 import { test, expect } from '@playwright/test';
 import { injectAxe, checkA11y } from 'axe-playwright';
+import { execSync, exec, ChildProcess } from 'node:child_process';
+import { readFileSync, readdirSync, statSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Testes e2e da landing do Savro — validando critérios da issue #122.
+//
+// O Savro não tem domínio próprio: a URL pública oficial é injetada via VITE_PUBLIC_SITE_URL
+// (env var), nunca fixada em código. Este arquivo usa o MESMO valor passado ao build servido
+// pelo webServer do playwright.config.ts — ver `TEST_SITE_URL` abaixo — para não duplicar o
+// domínio de teste em cada asserção. Nenhum teste aqui depende de "savro.app".
+
+const APRESENTACAO_DIR = path.resolve(__dirname, '..');
+
+// Precisa bater com a env var usada para gerar o build servido em `npm run preview` (ver
+// playwright.config.ts / README de teste). Fallback é o domínio Cloudflare Pages real do
+// projeto — o mesmo usado em produção (.github/workflows/deploy.yml) — nunca um placeholder.
+const TEST_SITE_URL = (process.env.VITE_PUBLIC_SITE_URL ?? 'https://ei-raiz-web.pages.dev').replace(/\/+$/, '');
+
+const PUBLIC_ROUTES: { path: string }[] = JSON.parse(
+  readFileSync(path.resolve(APRESENTACAO_DIR, 'src/config/public-routes.json'), 'utf-8')
+);
 
 test.describe('Landing — SEO, Estrutura e Rotas', () => {
   test('/ (root) renderiza com conteúdo coerente', async ({ page }) => {
@@ -19,42 +41,50 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     const metaDesc = await page.locator('meta[name="description"]').getAttribute('content');
     expect(metaDesc).toContain('sem nuvem');
 
-    // Canonical URL presente
+    // Canonical baseado na URL pública configurada — não em domínio fixo no código
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/');
+    expect(canonical).toBe(`${TEST_SITE_URL}/`);
 
-    // JSON-LD presente (Organization + SoftwareApplication)
-    const jsonLdScripts = await page.locator('script[type="application/ld+json"]').count();
-    expect(jsonLdScripts).toBeGreaterThanOrEqual(2);
+    // Página indexável — build rodou com VITE_PUBLIC_SITE_URL configurada
+    const robotsMeta = await page.locator('meta[name="robots"]').getAttribute('content');
+    expect(robotsMeta).toBe('index, follow');
 
-    // Open Graph tags
+    // JSON-LD presente (Organization + SoftwareApplication), URLs a partir da config, não fixas
+    const jsonLdContents = await page.locator('script[type="application/ld+json"]').allTextContents();
+    expect(jsonLdContents.length).toBeGreaterThanOrEqual(2);
+    for (const raw of jsonLdContents) {
+      const data = JSON.parse(raw);
+      if (data.url) expect(data.url).toBe(TEST_SITE_URL);
+      if (data.logo) expect(data.logo).toContain(TEST_SITE_URL);
+    }
+
+    // Open Graph tags — og:url e og:image a partir da URL pública configurada
     const ogTitle = await page.locator('meta[property="og:title"]').getAttribute('content');
     expect(ogTitle).toContain('Savro');
+    const ogUrl = await page.locator('meta[property="og:url"]').getAttribute('content');
+    expect(ogUrl).toBe(`${TEST_SITE_URL}/`);
     const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
-    expect(ogImage).toBeTruthy();
+    expect(ogImage).toBe(`${TEST_SITE_URL}/assets/savro/icon-512x512.png`);
 
     // Twitter Card
     const twitterCard = await page.locator('meta[name="twitter:card"]').getAttribute('content');
     expect(twitterCard).toBe('summary');
-
+    const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute('content');
+    expect(twitterImage).toBe(`${TEST_SITE_URL}/assets/savro/icon-512x512.png`);
   });
 
   test('/privacidade renderiza 200 com conteúdo', async ({ page }) => {
     const response = await page.goto('/privacidade');
     expect(response?.status()).toBe(200);
 
-    // Título específico
     await expect(page).toHaveTitle(/Política de Privacidade/);
 
-    // Canonical correto
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/privacidade');
+    expect(canonical).toBe(`${TEST_SITE_URL}/privacidade`);
 
-    // Conteúdo presente (pelo menos h1)
     const heading = page.locator('h1, [role="heading"][aria-level="1"]');
     await expect(heading).toContainText('Privacidade');
 
-    // Sem banco de dados/servidor mencionado (honesto sobre arquitetura local)
     const content = await page.locator('main').textContent();
     expect(content).toContain('local');
   });
@@ -66,7 +96,7 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     await expect(page).toHaveTitle(/Termos/);
 
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/termos');
+    expect(canonical).toBe(`${TEST_SITE_URL}/termos`);
 
     const heading = page.locator('h1, [role="heading"][aria-level="1"]');
     await expect(heading).toBeVisible();
@@ -79,7 +109,7 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     await expect(page).toHaveTitle(/Suporte/);
 
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/suporte');
+    expect(canonical).toBe(`${TEST_SITE_URL}/suporte`);
 
     const heading = page.locator('h1, [role="heading"][aria-level="1"]');
     await expect(heading).toBeVisible();
@@ -92,7 +122,7 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     await expect(page).toHaveTitle(/frequentes/i);
 
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/faq');
+    expect(canonical).toBe(`${TEST_SITE_URL}/faq`);
 
     const heading = page.locator('h1, [role="heading"][aria-level="1"]');
     await expect(heading).toBeVisible();
@@ -105,7 +135,7 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     await expect(page).toHaveTitle(/Changelog/);
 
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe('https://savro.app/changelog');
+    expect(canonical).toBe(`${TEST_SITE_URL}/changelog`);
 
     const heading = page.locator('h1, [role="heading"][aria-level="1"]');
     await expect(heading).toBeVisible();
@@ -117,14 +147,16 @@ test.describe('Landing — SEO, Estrutura e Rotas', () => {
     // O importante é que não faça crash e renderize algo sensato.
     expect([200, 404]).toContain(response?.status());
 
-    // Deve renderizar NotFound (conteúdo 404 coerente)
     const content = await page.locator('main').textContent();
     expect(content?.toLowerCase()).toContain('não encontr');
+
+    // 404 é sempre noindex, mesmo com URL pública configurada
+    const robotsMeta = await page.locator('meta[name="robots"]').getAttribute('content');
+    expect(robotsMeta).toBe('noindex, nofollow');
   });
 });
 
 test.describe('Rotas Patrimoniais — Não Devem Ser Públicas', () => {
-  // Lista de rotas que eram autenticadas/funcionais em Esquilo, agora removidas.
   const oldRoutes = [
     '/home',
     '/dashboard',
@@ -145,17 +177,14 @@ test.describe('Rotas Patrimoniais — Não Devem Ser Públicas', () => {
     test(`${route} não expõe UI funcional no build de produção`, async ({ page }) => {
       await page.goto(route);
 
-      // Não deve renderizar formulário de login/senha
       const loginForm = page.locator('form >> text=Entrar, input[type="password"], input[type="email"]').first();
       await expect(loginForm).not.toBeVisible();
 
-      // Não deve haver dados patrimoniais visíveis (nem em comentário HTML)
       const html = await page.content();
       expect(html).not.toContain('patrimonio');
       expect(html).not.toContain('carteira');
       expect(html).not.toContain('investimento');
 
-      // Deve renderizar landing ou 404, não tela em branco
       const mainContent = page.locator('main');
       await expect(mainContent).toBeVisible();
     });
@@ -166,11 +195,9 @@ test.describe('Botões e Links de Loja', () => {
   test('Botões de loja (Play Store/App Store) não renderizam sem URL configurada', async ({ page }) => {
     await page.goto('/');
 
-    // Play Store — sem env var VITE_PLAY_STORE_URL, botão não deve estar presente
     const playStoreLink = page.locator('a[href*="play.google.com"]').first();
     await expect(playStoreLink).not.toBeVisible();
 
-    // App Store — sem env var VITE_APP_STORE_URL, botão não deve estar presente
     const appStoreLink = page.locator('a[href*="apps.apple.com"]').first();
     await expect(appStoreLink).not.toBeVisible();
   });
@@ -178,7 +205,6 @@ test.describe('Botões e Links de Loja', () => {
   test('Links externos usam rel="noopener noreferrer" quando target="_blank"', async ({ page }) => {
     await page.goto('/');
 
-    // Qualquer link com target="_blank" deve ter rel seguro
     const externalLinks = await page.locator('a[target="_blank"]').all();
     for (const link of externalLinks) {
       const rel = await link.getAttribute('rel');
@@ -189,24 +215,32 @@ test.describe('Botões e Links de Loja', () => {
 });
 
 test.describe('SEO — robots.txt e sitemap.xml', () => {
-  test('robots.txt é acessível e contém Allow', async ({ page }) => {
+  test('robots.txt é acessível, contém Allow e aponta pro sitemap com a URL configurada', async ({ page }) => {
     const response = await page.request.get('/robots.txt');
     expect(response.status()).toBe(200);
 
     const content = await response.text();
     expect(content).toContain('Allow: /');
-    expect(content).toContain('Sitemap:');
+    expect(content).toContain(`Sitemap: ${TEST_SITE_URL}/sitemap.xml`);
+    expect(content).not.toContain('savro.app');
   });
 
-  test('sitemap.xml é acessível e bem-formado', async ({ page }) => {
+  test('sitemap.xml é acessível, bem-formado, com as 6 rotas públicas e sem domínio fixo', async ({ page }) => {
     const response = await page.request.get('/sitemap.xml');
     expect(response.status()).toBe(200);
 
     const content = await response.text();
     expect(content).toContain('<?xml');
-    expect(content).toContain('https://savro.app/');
-    expect(content).toContain('/privacidade');
-    expect(content).toContain('/termos');
+    expect(content).not.toContain('savro.app');
+
+    for (const rota of PUBLIC_ROUTES) {
+      expect(content).toContain(`<loc>${TEST_SITE_URL}${rota.path}</loc>`);
+    }
+
+    // Nenhuma rota patrimonial antiga no sitemap
+    for (const rotaAntiga of ['/home', '/dashboard', '/carteira', '/admin']) {
+      expect(content).not.toContain(`<loc>${TEST_SITE_URL}${rotaAntiga}`);
+    }
   });
 });
 
@@ -215,12 +249,14 @@ test.describe('Meta Tags por Rota', () => {
     { path: '/', expectedTitle: 'Organização patrimonial local-first' },
     { path: '/privacidade', expectedTitle: 'Privacidade' },
     { path: '/termos', expectedTitle: 'Termos' },
+    { path: '/suporte', expectedTitle: 'Suporte' },
     { path: '/faq', expectedTitle: 'Perguntas frequentes' },
+    { path: '/changelog', expectedTitle: 'Changelog' },
   ];
 
-  routes.forEach(({ path, expectedTitle }) => {
-    test(`Meta tags distintas em ${path}`, async ({ page }) => {
-      await page.goto(path);
+  routes.forEach(({ path: rota, expectedTitle }) => {
+    test(`Meta tags distintas em ${rota}`, async ({ page }) => {
+      await page.goto(rota);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
       const title = await page.title();
@@ -231,7 +267,7 @@ test.describe('Meta Tags por Rota', () => {
       expect(description?.length).toBeGreaterThan(20);
 
       const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-      expect(canonical).toContain(path);
+      expect(canonical).toBe(`${TEST_SITE_URL}${rota}`);
     });
   });
 });
@@ -247,14 +283,12 @@ test.describe('Responsividade Básica', () => {
       await page.setViewportSize({ width, height });
       await page.goto('/');
 
-      // Não deve haver scroll horizontal
       const mainOverflow = await page.evaluate(() => {
         const html = document.documentElement;
         return html.scrollWidth > html.clientWidth;
       });
       expect(mainOverflow).toBe(false);
 
-      // Elementos principais devem estar visíveis (h1, primeiro botão)
       const h1 = page.locator('h1').first();
       await expect(h1).toBeVisible();
 
@@ -273,10 +307,8 @@ test.describe('Acessibilidade — axe-core', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Injetar axe
     await injectAxe(page);
 
-    // Rodar check de acessibilidade
     try {
       await checkA11y(page, null, {
         detailedReport: true,
@@ -285,7 +317,6 @@ test.describe('Acessibilidade — axe-core', () => {
         },
       });
     } catch (e) {
-      // Se houver falha, fazer log — testes devem passar mesmo assim se for warning.
       console.warn('Acessibilidade: warnings encontradas (não críticas)', e);
     }
   });
@@ -309,30 +340,24 @@ test.describe('Acessibilidade — axe-core', () => {
     await page.goto('/');
     await expect(page.locator('section >> text=Seu patrimônio').first()).toBeVisible();
 
-    // Tab para o primeiro botão
     await page.keyboard.press('Tab');
 
     const focused = await page.evaluate(() => {
       return document.activeElement?.tagName.toLowerCase();
     });
 
-    // Deve ter focado em algo (botão, link, etc.)
     expect(['button', 'a', 'input']).toContain(focused);
 
-    // Elemento focado deve ter outline visível (propriedade de CSS)
     const hasOutline = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement;
       const style = window.getComputedStyle(el);
       return style.outline !== 'none' && style.outline !== '';
     });
 
-    // Pode não ter outline direto se usar box-shadow ou border — mas não deve ser invisível.
-    // Apenas logar para verificação manual se necessário.
     console.log('Elemento focado tem outline:', hasOutline);
   });
 
   test('reduced-motion respeitado no Hero', async ({ page }) => {
-    // Usar context com prefers-reduced-motion
     const context = await page.context().browser()?.newContext({
       reducedMotion: 'reduce',
     });
@@ -345,11 +370,9 @@ test.describe('Acessibilidade — axe-core', () => {
     const page2 = await context.newPage();
     await page2.goto('/');
 
-    // Hero tem motion.div com Framer Motion — deve respeitar reduced-motion
     const motionDiv = page2.locator('section >> text=Seu patrimônio').first();
     await expect(motionDiv).toBeVisible();
 
-    // Verificar se alguma animação foi skipped (via useReducedMotion)
     const hasReducedMotion = await page2.evaluate(() => {
       return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     });
@@ -373,7 +396,6 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
     await page.goto('/');
 
     const content = await page.locator('body').textContent();
-    // Não deve haver "disponível no Play Store" ou "já na App Store"
     expect(content).not.toMatch(/disponível.*play store|disponível.*app store/i);
   });
 
@@ -383,18 +405,16 @@ test.describe('Conteúdo — Honestidade sobre Status', () => {
     const commercialSection = page.locator('section >> text=sustenta');
     const text = await commercialSection.textContent();
 
-    // Não deve mencionar "R$" ou "a partir de" (preço)
     expect(text).not.toMatch(/R\$\s*\d+|^R\$|a partir de R\$/);
   });
 
-  test('Privacidade não inventa CNPJ', async ({ page }) => {
+  test('Privacidade não inventa CNPJ e não afirma domínio/empresa fixos', async ({ page }) => {
     await page.goto('/privacidade');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     const content = await page.locator('body').textContent();
-    // CNPJ é formato 14 dígitos — se houver, deve ser um CNPJ real (muito improvável encontrar aqui)
-    // Verificar que há placeholder "pendente de aprovação"
     expect(content?.toLowerCase()).toContain('pendente');
+    expect(content).not.toContain('savro.app');
   });
 });
 
@@ -403,18 +423,14 @@ test.describe('Build de Produção', () => {
     const response = await page.request.get('/');
     const html = await response.text();
 
-    // Não deve haver referência a "/api/patrimonio" (nem em JS comentado)
     expect(html).not.toContain('/api/patrimonio');
     expect(html).not.toContain('patrimonio');
   });
 
   test('Sem trackers/SDKs de analytics no package.json', async ({ page }) => {
-    // Este teste roda lendo o arquivo localmente (antes do test suite).
-    // Verificar aqui é mais direto.
     const response = await page.request.get('/');
     const html = await response.text();
 
-    // Não deve ter Google Analytics, Mixpanel, Segment, etc.
     const analytics = [
       'google-analytics',
       'gtag',
@@ -429,5 +445,129 @@ test.describe('Build de Produção', () => {
     for (const tracker of analytics) {
       expect(html.toLowerCase()).not.toContain(tracker);
     }
+  });
+});
+
+test.describe('Ausência de domínio hardcoded (savro.app)', () => {
+  test('savro.app não aparece em nenhum arquivo de código-fonte/público alterado por esta issue', () => {
+    const alvos = [
+      'src/config',
+      'src/hooks',
+      'src/features/landing',
+      'src/features/legal',
+      'public/robots.txt',
+      'public/sitemap.xml',
+      'index.html',
+    ];
+
+    const ofensores: string[] = [];
+
+    function varrer(caminho: string) {
+      const abs = path.resolve(APRESENTACAO_DIR, caminho);
+      const info = statSync(abs, { throwIfNoEntry: false });
+      if (!info) return;
+      if (info.isDirectory()) {
+        for (const filho of readdirSync(abs)) varrer(path.join(caminho, filho));
+        return;
+      }
+      if (!/\.(ts|tsx|js|jsx|json|txt|xml|html)$/.test(abs)) return;
+      const conteudo = readFileSync(abs, 'utf-8');
+      if (conteudo.includes('savro.app')) ofensores.push(caminho);
+    }
+
+    for (const alvo of alvos) varrer(alvo);
+
+    expect(ofensores).toEqual([]);
+  });
+
+  test('savro.app não aparece no build final (dist/)', () => {
+    const distDir = path.resolve(APRESENTACAO_DIR, 'dist');
+    const ofensores: string[] = [];
+
+    function varrer(caminho: string) {
+      const info = statSync(caminho, { throwIfNoEntry: false });
+      if (!info) return;
+      if (info.isDirectory()) {
+        for (const filho of readdirSync(caminho)) varrer(path.join(caminho, filho));
+        return;
+      }
+      if (!/\.(js|html|json|txt|xml|css)$/.test(caminho)) return;
+      const conteudo = readFileSync(caminho, 'utf-8');
+      if (conteudo.includes('savro.app')) ofensores.push(path.relative(distDir, caminho));
+    }
+
+    varrer(distDir);
+
+    expect(ofensores).toEqual([]);
+  });
+});
+
+test.describe('Comportamento sem URL pública oficial configurada (preview de branch)', () => {
+  test.setTimeout(90_000);
+
+  let child: ChildProcess | undefined;
+  const outDir = 'dist-teste-sem-url-publica';
+  const port = 4174;
+
+  test.beforeAll(async () => {
+    // Build isolado, deliberadamente SEM VITE_PUBLIC_SITE_URL — simula preview de branch/dev
+    // local. Usa --outDir próprio pra não pisar no build principal servido pelo webServer.
+    const env = { ...process.env };
+    delete env.VITE_PUBLIC_SITE_URL;
+    execSync(`npm run build -- --outDir ${outDir}`, {
+      cwd: APRESENTACAO_DIR,
+      env,
+      stdio: 'pipe',
+    });
+
+    child = exec(`npx vite preview --outDir ${outDir} --port ${port} --strictPort`, {
+      cwd: APRESENTACAO_DIR,
+      env,
+    });
+
+    // Espera o servidor responder antes de seguir.
+    const inicio = Date.now();
+    while (Date.now() - inicio < 20_000) {
+      try {
+        const res = await fetch(`http://localhost:${port}/`);
+        if (res.ok) return;
+      } catch {
+        // ainda subindo
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    throw new Error('Preview sem URL pública não respondeu a tempo');
+  });
+
+  test.afterAll(() => {
+    child?.kill();
+    rmSync(path.resolve(APRESENTACAO_DIR, outDir), { recursive: true, force: true });
+  });
+
+  test('canonical usa window.location.origin, robots é noindex,nofollow e sitemap fica vazio', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ baseURL: `http://localhost:${port}` });
+    const page = await context.newPage();
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(canonical).toBe(`http://localhost:${port}/`);
+    expect(canonical).not.toContain('savro.app');
+
+    const robotsMeta = await page.locator('meta[name="robots"]').getAttribute('content');
+    expect(robotsMeta).toBe('noindex, nofollow');
+
+    const robotsTxt = await page.request.get('/robots.txt');
+    const robotsTxtContent = await robotsTxt.text();
+    expect(robotsTxtContent).toContain('Disallow: /');
+
+    const sitemap = await page.request.get('/sitemap.xml');
+    const sitemapContent = await sitemap.text();
+    expect(sitemapContent).not.toContain('<url>');
+
+    await context.close();
   });
 });

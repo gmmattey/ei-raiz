@@ -42,6 +42,12 @@ jobs:
 
       - name: Gerar build
         run: npm run build
+        env:
+          # Mesmo valor usado no deploy real (ver deploy.yml) — exercita o caminho "URL pública
+          # configurada" (sitemap/robots/canonical indexáveis) também na validação de PR.
+          # Não é obrigatória aqui: sem ela o build de apresentacao/ ainda passa, só gera
+          # robots.txt/sitemap.xml não indexáveis (ver scripts/gerar-arquivos-seo.mjs).
+          VITE_PUBLIC_SITE_URL: https://ei-raiz-web.pages.dev
 
       - name: Impedir alterações em legado
         shell: bash

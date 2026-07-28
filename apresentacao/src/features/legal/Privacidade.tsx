@@ -15,9 +15,9 @@ const Privacidade: React.FC = () => {
     <LegalLayout title="Política de Privacidade" subtitle="Vigência: a partir da publicação desta página.">
       <LegalSection title="1. O que este documento cobre">
         <p>
-          Esta política descreve como o app Savro (Android/iOS) e o site institucional
-          savro.app tratam dados. O Savro está em desenvolvimento — o MVP1 ainda não foi
-          publicado nas lojas.
+          Esta política descreve como o app Savro (Android/iOS) e o site institucional do
+          Savro tratam dados. O Savro está em desenvolvimento — o MVP1 ainda não foi publicado
+          nas lojas.
         </p>
       </LegalSection>
 
@@ -60,7 +60,7 @@ const Privacidade: React.FC = () => {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Dados técnicos deste site institucional (savro.app)">
+      <LegalSection title="6. Dados técnicos deste site institucional">
         <p>
           O código deste site (o repositório que serve esta página) não declara nenhuma
           dependência de analytics, rastreamento ou anúncio em seu arquivo de dependências.
