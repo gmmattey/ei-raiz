@@ -1,5 +1,6 @@
 package io.savro.app
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,6 +22,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import io.savro.common.Resultado
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroButtonStyle
@@ -37,10 +42,13 @@ import io.savro.domain.patrimonio.ErroServicoPatrimonio
 import io.savro.domain.patrimonio.ErroValidacaoItem
 import io.savro.domain.patrimonio.EstadoFormularioItemPatrimonial
 import io.savro.domain.patrimonio.FiltroItensPatrimoniais
+import io.savro.domain.patrimonio.OrdenacaoItensPatrimoniais
 import io.savro.domain.patrimonio.RascunhoFormularioItem
 import io.savro.domain.patrimonio.ResumoItemPatrimonial
 import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.domain.patrimonio.ValidadorItemPatrimonial
+import io.savro.domain.patrimonio.calculo.ApresentacaoValor
+import io.savro.domain.patrimonio.ordenarPor
 import io.savro.model.ItemPatrimonial
 import io.savro.model.TipoItemPatrimonial
 import kotlinx.coroutines.launch
@@ -52,6 +60,7 @@ import kotlinx.coroutines.launch
  */
 private sealed class DestinoPatrimonio {
     data object Lista : DestinoPatrimonio()
+    data class Detalhe(val itemId: String) : DestinoPatrimonio()
     data class Formulario(val itemIdEmEdicao: String?) : DestinoPatrimonio()
     data class Ajuste(val itemId: String) : DestinoPatrimonio()
 
@@ -63,6 +72,7 @@ private sealed class DestinoPatrimonio {
      */
     fun paraChave(): String = when (this) {
         Lista -> ""
+        is Detalhe -> "detalhe:$itemId"
         is Formulario -> "formulario:${itemIdEmEdicao.orEmpty()}"
         is Ajuste -> "ajuste:$itemId"
     }
@@ -70,6 +80,7 @@ private sealed class DestinoPatrimonio {
     companion object {
         fun deChave(chave: String): DestinoPatrimonio = when {
             chave.isEmpty() -> Lista
+            chave.startsWith("detalhe:") -> Detalhe(chave.removePrefix("detalhe:"))
             chave.startsWith("formulario:") -> Formulario(chave.removePrefix("formulario:").takeIf { it.isNotEmpty() })
             chave.startsWith("ajuste:") -> Ajuste(chave.removePrefix("ajuste:"))
             else -> Lista
@@ -77,19 +88,76 @@ private sealed class DestinoPatrimonio {
     }
 }
 
+private enum class AbaPrincipal { HOME, PATRIMONIO }
+
+/**
+ * Orquestra a experiência principal do app (issue #120): Home, Patrimônio (lista) e Detalhe
+ * compartilham a mesma instância de [ServicoPatrimonio] (mesmos cálculos, dado único) e o mesmo
+ * estado de ocultação global de valores — alternar "ocultar" em qualquer tela vale para todas.
+ * Busca, filtro, ordenação e posição de rolagem ficam hospedados aqui (não dentro de
+ * [TelaListaPatrimonio]) para sobreviver a uma ida e volta até o Detalhe.
+ */
 @Composable
 internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProtecao: () -> Unit) {
     var destino by rememberSaveable(
         stateSaver = Saver(save = { it.paraChave() }, restore = { DestinoPatrimonio.deChave(it) }),
     ) { mutableStateOf<DestinoPatrimonio>(DestinoPatrimonio.Lista) }
+    var aba by rememberSaveable { mutableStateOf(AbaPrincipal.HOME) }
+    var ocultarValores by rememberSaveable { mutableStateOf(false) }
+    var texto by rememberSaveable { mutableStateOf("") }
+    var tipoSelecionado by rememberSaveable { mutableStateOf<TipoItemPatrimonial?>(null) }
+    var mostrarArquivados by rememberSaveable { mutableStateOf(false) }
+    var ordenacao by rememberSaveable { mutableStateOf(OrdenacaoItensPatrimoniais.NOME_ASC) }
+    val estadoDaLista = rememberLazyListState()
 
     LaunchedEffect(servico) { servico.carregar() }
 
     when (val atual = destino) {
-        DestinoPatrimonio.Lista -> TelaListaPatrimonio(
+        DestinoPatrimonio.Lista -> Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(SavroThemeTokens.spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
+            ) {
+                SavroFilterChip(label = "Home", selected = aba == AbaPrincipal.HOME, onClick = { aba = AbaPrincipal.HOME })
+                SavroFilterChip(
+                    label = "Patrimônio",
+                    selected = aba == AbaPrincipal.PATRIMONIO,
+                    onClick = { aba = AbaPrincipal.PATRIMONIO },
+                )
+            }
+            when (aba) {
+                AbaPrincipal.HOME -> TelaHomeResumo(
+                    servico = servico,
+                    ocultarValores = ocultarValores,
+                    aoAlternarOcultarValores = { ocultarValores = !ocultarValores },
+                    aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
+                    aoAbrirItem = { id -> destino = DestinoPatrimonio.Detalhe(id) },
+                )
+                AbaPrincipal.PATRIMONIO -> TelaListaPatrimonio(
+                    servico = servico,
+                    ocultarValores = ocultarValores,
+                    texto = texto,
+                    aoAlterarTexto = { texto = it },
+                    tipoSelecionado = tipoSelecionado,
+                    aoAlterarTipoSelecionado = { tipoSelecionado = it },
+                    mostrarArquivados = mostrarArquivados,
+                    aoAlterarMostrarArquivados = { mostrarArquivados = it },
+                    ordenacao = ordenacao,
+                    aoAlterarOrdenacao = { ordenacao = it },
+                    estadoDaLista = estadoDaLista,
+                    aoAbrirConfiguracaoProtecao = aoAbrirConfiguracaoProtecao,
+                    aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
+                    aoAbrirDetalhe = { id -> destino = DestinoPatrimonio.Detalhe(id) },
+                    aoEditar = { id -> destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = id) },
+                    aoAjustarValor = { id -> destino = DestinoPatrimonio.Ajuste(id) },
+                )
+            }
+        }
+        is DestinoPatrimonio.Detalhe -> TelaDetalheItem(
             servico = servico,
-            aoAbrirConfiguracaoProtecao = aoAbrirConfiguracaoProtecao,
-            aoCriar = { destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = null) },
+            itemId = atual.itemId,
+            ocultarValores = ocultarValores,
+            aoVoltar = { destino = DestinoPatrimonio.Lista },
             aoEditar = { id -> destino = DestinoPatrimonio.Formulario(itemIdEmEdicao = id) },
             aoAjustarValor = { id -> destino = DestinoPatrimonio.Ajuste(id) },
         )
@@ -110,15 +178,23 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
 @Composable
 private fun TelaListaPatrimonio(
     servico: ServicoPatrimonio,
+    ocultarValores: Boolean,
+    texto: String,
+    aoAlterarTexto: (String) -> Unit,
+    tipoSelecionado: TipoItemPatrimonial?,
+    aoAlterarTipoSelecionado: (TipoItemPatrimonial?) -> Unit,
+    mostrarArquivados: Boolean,
+    aoAlterarMostrarArquivados: (Boolean) -> Unit,
+    ordenacao: OrdenacaoItensPatrimoniais,
+    aoAlterarOrdenacao: (OrdenacaoItensPatrimoniais) -> Unit,
+    estadoDaLista: LazyListState,
     aoAbrirConfiguracaoProtecao: () -> Unit,
     aoCriar: () -> Unit,
+    aoAbrirDetalhe: (String) -> Unit,
     aoEditar: (String) -> Unit,
     aoAjustarValor: (String) -> Unit,
 ) {
     val itens by servico.itens.collectAsState()
-    var texto by remember { mutableStateOf("") }
-    var tipoSelecionado by remember { mutableStateOf<TipoItemPatrimonial?>(null) }
-    var mostrarArquivados by remember { mutableStateOf(false) }
     val escopo = rememberCoroutineScope()
 
     val filtro = FiltroItensPatrimoniais(
@@ -126,7 +202,9 @@ private fun TelaListaPatrimonio(
         tipos = tipoSelecionado?.let { setOf(it) } ?: emptySet(),
         incluirArquivados = mostrarArquivados,
     )
-    val itensFiltrados = filtro.aplicar(itens)
+    val itensFiltrados = remember(itens, texto, tipoSelecionado, mostrarArquivados, ordenacao) {
+        filtro.aplicar(itens).ordenarPor(ordenacao)
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md)) {
         Row(
@@ -151,7 +229,7 @@ private fun TelaListaPatrimonio(
 
         SavroTextField(
             value = texto,
-            onValueChange = { texto = it },
+            onValueChange = aoAlterarTexto,
             label = "Buscar",
             modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.md),
         )
@@ -163,15 +241,48 @@ private fun TelaListaPatrimonio(
             SavroFilterChip(
                 label = "Arquivados",
                 selected = mostrarArquivados,
-                onClick = { mostrarArquivados = !mostrarArquivados },
+                onClick = { aoAlterarMostrarArquivados(!mostrarArquivados) },
             )
             TipoItemPatrimonial.entries.forEach { tipo ->
                 SavroFilterChip(
                     label = rotuloDoTipo(tipo),
                     selected = tipoSelecionado == tipo,
-                    onClick = { tipoSelecionado = if (tipoSelecionado == tipo) null else tipo },
+                    onClick = { aoAlterarTipoSelecionado(if (tipoSelecionado == tipo) null else tipo) },
                 )
             }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = SavroThemeTokens.spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
+        ) {
+            SavroText("Ordenar:", style = SavroTextStyle.BodySmall)
+            SavroFilterChip(
+                label = "Nome",
+                selected = ordenacao == OrdenacaoItensPatrimoniais.NOME_ASC || ordenacao == OrdenacaoItensPatrimoniais.NOME_DESC,
+                onClick = {
+                    aoAlterarOrdenacao(
+                        if (ordenacao == OrdenacaoItensPatrimoniais.NOME_ASC) {
+                            OrdenacaoItensPatrimoniais.NOME_DESC
+                        } else {
+                            OrdenacaoItensPatrimoniais.NOME_ASC
+                        },
+                    )
+                },
+            )
+            SavroFilterChip(
+                label = "Valor",
+                selected = ordenacao == OrdenacaoItensPatrimoniais.VALOR_ASC || ordenacao == OrdenacaoItensPatrimoniais.VALOR_DESC,
+                onClick = {
+                    aoAlterarOrdenacao(
+                        if (ordenacao == OrdenacaoItensPatrimoniais.VALOR_ASC) {
+                            OrdenacaoItensPatrimoniais.VALOR_DESC
+                        } else {
+                            OrdenacaoItensPatrimoniais.VALOR_ASC
+                        },
+                    )
+                },
+            )
         }
 
         if (itensFiltrados.isEmpty()) {
@@ -183,12 +294,15 @@ private fun TelaListaPatrimonio(
             )
         } else {
             LazyColumn(
+                state = estadoDaLista,
                 modifier = Modifier.fillMaxSize().padding(top = SavroThemeTokens.spacing.md),
                 verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm),
             ) {
                 items(itensFiltrados, key = { it.id }) { item ->
                     ItemPatrimonialCard(
                         item = item,
+                        ocultarValores = ocultarValores,
+                        aoAbrirDetalhe = { aoAbrirDetalhe(item.id) },
                         aoEditar = { aoEditar(item.id) },
                         aoAjustarValor = { aoAjustarValor(item.id) },
                         aoDuplicar = { escopo.launch { servico.duplicar(item.id) } },
@@ -204,15 +318,26 @@ private fun TelaListaPatrimonio(
 @Composable
 private fun ItemPatrimonialCard(
     item: ItemPatrimonial,
+    ocultarValores: Boolean,
+    aoAbrirDetalhe: () -> Unit,
     aoEditar: () -> Unit,
     aoAjustarValor: () -> Unit,
     aoDuplicar: () -> Unit,
     aoArquivar: () -> Unit,
     aoExcluir: () -> Unit,
 ) {
-    SavroCard(modifier = Modifier.fillMaxWidth()) {
+    val valorFormatado = "${formatarValor(item)} ${item.moeda}"
+    val descricaoValor = ApresentacaoValor.descricaoAcessibilidade(valorFormatado, ocultarValores)
+
+    SavroCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = aoAbrirDetalhe),
+    ) {
         SavroText(item.nome, style = SavroTextStyle.Title)
-        SavroText("${rotuloDoTipo(item.tipo)} · ${formatarValor(item)} ${item.moeda}", style = SavroTextStyle.Body)
+        SavroText(
+            "${rotuloDoTipo(item.tipo)} · ${ApresentacaoValor.texto(valorFormatado, ocultarValores)}",
+            style = SavroTextStyle.Body,
+            modifier = Modifier.semantics { contentDescription = "${rotuloDoTipo(item.tipo)} · $descricaoValor" },
+        )
         item.instituicao?.let { SavroText(it, style = SavroTextStyle.BodySmall) }
         if (item.arquivado) SavroText("Arquivado", style = SavroTextStyle.Label)
 
@@ -501,10 +626,10 @@ private fun ItemPatrimonial.paraEstadoDeFormulario(): EstadoFormularioItemPatrim
         precoMedioTexto = precoMedioCentavos?.let { ConversorMonetario.centavosParaTexto(it) }.orEmpty(),
     )
 
-private fun formatarValor(item: ItemPatrimonial): String =
+internal fun formatarValor(item: ItemPatrimonial): String =
     ConversorMonetario.centavosParaTexto(item.valorCentavos)
 
-private fun rotuloDoTipo(tipo: TipoItemPatrimonial): String = when (tipo) {
+internal fun rotuloDoTipo(tipo: TipoItemPatrimonial): String = when (tipo) {
     TipoItemPatrimonial.CONTA -> "Conta"
     TipoItemPatrimonial.RENDA_VARIAVEL -> "Renda variável"
     TipoItemPatrimonial.RENDA_FIXA -> "Renda fixa"

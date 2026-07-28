@@ -3,8 +3,10 @@ package io.savro.domain.patrimonio
 import io.savro.common.Relogio
 import io.savro.common.Resultado
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoEventoTimeline
 
 /**
  * Fake mínimo para testar [ServicoPatrimonio] sem depender de `:shared:core:database` (que
@@ -21,6 +23,7 @@ class FakeRepositorioItensPatrimoniaisSimples(
 
     private val itens = LinkedHashMap<String, ItemPatrimonial>()
     private val ajustes = mutableListOf<AjusteValorItem>()
+    private val timeline = mutableListOf<EventoTimelineItem>()
 
     override suspend fun abrir(): Resultado<MetadadosBancoLocal, ErroRepositorio> =
         Resultado.Sucesso(MetadadosBancoLocal(1, itens.size))
@@ -43,6 +46,9 @@ class FakeRepositorioItensPatrimoniaisSimples(
     override suspend fun excluir(id: String): Resultado<Unit, ErroRepositorio> {
         falhaSimulada?.let { return Resultado.Falha(it) }
         if (itens.remove(id) == null) return Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(id))
+        // Simula `ON DELETE CASCADE`, igual às engines reais (Room/SQLCipher).
+        ajustes.removeAll { it.itemId == id }
+        timeline.removeAll { it.itemId == id }
         return Resultado.Sucesso(Unit)
     }
 
@@ -74,6 +80,29 @@ class FakeRepositorioItensPatrimoniaisSimples(
 
     override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
         Resultado.Sucesso(ajustes.filter { it.itemId == itemId })
+
+    override suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio> {
+        falhaSimulada?.let { return Resultado.Falha(it) }
+        val evento = EventoTimelineItem(
+            id = GeradorIdItem.novoId(),
+            itemId = itemId,
+            itemNome = itemNome,
+            tipo = tipo,
+            dataEpocaMs = dataEpocaMs,
+        )
+        timeline += evento
+        return Resultado.Sucesso(evento)
+    }
+
+    override suspend fun listarTimeline(itemId: String?): Resultado<List<EventoTimelineItem>, ErroRepositorio> {
+        val filtrada = if (itemId == null) timeline else timeline.filter { it.itemId == itemId }
+        return Resultado.Sucesso(filtrada.sortedByDescending { it.dataEpocaMs })
+    }
 
     override suspend fun executarEmTransacao(
         bloco: suspend TransacaoItensPatrimoniais.() -> Unit,

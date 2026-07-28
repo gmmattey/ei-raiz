@@ -2,8 +2,10 @@ package io.savro.domain.patrimonio
 
 import io.savro.common.Relogio
 import io.savro.common.Resultado
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.OrigemValor
+import io.savro.model.TipoEventoTimeline
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +37,14 @@ class ServicoPatrimonio(
     private val mutexRecarga = Mutex()
     private val _itens = MutableStateFlow<List<ItemPatrimonial>>(emptyList())
     val itens: StateFlow<List<ItemPatrimonial>> = _itens.asStateFlow()
+
+    /**
+     * Linha do tempo básica global (issue #120), mais recente primeiro — recarregada no mesmo
+     * chokepoint que [itens] ([recarregar]), então Home/Detalhe se atualizam imediatamente junto
+     * com os totais, sem chamada explícita adicional.
+     */
+    private val _timeline = MutableStateFlow<List<EventoTimelineItem>>(emptyList())
+    val timeline: StateFlow<List<EventoTimelineItem>> = _timeline.asStateFlow()
 
     /** Deve ser chamado depois de [RepositorioItensPatrimoniais.abrir] pelo host. */
     suspend fun carregar(): Resultado<List<ItemPatrimonial>, ErroServicoPatrimonio> =
@@ -71,6 +81,7 @@ class ServicoPatrimonio(
         return when (val resultado = repositorio.inserir(item)) {
             is Resultado.Falha -> Resultado.Falha(ErroServicoPatrimonio.Persistencia(resultado.erro))
             is Resultado.Sucesso -> {
+                registrarEvento(resultado.valor.id, resultado.valor.nome, TipoEventoTimeline.ITEM_CRIADO)
                 recarregar()
                 Resultado.Sucesso(resultado.valor)
             }
@@ -103,6 +114,7 @@ class ServicoPatrimonio(
         return when (val resultado = repositorio.atualizar(itemAtualizado)) {
             is Resultado.Falha -> Resultado.Falha(mapearErroDeAtualizacao(resultado.erro))
             is Resultado.Sucesso -> {
+                registrarEvento(resultado.valor.id, resultado.valor.nome, TipoEventoTimeline.ITEM_EDITADO)
                 recarregar()
                 Resultado.Sucesso(resultado.valor)
             }
@@ -126,6 +138,7 @@ class ServicoPatrimonio(
         return when (val resultado = repositorio.inserir(copia)) {
             is Resultado.Falha -> Resultado.Falha(ErroServicoPatrimonio.Persistencia(resultado.erro))
             is Resultado.Sucesso -> {
+                registrarEvento(resultado.valor.id, resultado.valor.nome, TipoEventoTimeline.ITEM_CRIADO)
                 recarregar()
                 Resultado.Sucesso(resultado.valor)
             }
@@ -141,6 +154,8 @@ class ServicoPatrimonio(
         return when (val resultado = repositorio.atualizar(existente.copy(arquivado = arquivado))) {
             is Resultado.Falha -> Resultado.Falha(mapearErroDeAtualizacao(resultado.erro))
             is Resultado.Sucesso -> {
+                val tipoEvento = if (arquivado) TipoEventoTimeline.ITEM_ARQUIVADO else TipoEventoTimeline.ITEM_REATIVADO
+                registrarEvento(resultado.valor.id, resultado.valor.nome, tipoEvento)
                 recarregar()
                 Resultado.Sucesso(resultado.valor)
             }
@@ -190,6 +205,7 @@ class ServicoPatrimonio(
         return when (resultado) {
             is Resultado.Falha -> Resultado.Falha(mapearErroDeAtualizacao(resultado.erro))
             is Resultado.Sucesso -> {
+                registrarEvento(resultado.valor.id, resultado.valor.nome, TipoEventoTimeline.VALOR_AJUSTADO)
                 recarregar()
                 Resultado.Sucesso(resultado.valor)
             }
@@ -198,14 +214,32 @@ class ServicoPatrimonio(
 
     suspend fun listarAjustes(id: String) = repositorio.listarAjustesDeValor(id)
 
+    /** Linha do tempo de um item específico (issue #120, tela de Detalhe), mais recente primeiro. */
+    suspend fun listarTimelineDoItem(id: String) = repositorio.listarTimeline(itemId = id)
+
+    /** Instante atual — usado pela Home (issue #120) para achar itens desatualizados sem cada tela precisar do próprio [Relogio]. */
+    fun agoraEmEpocaMs(): Long = relogio.agoraEmEpocaMs()
+
     private suspend fun recarregar(): Resultado<List<ItemPatrimonial>, ErroServicoPatrimonio> = mutexRecarga.withLock {
         when (val resultado = repositorio.listarTodos()) {
             is Resultado.Falha -> Resultado.Falha(ErroServicoPatrimonio.Persistencia(resultado.erro))
             is Resultado.Sucesso -> {
                 _itens.value = resultado.valor
+                val timeline = repositorio.listarTimeline(itemId = null)
+                if (timeline is Resultado.Sucesso) _timeline.value = timeline.valor
                 Resultado.Sucesso(resultado.valor)
             }
         }
+    }
+
+    /**
+     * Melhor esforço: a linha do tempo é um registro complementar, não a fonte de verdade do
+     * item — uma falha ao gravar o evento não desfaz nem impede a operação principal (que já foi
+     * confirmada no repositório antes deste ponto). Nunca chamado antes da escrita principal ter
+     * tido sucesso.
+     */
+    private suspend fun registrarEvento(itemId: String, itemNome: String, tipo: TipoEventoTimeline) {
+        repositorio.registrarEventoTimeline(itemId, itemNome, tipo, relogio.agoraEmEpocaMs())
     }
 
     private fun mapearErroDeAtualizacao(erro: ErroRepositorio): ErroServicoPatrimonio =

@@ -5,8 +5,10 @@ import io.savro.domain.patrimonio.ErroRepositorio
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoEventoTimeline
 
 /**
  * Fake mínimo de [RepositorioItensPatrimoniais] para `GerenciadorCofreTest` — só `abrir()`/
@@ -60,6 +62,16 @@ class FakeRepositorioItensPatrimoniais(
     ): Resultado<ItemPatrimonial, ErroRepositorio> = Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(itemId))
 
     override suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio> =
+        Resultado.Sucesso(emptyList())
+
+    override suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio> = Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(itemId))
+
+    override suspend fun listarTimeline(itemId: String?): Resultado<List<EventoTimelineItem>, ErroRepositorio> =
         Resultado.Sucesso(emptyList())
 
     override suspend fun executarEmTransacao(

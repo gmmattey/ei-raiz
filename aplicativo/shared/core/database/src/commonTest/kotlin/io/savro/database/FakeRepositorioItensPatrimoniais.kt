@@ -7,8 +7,10 @@ import io.savro.domain.patrimonio.GeradorIdItem
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.domain.patrimonio.TransacaoItensPatrimoniais
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoEventoTimeline
 import io.savro.domain.patrimonio.ProvedorChaveMestra
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,6 +31,7 @@ class FakeRepositorioItensPatrimoniais(
     private val mutex = Mutex()
     private val itens = LinkedHashMap<String, ItemPatrimonial>()
     private val ajustes = mutableListOf<AjusteValorItem>()
+    private val timeline = mutableListOf<EventoTimelineItem>()
     private var aberto = false
 
     override suspend fun abrir(): Resultado<MetadadosBancoLocal, ErroRepositorio> = mutex.withLock {
@@ -70,6 +73,11 @@ class FakeRepositorioItensPatrimoniais(
         if (itens.remove(id) == null) {
             return@withLock Resultado.Falha(ErroRepositorio.ItemNaoEncontrado(id))
         }
+        // Simula `ON DELETE CASCADE` (ajustes_valor_item/eventos_timeline_item) — mesmo
+        // comportamento que Room (FK habilitada por padrão) e SQLCipher (desde a correção do
+        // `PRAGMA foreign_keys` feita na #120).
+        ajustes.removeAll { it.itemId == id }
+        timeline.removeAll { it.itemId == id }
         Resultado.Sucesso(Unit)
     }
 
@@ -109,6 +117,31 @@ class FakeRepositorioItensPatrimoniais(
         mutex.withLock {
             exigirAberto()?.let { return@withLock Resultado.Falha(it) }
             Resultado.Sucesso(ajustes.filter { it.itemId == itemId })
+        }
+
+    override suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio> = mutex.withLock {
+        exigirAberto()?.let { return@withLock Resultado.Falha(it) }
+        val evento = EventoTimelineItem(
+            id = GeradorIdItem.novoId(),
+            itemId = itemId,
+            itemNome = itemNome,
+            tipo = tipo,
+            dataEpocaMs = dataEpocaMs,
+        )
+        timeline += evento
+        Resultado.Sucesso(evento)
+    }
+
+    override suspend fun listarTimeline(itemId: String?): Resultado<List<EventoTimelineItem>, ErroRepositorio> =
+        mutex.withLock {
+            exigirAberto()?.let { return@withLock Resultado.Falha(it) }
+            val filtrada = if (itemId == null) timeline else timeline.filter { it.itemId == itemId }
+            Resultado.Sucesso(filtrada.sortedByDescending { it.dataEpocaMs })
         }
 
     override suspend fun executarEmTransacao(

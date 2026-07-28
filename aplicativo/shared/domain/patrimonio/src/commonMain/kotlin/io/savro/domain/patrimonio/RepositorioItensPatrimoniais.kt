@@ -2,8 +2,10 @@ package io.savro.domain.patrimonio
 
 import io.savro.common.Resultado
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.MetadadosBancoLocal
+import io.savro.model.TipoEventoTimeline
 
 /**
  * Contrato de persistência do cofre patrimonial, comum a Android e iOS (ADR-002, #180).
@@ -54,6 +56,24 @@ interface RepositorioItensPatrimoniais {
 
     /** Histórico de ajustes de um item, do mais antigo para o mais recente. */
     suspend fun listarAjustesDeValor(itemId: String): Resultado<List<AjusteValorItem>, ErroRepositorio>
+
+    /**
+     * Registra um evento da linha do tempo básica (issue #120) — sempre chamado por
+     * [ServicoPatrimonio] logo após a operação de escrita correspondente já ter sido confirmada
+     * (nunca antes, para não registrar evento de algo que falhou em persistir).
+     */
+    suspend fun registrarEventoTimeline(
+        itemId: String,
+        itemNome: String,
+        tipo: TipoEventoTimeline,
+        dataEpocaMs: Long,
+    ): Resultado<EventoTimelineItem, ErroRepositorio>
+
+    /**
+     * Linha do tempo, mais recente primeiro. `itemId = null` retorna a linha do tempo global
+     * (Home); um id específico filtra para a tela de Detalhe do item.
+     */
+    suspend fun listarTimeline(itemId: String? = null): Resultado<List<EventoTimelineItem>, ErroRepositorio>
 
     /**
      * Executa [bloco] atomicamente: todas as operações de dentro se aplicam juntas, ou nenhuma se

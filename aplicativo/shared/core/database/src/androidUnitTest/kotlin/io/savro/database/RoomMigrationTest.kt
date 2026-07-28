@@ -182,6 +182,59 @@ class RoomMigrationTest {
         bancoV3.close()
     }
 
+    @Test
+    fun migracao3Para4_criaTabelaDeTimelineSemPerderItensExistentes() = runTest {
+        val arquivo = "teste-migracao-${UUID.randomUUID()}.db"
+        nomeArquivo = arquivo
+        val contexto = contexto()
+
+        // Reaproveita o schema real da v3 (SavroRoomDatabase já compilado com a entidade nova
+        // não serviria — precisamos do schema tal como estava antes da #120). Como a v3 já é
+        // idêntica ao schema de itens_patrimoniais pós #119, criamos direto via SQL bruto na v2
+        // + migration 2->3 para chegar num banco v3 realista antes de aplicar a 3->4.
+        val bancoV2 = Room.databaseBuilder(contexto, SavroRoomDatabaseV2SomenteParaTeste::class.java, arquivo)
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .build()
+        bancoV2.dao().inserir(
+            EntidadeItemPatrimonialV2(
+                id = "item-1",
+                tipo = "CONTA",
+                nome = "Conta corrente",
+                valorCentavos = 1_000,
+                instituicao = null,
+                observacao = null,
+                criadoEmEpocaMs = 1,
+                atualizadoEmEpocaMs = 1,
+            ),
+        )
+        bancoV2.close()
+
+        val bancoV4 = Room.databaseBuilder(contexto, SavroRoomDatabase::class.java, arquivo)
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            .addMigrations(*TODAS_AS_MIGRATIONS_ROOM)
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .build()
+
+        val itemMigrado = bancoV4.itemPatrimonialDao().buscarPorId("item-1")
+        assertEquals("Conta corrente", itemMigrado?.nome)
+
+        bancoV4.itemPatrimonialDao().inserirEventoTimeline(
+            EntidadeEventoTimelineItem(
+                id = "evento-1",
+                itemId = "item-1",
+                itemNome = "Conta corrente",
+                tipo = "ITEM_CRIADO",
+                dataEpocaMs = 2,
+            ),
+        )
+        val timeline = bancoV4.itemPatrimonialDao().listarTimelineDoItem("item-1")
+        assertEquals(1, timeline.size)
+        assertEquals("ITEM_CRIADO", timeline.single().tipo)
+
+        bancoV4.close()
+    }
+
     private fun contexto(): Context = ApplicationProvider.getApplicationContext()
 
     @After

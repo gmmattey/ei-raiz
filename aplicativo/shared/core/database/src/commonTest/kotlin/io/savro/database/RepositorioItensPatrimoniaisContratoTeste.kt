@@ -4,8 +4,10 @@ import io.savro.common.Resultado
 import io.savro.domain.patrimonio.ErroRepositorio
 import io.savro.domain.patrimonio.RepositorioItensPatrimoniais
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.OrigemValor
+import io.savro.model.TipoEventoTimeline
 import io.savro.model.TipoItemPatrimonial
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -315,6 +317,46 @@ abstract class RepositorioItensPatrimoniaisContratoTeste {
         val ajustes = repositorio.listarAjustesDeValor("nao-existe")
         assertIs<Resultado.Sucesso<List<AjusteValorItem>>>(ajustes)
         assertEquals(0, ajustes.valor.size)
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun registrarEventoTimeline_listaGlobalEPorItemMaisRecentePrimeiro() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        repositorio.inserir(itemDeTeste(id = "item-1", nome = "Conta corrente"))
+        repositorio.inserir(itemDeTeste(id = "item-2", nome = "Ações XPTO"))
+
+        repositorio.registrarEventoTimeline("item-1", "Conta corrente", TipoEventoTimeline.ITEM_CRIADO, dataEpocaMs = 1)
+        repositorio.registrarEventoTimeline("item-2", "Ações XPTO", TipoEventoTimeline.ITEM_CRIADO, dataEpocaMs = 2)
+        repositorio.registrarEventoTimeline("item-1", "Conta corrente", TipoEventoTimeline.VALOR_AJUSTADO, dataEpocaMs = 3)
+
+        val global = repositorio.listarTimeline(itemId = null)
+        assertIs<Resultado.Sucesso<List<EventoTimelineItem>>>(global)
+        assertEquals(3, global.valor.size)
+        assertEquals(listOf(3L, 2L, 1L), global.valor.map { it.dataEpocaMs })
+
+        val doItem1 = repositorio.listarTimeline(itemId = "item-1")
+        assertIs<Resultado.Sucesso<List<EventoTimelineItem>>>(doItem1)
+        assertEquals(2, doItem1.valor.size)
+        assertEquals(TipoEventoTimeline.VALOR_AJUSTADO, doItem1.valor.first().tipo)
+
+        encerrar(repositorio)
+    }
+
+    @Test
+    fun excluirItem_removeSeusEventosDeTimelineEmCascata() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.abrir()
+        repositorio.inserir(itemDeTeste(id = "item-1"))
+        repositorio.registrarEventoTimeline("item-1", "Conta corrente", TipoEventoTimeline.ITEM_CRIADO, dataEpocaMs = 1)
+
+        repositorio.excluir("item-1")
+
+        val restante = repositorio.listarTimeline(itemId = "item-1")
+        assertIs<Resultado.Sucesso<List<EventoTimelineItem>>>(restante)
+        assertEquals(0, restante.valor.size)
 
         encerrar(repositorio)
     }

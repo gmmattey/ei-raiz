@@ -6,8 +6,10 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import io.savro.model.AjusteValorItem
+import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
 import io.savro.model.OrigemValor
+import io.savro.model.TipoEventoTimeline
 import io.savro.model.TipoItemPatrimonial
 
 /**
@@ -103,5 +105,38 @@ internal fun EntidadeAjusteValorItem.paraModelo(): AjusteValorItem = AjusteValor
     valorCentavosAnterior = valorCentavosAnterior,
     valorCentavosNovo = valorCentavosNovo,
     origem = OrigemValor.valueOf(origem),
+    dataEpocaMs = dataEpocaMs,
+)
+
+/** Linha do tempo básica (issue #120) — append-only, nunca editada nem removida (exceto por cascata). */
+@Entity(
+    tableName = "eventos_timeline_item",
+    foreignKeys = [
+        ForeignKey(
+            entity = EntidadeItemPatrimonial::class,
+            parentColumns = ["id"],
+            childColumns = ["item_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("item_id")],
+)
+data class EntidadeEventoTimelineItem(
+    @PrimaryKey
+    val id: String,
+    @ColumnInfo(name = "item_id")
+    val itemId: String,
+    @ColumnInfo(name = "item_nome")
+    val itemNome: String,
+    val tipo: String,
+    @ColumnInfo(name = "data_epoca_ms")
+    val dataEpocaMs: Long,
+)
+
+internal fun EntidadeEventoTimelineItem.paraModelo(): EventoTimelineItem = EventoTimelineItem(
+    id = id,
+    itemId = itemId,
+    itemNome = itemNome,
+    tipo = TipoEventoTimeline.valueOf(tipo),
     dataEpocaMs = dataEpocaMs,
 )
