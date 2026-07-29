@@ -9,8 +9,16 @@ class FakeAutenticadorBiometrico(
         private set
     var ultimoPermitirCredencialDispositivo: Boolean? = null
         private set
+    var vezesDisponibilidadeConsultada: Int = 0
+        private set
+    var ultimoPermitirCredencialDispositivoConsultado: Boolean? = null
+        private set
 
-    override suspend fun disponibilidade(): DisponibilidadeBiometria = disponibilidadeSimulada
+    override suspend fun disponibilidade(permitirCredencialDispositivo: Boolean): DisponibilidadeBiometria {
+        vezesDisponibilidadeConsultada += 1
+        ultimoPermitirCredencialDispositivoConsultado = permitirCredencialDispositivo
+        return disponibilidadeSimulada
+    }
 
     override suspend fun autenticar(motivo: String, permitirCredencialDispositivo: Boolean): ResultadoAutenticacao {
         vezesChamado += 1

@@ -43,6 +43,8 @@ import io.savro.designsystem.componentes.SavroTextField
 import io.savro.designsystem.componentes.SavroWarningBanner
 import io.savro.designsystem.tema.SavroThemeTokens
 import io.savro.domain.patrimonio.calculo.FormatadorData
+import io.savro.security.DecisaoOpcaoProtecao
+import io.savro.security.DisponibilidadeBiometria
 import io.savro.security.GerenciadorCofre
 import io.savro.security.PoliticaProtecao
 import kotlinx.coroutines.launch
@@ -474,8 +476,15 @@ private fun PassoExportarCsv(
 private fun SecaoProtecao(gerenciador: GerenciadorCofre) {
     val escopo = rememberCoroutineScope()
     var politica by remember { mutableStateOf<PoliticaProtecao?>(null) }
+    // Ativar aqui usa a mesma combinação padrão de `ativarProtecao()` (biometria OU credencial do
+    // aparelho) — checa essa combinação antes de oferecer o botão como habilitado (#226): nunca
+    // deixa "Ativar proteção" aparecer clicável para depois falhar no primeiro desbloqueio.
+    var disponibilidadeParaAtivar by remember { mutableStateOf<DisponibilidadeBiometria?>(null) }
 
-    LaunchedEffect(gerenciador) { politica = gerenciador.politicaAtual() }
+    LaunchedEffect(gerenciador) {
+        politica = gerenciador.politicaAtual()
+        disponibilidadeParaAtivar = gerenciador.disponibilidadeBiometrica(permitirCredencialDispositivo = true)
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
         SavroText(stringResource(Res.string.configuracao_protecao_titulo), style = SavroTextStyle.Title)
@@ -484,8 +493,17 @@ private fun SecaoProtecao(gerenciador: GerenciadorCofre) {
             null -> Unit
             PoliticaProtecao.Nenhuma -> {
                 SavroText(stringResource(Res.string.configuracao_protecao_estado_desativada))
+                val disponibilidade = disponibilidadeParaAtivar
+                val podeAtivar = disponibilidade?.let(DecisaoOpcaoProtecao::habilitada) ?: false
+                if (disponibilidade != null && !podeAtivar) {
+                    SavroText(
+                        stringResource(mensagemIndisponibilidade(disponibilidade)),
+                        style = SavroTextStyle.BodySmall,
+                    )
+                }
                 SavroButton(
                     label = stringResource(Res.string.configuracao_protecao_botao_ativar),
+                    enabled = podeAtivar,
                     onClick = {
                         escopo.launch {
                             gerenciador.ativarProtecao()

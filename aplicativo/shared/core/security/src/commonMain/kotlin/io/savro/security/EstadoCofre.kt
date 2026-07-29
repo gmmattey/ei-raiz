@@ -16,8 +16,12 @@ sealed class EstadoCofre {
     /** Biometria/credencial rejeitada pelo sistema nesta tentativa — usuário pode tentar de novo. */
     data class CredencialInvalida(val motivo: String) : EstadoCofre()
 
-    /** Nenhuma biometria/credencial de dispositivo configurada ou disponível para autenticar. */
-    data object BiometriaIndisponivel : EstadoCofre()
+    /**
+     * Biometria/credencial de dispositivo indisponível para autenticar agora — [motivo] é a causa
+     * real (#226, [DisponibilidadeBiometria]) para a UI escolher mensagem e fallback corretos, em
+     * vez de um aviso genérico que finge não saber por quê.
+     */
+    data class BiometriaIndisponivel(val motivo: DisponibilidadeBiometria) : EstadoCofre()
 
     /** Sistema recusa novas tentativas até [tentarNovamenteEmEpocaMs] (sinal nativo, não contagem própria). */
     data class BloqueioTemporario(val tentarNovamenteEmEpocaMs: Long) : EstadoCofre()

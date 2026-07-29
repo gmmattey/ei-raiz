@@ -1,6 +1,7 @@
 package io.savro.security
 
 import kotlin.coroutines.resume
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCObjectVar
 import kotlinx.cinterop.alloc
@@ -20,7 +21,6 @@ import platform.LocalAuthentication.LAErrorUserCancel
 import platform.LocalAuthentication.LAErrorUserFallback
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthenticationWithBiometrics
-import platform.posix.time
 
 /**
  * [AutenticadorBiometrico] iOS: `LocalAuthentication`/`LAContext` (Face ID, Touch ID ou código do
@@ -32,25 +32,23 @@ import platform.posix.time
 @OptIn(ExperimentalForeignApi::class)
 class AutenticadorBiometricoIOS : AutenticadorBiometrico {
 
-    override suspend fun disponibilidade(): DisponibilidadeBiometria = memScoped {
-        val contexto = LAContext()
-        val erro = alloc<ObjCObjectVar<NSError?>>()
-        val podeAvaliar = contexto.canEvaluatePolicy(
-            LAPolicyDeviceOwnerAuthentication,
-            error = erro.ptr,
-        )
-        if (podeAvaliar) return@memScoped DisponibilidadeBiometria.Disponivel
+    @OptIn(BetaInteropApi::class)
+    override suspend fun disponibilidade(permitirCredencialDispositivo: Boolean): DisponibilidadeBiometria =
+        memScoped {
+            // Instância nova a cada checagem (padrão recomendado pela Apple, mesma regra de
+            // `autenticar`) — `canEvaluatePolicy` nunca dispara prompt, só consulta o sistema.
+            val contexto = LAContext()
+            val erro = alloc<ObjCObjectVar<NSError?>>()
+            val politica = if (permitirCredencialDispositivo) {
+                LAPolicyDeviceOwnerAuthentication
+            } else {
+                LAPolicyDeviceOwnerAuthenticationWithBiometrics
+            }
+            val podeAvaliar = contexto.canEvaluatePolicy(politica, error = erro.ptr)
+            if (podeAvaliar) return@memScoped DisponibilidadeBiometria.Disponivel
 
-        when (erro.value?.code) {
-            LAErrorBiometryNotAvailable, LAErrorPasscodeNotSet -> DisponibilidadeBiometria.SemHardware
-            LAErrorBiometryNotEnrolled -> DisponibilidadeBiometria.NaoConfigurada
-            LAErrorBiometryLockout ->
-                DisponibilidadeBiometria.TemporariamenteIndisponivel("Biometria temporariamente bloqueada pelo sistema")
-            else -> DisponibilidadeBiometria.TemporariamenteIndisponivel(
-                erro.value?.localizedDescription ?: "Status de biometria desconhecido",
-            )
+            mapearDisponibilidade(erro.value)
         }
-    }
 
     override suspend fun autenticar(
         motivo: String,
@@ -73,18 +71,37 @@ class AutenticadorBiometricoIOS : AutenticadorBiometrico {
         }
     }
 
-    private fun mapearErro(erro: NSError?): ResultadoAutenticacao = when (erro?.code) {
+    internal fun mapearErro(erro: NSError?): ResultadoAutenticacao = when (erro?.code) {
         LAErrorUserCancel, LAErrorSystemCancel, LAErrorAppCancel, LAErrorUserFallback ->
             ResultadoAutenticacao.Cancelado
-        LAErrorBiometryLockout -> ResultadoAutenticacao.BloqueioTemporario(
-            time(null) * 1000L + BLOQUEIO_TEMPORARIO_PADRAO_MS,
-        )
+        // O iOS não tem um "ERROR_LOCKOUT" temporizado equivalente ao do Android — o único código
+        // de bloqueio biométrico (LAErrorBiometryLockout) exige o usuário confirmar a credencial
+        // do aparelho pra resetar, o que é semanticamente um bloqueio permanente, não temporário
+        // (achado da auditoria #226 — a versão anterior mapeava isso como 30s fixos, incorreto).
+        LAErrorBiometryLockout -> ResultadoAutenticacao.BloqueioPermanente
         LAErrorBiometryNotAvailable, LAErrorBiometryNotEnrolled, LAErrorPasscodeNotSet ->
             ResultadoAutenticacao.Indisponivel(erro?.localizedDescription ?: "Biometria indisponível")
         else -> ResultadoAutenticacao.FalhaCredencial(erro?.localizedDescription ?: "Falha de autenticação")
     }
+}
 
-    private companion object {
-        const val BLOQUEIO_TEMPORARIO_PADRAO_MS = 30_000L
-    }
+/**
+ * Mapeamento puro de [NSError.code] de `LAContext.canEvaluatePolicy` (#226) — função de nível de
+ * topo, testável direto com instâncias de `NSError` reais em `iosTest`
+ * (`AutenticadorBiometricoIOSTest`), sem precisar de sensor físico nem mock de `LAContext`.
+ */
+internal fun mapearDisponibilidade(erro: NSError?): DisponibilidadeBiometria = when (erro?.code) {
+    // No iOS, sem passcode configurado nem biometria funciona (Face ID/Touch ID exigem passcode
+    // definido) — LAErrorPasscodeNotSet é sempre a causa raiz "sem credencial do aparelho", não
+    // "sem hardware biométrico", mesmo quando a checagem pedida foi só biometria (#226: nunca
+    // sugerir "cadastre sua biometria" quando o problema real é a ausência de passcode).
+    LAErrorPasscodeNotSet -> DisponibilidadeBiometria.SemCredencialDispositivo
+    LAErrorBiometryNotAvailable -> DisponibilidadeBiometria.SemHardware
+    LAErrorBiometryNotEnrolled -> DisponibilidadeBiometria.NaoConfigurada
+    // Ver comentário em `mapearErro`: no iOS o único código de lockout biométrico se comporta como
+    // bloqueio permanente (exige credencial do aparelho pra resetar), nunca temporizado.
+    LAErrorBiometryLockout -> DisponibilidadeBiometria.BloqueadaPermanentemente
+    else -> DisponibilidadeBiometria.ErroDesconhecido(
+        erro?.localizedDescription ?: "Código de status desconhecido: ${erro?.code}",
+    )
 }
