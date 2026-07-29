@@ -19,8 +19,8 @@ nesta sessão com sucesso, e o que cada um impede.
 | `RedacaoConteudoBackupTest` | `:shared:core:backup` (**novo**) | Regressão de redaction em `ConteudoBackup.toString()` (ex.: voltar a listar itens inteiros) | ✅ 1 teste, 0 falhas |
 | `VerifyDependencyInventoryTest` | `:shared:core:testing` (**novo**) | Dependência nova em `gradle/libs.versions.toml` sem registro no inventário de dependências | ✅ 1 teste, 0 falhas |
 | `VerifyArchitectureFunctionalTest` | `:shared:core:testing` (já existia) | Já cobre proibições de referência proibida/`android.`/`platform.UIKit` em `commonMain` — reforçado por esta issue com a extensão das listas de rede | ✅ (não modificado, mas as fixtures cobrem as listas estendidas) |
-| `ApresentacaoValorTest` | `:shared:domain:patrimonio` (já existia) | Regressão da máscara de privacidade em texto/acessibilidade | ✅ (confirmado nesta auditoria como parte da suíte `testes-comuns`) |
-| `SavroPrivacyMaskCommonTest`/`SavroPrivacyMaskInstrumentedTest` | `:shared:core:designsystem` (já existiam) | Regressão de vazamento na árvore de semântica | ✅ (confirmado nesta auditoria) |
+| `ApresentacaoValorTest` | `:shared:core:designsystem` (movido de `:shared:domain:patrimonio` na #230, agora `internal`) | Regressão da máscara de privacidade em texto/acessibilidade | ✅ (9 casos, `:shared:core:designsystem:testDebugUnitTest`) |
+| `SavroPrivacyMaskCommonTest`/`SavroPrivacyTextCommonTest`/`SavroPrivacyMaskInstrumentedTest` | `:shared:core:designsystem` (unificados na #230 — único caminho canônico, consumido por Home/Patrimônio/Detalhe) | Regressão de vazamento na árvore de semântica nas duas variantes (`SavroPrivacyMask`/`SavroPrivacyText`) | ✅ (`testDebugUnitTest` roda os testes comuns via Robolectric; instrumentado depende de device/AVD, não executado neste ambiente) |
 | `MainActivitySnapshotProtectionTest` | `:androidApp` (já existia) | Regressão do `FLAG_SECURE` | ✅ (confirmado nesta auditoria, roda em `:androidApp:testDevDebugUnitTest`) |
 
 ## Testes iOS (`iosTest`, exigem runner macOS real — não executáveis neste ambiente)

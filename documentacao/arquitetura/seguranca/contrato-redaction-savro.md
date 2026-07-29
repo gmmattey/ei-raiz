@@ -107,12 +107,14 @@ Este limite está documentado explicitamente no Kdoc de cada teste — não é u
 
 ## Testes já existentes que também sustentam este contrato (não criados nesta issue, confirmados aqui)
 
-- `ApresentacaoValorTest` (`:shared:domain:patrimonio`) — confirma que a máscara de privacidade
-  (`"••••••"`/`"Valor oculto"`) nunca contém dígito do valor real, tanto no texto visível quanto no
-  `contentDescription` de acessibilidade.
-- `SavroPrivacyMaskCommonTest`/`SavroPrivacyMaskInstrumentedTest` (`:shared:core:designsystem`) —
-  confirmam que o conteúdo sensível é removido da árvore de semântica (não só visualmente oculto)
-  quando `isVisible = false`.
+- `ApresentacaoValorTest` (`:shared:core:designsystem`, movido de `:shared:domain:patrimonio` na
+  #230 junto com a implementação) — confirma que a máscara de privacidade (`"••••••"`/`"Valor
+  oculto"`) nunca contém dígito do valor real, tanto no texto visível quanto no
+  `contentDescription` de acessibilidade, em valores positivos, negativos, zero e grandes.
+- `SavroPrivacyMaskCommonTest`/`SavroPrivacyTextCommonTest`/`SavroPrivacyMaskInstrumentedTest`
+  (`:shared:core:designsystem`) — confirmam que o conteúdo sensível é removido da árvore de
+  semântica (não só visualmente oculto) quando `oculto = true`, nas duas variantes canônicas
+  (`SavroPrivacyMask`/`SavroPrivacyText`, únicos consumidores de `ApresentacaoValor` desde a #230).
 - `InteroperabilidadeBackupTest`/vetores de referência (`:shared:core:backup`) — não testam
   redaction diretamente, mas confirmam que a única serialização de dado patrimonial (o JSON dentro
   do backup cifrado) é determinística e auditável campo a campo, reforçando que não há caminho

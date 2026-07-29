@@ -18,8 +18,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroCard
 import io.savro.designsystem.componentes.SavroConfirmDialog
@@ -29,6 +27,7 @@ import io.savro.designsystem.componentes.SavroIconButton
 import io.savro.designsystem.componentes.SavroInlineIcon
 import io.savro.designsystem.componentes.SavroMenuAction
 import io.savro.designsystem.componentes.SavroOverflowMenu
+import io.savro.designsystem.componentes.SavroPrivacyMask
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -36,7 +35,6 @@ import io.savro.designsystem.componentes.SavroTextStyle
 import io.savro.designsystem.tema.SavroThemeTokens
 import io.savro.domain.patrimonio.ConversorMonetario
 import io.savro.domain.patrimonio.ServicoPatrimonio
-import io.savro.domain.patrimonio.calculo.ApresentacaoValor
 import io.savro.domain.patrimonio.calculo.FormatadorData
 import io.savro.model.EventoTimelineItem
 import io.savro.model.ItemPatrimonial
@@ -129,20 +127,20 @@ internal fun TelaDetalheItem(
 
             SavroDivider(modifier = Modifier.padding(vertical = SavroThemeTokens.spacing.sm))
 
-            LinhaComOculto("Valor atual", "${formatarValor(item)} ${item.moeda}", ocultarValores)
+            SavroPrivacyMask(rotulo = "Valor atual", valorFormatado = "${formatarValor(item)} ${item.moeda}", oculto = ocultarValores)
 
             valorInvestidoCentavos(item)?.let { valorInvestido ->
-                LinhaComOculto(
-                    "Valor investido",
-                    "${ConversorMonetario.centavosParaTexto(valorInvestido)} ${item.moeda}",
-                    ocultarValores,
+                SavroPrivacyMask(
+                    rotulo = "Valor investido",
+                    valorFormatado = "${ConversorMonetario.centavosParaTexto(valorInvestido)} ${item.moeda}",
+                    oculto = ocultarValores,
                 )
             }
             item.quantidadeMilesimos?.let {
                 SavroText("Quantidade: ${ConversorMonetario.quantidadeMilesimosParaTexto(it)}", style = SavroTextStyle.BodySmall)
             }
             item.precoMedioCentavos?.let {
-                LinhaComOculto("Preço médio", "${ConversorMonetario.centavosParaTexto(it)} ${item.moeda}", ocultarValores)
+                SavroPrivacyMask(rotulo = "Preço médio", valorFormatado = "${ConversorMonetario.centavosParaTexto(it)} ${item.moeda}", oculto = ocultarValores)
             }
 
             SavroDivider(modifier = Modifier.padding(vertical = SavroThemeTokens.spacing.sm))
@@ -175,19 +173,6 @@ internal fun TelaDetalheItem(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun LinhaComOculto(rotulo: String, valorFormatado: String, oculto: Boolean) {
-    val texto = ApresentacaoValor.texto(valorFormatado, oculto)
-    val descricao = ApresentacaoValor.descricaoAcessibilidade("$rotulo: $valorFormatado", oculto)
-    Row(
-        modifier = Modifier.fillMaxWidth().semantics { contentDescription = descricao },
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        SavroText(rotulo, style = SavroTextStyle.Body)
-        SavroText(texto, style = SavroTextStyle.Body)
     }
 }
 
