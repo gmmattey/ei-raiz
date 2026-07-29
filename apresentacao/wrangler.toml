@@ -3,7 +3,6 @@ compatibility_date = "2026-04-09"
 pages_build_output_dir = "./dist"
 
 [vars]
-VITE_API_BASE_URL = "https://ei-api-gateway.giammattey-luiz.workers.dev"
 # Domínio Cloudflare Pages atual do projeto — o Savro não tem domínio próprio ainda (issue #122).
 # Consumida em build-time por scripts/gerar-arquivos-seo.mjs e src/config/site.ts. O deploy real
 # (.github/workflows/deploy.yml) passa esta mesma env var explicitamente ao `npm run build`; este

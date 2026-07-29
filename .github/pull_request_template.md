@@ -12,10 +12,8 @@ Closes #
 
 ## Camadas afetadas
 
-- [ ] Frontend
-- [ ] Backend
-- [ ] Contratos
-- [ ] Banco/migration
+- [ ] Frontend (`apresentacao/`)
+- [ ] App KMP (`aplicativo/`)
 - [ ] Scripts operacionais
 - [ ] Documentação
 - [ ] CI/infraestrutura
@@ -30,7 +28,6 @@ Closes #
 ## Validação executada
 
 - [ ] `npm run typecheck`
-- [ ] `npm run test:api`
 - [ ] `npm run build`
 - [ ] Validação manual
 - [ ] Não se aplica
@@ -43,18 +40,10 @@ Closes #
 
 <!-- Obrigatório para alterações de interface. Inclua antes/depois quando fizer sentido. -->
 
-## Banco de dados
-
-- [ ] Não altera banco.
-- [ ] Inclui migration nova.
-- [ ] A migration foi validada em ambiente local.
-- [ ] Estratégia de compatibilidade/rollback está documentada.
-
 ## Segurança e privacidade
 
 - [ ] Não adiciona segredo ou credencial.
-- [ ] Não registra dados financeiros sensíveis.
-- [ ] Autorização por usuário foi validada quando aplicável.
+- [ ] Não registra dado pessoal sensível em log.
 
 ## Riscos, limitações e pendências
 
