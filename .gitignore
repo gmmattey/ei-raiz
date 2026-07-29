@@ -41,6 +41,13 @@ jest.config.js
 playwright-report/
 test-results/
 
+# Relatórios do Lighthouse (apresentacao/) — nunca versionar, só medir local/CI e reportar
+# o score no PR. Escopado a apresentacao/ para não ignorar arquivos legítimos de mesmo nome
+# em outras partes do monorepo.
+apresentacao/lighthouse-report.json
+apresentacao/lighthouse-report.html
+apresentacao/.lighthouseci/
+
 # OS
 .DS_Store
 .DS_Store?

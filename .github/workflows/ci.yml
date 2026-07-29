@@ -58,3 +58,15 @@ jobs:
             git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep '^_legacy/'
             exit 1
           fi
+
+      - name: Impedir artefatos de teste/relatório versionados
+        shell: bash
+        run: |
+          # Checa arquivos rastreados pelo Git (não só o que está no workspace) — pega até
+          # artefato adicionado com `git add -f` por engano, que o .gitignore sozinho não barra.
+          ARTEFATOS=$(git ls-files | grep -iE '(^|/)(playwright-report|test-results)/|lighthouse-report\.(json|html)$|(^|/)\.lighthouseci/' || true)
+          if [ -n "$ARTEFATOS" ]; then
+            echo "::error::Artefato gerado (relatório de teste/Lighthouse) foi versionado por engano:"
+            echo "$ARTEFATOS"
+            exit 1
+          fi
