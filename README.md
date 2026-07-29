@@ -61,6 +61,12 @@ _legacy/                Gerações anteriores e protótipos relacionados — his
 - npm 9 ou superior
 - Wrangler CLI
 
+O monorepo usa npm workspaces com **um único lockfile canônico**: `package-lock.json` na raiz.
+Nenhum workspace (`apresentacao/`, `servidores/porta-entrada/`, `bibliotecas/*`) deve ter
+`package-lock.json` próprio — `npm ci`/`npm install` sempre rodam a partir da raiz. Um
+`apresentacao/package-lock.json` aninhado e dessincronizado existiu até a #184; foi removido, e o
+guard `npm run checar:legado-capacitor` falha se um lockfile fora da raiz voltar a ser versionado.
+
 ## Desenvolvimento local
 
 ```bash

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Guard de CI contra regressão do Capacitor e do runtime patrimonial React legado (issue #184).
+// Guard de CI contra regressão do Capacitor, do runtime patrimonial React legado e de lockfile
+// aninhado fora do padrão do monorepo (issue #184).
 //
 // Checa arquivos RASTREADOS pelo git (não o workspace, que pode ter artefato de build solto) e
 // dependências reais declaradas em package.json — não é grep cego: cada regra sabe exatamente o
@@ -100,6 +101,16 @@ for (const arquivo of arquivosApp) {
   if (padraoWebView.test(conteudo)) {
     erros.push(`Referência a WebView/WKWebView no app KMP: ${arquivo}`)
   }
+}
+
+// 6. Lockfile canônico é só o da raiz — nenhum workspace pode ter package-lock.json próprio
+// (o `apresentacao/package-lock.json` aninhado, ignorado pelo npm workspaces e dessincronizado
+// do package.json real, foi removido na #184; não deixar reaparecer por engano).
+const lockfilesFantasmas = todos.filter(
+  (f) => f.endsWith('package-lock.json') && f !== 'package-lock.json' && !f.startsWith('_legacy/')
+)
+for (const arquivo of lockfilesFantasmas) {
+  erros.push(`Lockfile aninhado fora da raiz (não usado por npm workspaces): ${arquivo}`)
 }
 
 if (erros.length > 0) {
