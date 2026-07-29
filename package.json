@@ -4,27 +4,18 @@
   "version": "0.1.0",
   "workspaces": [
     "apresentacao",
-    "servidores/*",
     "bibliotecas/*"
   ],
   "scripts": {
     "dev": "npm run dev -w @ei/web",
-    "dev:api": "npm run dev -w @ei/api",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "deploy:api": "npm run deploy -w @ei/api",
     "deploy:web": "npm run build -w @ei/web && npm run deploy -w @ei/web",
-    "ingest:cvm": "node utilitarios/scripts/ingest-cvm-funds.mjs",
-    "backfill:cvm-monthly": "node utilitarios/scripts/backfill-cvm-monthly.mjs",
-    "test:api": "npm run test -w @ei/api",
     "checar:legado-capacitor": "node utilitarios/scripts/checar-legado-capacitor.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "axe-playwright": "^1.2.3",
-    "better-sqlite3": "^12.9.0",
-    "concurrently": "^9.1.2",
     "playwright": "^1.59.1",
     "uuid": "^14.0.0"
   }
