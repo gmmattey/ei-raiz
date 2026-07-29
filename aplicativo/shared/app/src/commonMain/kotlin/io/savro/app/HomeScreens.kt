@@ -21,8 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import io.savro.designsystem.componentes.SavroButton
 import io.savro.designsystem.componentes.SavroCard
 import io.savro.designsystem.componentes.SavroDivider
@@ -31,6 +29,7 @@ import io.savro.designsystem.componentes.SavroDonutSlice
 import io.savro.designsystem.componentes.SavroIcon
 import io.savro.designsystem.componentes.SavroIconButton
 import io.savro.designsystem.componentes.SavroInlineIcon
+import io.savro.designsystem.componentes.SavroPrivacyMask
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -38,7 +37,6 @@ import io.savro.designsystem.componentes.SavroTextStyle
 import io.savro.designsystem.tema.SavroThemeTokens
 import io.savro.domain.patrimonio.ConversorMonetario
 import io.savro.domain.patrimonio.ServicoPatrimonio
-import io.savro.domain.patrimonio.calculo.ApresentacaoValor
 import io.savro.domain.patrimonio.calculo.CalculoPatrimonio
 import io.savro.domain.patrimonio.calculo.FormatadorData
 import io.savro.model.TipoItemPatrimonial
@@ -198,19 +196,13 @@ private fun BotaoAdicionarItem(aoCriar: () -> Unit) {
     SavroButton(label = "Adicionar item", onClick = aoCriar, loadingStateDescription = "")
 }
 
+/** Converte centavos+moeda (domínio patrimonial) em texto formatado antes de delegar a ocultação
+ * ao componente canônico do design system — `SavroPrivacyMask` não conhece `ConversorMonetario`
+ * (#230). */
 @Composable
 private fun LinhaValor(rotulo: String, valorCentavos: Long, moeda: String, oculto: Boolean, destaque: Boolean = false) {
     val valorFormatado = "${ConversorMonetario.centavosParaTexto(valorCentavos)} $moeda"
-    val texto = ApresentacaoValor.texto(valorFormatado, oculto)
-    val descricao = ApresentacaoValor.descricaoAcessibilidade("$rotulo: $valorFormatado", oculto)
-
-    Row(
-        modifier = Modifier.fillMaxWidth().semantics { contentDescription = descricao },
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        SavroText(rotulo, style = if (destaque) SavroTextStyle.Title else SavroTextStyle.Body)
-        SavroText(texto, style = if (destaque) SavroTextStyle.Display else SavroTextStyle.Body)
-    }
+    SavroPrivacyMask(rotulo = rotulo, valorFormatado = valorFormatado, oculto = oculto, destaque = destaque)
 }
 
 /**

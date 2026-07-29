@@ -605,24 +605,53 @@ fun SavroProgressDots(total: Int, indiceAtual: Int, modifier: Modifier = Modifie
 
 enum class SavroState { Loading, Empty, Error, Offline, Hidden }
 
+/**
+ * Componente canônico de ocultação de valores patrimoniais (issue #230). Ponto único de verdade:
+ * substitui as três implementações locais que existiam em `HomeScreens.kt`/`DetalheScreens.kt`
+ * (idênticas, uma linha rótulo + valor) e o wrapper genérico que existia aqui antes, sem consumidor
+ * em produção. `ApresentacaoValor` já garante que nenhum dígito real chega ao texto/descrição
+ * exibidos quando [oculto] — este componente só é responsável por compor isso na árvore (texto
+ * visível + `contentDescription`), nunca por decidir a máscara.
+ */
 @Composable
 fun SavroPrivacyMask(
-    isVisible: Boolean,
-    hiddenContentDescription: String,
+    rotulo: String,
+    valorFormatado: String,
+    oculto: Boolean,
     modifier: Modifier = Modifier,
-    content: @Composable (Modifier) -> Unit,
+    destaque: Boolean = false,
 ) {
-    if (isVisible) {
-        content(modifier)
-    } else {
-        Surface(
-            modifier = modifier,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ) {
-            Text(text = hiddenContentDescription, style = MaterialTheme.typography.bodyMedium)
-        }
+    val texto = ApresentacaoValor.texto(valorFormatado, oculto)
+    val descricao = ApresentacaoValor.descricaoAcessibilidade("$rotulo: $valorFormatado", oculto)
+    Row(
+        modifier = modifier.fillMaxWidth().semantics { contentDescription = descricao },
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        SavroText(rotulo, style = if (destaque) SavroTextStyle.Title else SavroTextStyle.Body)
+        SavroText(texto, style = if (destaque) SavroTextStyle.Display else SavroTextStyle.Body)
     }
+}
+
+/**
+ * Variante de [SavroPrivacyMask] para texto composto numa linha só (ex.: "Renda fixa · R$
+ * 1.200,00"), usada onde o layout não é uma linha rótulo/valor em duas colunas — hoje só o cartão
+ * de item em `PatrimonioScreens.kt`. Mesma garantia de segurança semântica de [SavroPrivacyMask].
+ */
+@Composable
+fun SavroPrivacyText(
+    prefixo: String,
+    valorFormatado: String,
+    oculto: Boolean,
+    modifier: Modifier = Modifier,
+    style: SavroTextStyle = SavroTextStyle.Body,
+) {
+    val texto = ApresentacaoValor.texto(valorFormatado, oculto)
+    val descricao = ApresentacaoValor.descricaoAcessibilidade(valorFormatado, oculto)
+    SavroText(
+        "$prefixo · $texto",
+        style = style,
+        modifier = modifier.semantics { contentDescription = "$prefixo · $descricao" },
+    )
 }
 
 /**

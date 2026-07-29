@@ -1,40 +1,40 @@
-# Segurança de tela e acessibilidade — Savro (issue #130)
+# Segurança de tela e acessibilidade — Savro (issue #130, máscara unificada na #230)
 
 ## Máscara de valores
 
-- `ApresentacaoValor` (`:shared:domain:patrimonio`, `calculo/ApresentacaoValor.kt`): função pura,
-  testada (`ApresentacaoValorTest`, 4 casos), que troca o texto visível **e** o
-  `contentDescription` de acessibilidade por uma máscara fixa (`"••••••"`/`"Valor oculto"`) — nunca
-  passa o valor real para nenhum dos dois quando `oculto = true`.
-- Wired em produção: `HomeScreens.kt` (`ocultarValores`/`aoAlternarOcultarValores`, ícone
-  `SavroIcon.OcultarValores`/`MostrarValores` no header da Home) — é a única tela do MVP1 com toggle
-  de ocultar valores hoje (`PatrimonioScreens.kt`/`DetalheScreens.kt` foram inspecionados nesta
-  auditoria; a função de máscara está disponível para eles, mas não foi confirmado uso do toggle
-  nessas duas telas especificamente — registrado como item a confirmar, não como falha, já que a
-  Home é o ponto central de consolidação onde o requisito original da issue #120 mais se aplica).
+- `ApresentacaoValor` (`:shared:core:designsystem`, `componentes/ApresentacaoValor.kt`, `internal`):
+  função pura, testada (`ApresentacaoValorTest`, 9 casos — visível/oculto, positivo/negativo/zero/
+  valor grande, alternância), que troca o texto visível **e** o `contentDescription` de
+  acessibilidade por uma máscara fixa (`"••••••"`/`"Valor oculto"`) — nunca passa o valor real para
+  nenhum dos dois quando `oculto = true`. Movida de `:shared:domain:patrimonio` para
+  `:shared:core:designsystem` na #230: é uma função de apresentação, não de domínio patrimonial, e
+  precisa estar no mesmo módulo que o componente Compose que a consome (a allowlist de
+  `aplicativo/build.gradle.kts` só permite `designsystem → core:common`, não
+  `designsystem → domain:patrimonio`). `internal`: nenhuma tela pode mais chamá-la diretamente —
+  só `SavroPrivacyMask`/`SavroPrivacyText` a consomem, o que elimina a duplicação estruturalmente
+  (erro de compilação, não só convenção de code review).
 
 ## Árvore semântica (accessibility tree)
 
-- `SavroPrivacyMask` (`:shared:core:designsystem`, `componentes/SavroComponents.kt`): componente
-  Compose Multiplatform que **remove completamente** o conteúdo sensível da árvore de semântica
-  quando `isVisible = false` (renderiza só um `Surface` com o texto do rótulo oculto — o `content`
-  sensível não é composto de jeito nenhum nesse ramo do `if`).
-- Testado nas duas plataformas a partir de uma única implementação:
-  `SavroPrivacyMaskCommonTest` (`commonTest`, roda via `androidUnitTest`/Robolectric neste ambiente
-  e via `iosTest`/XCTest em host macOS) e `SavroPrivacyMaskInstrumentedTest`
-  (`androidInstrumentedTest`, Compose UI Test real). Ambos confirmam via
-  `onNodeWithText(...).assertDoesNotExist()` que o valor real não está na árvore quando oculto.
-- **Achado "importante" desta auditoria:** `SavroPrivacyMask` existe e é testado, mas as telas de
-  produto (`HomeScreens.kt`) implementam a ocultação **diretamente com `ApresentacaoValor` +
-  `Modifier.semantics { contentDescription = ... }`**, não usando o componente `SavroPrivacyMask`.
-  As duas abordagens são equivalentes em efeito (nenhuma vaza o valor real — confirmado por leitura
-  de código e pelos testes de cada uma), mas são dois caminhos paralelos para o mesmo problema, o
-  que é uma duplicação de lógica, não uma falha de segurança. Recomendação registrada para uma
-  issue futura de design system: convergir `HomeScreens`/`PatrimonioScreens`/`DetalheScreens` para
-  usar `SavroPrivacyMask` como único ponto de verdade, ou depreciar `SavroPrivacyMask` se a decisão
-  for manter `ApresentacaoValor` como a abordagem canônica. Não corrigido nesta issue por ser
-  refatoração de UI fora do escopo de segurança/privacidade puro da #130 — nenhuma das duas
-  abordagens vaza dado hoje.
+- `SavroPrivacyMask`/`SavroPrivacyText` (`:shared:core:designsystem`,
+  `componentes/SavroComponents.kt`): **único** ponto de verdade para ocultação de valores
+  patrimoniais na UI (issue #230). `SavroPrivacyMask` cobre o padrão rótulo/valor em duas colunas
+  (Home, Detalhe); `SavroPrivacyText` cobre texto composto numa linha só (cartão de item da lista
+  de Patrimônio). Nenhuma tela compõe o valor real quando oculto — `texto`/`descricao` já chegam
+  mascarados de `ApresentacaoValor` antes de entrar na árvore de Compose.
+- Testado nas duas plataformas a partir de uma única implementação em `commonTest`:
+  `SavroPrivacyMaskCommonTest`, `SavroPrivacyTextCommonTest` e `ApresentacaoValorTest` (rodam via
+  `androidUnitTest`/Robolectric neste ambiente e via `iosTest`/XCTest em host macOS), mais
+  `SavroPrivacyMaskInstrumentedTest` (`androidInstrumentedTest`, Compose UI Test real, cobre as
+  duas variantes). Todos confirmam via `onNodeWithText(...)`/`onNodeWithContentDescription(...)`
+  que nem o texto visível nem o `contentDescription` contêm o valor real quando oculto, e que
+  alternar oculto→visível→oculto (recomposição) nunca vaza o valor no meio do caminho.
+- **Achado da auditoria #130, resolvido nesta issue:** antes da #230, `SavroPrivacyMask` existia e
+  era testado, mas não tinha nenhum consumidor em produção — `HomeScreens.kt`/`DetalheScreens.kt`/
+  `PatrimonioScreens.kt` reimplementavam a mesma lógica localmente (`ApresentacaoValor` do domínio +
+  `Modifier.semantics { contentDescription = ... }` manual em cada tela), três vezes. As três telas
+  agora chamam `SavroPrivacyMask`/`SavroPrivacyText`; as implementações locais (`LinhaValor`,
+  `LinhaComOculto`, o bloco manual em `ItemPatrimonialCard`) foram removidas.
 
 ## Recent apps / app switcher e screenshots
 

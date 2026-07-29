@@ -27,8 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import io.savro.common.Resultado
 import io.savro.designsystem.componentes.SavroBottomNavItem
 import io.savro.designsystem.componentes.SavroBottomNavScaffold
@@ -41,6 +39,7 @@ import io.savro.designsystem.componentes.SavroFilterChip
 import io.savro.designsystem.componentes.SavroIcon
 import io.savro.designsystem.componentes.SavroMenuAction
 import io.savro.designsystem.componentes.SavroOverflowMenu
+import io.savro.designsystem.componentes.SavroPrivacyText
 import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.componentes.SavroText
@@ -58,7 +57,6 @@ import io.savro.domain.patrimonio.RascunhoFormularioItem
 import io.savro.domain.patrimonio.ResumoItemPatrimonial
 import io.savro.domain.patrimonio.ServicoPatrimonio
 import io.savro.domain.patrimonio.ValidadorItemPatrimonial
-import io.savro.domain.patrimonio.calculo.ApresentacaoValor
 import io.savro.domain.patrimonio.ordenarPor
 import io.savro.model.ItemPatrimonial
 import io.savro.model.TipoItemPatrimonial
@@ -375,7 +373,6 @@ private fun ItemPatrimonialCard(
     aoExcluir: () -> Unit,
 ) {
     val valorFormatado = "${formatarValor(item)} ${item.moeda}"
-    val descricaoValor = ApresentacaoValor.descricaoAcessibilidade(valorFormatado, ocultarValores)
     var confirmandoExclusao by remember { mutableStateOf(false) }
 
     if (confirmandoExclusao) {
@@ -407,10 +404,10 @@ private fun ItemPatrimonialCard(
                 ),
             )
         }
-        SavroText(
-            "${rotuloDoTipo(item.tipo)} · ${ApresentacaoValor.texto(valorFormatado, ocultarValores)}",
-            style = SavroTextStyle.Body,
-            modifier = Modifier.semantics { contentDescription = "${rotuloDoTipo(item.tipo)} · $descricaoValor" },
+        SavroPrivacyText(
+            prefixo = rotuloDoTipo(item.tipo),
+            valorFormatado = valorFormatado,
+            oculto = ocultarValores,
         )
         item.instituicao?.let { SavroText(it, style = SavroTextStyle.BodySmall) }
         if (item.arquivado) SavroText("Arquivado", style = SavroTextStyle.Label)
