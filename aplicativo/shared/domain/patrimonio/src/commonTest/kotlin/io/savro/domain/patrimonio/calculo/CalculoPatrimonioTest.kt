@@ -93,6 +93,64 @@ class CalculoPatrimonioTest {
     }
 
     @Test
+    fun resumo_multiplasDividas_somaTodasAsDividas() {
+        val itens = listOf(
+            item("conta", TipoItemPatrimonial.CONTA, 200_000),
+            item("divida-cartao", TipoItemPatrimonial.DIVIDA, -30_000),
+            item("divida-financiamento", TipoItemPatrimonial.DIVIDA, -70_000),
+        )
+        val total = CalculoPatrimonio.resumo(itens).totaisPorMoeda.single()
+
+        assertEquals(200_000L, total.brutoCentavos)
+        assertEquals(100_000L, total.dividasCentavos)
+        assertEquals(100_000L, total.liquidoCentavos)
+    }
+
+    @Test
+    fun resumo_brutoIgualADividas_liquidoExatamenteZero() {
+        val itens = listOf(
+            item("conta", TipoItemPatrimonial.CONTA, 50_000),
+            item("divida", TipoItemPatrimonial.DIVIDA, -50_000),
+        )
+        val total = CalculoPatrimonio.resumo(itens).totaisPorMoeda.single()
+
+        assertEquals(50_000L, total.brutoCentavos)
+        assertEquals(50_000L, total.dividasCentavos)
+        assertEquals(0L, total.liquidoCentavos)
+    }
+
+    @Test
+    fun resumo_itemComValorZero_entraNoBrutoSemAlterarLiquido() {
+        val itens = listOf(
+            item("conta", TipoItemPatrimonial.CONTA, 100_000),
+            item("zerado", TipoItemPatrimonial.OUTRO, 0),
+        )
+        val total = CalculoPatrimonio.resumo(itens).totaisPorMoeda.single()
+
+        assertEquals(100_000L, total.brutoCentavos)
+        assertEquals(0L, total.dividasCentavos)
+        assertEquals(100_000L, total.liquidoCentavos)
+    }
+
+    @Test
+    fun resumo_valoresGrandes_somaSemOverflowSilencioso() {
+        // R$ 999.999.999,99 por item — ordem de grandeza muito acima de qualquer patrimônio real,
+        // usada só para provar que a soma de poucos itens grandes não estoura silenciosamente
+        // dentro da faixa em que este app opera (Long tem margem folgada até ~R$ 92 quatrilhões).
+        val valorGrandeCentavos = 99_999_999_999L
+        val itens = listOf(
+            item("bem-a", TipoItemPatrimonial.BEM, valorGrandeCentavos),
+            item("bem-b", TipoItemPatrimonial.BEM, valorGrandeCentavos),
+            item("divida-grande", TipoItemPatrimonial.DIVIDA, -valorGrandeCentavos),
+        )
+        val total = CalculoPatrimonio.resumo(itens).totaisPorMoeda.single()
+
+        assertEquals(valorGrandeCentavos * 2, total.brutoCentavos)
+        assertEquals(valorGrandeCentavos, total.dividasCentavos)
+        assertEquals(valorGrandeCentavos, total.liquidoCentavos)
+    }
+
+    @Test
     fun distribuicaoPorClasse_somaExatamente10000BasisPointsApesarDeDivisaoNaoExata() {
         // 3 itens de 1000 centavos cada => 1/3 exato não existe em base 10 — testa o método do
         // maior resto sem nunca usar Double.
@@ -125,6 +183,36 @@ class CalculoPatrimonioTest {
         assertTrue(
             CalculoPatrimonio.distribuicaoPorClasse(listOf(item("divida", TipoItemPatrimonial.DIVIDA, -1_000))).isEmpty(),
         )
+    }
+
+    @Test
+    fun distribuicaoPorClasse_itemComValorZero_naoGeraFatiaPropria() {
+        val itens = listOf(
+            item("conta", TipoItemPatrimonial.CONTA, 100_000),
+            item("zerado", TipoItemPatrimonial.OUTRO, 0),
+        )
+        val distribuicao = CalculoPatrimonio.distribuicaoPorClasse(itens).single()
+        assertEquals(1, distribuicao.fatias.size)
+        assertEquals(TipoItemPatrimonial.CONTA, distribuicao.fatias.single().tipo)
+    }
+
+    @Test
+    fun distribuicaoPorClasse_multiplasMoedas_umaDistribuicaoIndependentePorMoeda() {
+        val itens = listOf(
+            item("conta-brl", TipoItemPatrimonial.CONTA, 100_000, moeda = "BRL"),
+            item("cripto-brl", TipoItemPatrimonial.CRIPTO, 100_000, moeda = "BRL"),
+            item("conta-usd", TipoItemPatrimonial.CONTA, 50_000, moeda = "USD"),
+        )
+        val distribuicoes = CalculoPatrimonio.distribuicaoPorClasse(itens)
+
+        assertEquals(2, distribuicoes.size)
+        val brl = distribuicoes.single { it.moeda == "BRL" }
+        assertEquals(2, brl.fatias.size)
+        assertEquals(10_000, brl.fatias.sumOf { it.percentualBasisPoints })
+
+        val usd = distribuicoes.single { it.moeda == "USD" }
+        assertEquals(1, usd.fatias.size)
+        assertEquals(10_000, usd.fatias.single().percentualBasisPoints)
     }
 
     @Test
