@@ -23,21 +23,6 @@
   --dur-slow: 380ms;
 }
 
-.dark {
-  /* Variant A (default): sobrio com hierarquia clara */
-  --bg-primary: #09121c;
-  --bg-secondary: #0f1a27;
-  --bg-card: #111d2b;
-  --bg-card-alt: #182739;
-  --bg-elevated: #1e2f43;
-  --text-primary: #e8eef5;
-  --text-secondary: #b2bfce;
-  --text-muted: #8f9caf;
-  --border-color: #2D3748;
-  --accent: #F56A2A;
-  color-scheme: dark;
-}
-
 @layer base {
   html {
     scrollbar-gutter: stable;
@@ -141,62 +126,6 @@ html.legacy img {
   content-visibility: visible;
 }
 
-/* Fallback para telas antigas com classes hardcoded */
-.dark [class*="bg-white"],
-.dark [class*="bg-[#FAFAFA]"],
-.dark [class*="bg-[#FDFCFB]"],
-.dark [class*="bg-[#F5F0EB]"] {
-  background-color: var(--bg-card) !important;
-}
-
-.dark [class*="bg-[#0B1218]"] {
-  background-color: var(--bg-secondary) !important;
-}
-
-.dark [class*="text-[#0B1218]"] {
-  color: var(--text-primary) !important;
-}
-
-.dark [class*="text-[#0B1218]/40"],
-.dark [class*="text-[#0B1218]/45"],
-.dark [class*="text-[#0B1218]/50"],
-.dark [class*="text-[#0B1218]/55"],
-.dark [class*="text-[#0B1218]/60"] {
-  color: var(--text-secondary) !important;
-}
-
-.dark [class*="text-[#0B1218]/30"],
-.dark [class*="text-[#0B1218]/20"],
-.dark [class*="text-[#0B1218]/10"] {
-  color: var(--text-muted) !important;
-}
-
-.dark [class*="border-[#EFE7DC]"],
-.dark [class*="border-[#EFE7DC]/"] {
-  border-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important;
-}
-
-.dark [class*="divide-[#EFE7DC]"],
-.dark [class*="divide-[#EFE7DC]/"] {
-  border-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important;
-}
-
-.dark [class*="border-white/"] {
-  border-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important;
-}
-
-.dark [class*="bg-white/"] {
-  background-color: color-mix(in srgb, var(--bg-card) 88%, transparent) !important;
-}
-
-.dark [class*="shadow-black/"] {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3) !important;
-}
-
-.dark table tr {
-  border-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important;
-}
-
 /* Custom scrollbar premium */
 ::-webkit-scrollbar {
   width: 6px;
@@ -212,10 +141,6 @@ html.legacy img {
   border: 2px solid transparent;
   background-clip: padding-box;
   transition: background 0.3s ease;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
 }
 
 ::-webkit-scrollbar-thumb:hover {

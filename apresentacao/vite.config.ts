@@ -31,18 +31,6 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // Home consolidada — NetworkFirst com fallback em 5s.
-            // Garante dados frescos, mas a tela carrega do cache se a rede demorar.
-            urlPattern: /\/api\/patrimonio\/resumo(\?.*)?$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-resumo',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 1, maxAgeSeconds: 300 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
             // Fontes Google — CacheFirst (mudam raramente, impacto enorme no LCP).
             urlPattern: /^https:\/\/fonts\.gstatic\.com/,
             handler: 'CacheFirst',
@@ -86,7 +74,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-recharts': ['recharts'],
           'vendor-framer': ['framer-motion'],
           'vendor-router': ['react-router-dom'],
         },

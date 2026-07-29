@@ -59,6 +59,9 @@ jobs:
             exit 1
           fi
 
+      - name: Impedir regressão do Capacitor e do runtime patrimonial React (#184)
+        run: node utilitarios/scripts/checar-legado-capacitor.mjs
+
       - name: Impedir artefatos de teste/relatório versionados
         shell: bash
         run: |

@@ -11,19 +11,11 @@
     "deploy": "wrangler pages deploy dist --project-name ei-raiz-web --commit-dirty=true"
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.1",
-    "@capacitor/cli": "^8.3.1",
-    "@capacitor/core": "^8.3.1",
-    "@ei/contratos": "*",
-    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.446.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2",
-    "recharts": "^3.8.1",
-    "tailwind-merge": "^2.5.2",
-    "xlsx": "^0.18.5"
+    "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",

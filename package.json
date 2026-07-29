@@ -17,7 +17,8 @@
     "deploy:web": "npm run build -w @ei/web && npm run deploy -w @ei/web",
     "ingest:cvm": "node utilitarios/scripts/ingest-cvm-funds.mjs",
     "backfill:cvm-monthly": "node utilitarios/scripts/backfill-cvm-monthly.mjs",
-    "test:api": "npm run test -w @ei/api"
+    "test:api": "npm run test -w @ei/api",
+    "checar:legado-capacitor": "node utilitarios/scripts/checar-legado-capacitor.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
