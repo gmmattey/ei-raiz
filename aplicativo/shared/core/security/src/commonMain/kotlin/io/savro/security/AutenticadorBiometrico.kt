@@ -8,8 +8,17 @@ package io.savro.security
  */
 interface AutenticadorBiometrico {
 
-    /** Consultado antes de mostrar o prompt, para decidir se vale a pena tentar. */
-    suspend fun disponibilidade(): DisponibilidadeBiometria
+    /**
+     * Consultado antes de mostrar o prompt (nunca dispara autenticação real —
+     * `BiometricManager.canAuthenticate`/`LAContext.canEvaluatePolicy`), para decidir se a opção
+     * deve aparecer habilitada e qual seria o desfecho de uma tentativa agora (#226).
+     *
+     * @param permitirCredencialDispositivo quando `true`, considera código/PIN/padrão do aparelho
+     *   como alternativa válida (mesma combinação que [autenticar] usaria); quando `false`, checa
+     *   só a biometria isolada. Chamado com os dois valores quando a UI precisa diferenciar as
+     *   opções "Biometria" e "Credencial do aparelho" (ver `TelaEscolherProtecao`).
+     */
+    suspend fun disponibilidade(permitirCredencialDispositivo: Boolean): DisponibilidadeBiometria
 
     /**
      * Mostra o prompt nativo e suspende até o usuário concluir, cancelar, ou o sistema recusar.

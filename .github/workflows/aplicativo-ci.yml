@@ -257,6 +257,15 @@ jobs:
             :shared:core:database:compileKotlinIosSimulatorArm64 \
             :shared:core:database:iosSimulatorArm64Test
 
+      # Máquina de estados do cofre e mapeamento de LocalAuthentication (#118/#226) — nunca rodava
+      # em nenhum job de CI: "ios-compilacao-linux" só compilava (compileKotlinIosX), sem executar
+      # nenhum teste; este é o primeiro ponto real de execução do `commonTest`/`iosTest` de
+      # `:shared:core:security` no simulador iOS. Cobre `GerenciadorCofreTest`,
+      # `DecisaoOpcaoProtecaoTest` (commonTest) e `AutenticadorBiometricoIOSTest` (iosTest, mapeamento
+      # de `LAError` com `NSError` reais, sem sensor físico).
+      - name: Testar máquina de estados do cofre e biometria no simulador iOS
+        run: ./gradlew --no-daemon --stacktrace :shared:core:security:iosSimulatorArm64Test
+
       # Evidência de interoperabilidade Android <-> iOS da #121 (critério de aceite, não opcional).
       # É o MESMO `commonTest` que o job "testes-comuns" roda na JVM: o arquivo de referência
       # `VetoresDeReferencia.ARQUIVO_HEX` foi gerado pela implementação Android e aqui precisa

@@ -129,7 +129,159 @@ class GerenciadorCofreTest {
         gerenciador.iniciar()
         advanceUntilIdle()
 
-        assertEquals(EstadoCofre.BiometriaIndisponivel, gerenciador.estado.value)
+        assertEquals(
+            EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.NaoConfigurada),
+            gerenciador.estado.value,
+        )
+        assertEquals(0, c.autenticador.vezesChamado)
+    }
+
+    @Test
+    fun semHardwareBiometrico_viraBiometriaIndisponivelComMotivoEspecifico() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(disponibilidadeSimulada = DisponibilidadeBiometria.SemHardware),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.SemHardware), gerenciador.estado.value)
+    }
+
+    @Test
+    fun semCredencialDeDispositivo_viraBiometriaIndisponivelComMotivoEspecifico() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(
+                disponibilidadeSimulada = DisponibilidadeBiometria.SemCredencialDispositivo,
+            ),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(
+            EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.SemCredencialDispositivo),
+            gerenciador.estado.value,
+        )
+    }
+
+    @Test
+    fun biometriaBloqueadaPermanentemente_viraBiometriaIndisponivelComMotivoEspecifico() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(
+                disponibilidadeSimulada = DisponibilidadeBiometria.BloqueadaPermanentemente,
+            ),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(
+            EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.BloqueadaPermanentemente),
+            gerenciador.estado.value,
+        )
+    }
+
+    @Test
+    fun disponibilidadeComErroDesconhecido_viraBiometriaIndisponivelComMotivoEspecifico() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(
+                disponibilidadeSimulada = DisponibilidadeBiometria.ErroDesconhecido("status inesperado"),
+            ),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(
+            EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.ErroDesconhecido("status inesperado")),
+            gerenciador.estado.value,
+        )
+    }
+
+    @Test
+    fun bloqueioTemporarioDetectadoNaDisponibilidade_viraBloqueioTemporarioSemTentarAutenticar() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(
+                disponibilidadeSimulada = DisponibilidadeBiometria.BloqueadaTemporariamente(
+                    tentarNovamenteEmEpocaMs = 45_000L,
+                ),
+            ),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(EstadoCofre.BloqueioTemporario(45_000L), gerenciador.estado.value)
+        // Já se sabe pela checagem de disponibilidade que vai falhar — nunca mostra o prompt.
+        assertEquals(0, c.autenticador.vezesChamado)
+    }
+
+    @Test
+    fun bloqueioTemporarioSemHorarioConhecido_usaFallbackAPartirDoRelogio() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(
+                disponibilidadeSimulada = DisponibilidadeBiometria.BloqueadaTemporariamente(
+                    tentarNovamenteEmEpocaMs = null,
+                ),
+            ),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(EstadoCofre.BloqueioTemporario(30_000L), gerenciador.estado.value)
+    }
+
+    @Test
+    fun bloqueioPermanenteDuranteTentativaReal_viraBiometriaIndisponivelBloqueadaPermanentemente() = runTest {
+        val c = cenario(
+            autenticador = FakeAutenticadorBiometrico(resultadoSimulado = ResultadoAutenticacao.BloqueioPermanente),
+            preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada()),
+        )
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(
+            EstadoCofre.BiometriaIndisponivel(DisponibilidadeBiometria.BloqueadaPermanentemente),
+            gerenciador.estado.value,
+        )
+    }
+
+    @Test
+    fun disponibilidadeConsultadaComAMesmaPoliticaConfigurada() = runTest {
+        val c = cenario(preferencias = FakePreferenciasCofre(politica = PoliticaProtecao.Ativada(false)))
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        gerenciador.iniciar()
+        advanceUntilIdle()
+
+        assertEquals(1, c.autenticador.vezesDisponibilidadeConsultada)
+        assertEquals(false, c.autenticador.ultimoPermitirCredencialDispositivoConsultado)
+    }
+
+    @Test
+    fun disponibilidadeBiometricaExpostaParaUi_naoMostraPrompt() = runTest {
+        val c = cenario(autenticador = FakeAutenticadorBiometrico(disponibilidadeSimulada = DisponibilidadeBiometria.Disponivel))
+        val gerenciador = GerenciadorCofre(c.provedor, c.repositorio, c.autenticador, c.preferencias, c.relogio, this)
+
+        val resultado = gerenciador.disponibilidadeBiometrica(permitirCredencialDispositivo = true)
+
+        assertEquals(DisponibilidadeBiometria.Disponivel, resultado)
         assertEquals(0, c.autenticador.vezesChamado)
     }
 

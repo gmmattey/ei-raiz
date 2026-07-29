@@ -14,8 +14,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import io.savro.app.recursos.Res
-import io.savro.app.recursos.cofre_biometria_indisponivel_mensagem
-import io.savro.app.recursos.cofre_biometria_indisponivel_titulo
 import io.savro.app.recursos.cofre_bloqueio_temporario_mensagem
 import io.savro.app.recursos.cofre_bloqueio_temporario_titulo
 import io.savro.app.recursos.cofre_botao_continuar_sem_protecao
@@ -39,6 +37,7 @@ import io.savro.designsystem.componentes.SavroState
 import io.savro.designsystem.componentes.SavroStatePanel
 import io.savro.designsystem.tema.SavroThemeTokens
 import io.savro.domain.patrimonio.ServicoPatrimonio
+import io.savro.security.DecisaoOpcaoProtecao
 import io.savro.security.EstadoCofre
 import io.savro.security.GerenciadorCofre
 import kotlinx.coroutines.launch
@@ -71,14 +70,18 @@ internal fun TelaCofre(
             action = { BotaoTentarNovamente(gerenciador) },
         )
 
-        EstadoCofre.BiometriaIndisponivel -> SavroStatePanel(
+        is EstadoCofre.BiometriaIndisponivel -> SavroStatePanel(
             state = SavroState.Error,
-            title = stringResource(Res.string.cofre_biometria_indisponivel_titulo),
-            message = stringResource(Res.string.cofre_biometria_indisponivel_mensagem),
+            title = stringResource(tituloIndisponibilidade(atual.motivo)),
+            message = stringResource(mensagemIndisponibilidade(atual.motivo)),
             icon = SavroIcon.EstadoErro,
             action = {
                 Column(verticalArrangement = Arrangement.spacedBy(SavroThemeTokens.spacing.sm)) {
-                    BotaoTentarNovamente(gerenciador)
+                    // "Tentar novamente" só aparece quando o motivo é transitório (#226) — sem
+                    // hardware/cadastro/credencial/bloqueio permanente não mudam sozinhos com um
+                    // novo clique, e insistir sem explicar isso é o tipo de UX que a auditoria
+                    // pediu para eliminar.
+                    if (DecisaoOpcaoProtecao.permiteTentarNovamente(atual.motivo)) BotaoTentarNovamente(gerenciador)
                     SavroButton(
                         label = stringResource(Res.string.cofre_botao_continuar_sem_protecao),
                         onClick = { escopo.launch { gerenciador.removerProtecao(); gerenciador.tentarNovamente() } },

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,8 @@ import io.savro.designsystem.componentes.SavroText
 import io.savro.designsystem.componentes.SavroTextStyle
 import io.savro.designsystem.componentes.SavroWarningBanner
 import io.savro.designsystem.tema.SavroThemeTokens
+import io.savro.security.DecisaoOpcaoProtecao
+import io.savro.security.DisponibilidadeBiometria
 import io.savro.security.GerenciadorCofre
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
@@ -133,16 +136,37 @@ private enum class OpcaoProtecao { Biometria, Credencial, SemBloqueio }
  * `permitirCredencialDispositivo = false`, Credencial do aparelho ==
  * `permitirCredencialDispositivo = true` — nenhum estado de domínio novo foi criado.
  *
- * Pendência real (registrada, não resolvida aqui): não há contrato disponível para checar se o
- * aparelho tem biometria configurada sem mudar `GerenciadorCofre`/`AutenticadorBiometrico` — as
- * três opções ficam sempre habilitadas, diferente do protótipo ("sem biometria → opção
- * desabilitada, com nota").
+ * Disponibilidade real (#226): checa `GerenciadorCofre.disponibilidadeBiometrica` para as duas
+ * combinações assim que a tela entra em composição (nunca mostra prompt) — cada opção só fica
+ * marcável quando o aparelho está pronto para ela agora, com uma nota explicando o motivo real
+ * quando não está (nunca "cadastre sua biometria" para um problema que não é esse).
  */
 @Composable
 private fun TelaEscolherProtecao(gerenciador: GerenciadorCofre, aoConcluir: () -> Unit) {
     val escopo = rememberCoroutineScope()
     var opcao by remember { mutableStateOf(OpcaoProtecao.Biometria) }
     var confirmouResponsabilidade by remember { mutableStateOf(false) }
+    var disponibilidadeBiometria by remember { mutableStateOf<DisponibilidadeBiometria?>(null) }
+    var disponibilidadeCredencial by remember { mutableStateOf<DisponibilidadeBiometria?>(null) }
+
+    LaunchedEffect(gerenciador) {
+        disponibilidadeBiometria = gerenciador.disponibilidadeBiometrica(permitirCredencialDispositivo = false)
+        disponibilidadeCredencial = gerenciador.disponibilidadeBiometrica(permitirCredencialDispositivo = true)
+
+        // Se a opção pré-selecionada (Biometria, valor inicial) não estiver pronta, cai para a
+        // primeira que estiver — nunca deixa "Continuar" seguir com uma opção que sabidamente vai
+        // falhar no primeiro desbloqueio.
+        val biometriaOk = disponibilidadeBiometria == DisponibilidadeBiometria.Disponivel
+        val credencialOk = disponibilidadeCredencial == DisponibilidadeBiometria.Disponivel
+        if (opcao == OpcaoProtecao.Biometria && !biometriaOk) {
+            opcao = if (credencialOk) OpcaoProtecao.Credencial else OpcaoProtecao.SemBloqueio
+        }
+    }
+
+    // Enquanto a checagem não voltou, nenhuma opção protegida é oferecida como pronta — evita
+    // piscar "habilitada" e depois desabilitar assim que o resultado real chega.
+    val biometriaHabilitada = disponibilidadeBiometria?.let(DecisaoOpcaoProtecao::habilitada) ?: false
+    val credencialHabilitada = disponibilidadeCredencial?.let(DecisaoOpcaoProtecao::habilitada) ?: false
 
     Column(
         modifier = Modifier.fillMaxSize().padding(SavroThemeTokens.spacing.md),
@@ -155,11 +179,19 @@ private fun TelaEscolherProtecao(gerenciador: GerenciadorCofre, aoConcluir: () -
             label = stringResource(Res.string.protecao_opcao_biometria),
             selected = opcao == OpcaoProtecao.Biometria,
             onClick = { opcao = OpcaoProtecao.Biometria },
+            enabled = biometriaHabilitada,
+            supportingText = disponibilidadeBiometria
+                ?.takeUnless { it == DisponibilidadeBiometria.Disponivel }
+                ?.let { stringResource(mensagemIndisponibilidade(it)) },
         )
         SavroRadioOptionCard(
             label = stringResource(Res.string.protecao_opcao_credencial),
             selected = opcao == OpcaoProtecao.Credencial,
             onClick = { opcao = OpcaoProtecao.Credencial },
+            enabled = credencialHabilitada,
+            supportingText = disponibilidadeCredencial
+                ?.takeUnless { it == DisponibilidadeBiometria.Disponivel }
+                ?.let { stringResource(mensagemIndisponibilidade(it)) },
         )
         SavroRadioOptionCard(
             label = stringResource(Res.string.protecao_opcao_sem_bloqueio),

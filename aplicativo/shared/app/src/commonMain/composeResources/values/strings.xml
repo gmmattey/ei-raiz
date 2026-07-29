@@ -26,7 +26,15 @@
     <string name="cofre_credencial_invalida_titulo">Não foi possível confirmar</string>
     <string name="cofre_credencial_invalida_mensagem">A biometria ou o código informado não conferem. Tente de novo.</string>
     <string name="cofre_biometria_indisponivel_titulo">Proteção indisponível</string>
-    <string name="cofre_biometria_indisponivel_mensagem">Não há biometria nem código de dispositivo configurados. Configure a proteção do aparelho ou continue sem proteção.</string>
+    <string name="cofre_biometria_indisponivel_mensagem">Não foi possível checar a proteção do aparelho agora. Tente de novo ou continue sem proteção.</string>
+    <string name="cofre_biometria_sem_hardware_titulo">Sem biometria neste aparelho</string>
+    <string name="cofre_biometria_sem_hardware_mensagem">Este aparelho não tem sensor de biometria. Use o código do aparelho ou continue sem proteção.</string>
+    <string name="cofre_biometria_nao_configurada_titulo">Biometria não cadastrada</string>
+    <string name="cofre_biometria_nao_configurada_mensagem">Cadastre uma biometria nas configurações do aparelho, use o código do aparelho, ou continue sem proteção.</string>
+    <string name="cofre_biometria_sem_credencial_titulo">Sem código do aparelho</string>
+    <string name="cofre_biometria_sem_credencial_mensagem">Defina um código, PIN ou padrão nas configurações do aparelho para usar essa proteção. Por enquanto, continue sem proteção.</string>
+    <string name="cofre_biometria_bloqueio_permanente_titulo">Biometria bloqueada</string>
+    <string name="cofre_biometria_bloqueio_permanente_mensagem">Muitas tentativas erradas bloquearam a biometria. Confirme o código do aparelho para liberar de novo, ou continue sem proteção.</string>
     <string name="cofre_bloqueio_temporario_titulo">Bloqueado temporariamente</string>
     <string name="cofre_bloqueio_temporario_mensagem">Muitas tentativas. Aguarde um momento e tente de novo.</string>
     <string name="cofre_chave_invalidada_titulo">A proteção do aparelho mudou</string>
