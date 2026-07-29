@@ -24,7 +24,9 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.savro.common.Resultado
@@ -67,7 +69,7 @@ import kotlinx.coroutines.launch
  * quem introduz navegação real entre Home/Patrimônio/Detalhe): lista com busca/filtro é o destino
  * padrão; formulário e ajuste de valor são sobrepostos por cima quando abertos.
  */
-private sealed class DestinoPatrimonio {
+internal sealed class DestinoPatrimonio {
     data object Lista : DestinoPatrimonio()
     data class Detalhe(val itemId: String) : DestinoPatrimonio()
     data class Formulario(val itemIdEmEdicao: String?) : DestinoPatrimonio()
@@ -97,7 +99,20 @@ private sealed class DestinoPatrimonio {
     }
 }
 
-private enum class AbaPrincipal { HOME, PATRIMONIO }
+internal enum class AbaPrincipal { HOME, PATRIMONIO }
+
+/**
+ * Regra pura de "para onde o botão/gesto de voltar do sistema deve levar" — extraída de
+ * [TelaPatrimonio] para ser testável em `commonTest` sem depender de infraestrutura de UI
+ * (issue #181). `null` significa "este nível não consome o back", deixando o próximo nível
+ * (aba, ou o sistema) decidir.
+ */
+internal fun DestinoPatrimonio.aoVoltar(): DestinoPatrimonio? =
+    if (this == DestinoPatrimonio.Lista) null else DestinoPatrimonio.Lista
+
+/** Mesma ideia de [DestinoPatrimonio.aoVoltar], para a aba selecionada na Lista (#181). */
+internal fun AbaPrincipal.aoVoltarNaLista(): AbaPrincipal? =
+    if (this == AbaPrincipal.PATRIMONIO) AbaPrincipal.HOME else null
 
 /**
  * Orquestra a experiência principal do app (issue #120): Home, Patrimônio (lista) e Detalhe
@@ -106,6 +121,7 @@ private enum class AbaPrincipal { HOME, PATRIMONIO }
  * Busca, filtro, ordenação e posição de rolagem ficam hospedados aqui (não dentro de
  * [TelaListaPatrimonio]) para sobreviver a uma ida e volta até o Detalhe.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProtecao: () -> Unit) {
     var destino by rememberSaveable(
@@ -120,6 +136,16 @@ internal fun TelaPatrimonio(servico: ServicoPatrimonio, aoAbrirConfiguracaoProte
     val estadoDaLista = rememberLazyListState()
 
     LaunchedEffect(servico) { servico.carregar() }
+
+    // Back Android/gesto preditivo (#181): primeiro sai de Detalhe/Formulário/Ajuste de volta pra
+    // Lista; só quando já está na Lista é que a aba Patrimônio volta pra Home. Na Lista + Home não
+    // há handler habilitado — o sistema decide (sair do app), como já era antes desta issue.
+    BackHandler(enabled = destino.aoVoltar() != null) {
+        destino = destino.aoVoltar() ?: destino
+    }
+    BackHandler(enabled = destino == DestinoPatrimonio.Lista && aba.aoVoltarNaLista() != null) {
+        aba = aba.aoVoltarNaLista() ?: aba
+    }
 
     when (val atual = destino) {
         // Bottom navigation com 3 destinos (protótipo `navigation.html`, reduzido de 4 para o

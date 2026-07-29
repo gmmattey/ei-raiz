@@ -32,6 +32,9 @@ bouncycastle = "1.85"
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+# BackHandler comum (androidx.compose.ui.backhandler) — não vem transitivo de foundation/ui,
+# precisa ser declarado à parte (issue #181, back Android/gesto preditivo).
+compose-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
 # Ícones lineares usados pelos componentes novos da auditoria #220 (SavroIconButton/Fab/BottomNav) —
 # só o designsystem depende disso, :shared:app continua só enxergando o enum SavroIcon (ADR-002).

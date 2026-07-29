@@ -53,6 +53,7 @@ class VerifyDependencyInventoryTest {
             "compose-runtime",
             "compose-foundation",
             "compose-ui",
+            "compose-ui-backhandler",
             "compose-material3",
             "compose-material-icons-extended",
             "compose-components-resources",
