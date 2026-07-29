@@ -50,4 +50,18 @@ class ConversorMonetarioTest {
         assertEquals(1_500L, ConversorMonetario.paraQuantidadeMilesimos("1,5"))
         assertEquals(1_234L, ConversorMonetario.paraQuantidadeMilesimos("1,234"))
     }
+
+    @Test
+    fun paraCentavos_valorAcimaDoLimiteDeLong_retornaNuloEmVezDeEstourar() {
+        // 30 dígitos: nenhum valor patrimonial real chega perto disso, mas o texto digitado é
+        // entrada de usuário não confiável — precisa falhar como "inválido" (null), nunca lançar
+        // exceção de overflow do `Long.toLong()`.
+        assertNull(ConversorMonetario.paraCentavos("1".repeat(30)))
+    }
+
+    @Test
+    fun paraCentavos_zero_naoRetornaNuloERepresentaZeroCentavos() {
+        assertEquals(0L, ConversorMonetario.paraCentavos("0"))
+        assertEquals(0L, ConversorMonetario.paraCentavos("0,00"))
+    }
 }
