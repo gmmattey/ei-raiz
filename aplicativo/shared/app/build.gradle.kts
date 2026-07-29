@@ -41,6 +41,7 @@ kotlin {
             api(project(":shared:domain:patrimonio"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
+            implementation(libs.compose.ui.backhandler)
             implementation(libs.compose.components.resources)
             implementation(libs.kotlinx.coroutines.core)
         }

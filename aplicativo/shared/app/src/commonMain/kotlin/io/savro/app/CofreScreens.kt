@@ -10,7 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import io.savro.app.recursos.Res
 import io.savro.app.recursos.cofre_biometria_indisponivel_mensagem
 import io.savro.app.recursos.cofre_biometria_indisponivel_titulo
@@ -144,6 +146,7 @@ private fun BotaoTentarNovamente(gerenciador: GerenciadorCofre) {
  * instância de [servicoPatrimonio]. Ajustes (proteção do cofre #118 + backup/restauração/CSV
  * #121) abre a partir daqui, em `AjustesScreens.kt`.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TelaHome(
     gerenciador: GerenciadorCofre,
@@ -151,6 +154,10 @@ private fun TelaHome(
     servicoBackup: ServicoBackup,
 ) {
     var mostrarAjustes by remember { mutableStateOf(false) }
+
+    // Back Android/gesto preditivo (#181): fecha o overlay de Ajustes antes de deixar o sistema
+    // agir (o que, sem isso, saía do app direto de dentro de Ajustes).
+    BackHandler(enabled = mostrarAjustes) { mostrarAjustes = false }
 
     if (mostrarAjustes) {
         TelaAjustes(
