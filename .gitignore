@@ -96,6 +96,11 @@ aplicativo/**/*.apk
 aplicativo/**/*.aab
 aplicativo/**/*.apks
 
+# Chave de upload do Play Console (#241) — nunca versionar
+aplicativo/**/*.jks
+aplicativo/**/*.keystore
+aplicativo/keystore.properties
+
 # Gradle rodado por engano fora de aplicativo/ (raiz do repo não é projeto Gradle)
 /.gradle/
 /.kotlin/
