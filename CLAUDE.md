@@ -1,4 +1,13 @@
-# Esquilo Invest — Guia do Ambiente
+# Esquilo Invest — Guia do Ambiente (backend congelado)
+
+> **Este documento descreve o backend/frontend patrimonial anterior (Esquilo Invest), congelado
+> desde a issue #184.** O produto ativo do monorepo é o Savro, app KMP em `aplicativo/` — ver
+> `README.md` (seção "Status") e `documentacao/arquitetura/ADR-002-savro-kmp-multiplataforma.md`.
+> `apresentacao/` hoje é só a landing institucional do Savro; o wrapper Capacitor e as telas
+> autenticadas (login, dashboard, carteira, aportes, insights, importação, decisões, perfil,
+> admin) descritas abaixo foram removidas do frontend. A arquitetura de backend/banco abaixo
+> continua correta como referência do que roda em `servidores/porta-entrada/` — só não recebe mais
+> nenhum cliente ativo nem desenvolvimento novo.
 
 Plataforma de consolidação e diagnóstico financeiro para investidores brasileiros.
 Monorepo TypeScript rodando em **Cloudflare Workers + D1 (SQLite) + Pages**.
@@ -226,9 +235,17 @@ GET    /api/admin/cvm
 
 ---
 
-## Frontend
+## Frontend (histórico — removido em #184)
 
 **Pages:** `ei-raiz-web` → `apresentacao/`
+
+> A árvore abaixo é histórica: `cliente-api/`, `features/*` autenticadas, `components/`,
+> os hooks/contextos do runtime patrimonial (`context/ThemeContext`,
+> `context/ModoVisualizacaoContext`, `hooks/useInsights`, `hooks/usePortfolioData`,
+> `hooks/useConteudoApp`, `hooks/useIsMobile`) foram removidos fisicamente na #184.
+> `apresentacao/src/` hoje contém só a landing (`features/landing/`), páginas legais
+> (`features/legal/`), `config/`, `hooks/useSeo.ts` e utilitários genéricos — ver
+> `App.tsx`/`main.tsx` para a árvore real atual.
 
 ```
 src/

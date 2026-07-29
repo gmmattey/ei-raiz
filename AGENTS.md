@@ -30,18 +30,23 @@ o agente principal, responsável por coordenar o trabalho, implementar e falar c
 
 ## 1. Produto
 
-Esquilo Wallet é uma plataforma brasileira de consolidação patrimonial, diagnóstico de risco e
-inteligência financeira.
+Savro (ex-Esquilo Wallet) é um app de organização patrimonial local-first para investidores
+brasileiros.
 
-Stack principal:
-
-- Frontend: React + Vite, publicado no Cloudflare Pages.
-- Backend: TypeScript em Cloudflare Workers.
-- Banco: Cloudflare D1, compatível com SQLite.
-- Contratos: tipos TypeScript compartilhados por npm workspaces.
-- Infraestrutura: Cloudflare Workers, Pages e GitHub Actions.
+- **Mobile oficial (produto ativo):** Kotlin Multiplatform (Android + iOS), em `aplicativo/`.
+  Local-first e sem conta — dados patrimoniais nunca saem do aparelho. Fonte de verdade para
+  qualquer trabalho de produto/funcionalidade nova.
+- **Web (`apresentacao/`):** landing institucional do Savro + páginas legais, publicada no
+  Cloudflare Pages. Não é mais um app patrimonial — o wrapper Capacitor e o runtime React
+  autenticado (login, dashboard, carteira, etc.) foram encerrados na issue #184.
+- **Backend (`servidores/porta-entrada/`):** Worker Cloudflare TypeScript do produto patrimonial
+  anterior, com D1 (SQLite) e contratos compartilhados via npm workspaces. Congelado desde a
+  #184 — sem cliente ativo, sem desenvolvimento novo, mantido publicado até decisão explícita
+  sobre os dados existentes.
 
 O código ativo está na raiz do monorepo. A pasta `_legacy/` contém somente referências históricas.
+Nenhum desenvolvimento patrimonial novo deve ocorrer em `apresentacao/` ou
+`servidores/porta-entrada/`; funcionalidade nova de produto entra em `aplicativo/`.
 
 ## 2. Fontes de verdade
 
@@ -69,19 +74,24 @@ Não use `_legacy/` como fonte de verdade do produto atual.
 ## 3. Estrutura do código ativo
 
 ```text
-apresentacao/             Frontend React + Vite
-servidores/porta-entrada/ Backend Cloudflare Worker
-bibliotecas/contratos/    DTOs e tipos compartilhados
+aplicativo/               App KMP Android + iOS — mobile oficial, local-first
+apresentacao/             Landing institucional + páginas legais (React + Vite)
+servidores/porta-entrada/ Backend Cloudflare Worker patrimonial — congelado (ver seção 1)
+bibliotecas/contratos/    DTOs e tipos compartilhados (consumidos pelo backend congelado)
 bibliotecas/utilitarios/  Funções internas reutilizáveis
 bibliotecas/validacao/    Schemas de validação
-infra/banco/migrations/   Migrations versionadas do D1
-infra/banco/seed.sql      Dados de desenvolvimento
+infra/banco/migrations/   Migrations versionadas do D1 do backend congelado
+infra/banco/seed.sql      Dados de desenvolvimento do backend congelado
 utilitarios/scripts/      Scripts operacionais
-testes/                   Testes E2E e massas de teste
+testes/                   Testes E2E e massas de teste do backend congelado
 documentacao/             Produto, arquitetura e marca
 midia/                    Assets visuais
 _legacy/                  Histórico congelado e somente leitura
 ```
+
+`aplicativo/` não segue as regras de camada de backend (seção 8) nem as convenções TypeScript
+(seção 7) — é um módulo Gradle/Kotlin próprio, com suas próprias convenções (ver
+`documentacao/arquitetura/ADR-002-savro-kmp-multiplataforma.md`).
 
 ## 4. Regra absoluta para `_legacy/`
 

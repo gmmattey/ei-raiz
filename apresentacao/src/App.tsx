@@ -2,15 +2,12 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
-// Contextos
-import { ModoVisualizacaoProvider } from './context/ModoVisualizacaoContext';
-import { ThemeProvider } from './context/ThemeContext';
-
 // ─── Lazy imports: landing institucional + páginas legais ────────────────────
 // Rotas patrimoniais/autenticadas (login, onboarding, dashboard, carteira, aportes, insights,
 // histórico, importação, decisões, perfil, configurações, admin) foram removidas do router
-// público nesta issue (#122 — Savro migrando para app mobile KMP local-first). Os arquivos de
-// `src/features/*` correspondentes NÃO foram apagados — remoção física é escopo da issue #184.
+// público na #122 (Savro migrando para app mobile KMP local-first) e o código correspondente
+// (`src/features/*`, `src/components/*`, `src/cliente-api/*`, contextos de tema/visualização)
+// foi removido fisicamente na #184, junto com o wrapper Capacitor.
 const Landing = React.lazy(() => import('./features/landing/Landing'));
 const Privacidade = React.lazy(() => import('./features/legal/Privacidade'));
 const Termos = React.lazy(() => import('./features/legal/Termos'));
@@ -52,13 +49,9 @@ const AnimatedRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ModoVisualizacaoProvider>
-      <ThemeProvider>
-        <Router>
-          <AnimatedRoutes />
-        </Router>
-      </ThemeProvider>
-    </ModoVisualizacaoProvider>
+    <Router>
+      <AnimatedRoutes />
+    </Router>
   );
 };
 
