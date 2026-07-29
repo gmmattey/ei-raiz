@@ -1,0 +1,147 @@
+name: Android Internal Release
+
+# Gera o AAB release assinado do Savro para o primeiro teste interno no Play Console (#241).
+# Disparo manual apenas — não publica em loja, não cadastra service account.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-internal-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BUNDLETOOL_VERSION: "1.17.1"
+
+jobs:
+  build-signed-aab:
+    name: Gerar e validar AAB release assinado
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: aplicativo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Validar Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platforms;android-36"
+
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Verificar arquitetura, tokens e ausência de rede
+        run: ./gradlew --no-daemon --stacktrace verifyArchitecture verifyDesignSystemTokens verifyNoNetworkAccess
+
+      - name: Executar commonTest e módulos compartilhados
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:core:model:testDebugUnitTest \
+            :shared:core:testing:testDebugUnitTest \
+            :shared:core:designsystem:testDebugUnitTest \
+            :shared:core:database:testDebugUnitTest \
+            :shared:core:security:testDebugUnitTest \
+            :shared:core:backup:testDebugUnitTest \
+            :shared:domain:patrimonio:testDebugUnitTest
+
+      - name: Executar testes unitários Android (:androidApp)
+        run: ./gradlew --no-daemon --stacktrace :androidApp:testDevDebugUnitTest
+
+      - name: Lint release
+        run: ./gradlew --no-daemon --stacktrace :androidApp:lintDevRelease
+
+      # A chave de upload nunca é versionada. Só o segredo em base64 existe em CI; é reconstruída
+      # aqui num arquivo temporário do runner e removida no fim do job (passo com if: always()),
+      # mesmo se um passo anterior falhar.
+      - name: Reconstruir keystore de upload
+        env:
+          SAVRO_UPLOAD_KEYSTORE_BASE64: ${{ secrets.SAVRO_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "${SAVRO_UPLOAD_KEYSTORE_BASE64:-}" ]; then
+            echo "Secret SAVRO_UPLOAD_KEYSTORE_BASE64 não configurado — sem chave de upload, o bundleDevRelease abaixo vai falhar na assinatura (esperado até a chave existir)." >&2
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/savro-upload-keystore.jks"
+          echo "$SAVRO_UPLOAD_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          echo "SAVRO_UPLOAD_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Gerar AAB release assinado (bundleDevRelease)
+        env:
+          SAVRO_UPLOAD_STORE_PASSWORD: ${{ secrets.SAVRO_UPLOAD_STORE_PASSWORD }}
+          SAVRO_UPLOAD_KEY_ALIAS: ${{ secrets.SAVRO_UPLOAD_KEY_ALIAS }}
+          SAVRO_UPLOAD_KEY_PASSWORD: ${{ secrets.SAVRO_UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon --stacktrace :androidApp:bundleDevRelease
+
+      - name: Localizar AAB gerado
+        run: |
+          AAB_PATH=$(find androidApp/build/outputs/bundle/devRelease -name "*.aab" | head -n 1)
+          if [ -z "$AAB_PATH" ]; then
+            echo "Nenhum .aab encontrado em androidApp/build/outputs/bundle/devRelease" >&2
+            exit 1
+          fi
+          echo "AAB_PATH=aplicativo/$AAB_PATH" >> "$GITHUB_ENV"
+          echo "AAB gerado em $AAB_PATH"
+
+      - name: Baixar bundletool
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/bundletool.jar" \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+
+      # Inspeção do AAB: package, versionCode, versionName e debuggable a partir do Manifest real
+      # embutido no bundle (protobuf) — aapt2 não lê esse formato, por isso bundletool.
+      - name: Inspecionar Manifest do AAB (package, versão, debuggable)
+        working-directory: .
+        run: |
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle="$AAB_PATH" > "$RUNNER_TEMP/manifest-dump.txt"
+          cat "$RUNNER_TEMP/manifest-dump.txt"
+
+          fail=0
+          grep -q 'package="io.savro.app"' "$RUNNER_TEMP/manifest-dump.txt" || { echo "package incorreto (esperado io.savro.app)" >&2; fail=1; }
+          grep -q 'versionCode="1"' "$RUNNER_TEMP/manifest-dump.txt" || { echo "versionCode incorreto (esperado 1)" >&2; fail=1; }
+          grep -q 'versionName="0.1.0"' "$RUNNER_TEMP/manifest-dump.txt" || { echo "versionName incorreto (esperado 0.1.0)" >&2; fail=1; }
+          grep -q 'debuggable="true"' "$RUNNER_TEMP/manifest-dump.txt" && { echo "AAB está debuggable=true — inaceitável para release" >&2; fail=1; }
+          grep -qi '\.dev"' "$RUNNER_TEMP/manifest-dump.txt" && { echo "package contém sufixo .dev — build errado (deveria ser bundleDevRelease, não debug)" >&2; fail=1; }
+          grep -qi '\-dev"' "$RUNNER_TEMP/manifest-dump.txt" && { echo "versionName contém sufixo -dev — build errado" >&2; fail=1; }
+          [ "$fail" -eq 0 ] || exit 1
+          echo "Manifest do AAB validado: io.savro.app, versionCode=1, versionName=0.1.0, debuggable=false, sem sufixo .dev/-dev."
+
+      - name: Validar assinatura do AAB
+        working-directory: .
+        run: |
+          jarsigner -verify -verbose -certs "$AAB_PATH" | tee "$RUNNER_TEMP/jarsigner-output.txt"
+          grep -q "jar verified" "$RUNNER_TEMP/jarsigner-output.txt" || { echo "Assinatura do AAB não verificada — bundle não confiável para o Play Console" >&2; exit 1; }
+
+      - name: Calcular SHA-256 do AAB
+        working-directory: .
+        run: sha256sum "$AAB_PATH" | tee "$RUNNER_TEMP/savro-0.1.0-internal.sha256"
+
+      - name: Publicar artifact privado
+        uses: actions/upload-artifact@v4
+        with:
+          name: savro-0.1.0-internal-aab
+          path: |
+            ${{ env.AAB_PATH }}
+            ${{ runner.temp }}/savro-0.1.0-internal.sha256
+          retention-days: 7
+          if-no-files-found: error
+
+      # Roda mesmo se um passo anterior falhou — a chave nunca fica no runner além deste job.
+      - name: Apagar keystore temporário
+        if: always()
+        run: rm -f "${SAVRO_UPLOAD_KEYSTORE_PATH:-}"
