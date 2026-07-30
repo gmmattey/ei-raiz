@@ -44,7 +44,7 @@ jobs:
           # configurada" (sitemap/robots/canonical indexáveis) também na validação de PR.
           # Não é obrigatória aqui: sem ela o build de apresentacao/ ainda passa, só gera
           # robots.txt/sitemap.xml não indexáveis (ver scripts/gerar-arquivos-seo.mjs).
-          VITE_PUBLIC_SITE_URL: https://ei-raiz-web.pages.dev
+          VITE_PUBLIC_SITE_URL: https://savro-site.pages.dev
           VITE_SUPPORT_EMAIL: suporte.savro@gmail.com
 
       - name: Impedir alterações em legado

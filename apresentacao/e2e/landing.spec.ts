@@ -19,7 +19,7 @@ const APRESENTACAO_DIR = path.resolve(__dirname, '..');
 // Precisa bater com a env var usada para gerar o build servido em `npm run preview` (ver
 // playwright.config.ts / README de teste). Fallback é o domínio Cloudflare Pages real do
 // projeto — o mesmo usado em produção (.github/workflows/deploy.yml) — nunca um placeholder.
-const TEST_SITE_URL = (process.env.VITE_PUBLIC_SITE_URL ?? 'https://ei-raiz-web.pages.dev').replace(/\/+$/, '');
+const TEST_SITE_URL = (process.env.VITE_PUBLIC_SITE_URL ?? 'https://savro-site.pages.dev').replace(/\/+$/, '');
 
 const PUBLIC_ROUTES: { path: string }[] = JSON.parse(
   readFileSync(path.resolve(APRESENTACAO_DIR, 'src/config/public-routes.json'), 'utf-8')

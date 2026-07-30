@@ -12,7 +12,7 @@ Este monorepo também hospeda a landing institucional do Savro.
 - **Web (`apresentacao/`):** landing institucional do Savro + páginas legais
   (`/privacidade`, `/termos`, `/suporte`, `/faq`, `/changelog`). Não é mais um app patrimonial —
   o wrapper Capacitor e o runtime React de login/dashboard/carteira foram encerrados na issue
-  #184. Publicada em https://esquilo.wallet e https://ei-raiz-web.pages.dev.
+  #184. Publicada em https://savro-site.pages.dev.
 - **Backend patrimonial:** encerrado (#184 congelou, #235 decidiu o desligamento). O Worker
   `ei-api-gateway` e os bancos D1 (`esquilo-invest`, `esquilo-invest-dev`, `esquilo-invest-hml`)
   foram excluídos da Cloudflare; o código em `servidores/porta-entrada/`, os contratos
