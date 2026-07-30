@@ -95,6 +95,41 @@ confiável. Fix aplicado **só no teste** (`RoomDatabase.JournalMode.TRUNCATE`, 
 peculiaridade do Savro, é limitação documentada de rodar Room sob Robolectric. Registrado aqui
 porque não está em nenhum dos pareceres anteriores (117-A não testava Room de verdade ainda).
 
+### Dois bugs reais que só apareciam em device/emulador de verdade (#247)
+
+Robolectric usa `FrameworkSQLiteOpenHelperFactory` no lugar do SQLCipher real (ver Pendência 2,
+histórica) — então nunca exercitou o caminho que quebrava em produção: o cofre nunca abria em
+Android real (`UnsatisfiedLinkError`). Dois bugs distintos, os dois só visíveis com a suíte comum
+rodando de verdade contra `net.zetetic:sqlcipher-android` em `androidInstrumentedTest`:
+
+1. **`libsqlcipher.so` nunca era carregada.** `net.zetetic:sqlcipher-android:4.17.0` (ao contrário
+   da geração anterior da biblioteca, que expunha `SQLiteDatabase.loadLibs(context)`) não carrega a
+   lib nativa sozinha — quem integra precisa chamar `System.loadLibrary("sqlcipher")`
+   explicitamente antes de qualquer conexão. Ninguém fazia isso. `SupportOpenHelperFactory` subia
+   normalmente (é só uma classe Kotlin), mas a primeira abertura real de conexão derrubava o app com
+   `UnsatisfiedLinkError` em `net.zetetic.database.sqlcipher.SQLiteConnection.nativeOpen`. Fix:
+   `System.loadLibrary("sqlcipher")` num bloco `init` de `companion object` (`by lazy`, uma vez por
+   processo) em `RepositorioItensPatrimoniaisRoom`, disparado só dentro da fábrica *padrão* de
+   `fabricaOpenHelper` — o teste Robolectric, que troca a fábrica, nunca aciona esse carregamento.
+2. **`Arrays.fill(chave, 0)` zerava a mesma referência de array entregue ao SQLCipher.** Depois do
+   fix acima, a abertura inicial funcionava, mas testes com múltiplas operações sequenciais (várias
+   inserções, transações, listagens) falhavam de forma intermitente com
+   `SQLiteNotADatabaseException: file is not a database`, sempre ao abrir uma conexão *secundária*
+   do pool de WAL (leitura concorrente) — nunca a primária. Causa: `abrirComChave()` zera `chave`
+   (`Arrays.fill(chave, 0)`, higiene de memória correta em princípio) depois de construir o banco,
+   mas `SupportOpenHelperFactory(chave)` guardava a **mesma referência**, não uma cópia — SQLCipher
+   retém esse array em `SQLiteDatabaseConfiguration.password` para reabrir conexões extras do pool
+   pelo tempo de vida do banco. Zerar essa referência corrompia a chave de qualquer conexão aberta
+   depois da primeira. Fix: `SupportOpenHelperFactory(chave.copyOf())` — SQLCipher passa a reter uma
+   cópia própria, e `Arrays.fill` só zera a referência que a nossa própria função recebeu de
+   [ProvedorChaveMestra]. Nenhuma redução de higiene de memória: a chave da aplicação continua sendo
+   zerada assim que deixa de ser necessária, só não é mais a mesma referência que o motor de
+   persistência precisa manter viva.
+
+Essa combinação (native lib nunca carregada + chave corrompida em conexões tardias) é o motivo pelo
+qual o cofre nunca abria em nenhum Android real antes da #247, apesar de toda a suíte Robolectric
+estar verde.
+
 ## iOS
 
 - SQLCipher nativo via cinterop Kotlin/Native, consumindo o pod CocoaPods oficial `SQLCipher`
@@ -143,14 +178,16 @@ para iOS disponível. Confirmado empiricamente nesta sessão: um módulo KMP com
    desta PR. Primeira coisa a checar; se o pod `SQLCipher` não resolver ou os bindings gerados não
    caírem no pacote `cocoapods.SQLCipher.*` como assumido em `SQLiteCifrado.kt`, é o próximo passo
    de correção.
-2. **`androidInstrumentedTest` não executado** — comportamento específico de SQLCipher no Android
-   (rejeitar senha errada de verdade, `KeyPermanentlyInvalidatedException`) só é verificável em
-   dispositivo/emulador real; não há emulador Android neste ambiente, e a CI atual (#195) não roda
-   `connectedAndroidTest`. Os testes que rodam (`androidUnitTest`/Robolectric) usam
-   `FrameworkSQLiteOpenHelperFactory` no lugar do SQLCipher real (Robolectric não carrega
-   `libsqlcipher.so`), validando schema/DAO/transação/migration reais, não a cifra em si — a cifra
-   em si já tem evidência própria em 117-A (artefato, licença, integração `SupportOpenHelperFactory`
-   documentados a partir de fontes primárias).
+2. ~~**`androidInstrumentedTest` não executado**~~ — **resolvido na #247** (2026-07-30). O source
+   set `androidInstrumentedTest` não existia de verdade (só o processor KSP estava preparado); a
+   lacuna escondia dois bugs reais que faziam o cofre nunca abrir em Android real (ver "Dois bugs
+   reais que só apareciam em device/emulador de verdade", acima). `:shared:core:database:connectedDebugAndroidTest`
+   agora roda a suíte de contrato comum inteira (`RoomSQLCipherRepositorioItensPatrimoniaisInstrumentedTest`)
+   contra SQLCipher real (`SupportOpenHelperFactory`, sem troca por `FrameworkSQLiteOpenHelperFactory`),
+   incluindo a rejeição de chave errada — 42/42 testes passando em emulador (Pixel 10, API 37,
+   x86_64). A CI (#195) ainda não roda `connectedAndroidTest` automaticamente (exige emulador/device
+   no runner); isso continua pendente separado — o que fechou aqui foi a existência e execução local
+   do teste, não a automação em CI.
 3. **`:shared:app`/`:androidApp`/`:iosApp` não consomem `:shared:core:database` ainda** — decisão
    deliberada de escopo (ver acima); fica para #118 ou uma issue de wiring dedicada.
 4. **AAB 16 KB e medição de tamanho real (Android)** — 117-A já cobriu a metodologia; #180 não

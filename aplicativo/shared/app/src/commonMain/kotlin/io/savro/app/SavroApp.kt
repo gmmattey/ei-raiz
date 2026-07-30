@@ -81,9 +81,14 @@ fun SavroApp(
 
 /**
  * Abertura do app (protótipo tela 01) — ícone + wordmark, sem rede, sem estado de cofre ainda.
- * Usa o SVG de marca já existente em `documentacao/marca/assets-savro/savro-icone-white.svg`
- * (copiado para `composeResources/drawable`); não é uma tela do cofre/desbloqueio, é a peça de
- * marca antes de qualquer verificação (#220, item 6).
+ * Usa a marca em `documentacao/marca/assets-savro/savro-icone-white.svg`, convertida para vetor
+ * Android (`composeResources/drawable/savro_icone.xml`, mesmo path de dados do SVG original) —
+ * Compose Multiplatform só decodifica `.svg` via Skia (iOS/Desktop); no target Android isso
+ * derrubava o app com `IllegalStateException: Android platform doesn't support SVG format` em
+ * toda abertura (#246). O formato `.xml` (subconjunto de Android VectorDrawable) é suportado nos
+ * três alvos pelo próprio parser do Compose Multiplatform, sem depender de decoder de plataforma
+ * nem de dependência nova (ex. coil-svg). Não é uma tela do cofre/desbloqueio, é a peça de marca
+ * antes de qualquer verificação (#220, item 6).
  */
 @Composable
 private fun TelaSplash() {

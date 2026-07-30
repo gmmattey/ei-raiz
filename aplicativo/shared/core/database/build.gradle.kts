@@ -55,6 +55,18 @@ kotlin {
                 implementation(libs.androidx.junit)
             }
         }
+        val androidInstrumentedTest by getting {
+            // Não é automático em KMP: sem isso, androidInstrumentedTest não enxerga
+            // `RepositorioItensPatrimoniaisContratoTeste`/`FakeProvedorChaveMestra` (commonTest) —
+            // é exatamente esse contrato comum, rodando contra a fábrica SQLCipher real (default de
+            // RepositorioItensPatrimoniaisRoom, sem troca por FrameworkSQLiteOpenHelperFactory),
+            // que fecha a lacuna da #247 (nunca existia teste real de device pra esse caminho).
+            dependsOn(commonTest.get())
+            dependencies {
+                implementation(libs.androidx.junit)
+                implementation(libs.androidx.test.runner)
+            }
+        }
     }
 }
 
