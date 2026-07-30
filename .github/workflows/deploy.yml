@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  # Domínio Cloudflare Pages atual do projeto Esquilo — o Savro não tem domínio próprio ainda
+  # Domínio Cloudflare Pages atual do projeto Savro — o Savro não tem domínio próprio ainda
   # (issue #122). Não é segredo, só o único lugar onde o valor real deveria viver. Trocar aqui
   # quando um domínio próprio for registrado; nenhum outro arquivo precisa mudar.
-  PUBLIC_SITE_URL: https://ei-raiz-web.pages.dev
+  PUBLIC_SITE_URL: https://savro-site.pages.dev
   # Canal oficial de suporte/privacidade do Savro (issue #122) — não é segredo, é o contato
   # público exibido em Privacidade/Termos/Suporte/footer. Trocar aqui se o canal mudar.
   SUPPORT_EMAIL: suporte.savro@gmail.com

@@ -32,7 +32,7 @@ esquilo-wallet/
 
 ## Frontend (`apresentacao/`)
 
-React + Vite → Cloudflare Pages (`ei-raiz-web`). Hoje é só a landing (`features/landing/`) e as
+React + Vite → Cloudflare Pages (`savro-site`). Hoje é só a landing (`features/landing/`) e as
 páginas legais (`features/legal/`) — o wrapper Capacitor e o runtime patrimonial autenticado
 (login, dashboard, carteira, aportes, insights, importação, decisões, perfil, admin) foram
 removidos na #184.
@@ -42,7 +42,7 @@ removidos na #184.
 Automático via GitHub Actions (`.github/workflows/deploy.yml`) a cada push em `master`:
 typecheck → build → deploy no Cloudflare Pages.
 
-URL: https://ei-raiz-web.pages.dev
+URL: https://savro-site.pages.dev
 
 ### Variáveis de ambiente (`apresentacao/wrangler.toml`)
 

@@ -8,7 +8,7 @@
     "prebuild": "node scripts/gerar-arquivos-seo.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "wrangler pages deploy dist --project-name ei-raiz-web --commit-dirty=true"
+    "deploy": "wrangler pages deploy dist --project-name savro-site --commit-dirty=true"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

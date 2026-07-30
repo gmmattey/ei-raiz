@@ -1,4 +1,4 @@
-name = "ei-raiz-web"
+name = "savro-site"
 compatibility_date = "2026-04-09"
 pages_build_output_dir = "./dist"
 
@@ -7,7 +7,7 @@ pages_build_output_dir = "./dist"
 # Consumida em build-time por scripts/gerar-arquivos-seo.mjs e src/config/site.ts. O deploy real
 # (.github/workflows/deploy.yml) passa esta mesma env var explicitamente ao `npm run build`; este
 # valor aqui documenta o que o build de produção usa e serve `wrangler pages dev` local.
-VITE_PUBLIC_SITE_URL = "https://ei-raiz-web.pages.dev"
+VITE_PUBLIC_SITE_URL = "https://savro-site.pages.dev"
 # Canal oficial de suporte/privacidade do Savro (issue #122), aprovado pelo Luiz. Fonte única
 # consumida por src/config/platforms.ts (SUPPORT_EMAIL) — Privacidade, Termos, Suporte e
 # StoreLinks só usam este valor, nunca um e-mail hardcoded no componente.
