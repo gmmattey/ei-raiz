@@ -43,6 +43,17 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
  * `-shm` adicionais ao lado do banco, e esse caminho não é totalmente suportado nesse runtime.
  * Isso não é um problema do Savro nem do dispositivo real, é uma limitação documentada de rodar
  * Room sob Robolectric.
+ *
+ * `net.zetetic:sqlcipher-android` (ao contrário da geração anterior da biblioteca, que expunha
+ * `SQLiteDatabase.loadLibs(context)`) não carrega `libsqlcipher.so` sozinha — quem integra precisa
+ * chamar `System.loadLibrary("sqlcipher")` explicitamente antes de qualquer conexão. Sem isso,
+ * `SupportOpenHelperFactory` sobe normalmente (é só um `SupportSQLiteOpenHelper.Factory`), mas a
+ * primeira chamada real ao banco falha com `UnsatisfiedLinkError` em
+ * `net.zetetic.database.sqlcipher.SQLiteConnection.nativeOpen` (#247) — nunca foi pego porque só
+ * dá pra reproduzir em device/emulador real, e o único teste que existia (Robolectric) troca o
+ * factory por `FrameworkSQLiteOpenHelperFactory` antes de chegar aqui. [carregarBibliotecaNativa]
+ * só roda dentro do factory padrão (produção); os testes que substituem [fabricaOpenHelper] nunca
+ * o invocam.
  */
 class RepositorioItensPatrimoniaisRoom(
     private val context: Context,
@@ -50,9 +61,19 @@ class RepositorioItensPatrimoniaisRoom(
     private val nomeArquivoBanco: String = EsquemaSavro.NOME_BANCO,
     private val relogio: Relogio = RelogioDoSistemaAndroid,
     private val fabricaOpenHelper: (chave: ByteArray) -> SupportSQLiteOpenHelper.Factory =
-        { chave -> SupportOpenHelperFactory(chave) },
+        { chave -> carregarBibliotecaNativaSQLCipher(); SupportOpenHelperFactory(chave.copyOf()) },
     private val modoJournal: RoomDatabase.JournalMode? = null,
 ) : RepositorioItensPatrimoniais {
+
+    private companion object {
+        // `by lazy` garante exatamente um `System.loadLibrary` por processo, mesmo com múltiplas
+        // instâncias de [RepositorioItensPatrimoniaisRoom] ou reaberturas após [fechar].
+        val bibliotecaNativaCarregada by lazy { System.loadLibrary("sqlcipher") }
+
+        fun carregarBibliotecaNativaSQLCipher() {
+            bibliotecaNativaCarregada
+        }
+    }
 
     private val mutex = Mutex()
 
@@ -90,6 +111,13 @@ class RepositorioItensPatrimoniaisRoom(
     } catch (excecao: Exception) {
         mapearExcecaoDeAbertura(excecao)
     } finally {
+        // Zera só a NOSSA cópia recebida de [provedorChaveMestra] — [fabricaOpenHelper] já entrega
+        // ao SQLCipher uma cópia própria (`chave.copyOf()`), nunca esta referência. SQLCipher
+        // guarda essa cópia em `SQLiteDatabaseConfiguration.password` pelo tempo de vida da conexão
+        // e a reusa para (re)abrir conexões extras do pool de WAL (leitura concorrente) — zerar a
+        // referência compartilhada aqui quebrava exatamente essas conexões tardias com
+        // `SQLiteNotADatabaseException: file is not a database`, descoberto pelo teste
+        // instrumentado real da #247 (nunca existia antes).
         Arrays.fill(chave, 0)
     }
 
