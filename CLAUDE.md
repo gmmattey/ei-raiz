@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # Savro — Guia do Ambiente
 
 Savro é um app de organização patrimonial **local-first** para investidores brasileiros: Android e
@@ -15,7 +17,7 @@ patrimonial ativo: o Worker Cloudflare `ei-api-gateway` e os bancos D1 do produt
 ## Estrutura do Monorepo
 
 ```
-esquilo-wallet/
+savro/
 ├── aplicativo/             # App KMP Android + iOS — mobile oficial, local-first
 ├── apresentacao/           # Landing institucional + páginas legais → Cloudflare Pages
 ├── bibliotecas/
@@ -68,11 +70,7 @@ Não segue as convenções deste documento — é um módulo Gradle/Kotlin próp
 - DTOs em `camelCase`; tipos em `PascalCase`.
 - Sufixos: `Entrada`, `Saida`, `Filtro`, `Resumo`, `Dto`.
 
-### Palavras banidas no código
-
-Herdadas do domínio patrimonial (`portfolio`, `financial-core`, `insights`/`analytics`,
-`carteira`, `assets`, `posicoes`, `snapshot`, `unified`/`_v2`) — não reintroduzir sem decisão
-explícita de trazer de volta um backend patrimonial.
+Vocabulário canônico e palavras banidas: ver `AGENTS.md` §7.
 
 ---
 

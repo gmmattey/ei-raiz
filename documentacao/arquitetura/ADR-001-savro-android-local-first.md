@@ -229,6 +229,14 @@ Este segundo adendo é só registro de leitura das issues — não cria a ADR-00
 aprovada e fechada, criar `ADR-002-savro-kmp-multiplataforma.md` (ou nome equivalente) como a nova
 ADR canônica, marcando esta ADR-001 como histórica de forma definitiva.
 
+## Adendo — 2026-08-03 — correção de nomenclatura (não é decisão nova)
+
+O texto acima (linhas 29 e 200-219) registra `esquilo-wallet`/`gmmattey/esquilo-wallet` como
+repositório durante a transição — já estava desatualizado antes deste adendo (o repo real é
+`buildea-labs/savro`, não `gmmattey/esquilo-wallet`) e a pasta local foi renomeada de
+`esquilo-wallet/` para `savro/` em 2026-08-03, equalizando com o nome do repo. Não altera nenhuma
+decisão arquitetural — só corrige a referência de nome/caminho pra quem ler este ADR depois.
+
 ## Critérios de aceite da #174
 
 - [x] Nome de trabalho, namespace, IDs e recursos documentados.
