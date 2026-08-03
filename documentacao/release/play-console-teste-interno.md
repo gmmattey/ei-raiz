@@ -60,7 +60,8 @@ que existir); nunca os dois ao mesmo tempo. O workflow de CI usa exclusivamente 
 reconstrói o `.jks` num arquivo temporário do runner e apaga esse arquivo ao final do job
 (`if: always()`), mesmo se algum passo anterior falhar.
 
-Cadastro dos secrets no repositório (`buildea-labs/savro`) **não faz parte desta issue** — fica
+Cadastro dos secrets no repositório (`gmmattey/savro`, transferido de `buildea-labs/savro` em
+2026-08-03) **não faz parte desta issue** — fica
 para quando o Luiz gerar a chave real e decidir cadastrá-los.
 
 Gerar o base64 a partir do `.jks` (Linux/macOS):
